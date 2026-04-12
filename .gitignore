@@ -1,0 +1,29 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Data files (too large for GitHub)
+Data/asado.duckdb
+Data/Normalized_T2_MasterCSV.csv
+Data/raw/
+Data/processed/
+Data/backups/
+Data/cache/
+Data/logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Environment
+.env
+*.env.local

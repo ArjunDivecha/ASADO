@@ -398,6 +398,10 @@ def _categorize_factor(name: str) -> str:
             return "macro_forecast"
         if "Debt" in name:
             return "fiscal"
+        if "PMI" in name:
+            return "activity"
+        if "M2" in name:
+            return "monetary_policy"
         return "rates"
 
     return "other"

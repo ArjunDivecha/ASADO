@@ -54,7 +54,7 @@
 - IMF bilateral trade matrices
 - BIS cross-border banking claims
 
-**TOTAL: ~328 distinct variables in unified_panel (as of April 2026)**
+**TOTAL: 332 distinct variables in unified_panel (as of April 2026)**
 
 ---
 
@@ -104,7 +104,7 @@ These are data series that Bloomberg provides uniquely and that would add genuin
 | **3** | **Inflation Breakevens** (market-implied inflation) | ILBE / bond tickers | Daily→Monthly | Forward-looking inflation expectations from bond markets. | **DONE** — `BBG_Breakeven_10Y` (6 countries) |
 | **4** | **Yield Curve Shape** (2Y, 5Y, 10Y, 30Y yields by country) | Generic govt bond tickers | Daily→Monthly | Full curve shape adds term structure signal. | **DONE** — `BBG_Govt_Bond_{2Y,5Y,10Y,30Y}` (26 countries) + `BBG_Yield_Curve_10Y2Y` derived |
 | **5** | **Central Bank Rate Change Probability** | WIRP | Daily→Monthly | Market-implied odds of rate hikes/cuts. | **DONE** — `BBG_WIRP_ImpliedRate` (25 countries) |
-| **6** | **Consensus Economic Forecasts** (GDP, CPI) | ECFC | Monthly | Forward-looking analyst consensus. | **DONE** — `BBG_ECFC_GDP`, `BBG_ECFC_CPI` (20 countries) |
+| **6** | **Consensus Economic Forecasts** (GDP, CPI) | ECFC | Monthly | Forward-looking analyst consensus. | **DONE** — `BBG_ECFC_GDP` (26 countries, with EHGD fallback), `BBG_ECFC_CPI` (19 countries) |
 | **7** | **Sovereign Credit Rating History** (S&P, Moody's, Fitch) | CSDR / BDP fields | Event-driven | Rating level + trajectory. | **PARTIAL** — collector built, some tickers need terminal-side verification |
 
 ### TIER 2 — MEDIUM VALUE: Better Quality or Frequency Than Free Alternatives
@@ -113,9 +113,9 @@ These overlap with existing data but Bloomberg versions are materially higher qu
 
 | # | Data | Bloomberg Source | Frequency | What We Already Have | Why Bloomberg Is Better |
 |---|---|---|---|---|---|
-| **8** | **PMI Data** (Manufacturing + Services + Composite) | ECST / tickers | Monthly | OECD BCI/CCI (sentiment, not PMI) | PMI is the global standard leading indicator. BCI/CCI are different surveys with less market impact. PMI drives markets. |
-| **9** | **Money Supply Growth** (M2 YoY) | ECST > Monetary | Monthly | Nothing — only have BIS policy rate | Monetary aggregate growth is a key liquidity signal for equity markets. |
-| **10** | **Private Sector Credit Growth** (YoY) | ECST > Monetary | Monthly | BIS credit-to-GDP GAP (level, not growth rate) | Credit growth rate is different from the credit gap. Growth measures flow; gap measures deviation from trend. |
+| **8** | **PMI Data** (Manufacturing + Services) | ECST / tickers | Monthly | OECD BCI/CCI (sentiment, not PMI) | PMI is the global standard leading indicator. BCI/CCI are different surveys with less market impact. PMI drives markets. | **DONE** — `BBG_PMI_Manufacturing` (19 countries), `BBG_PMI_Services` (7 countries) |
+| **9** | **Money Supply Growth** (M2 YoY) | ECST > Monetary | Monthly | Nothing — only have BIS policy rate | Monetary aggregate growth is a key liquidity signal for equity markets. | **DONE** — `BBG_M2_YoY` (13 countries) |
+| **10** | **Private Sector Credit Growth** (YoY) | ECST > Monetary | Monthly | BIS credit-to-GDP GAP (level, not growth rate) | Credit growth rate is different from the credit gap. Growth measures flow; gap measures deviation from trend. | **DEFERRED** — no consistent ticker pattern, requires terminal discovery |
 | **11** | **Govt Debt Maturity Profile / Avg Maturity** | DDIS / WCDM | Monthly | Debt/GDP level only | Rollover risk: a country with 3Y avg maturity is far more vulnerable than one with 15Y avg maturity at the same debt level. |
 | **12** | **FX Consensus Forecasts** | FXFC | Monthly | Spot rates only (ECB, IMF) | Forward-looking consensus. The gap between forecast and spot = expected return / risk. |
 | **13** | **Bond Yield Forecasts** | BYFC | Monthly | Current yields only (T2, IMF) | Consensus rate direction. Rising/falling rate expectations affect equity returns via duration. |
@@ -192,11 +192,11 @@ Series to implement:
 | 2 | Yield Curve (2Y, 5Y, 10Y, 30Y) | Partial gap | Very High | Easy (bdh) | **P1** | **DONE** |
 | 3 | Inflation Breakevens | Yes | High | Easy (bdh) | **P1** | **DONE** |
 | 4 | Sovereign Credit Ratings | Yes | Very High | Medium (bdp) | **P2** | Partial |
-| 5 | PMI (Mfg + Services) | Yes (vs BCI/CCI) | Very High | Medium (tickers) | **P2** | Planned |
+| 5 | PMI (Mfg + Services) | Yes (vs BCI/CCI) | Very High | Medium (tickers) | **P2** | **DONE** (19 countries mfg, 7 svc) |
 | 6 | SRSK Default Probability | Yes | Very High | Medium (SRSK) | **P2** | Not available via BLPAPI |
-| 7 | Consensus Forecasts (GDP, CPI) | Yes | High | Hard (ECFC/BDS) | **P3** | **DONE** |
-| 8 | M2 Money Supply Growth | Yes | High | Medium (tickers) | **P2** | Planned |
-| 9 | Private Credit Growth | Partial gap | Medium-High | Medium (tickers) | **P2** | Planned |
+| 7 | Consensus Forecasts (GDP, CPI) | Yes | High | Hard (ECFC/BDS) | **P3** | **DONE** (26 GDP w/ fallback, 19 CPI) |
+| 8 | M2 Money Supply Growth | Yes | High | Medium (tickers) | **P2** | **DONE** (13 countries) |
+| 9 | Private Credit Growth | Partial gap | Medium-High | Medium (tickers) | **P2** | Deferred — terminal discovery needed |
 | 10 | WIRP Rate Probabilities | Yes | High | Hard (per-CB) | **P3** | **DONE** |
 | 11 | FX/Bond Forecasts | Yes | Medium | Medium (FXFC/BYFC) | **P3** | Planned |
 | 12 | Debt Maturity Profile | Yes | Medium | Hard (DDIS) | **P4** | Collector built, tickers need terminal discovery |
@@ -215,4 +215,4 @@ Series to implement:
 | **P4** (remainder) | ~5 per country | Marginal additions |
 | **TOTAL** | **~30 new variables per country** | |
 
-As of April 2026, Bloomberg has brought ASADO from **~315 to ~328 variables** in `unified_panel`, with **13 Bloomberg variables** adding the critical **market-implied forward-looking data** (CDS, breakevens, ECFC forecasts, WIRP rates, OIS/Z-spreads, MIPD default probability) that was previously absent from the database. Additional Tier 2/3 items remain planned for future phases.
+As of April 2026, Bloomberg has brought ASADO to **332 variables** in `unified_panel`, with **17 Bloomberg variables** adding the critical **market-implied forward-looking data** (CDS, breakevens, ECFC forecasts, WIRP rates, OIS/Z-spreads, MIPD default probability) and **high-frequency activity/monetary indicators** (PMI Manufacturing/Services, M2 money supply YoY) that were previously absent from the database. Private credit growth remains deferred (requires terminal-side ticker discovery).

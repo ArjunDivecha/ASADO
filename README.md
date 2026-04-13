@@ -1,6 +1,6 @@
 # ASADO — Country Data Collection & Research Platform
 
-Collects macro/governance/risk/climate/trade data from **26 free external sources** (including 7 IMF datasets) **plus 13 Bloomberg Terminal variables** (sovereign bonds, CDS, breakevens, OIS rates, WIRP, ECFC, MIPD), aligns to the 34-country T2 Master universe, stores everything in a **hybrid DuckDB + Neo4j database** with **bilateral trade/banking network edges** and **country-state vector embeddings** for similarity search.
+Collects macro/governance/risk/climate/trade data from **26 free external sources** (including 7 IMF datasets) **plus 17 Bloomberg Terminal variables** (sovereign bonds, CDS, breakevens, OIS rates, WIRP, ECFC, PMI, M2, MIPD), aligns to the 34-country T2 Master universe, stores everything in a **hybrid DuckDB + Neo4j database** with **bilateral trade/banking network edges** and **country-state vector embeddings** for similarity search.
 
 ## Project Structure
 
@@ -18,7 +18,7 @@ ASADO/
 │   │   ├── imf_factors_panel.parquet     # Program 3 output (107K rows, 26 vars)
 │   │   ├── bilateral_trade_matrix.parquet  # Program 4 output (899 trade pairs)
 │   │   ├── bilateral_banking_matrix.parquet # Program 4 output (582 banking pairs)
-│   │   ├── bloomberg_factors_panel.parquet # Program 5 output (62K rows, 13 vars)
+│   │   ├── bloomberg_factors_panel.parquet # Program 5 output (67K rows, 17 vars)
 │   │   └── ...catalogs, CSV copies, run history
 │   ├── backups/                          # Timestamped backups before overwrites
 │   └── cache/                            # Log files
@@ -28,7 +28,7 @@ ASADO/
 │   ├── collect_extended.py               # Program 2 — 12 extended sources
 │   ├── collect_imf.py                    # Program 3 — 7 IMF datasets
 │   ├── collect_bilateral.py              # Program 4 — bilateral trade + banking matrices
-│   ├── collect_bloomberg.py              # Program 5 — Bloomberg Terminal (bonds, CDS, OIS, WIRP, ECFC)
+│   ├── collect_bloomberg.py              # Program 5 — Bloomberg Terminal (bonds, CDS, OIS, WIRP, ECFC, PMI, M2)
 │   ├── setup_duckdb.py                   # DuckDB schema + data loader
 │   ├── setup_neo4j.py                    # Neo4j knowledge graph builder
 │   ├── build_embeddings.py               # Country-state PCA vectors + Neo4j vector index
@@ -64,7 +64,7 @@ This single command runs the entire pipeline:
 | 2 | `collect_extended.py --force` | 12 extended sources (BIS rates, OECD BCI/CCI, ECB, ILOSTAT, FRED, EIA) | ~45s |
 | 3 | `collect_imf.py --force` | 7 IMF datasets (CPI, WEO, BOP, rates, FX, labor, trade) | ~70s |
 | 4 | `collect_bilateral.py` | Bilateral trade (IMF IMTS) + banking claims (BIS LBS) | ~120s |
-| 5 | `collect_bloomberg.py` | Bloomberg Terminal data (bonds, CDS, OIS, WIRP, ECFC, breakevens) | ~90s |
+| 5 | `collect_bloomberg.py` | Bloomberg Terminal data (bonds, CDS, OIS, WIRP, ECFC, PMI, M2, breakevens) | ~140s |
 | 6 | `setup_duckdb.py` | Rebuild DuckDB analytical database | ~2s |
 | 7 | `setup_neo4j.py` | Rebuild Neo4j knowledge graph + trade/banking edges | ~9s |
 | 8 | `build_embeddings.py` | Country-state PCA vectors + Neo4j vector index | ~3s |
@@ -116,7 +116,7 @@ All collectors are designed for safe monthly re-runs:
 5. **Records run metadata** in run history JSON (keeps last 24 runs)
 6. **Prints a delta report** showing row count changes and date range extensions
 
-## Latest Run Results (2026-04-12)
+## Latest Run Results (2026-04-13)
 
 ### Program 1: Core Sources (collect_external.py)
 
@@ -176,16 +176,19 @@ API: SDMX 3.0 REST at `api.imf.org` — no API key required.
 | Breakevens (10Y) | OK | 6/34 | 1 | 2000-01 → 2026-03 |
 | OIS 10Y Swap Rates | OK | 17/34 | 1 | 2000-01 → 2026-03 |
 | WIRP Implied Rates | OK | 25/34 | 1 | 2000-01 → 2026-03 |
-| ECFC Consensus (GDP, CPI) | OK | 20/34 | 2 | 2010-01 → 2026-03 |
+| ECFC Consensus (GDP, CPI) | OK | 26/34 | 2 | 2010-01 → 2026-03 |
+| PMI (Manufacturing, Services) | OK | 19/34 | 2 | 2020-10 → 2026-03 |
+| M2 Money Supply YoY | OK | 13/34 | 1 | 2000-01 → 2026-03 |
+| DDIS Debt/GDP | OK | 1/34 | 1 | 2011-03 → 2025-12 |
 | Yield Curve Slope (derived) | OK | 23/34 | 1 | 2000-01 → 2026-03 |
 | MIPD Default Prob (derived) | OK | 15/34 | 1 | 2000-10 → 2026-03 |
 | Z-Spread vs OIS (derived) | OK | 16/34 | 1 | 2000-01 → 2026-03 |
 
-**Total: 61,853 rows, 13 variables, 34 countries, 9/9 categories OK**
+**Total: 66,656 rows, 17 variables, 34 countries, 12/13 categories OK**
 
 Bloomberg connection: macOS Python → TCP:8194 → Parallels Windows 11 VM → bbcomm.exe → Bloomberg Terminal. Uses the OpusBloomberg library at `/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg`.
 
-### Combined Total: 358,598 rows, 125 variables across 26 free sources + Bloomberg Terminal
+### Combined Total: 1,910,775 rows, 332 variables across 26 free sources + Bloomberg Terminal
 
 ## Output Files
 
@@ -199,7 +202,7 @@ Bloomberg connection: macOS Python → TCP:8194 → Parallels Windows 11 VM → 
 | `Data/processed/imf_factors_panel.csv` | Program 3 CSV copy |
 | `Data/processed/bilateral_trade_matrix.parquet` | Program 4 — 899 bilateral trade pairs |
 | `Data/processed/bilateral_banking_matrix.parquet` | Program 4 — 582 banking exposure pairs |
-| `Data/processed/bloomberg_factors_panel.parquet` | Program 5 — 62K rows, 13 Bloomberg variables |
+| `Data/processed/bloomberg_factors_panel.parquet` | Program 5 — 67K rows, 17 Bloomberg variables |
 | `Data/processed/bloomberg_factors_panel.csv` | Program 5 CSV copy |
 | `Data/processed/bloomberg_variable_catalog.csv` | Program 5 variable metadata |
 | `Data/processed/external_variable_catalog.csv` | Program 1 variable metadata |
@@ -216,7 +219,7 @@ Bloomberg connection: macOS Python → TCP:8194 → Parallels Windows 11 VM → 
 | variable | string | EPU |
 | source | string | epu |
 
-## Variables Collected (125 total)
+## Variables Collected (332 total)
 
 ### Program 1: Core Sources (35 variables)
 
@@ -249,14 +252,16 @@ Bloomberg connection: macOS Python → TCP:8194 → Parallels Windows 11 VM → 
 **Labor (1):** `IMF_Employment_Index`
 **Trade (8):** `IMF_Exports_USD`, `IMF_Imports_USD`, `IMF_Trade_Balance_USD` (computed), `IMF_Trade_Openness_USD` (computed), `IMF_Export_Price_Index`, `IMF_Import_Price_Index`, `IMF_Exports_YoY`, `IMF_Imports_YoY`
 
-### Program 5: Bloomberg Terminal (13 variables)
+### Program 5: Bloomberg Terminal (17 variables)
 
 **Sovereign Bonds (4):** `BBG_Govt_Bond_2Y`, `BBG_Govt_Bond_5Y`, `BBG_Govt_Bond_10Y`, `BBG_Govt_Bond_30Y`
 **CDS (1):** `BBG_CDS_5Y`
 **Inflation (1):** `BBG_Breakeven_10Y`
 **Rates (2):** `BBG_OIS_10Y`, `BBG_ZSpread_OIS_10Y` (derived: bond yield minus OIS rate)
-**Monetary Policy (1):** `BBG_WIRP_ImpliedRate` (central bank implied policy rate)
-**Consensus Forecasts (2):** `BBG_ECFC_GDP`, `BBG_ECFC_CPI` (survey consensus)
+**Monetary Policy (2):** `BBG_WIRP_ImpliedRate` (central bank implied policy rate), `BBG_M2_YoY` (M2 money supply growth)
+**Activity (2):** `BBG_PMI_Manufacturing`, `BBG_PMI_Services` (S&P Global/Markit PMI)
+**Consensus Forecasts (2):** `BBG_ECFC_GDP` (with fallback to actual GDP YoY), `BBG_ECFC_CPI` (survey consensus)
+**Fiscal (1):** `BBG_Debt_GDP_Ratio` (sovereign debt-to-GDP)
 **Sovereign Risk (1):** `BBG_MIPD_5Y` (derived: market-implied default probability from CDS)
 **Yield Curve (1):** `BBG_Yield_Curve_10Y2Y` (derived: 10Y-2Y slope)
 
@@ -318,13 +323,13 @@ blpapi pandas pyarrow numpy  # in OpusBloomberg/.venv
 - IMF WEO includes forward-looking forecasts through 2030
 - IMF IMTS (formerly DOTS) provides bilateral merchandise trade via SDMX 3.0 — 30/31 reporters covered
 - BIS Locational Banking Statistics (LBS) provides cross-border banking claims via CSV API at stats.bis.org — 21/31 reporting countries
-- Country-state embeddings use PCA-compressed z-scored factor values (34d vectors from 285 variables) stored on Neo4j Country nodes with a cosine similarity vector index
+- Country-state embeddings use PCA-compressed z-scored factor values (34d vectors from 332 variables) stored on Neo4j Country nodes with a cosine similarity vector index
 - Bloomberg data uses the OpusBloomberg library for BLPAPI access via macOS → Parallels → Windows VM → Bloomberg Terminal. Runs in a dedicated conda environment (`OpusBloomberg/.venv`) with `blpapi`. Connection auto-detects VM IP, starts bbcomm, configures port forwarding and firewall rules.
-- Bloomberg collector outputs both pulled data (bond yields, CDS, OIS, breakevens, WIRP, ECFC) and derived signals (MIPD from CDS via hazard rate model, Z-spread = bond yield minus OIS rate, yield curve slope = 10Y minus 2Y)
+- Bloomberg collector outputs both pulled data (bond yields, CDS, OIS, breakevens, WIRP, ECFC, PMI, M2) and derived signals (MIPD from CDS via hazard rate model, Z-spread = bond yield minus OIS rate, yield curve slope = 10Y minus 2Y). ECFC GDP uses a fallback strategy: tries consensus forecast tickers first (`ECGD[CC]`), falls back to actual GDP YoY (`EHGD[CC]Y`) if consensus ticker fails.
 
 ## Database Architecture (Phase 1B)
 
-### DuckDB — Analytical Store (`Data/asado.duckdb`, 75.5 MB)
+### DuckDB — Analytical Store (`Data/asado.duckdb`, 72.5 MB)
 
 Columnar database for fast time-series analytics. Contains six tables + one unified view:
 
@@ -335,32 +340,32 @@ Columnar database for fast time-series analytics. Contains six tables + one unif
 | `extended_factors` | 77,123 | 51 | 34 | 1990-12 → 2026-04 |
 | `gdelt_panel` | 404,702 | 93 | 34 | 2015-09 → 2026-04 |
 | `imf_factors` | 106,989 | 26 | 34 | 1980-12 → 2030-12 |
-| `bloomberg_factors` | 61,853 | 13 | 34 | 2000-01 → 2026-03 |
-| **`unified_panel`** (view) | **1,905,972** | **328** | 34 | 1980-12 → 2030-12 |
+| `bloomberg_factors` | 66,656 | 17 | 34 | 2000-01 → 2026-03 |
+| **`unified_panel`** (view) | **1,910,775** | **332** | 34 | 1980-12 → 2030-12 |
 
 All tables share the tidy schema `(date DATE, country VARCHAR, value DOUBLE, variable VARCHAR)`. Indexes on `(country, date)` and `(variable)`.
 
 ### Neo4j — Knowledge Graph (bolt://localhost:7687)
 
-Graph database representing entity relationships with bilateral trade/banking networks and vector embeddings. **438 nodes, 6,495 edges.**
+Graph database representing entity relationships with bilateral trade/banking networks and vector embeddings. **446 nodes, 6,522 edges.**
 
 **Node types:**
 | Label | Count | Key Properties |
 |-------|-------|----------------|
 | Country | 34 | t2_name, iso3, dm_em, region, currency_code, state_embedding (34d vector) |
-| Factor | 328 | name, category, source |
+| Factor | 332 | name, category, source |
 | CentralBank | 31 | name, country_iso3 |
 | DataSource | 30 | name, url, frequency, api_type |
 | CrisisEvent | 9 | name, start_date, end_date, type |
 | SanctionsProgram | 6 | name, active |
 | Commodity | 4 | name, category |
 
-Bloomberg factors are categorized as: `rates` (bonds, OIS, Z-spread, yield curve), `sovereign_risk` (CDS, MIPD), `inflation` (breakevens), `monetary_policy` (WIRP), `macro_forecast` (ECFC GDP/CPI).
+Bloomberg factors are categorized as: `rates` (bonds, OIS, Z-spread, yield curve), `sovereign_risk` (CDS, MIPD), `inflation` (breakevens), `monetary_policy` (WIRP, M2), `macro_forecast` (ECFC GDP/CPI), `activity` (PMI Manufacturing/Services), `fiscal` (Debt/GDP).
 
 **Edge types:**
 | Relationship | Count | Description |
 |-------------|-------|-------------|
-| HAS_FACTOR_EXPOSURE | 3,725 | Country → Factor (latest values) |
+| HAS_FACTOR_EXPOSURE | 3,752 | Country → Factor (latest values) |
 | TRADES_WITH | 1,079 | Country → Country (bilateral trade >$100M, IMF IMTS) |
 | DATA_AVAILABLE_FROM | 765 | Country → DataSource (coverage) |
 | HAS_BANKING_EXPOSURE_TO | 704 | Country → Country (cross-border claims, BIS LBS) |

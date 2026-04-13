@@ -29,7 +29,7 @@ Bloomberg connection uses the OpusBloomberg pathway:
                                  │
                              Bloomberg Terminal → Bloomberg Servers
 
-Data collected (Phase 1 + Phase 2):
+Data collected (Phase 1 + Phase 2 + Phase 3):
 
   Phase 1 — Market-Implied (daily → monthly):
     1. Government bond yields: 2Y, 5Y, 10Y, 30Y per country
@@ -41,8 +41,12 @@ Data collected (Phase 1 + Phase 2):
     5. MIPD: Market-implied default probability (derived from CDS)
     6. OIS 10Y swap rates + sovereign Z-spread vs OIS
     7. WIRP: Central bank rate change probabilities
-    8. ECFC: Consensus GDP/CPI forecasts (Y+1, Y+2)
+    8. ECFC: Consensus GDP/CPI forecasts (with GDP fallback tickers)
     9. DDIS: Sovereign debt maturity distribution (snapshot)
+
+  Phase 3 — ECST Activity & Monetary:
+   10. PMI: S&P Global Manufacturing & Services indices per country
+   11. M2: Money supply YoY growth per country
 
 PREREQUISITES:
 - Bloomberg Terminal open and logged in on Windows (Parallels)
@@ -277,42 +281,43 @@ COUNTRY_CB_TICKER = {
 # Pattern: CO[indicator][country_code] Index
 # These are Bloomberg ECFC survey-derived time series pullable via bdh().
 COUNTRY_ECFC_TICKERS = {
-    # Bloomberg survey/consensus tickers: ECGD[CC] = GDP survey, ECCPIY[CC] = CPI survey
-    # Also try BN_SURVEY_MEDIAN on economic release tickers as fallback
-    "Australia":     {"gdp": "ECGDAU Index", "cpi": "AUCPIYOY Index"},
-    "Brazil":        {"gdp": "ECGDBZ Index", "cpi": "BZCPIYOY Index"},
-    "Canada":        {"gdp": "ECGDCA Index", "cpi": "CACPIYOY Index"},
-    "Chile":         {"gdp": "ECGDCL Index", "cpi": "CLCPIYOY Index"},
-    "ChinaA":        {"gdp": "ECGDCH Index", "cpi": "CHCPIYOY Index"},
-    "ChinaH":        {"gdp": "ECGDCH Index", "cpi": "CHCPIYOY Index"},
-    "Denmark":       {"gdp": "ECGDDK Index", "cpi": None},
-    "France":        {"gdp": "ECGDFR Index", "cpi": "FRCPIYOY Index"},
-    "Germany":       {"gdp": "ECGDDE Index", "cpi": "GRCP20YY Index"},
-    "Hong Kong":     {"gdp": "ECGDHK Index", "cpi": "HKCPIY Index"},
-    "India":         {"gdp": "ECGDIN Index", "cpi": "INCPIYOY Index"},
-    "Indonesia":     {"gdp": "ECGDID Index", "cpi": "IDCPIY Index"},
-    "Italy":         {"gdp": "ECGDIT Index", "cpi": "ITCPNICY Index"},
-    "Japan":         {"gdp": "ECGDJN Index", "cpi": "JNCPIYOY Index"},
-    "Korea":         {"gdp": "ECGDKO Index", "cpi": "KOCPIYOY Index"},
-    "Malaysia":      {"gdp": "ECGDMY Index", "cpi": "MACPIYOY Index"},
-    "Mexico":        {"gdp": "ECGDMX Index", "cpi": "MXCPIYOY Index"},
-    "NASDAQ":        {"gdp": "ECGDUS Index", "cpi": "CPI YOY Index"},
-    "Netherlands":   {"gdp": "ECGDNL Index", "cpi": None},
-    "Philippines":   {"gdp": "ECGDPH Index", "cpi": "PHCPIYOY Index"},
-    "Poland":        {"gdp": "ECGDPL Index", "cpi": "POCPIYOY Index"},
-    "Saudi Arabia":  {"gdp": "ECGDSA Index", "cpi": None},
-    "Singapore":     {"gdp": "ECGDSG Index", "cpi": "SICPIYOY Index"},
-    "South Africa":  {"gdp": "ECGDZA Index", "cpi": "SACPIYOY Index"},
-    "Spain":         {"gdp": "ECGDES Index", "cpi": "SPCPIYOY Index"},
-    "Sweden":        {"gdp": "ECGDSE Index", "cpi": "SWCPIYOY Index"},
-    "Switzerland":   {"gdp": "ECGDCH Index", "cpi": "SZCPIYOY Index"},
-    "Taiwan":        {"gdp": "ECGDTW Index", "cpi": "TWCPIYOY Index"},
-    "Thailand":      {"gdp": "ECGDTH Index", "cpi": "THCPIYOY Index"},
-    "Turkey":        {"gdp": "ECGDTR Index", "cpi": "TUCPIYOY Index"},
-    "U.K.":          {"gdp": "ECGDGB Index", "cpi": "UKRPCJYR Index"},
-    "U.S.":          {"gdp": "ECGDUS Index", "cpi": "CPI YOY Index"},
-    "US SmallCap":   {"gdp": "ECGDUS Index", "cpi": "CPI YOY Index"},
-    "Vietnam":       {"gdp": "ECGDVN Index", "cpi": None},
+    # GDP: try ECGD[CC] (consensus forecast) first, fallback to EHGD[CC]Y (actual YoY).
+    # CPI: country-specific CPI YoY tickers (no uniform pattern).
+    # BBG country codes: CH=China, SW=Switzerland, JN=Japan, BZ=Brazil, etc.
+    "Australia":     {"gdp": "ECGDAU Index", "gdp_fallback": "EHGDAUY Index", "cpi": "AUCPIYOY Index"},
+    "Brazil":        {"gdp": "ECGDBZ Index", "gdp_fallback": "EHGDBZY Index", "cpi": "BZCPIYOY Index"},
+    "Canada":        {"gdp": "ECGDCA Index", "gdp_fallback": "EHGDCAY Index", "cpi": "CACPIYOY Index"},
+    "Chile":         {"gdp": "ECGDCL Index", "gdp_fallback": "EHGDCLY Index", "cpi": "CLCPIYOY Index"},
+    "ChinaA":        {"gdp": "ECGDCH Index", "gdp_fallback": "EHGDCHY Index", "cpi": "CHCPIYOY Index"},
+    "ChinaH":        {"gdp": "ECGDCH Index", "gdp_fallback": "EHGDCHY Index", "cpi": "CHCPIYOY Index"},
+    "Denmark":       {"gdp": "ECGDDK Index", "gdp_fallback": "EHGDDKY Index", "cpi": None},
+    "France":        {"gdp": "ECGDFR Index", "gdp_fallback": "EHGDFRY Index", "cpi": "FRCPIYOY Index"},
+    "Germany":       {"gdp": "ECGDDE Index", "gdp_fallback": "EHGDGEY Index", "cpi": "GRCP20YY Index"},
+    "Hong Kong":     {"gdp": "ECGDHK Index", "gdp_fallback": "EHGDHKY Index", "cpi": "HKCPIY Index"},
+    "India":         {"gdp": "ECGDIN Index", "gdp_fallback": "EHGDINY Index", "cpi": "INCPIYOY Index"},
+    "Indonesia":     {"gdp": "ECGDID Index", "gdp_fallback": "EHGDIDY Index", "cpi": "IDCPIY Index"},
+    "Italy":         {"gdp": "ECGDIT Index", "gdp_fallback": "EHGDITY Index", "cpi": "ITCPNICY Index"},
+    "Japan":         {"gdp": "ECGDJN Index", "gdp_fallback": "EHGDJNY Index", "cpi": "JNCPIYOY Index"},
+    "Korea":         {"gdp": "ECGDKO Index", "gdp_fallback": "EHGDKOY Index", "cpi": "KOCPIYOY Index"},
+    "Malaysia":      {"gdp": "ECGDMY Index", "gdp_fallback": "EHGDMYY Index", "cpi": "MACPIYOY Index"},
+    "Mexico":        {"gdp": "ECGDMX Index", "gdp_fallback": "EHGDMXY Index", "cpi": "MXCPIYOY Index"},
+    "NASDAQ":        {"gdp": "ECGDUS Index", "gdp_fallback": "EHGDUSY Index", "cpi": "CPI YOY Index"},
+    "Netherlands":   {"gdp": "ECGDNL Index", "gdp_fallback": "EHGDNLY Index", "cpi": None},
+    "Philippines":   {"gdp": "ECGDPH Index", "gdp_fallback": "EHGDPHY Index", "cpi": "PHCPIYOY Index"},
+    "Poland":        {"gdp": "ECGDPL Index", "gdp_fallback": "EHGDPLY Index", "cpi": "POCPIYOY Index"},
+    "Saudi Arabia":  {"gdp": "ECGDSA Index", "gdp_fallback": "EHGDSAY Index", "cpi": None},
+    "Singapore":     {"gdp": "ECGDSG Index", "gdp_fallback": "EHGDSGY Index", "cpi": "SICPIYOY Index"},
+    "South Africa":  {"gdp": "ECGDZA Index", "gdp_fallback": "EHGDZAY Index", "cpi": "SACPIYOY Index"},
+    "Spain":         {"gdp": "ECGDES Index", "gdp_fallback": "EHGDESY Index", "cpi": "SPCPIYOY Index"},
+    "Sweden":        {"gdp": "ECGDSE Index", "gdp_fallback": "EHGDSEY Index", "cpi": "SWCPIYOY Index"},
+    "Switzerland":   {"gdp": "ECGDSW Index", "gdp_fallback": "EHGDSWY Index", "cpi": "SZCPIYOY Index"},
+    "Taiwan":        {"gdp": "ECGDTW Index", "gdp_fallback": "EHGDTWY Index", "cpi": "TWCPIYOY Index"},
+    "Thailand":      {"gdp": "ECGDTH Index", "gdp_fallback": "EHGDTHY Index", "cpi": "THCPIYOY Index"},
+    "Turkey":        {"gdp": "ECGDTR Index", "gdp_fallback": "EHGDTUY Index", "cpi": "TUCPIYOY Index"},
+    "U.K.":          {"gdp": "ECGDGB Index", "gdp_fallback": "EHGDGBY Index", "cpi": "UKRPCJYR Index"},
+    "U.S.":          {"gdp": "ECGDUS Index", "gdp_fallback": "EHGDUSY Index", "cpi": "CPI YOY Index"},
+    "US SmallCap":   {"gdp": "ECGDUS Index", "gdp_fallback": "EHGDUSY Index", "cpi": "CPI YOY Index"},
+    "Vietnam":       {"gdp": "ECGDVN Index", "gdp_fallback": "EHGDVNY Index", "cpi": None},
 }
 
 # ── Phase 2: DDIS — Sovereign external debt metrics ──────────────────────
@@ -358,6 +363,86 @@ COUNTRY_DEBT_TICKERS = {
     "U.S.":          {"debt_gdp": "USDEGDP Index"},
     "US SmallCap":   {"debt_gdp": "USDEGDP Index"},
     "Vietnam":       {"debt_gdp": None},
+}
+
+# ── Phase 3: PMI — Purchasing Managers' Indices ──────────────────────────
+# S&P Global/Markit PMI tickers follow pattern: MPMI[CC]MA (Manufacturing),
+# MPMI[CC]SA (Services). Gotcha: Japan uses "JA" not "JN" in PMI tickers.
+COUNTRY_PMI_TICKERS = {
+    "Australia":     {"mfg": "MPMIAUMA Index", "svc": "MPMIAUСА Index"},
+    "Brazil":        {"mfg": "MPMIBZMA Index", "svc": "MPMIBZSA Index"},
+    "Canada":        {"mfg": "MPMICAMA Index", "svc": "MPMICASA Index"},
+    "Chile":         {"mfg": None,              "svc": None},
+    "ChinaA":        {"mfg": "MPMICHMA Index", "svc": "MPMICHSA Index"},
+    "ChinaH":        {"mfg": "MPMICHMA Index", "svc": "MPMICHSA Index"},
+    "Denmark":       {"mfg": None,              "svc": None},
+    "France":        {"mfg": "MPMIFRMA Index", "svc": "MPMIFRSA Index"},
+    "Germany":       {"mfg": "MPMIDEMA Index", "svc": "MPMIDESA Index"},
+    "Hong Kong":     {"mfg": "MPMIHKMA Index", "svc": None},
+    "India":         {"mfg": "MPMIINMA Index", "svc": "MPMIINSA Index"},
+    "Indonesia":     {"mfg": "MPMIIDMA Index", "svc": None},
+    "Italy":         {"mfg": "MPMIITMA Index", "svc": "MPMIITSA Index"},
+    "Japan":         {"mfg": "MPMIJAMA Index", "svc": "MPMIJASA Index"},
+    "Korea":         {"mfg": "MPMIKOMA Index", "svc": None},
+    "Malaysia":      {"mfg": "MPMIMYMA Index", "svc": None},
+    "Mexico":        {"mfg": "MPMIMXMA Index", "svc": None},
+    "NASDAQ":        {"mfg": "MPMIUSMA Index", "svc": "MPMIUSSA Index"},
+    "Netherlands":   {"mfg": "MPMINLMA Index", "svc": None},
+    "Philippines":   {"mfg": "MPMIPHMA Index", "svc": None},
+    "Poland":        {"mfg": "MPMIPLMA Index", "svc": None},
+    "Saudi Arabia":  {"mfg": "MPMISAMA Index", "svc": None},
+    "Singapore":     {"mfg": "MPMISGMA Index", "svc": None},
+    "South Africa":  {"mfg": "MPMIZAMA Index", "svc": None},
+    "Spain":         {"mfg": "MPMIESMA Index", "svc": "MPMIIESSA Index"},
+    "Sweden":        {"mfg": "MPMISEMA Index", "svc": "MPMISESA Index"},
+    "Switzerland":   {"mfg": None,              "svc": None},
+    "Taiwan":        {"mfg": "MPMITWMA Index", "svc": None},
+    "Thailand":      {"mfg": "MPMITHMA Index", "svc": None},
+    "Turkey":        {"mfg": "MPMITRMA Index", "svc": None},
+    "U.K.":          {"mfg": "MPMIGBMA Index", "svc": "MPMIGBSA Index"},
+    "U.S.":          {"mfg": "MPMIUSMA Index", "svc": "MPMIUSSA Index"},
+    "US SmallCap":   {"mfg": "MPMIUSMA Index", "svc": "MPMIUSSA Index"},
+    "Vietnam":       {"mfg": "MPMIVNMA Index", "svc": None},
+}
+
+# ── Phase 3: M2 Money Supply YoY ─────────────────────────────────────────
+# No uniform pattern; some confirmed tickers plus two candidate patterns
+# tried per country: [CC]M2YOY Index and [CC]MSM2Y Index.
+COUNTRY_M2_TICKERS = {
+    "Australia":     ["AUM2YOY Index",   "AUMSM2Y Index"],
+    "Brazil":        ["BZM2YOY Index",   "BZMSM2Y Index"],
+    "Canada":        ["CAM2YOY Index",   "CAMSM2Y Index"],
+    "Chile":         ["CLM2YOY Index",   "CLMSM2Y Index"],
+    "ChinaA":        ["CNMS2YOY Index"],
+    "ChinaH":        ["CNMS2YOY Index"],
+    "Denmark":       ["DKM2YOY Index",   "DKMSM2Y Index"],
+    "France":        ["FRM2YOY Index",   "FRMSM2Y Index"],
+    "Germany":       ["DEM2YOY Index",   "DEMSM2Y Index"],
+    "Hong Kong":     ["HKM2YOY Index",   "HKMSM2Y Index"],
+    "India":         ["INM2YOY Index",   "INMSM2Y Index"],
+    "Indonesia":     ["IDM2YOY Index"],
+    "Italy":         ["ITM2YOY Index",   "ITMSM2Y Index"],
+    "Japan":         ["JMNSM2Y Index"],
+    "Korea":         ["KOM2YOY Index",   "KOMSM2Y Index"],
+    "Malaysia":      ["MYM2YOY Index",   "MYMSM2Y Index"],
+    "Mexico":        ["MXM2YOY Index",   "MXMSM2Y Index"],
+    "NASDAQ":        ["M2 YOY Index"],
+    "Netherlands":   ["NLM2YOY Index",   "NLMSM2Y Index"],
+    "Philippines":   ["PHM2YOY Index",   "PHMSM2Y Index"],
+    "Poland":        ["PLM2YOY Index",   "PLMSM2Y Index"],
+    "Saudi Arabia":  ["SAM2YOY Index",   "SAMSM2Y Index"],
+    "Singapore":     ["SGM2YOY Index",   "SGMSM2Y Index"],
+    "South Africa":  ["ZAM2YOY Index",   "ZAMSM2Y Index"],
+    "Spain":         ["ESM2YOY Index",   "ESMSM2Y Index"],
+    "Sweden":        ["SEM2YOY Index",   "SEMSM2Y Index"],
+    "Switzerland":   ["SWM2YOY Index",   "SWMSM2Y Index"],
+    "Taiwan":        ["TWM2YOY Index",   "TWMSM2Y Index"],
+    "Thailand":      ["THM2YOY Index",   "THMSM2Y Index"],
+    "Turkey":        ["TRM2YOY Index",   "TRMSM2Y Index"],
+    "U.K.":          ["GBM2YOY Index",   "GBMSM2Y Index"],
+    "U.S.":          ["M2 YOY Index"],
+    "US SmallCap":   ["M2 YOY Index"],
+    "Vietnam":       ["VNM2YOY Index",   "VNMSM2Y Index"],
 }
 
 
@@ -442,7 +527,7 @@ def _hist_to_df(hist_data: list, ticker: str, variable: str,
 
 def collect_bond_yields(bbg: BBG, force: bool) -> pd.DataFrame:
     """Pull monthly government bond yields for all 34 countries."""
-    logger.info("[1/9] Government Bond Yields (2Y, 5Y, 10Y, 30Y) ...")
+    logger.info("[1/11] Government Bond Yields (2Y, 5Y, 10Y, 30Y) ...")
 
     cache = _cache_path("bond_yields")
     if _is_cached(cache, force):
@@ -503,7 +588,7 @@ def collect_bond_yields(bbg: BBG, force: bool) -> pd.DataFrame:
 
 def collect_cds_spreads(bbg: BBG, force: bool) -> pd.DataFrame:
     """Pull monthly sovereign 5Y CDS spreads."""
-    logger.info("[2/9] Sovereign 5Y CDS Spreads ...")
+    logger.info("[2/11] Sovereign 5Y CDS Spreads ...")
 
     cache = _cache_path("cds_spreads")
     if _is_cached(cache, force):
@@ -548,7 +633,7 @@ def collect_cds_spreads(bbg: BBG, force: bool) -> pd.DataFrame:
 
 def collect_breakevens(bbg: BBG, force: bool) -> pd.DataFrame:
     """Pull monthly inflation breakeven rates (where available)."""
-    logger.info("[3/9] Inflation Breakeven Rates ...")
+    logger.info("[3/11] Inflation Breakeven Rates ...")
 
     cache = _cache_path("breakevens")
     if _is_cached(cache, force):
@@ -593,7 +678,7 @@ def collect_breakevens(bbg: BBG, force: bool) -> pd.DataFrame:
 
 def collect_credit_ratings(bbg: BBG, force: bool) -> pd.DataFrame:
     """Pull current sovereign credit ratings (S&P, Moody's, Fitch)."""
-    logger.info("[4/9] Sovereign Credit Ratings (S&P, Moody's, Fitch) ...")
+    logger.info("[4/11] Sovereign Credit Ratings (S&P, Moody's, Fitch) ...")
 
     cache = _cache_path("credit_ratings")
     if _is_cached(cache, force):
@@ -726,7 +811,7 @@ def compute_mipd(cds_df: pd.DataFrame) -> pd.DataFrame:
 
 def collect_ois_swap_rates(bbg: BBG, force: bool) -> pd.DataFrame:
     """Pull 10Y OIS/IRS swap rates and compute Z-spread vs govt bonds."""
-    logger.info("[6/9] OIS 10Y Swap Rates ...")
+    logger.info("[6/11] OIS 10Y Swap Rates ...")
 
     cache = _cache_path("ois_swap_rates")
     if _is_cached(cache, force):
@@ -837,7 +922,7 @@ def collect_wirp(bbg: BBG, force: bool) -> pd.DataFrame:
     Uses ref() to get the current implied next-meeting rate from the
     central bank policy rate ticker.
     """
-    logger.info("[7/9] WIRP — Central Bank Rate Probabilities ...")
+    logger.info("[7/11] WIRP — Central Bank Rate Probabilities ...")
 
     cache = _cache_path("wirp")
     if _is_cached(cache, force):
@@ -954,10 +1039,10 @@ def collect_ecfc(bbg: BBG, force: bool) -> pd.DataFrame:
     """
     Pull consensus GDP and CPI forecasts from Bloomberg ECFC survey tickers.
 
-    Uses bdh() on COGD[CC] / COCP[CC] Index tickers which represent the
-    Bloomberg consensus survey median for current-year forecasts.
+    GDP strategy: try ECGD[CC] (consensus) first; if it fails, fall back to
+    EHGD[CC]Y (actual GDP YoY).  CPI uses country-specific tickers directly.
     """
-    logger.info("[8/9] ECFC — Consensus Macro Forecasts (GDP, CPI) ...")
+    logger.info("[8/11] ECFC — Consensus Macro Forecasts (GDP, CPI) ...")
 
     cache = _cache_path("ecfc")
     if _is_cached(cache, force):
@@ -969,55 +1054,79 @@ def collect_ecfc(bbg: BBG, force: bool) -> pd.DataFrame:
     pulled = 0
     errors = 0
     seen_tickers = set()
-
-    indicator_map = {
-        "gdp": "BBG_ECFC_GDP",
-        "cpi": "BBG_ECFC_CPI",
-    }
+    fallback_used = 0
 
     for country, tickers in COUNTRY_ECFC_TICKERS.items():
-        for ind_key, variable_name in indicator_map.items():
-            ticker = tickers.get(ind_key)
-            if ticker is None or ticker in seen_tickers:
-                if ticker in seen_tickers:
-                    # Duplicate ticker (same country code) — copy from earlier pull
-                    pass
-                continue
-
+        # ── CPI ──
+        cpi_ticker = tickers.get("cpi")
+        if cpi_ticker is not None and cpi_ticker not in seen_tickers:
             try:
-                hist = bbg.hist(ticker, "PX_LAST", "20100101", end_date,
+                hist = bbg.hist(cpi_ticker, "PX_LAST", "20100101", end_date,
                                 periodicity="MONTHLY")
-                df = _hist_to_df(hist, ticker, variable_name, country)
+                df = _hist_to_df(hist, cpi_ticker, "BBG_ECFC_CPI", country)
                 if not df.empty:
                     frames.append(df)
                     pulled += 1
-                    seen_tickers.add(ticker)
+                seen_tickers.add(cpi_ticker)
             except Exception as e:
                 errors += 1
-                seen_tickers.add(ticker)
-                logger.warning(f"  Error: {country} {ind_key} ({ticker}): {e}")
+                seen_tickers.add(cpi_ticker)
+                logger.warning(f"  Error: {country} CPI ({cpi_ticker}): {e}")
+
+        # ── GDP with fallback ──
+        gdp_ticker = tickers.get("gdp")
+        gdp_fallback = tickers.get("gdp_fallback")
+        gdp_ok = False
+
+        if gdp_ticker is not None and gdp_ticker not in seen_tickers:
+            try:
+                hist = bbg.hist(gdp_ticker, "PX_LAST", "20100101", end_date,
+                                periodicity="MONTHLY")
+                df = _hist_to_df(hist, gdp_ticker, "BBG_ECFC_GDP", country)
+                if not df.empty:
+                    frames.append(df)
+                    pulled += 1
+                    gdp_ok = True
+                seen_tickers.add(gdp_ticker)
+            except Exception as e:
+                errors += 1
+                seen_tickers.add(gdp_ticker)
+                logger.warning(f"  Error: {country} GDP ({gdp_ticker}): {e}")
+
+        if not gdp_ok and gdp_fallback is not None and gdp_fallback not in seen_tickers:
+            try:
+                hist = bbg.hist(gdp_fallback, "PX_LAST", "20100101", end_date,
+                                periodicity="MONTHLY")
+                df = _hist_to_df(hist, gdp_fallback, "BBG_ECFC_GDP", country)
+                if not df.empty:
+                    frames.append(df)
+                    pulled += 1
+                    fallback_used += 1
+                    logger.info(f"  {country}: GDP fallback ticker worked ({gdp_fallback})")
+                seen_tickers.add(gdp_fallback)
+            except Exception as e:
+                errors += 1
+                seen_tickers.add(gdp_fallback)
+                logger.debug(f"  {country}: GDP fallback also failed ({gdp_fallback}): {e}")
 
     # Handle countries that share tickers (ChinaA/H, NASDAQ/U.S./US SmallCap)
     shared_pairs = [
         ("ChinaH", "ChinaA"), ("US SmallCap", "U.S."), ("NASDAQ", "U.S."),
     ]
     for target, source in shared_pairs:
-        if target not in [f.get("country", "") for f in frames if isinstance(f, dict)]:
-            for ind_key, variable_name in indicator_map.items():
-                src_ticker = COUNTRY_ECFC_TICKERS.get(source, {}).get(ind_key)
-                if src_ticker is None:
-                    continue
-                existing = [f for f in frames
+        for variable_name in ("BBG_ECFC_GDP", "BBG_ECFC_CPI"):
+            existing_src = [f for f in frames
                            if isinstance(f, pd.DataFrame) and
                            not f.empty and
                            f["country"].iloc[0] == source and
                            f["variable"].iloc[0] == variable_name]
-                if existing:
-                    dup = existing[0].copy()
-                    dup["country"] = target
-                    frames.append(dup)
+            if existing_src:
+                dup = existing_src[0].copy()
+                dup["country"] = target
+                frames.append(dup)
 
-    logger.info(f"  Pulled {pulled} unique ticker series ({errors} errors)")
+    logger.info(f"  Pulled {pulled} unique ticker series ({errors} errors, "
+                f"{fallback_used} GDP fallbacks used)")
 
     if frames:
         result = pd.concat(frames, ignore_index=True)
@@ -1040,7 +1149,7 @@ def collect_ddis(bbg: BBG, force: bool) -> pd.DataFrame:
     Uses bdh() on [CC]DEBT2G Index tickers — the standard Bloomberg
     government debt-to-GDP indicators from ECST/WCDM.
     """
-    logger.info("[9/9] DDIS — Sovereign Debt Metrics ...")
+    logger.info("[9/11] DDIS — Sovereign Debt Metrics ...")
 
     cache = _cache_path("ddis")
     if _is_cached(cache, force):
@@ -1115,6 +1224,163 @@ def collect_ddis(bbg: BBG, force: bool) -> pd.DataFrame:
 
 
 # =============================================================================
+# COLLECTOR 10: PMI — PURCHASING MANAGERS' INDICES
+# =============================================================================
+
+def collect_pmi(bbg: BBG, force: bool) -> pd.DataFrame:
+    """
+    Pull S&P Global/Markit PMI Manufacturing and Services indices.
+
+    Tries MPMI[CC]MA/SA tickers for each country. Countries without
+    liquid PMI data will fail gracefully and be skipped.
+    """
+    logger.info("[10/11] PMI — Manufacturing & Services ...")
+
+    cache = _cache_path("pmi")
+    if _is_cached(cache, force):
+        logger.info("  Using cached data")
+        return pd.read_parquet(cache)
+
+    end_date = datetime.now().strftime("%Y%m%d")
+    frames = []
+    pulled = 0
+    errors = 0
+    seen_tickers = set()
+
+    indicator_map = {
+        "mfg": "BBG_PMI_Manufacturing",
+        "svc": "BBG_PMI_Services",
+    }
+
+    for country, tickers in COUNTRY_PMI_TICKERS.items():
+        for ind_key, variable_name in indicator_map.items():
+            ticker = tickers.get(ind_key)
+            if ticker is None or ticker in seen_tickers:
+                continue
+
+            try:
+                hist = bbg.hist(ticker, "PX_LAST", HIST_START, end_date,
+                                periodicity="MONTHLY")
+                df = _hist_to_df(hist, ticker, variable_name, country)
+                if not df.empty:
+                    frames.append(df)
+                    pulled += 1
+                seen_tickers.add(ticker)
+            except Exception as e:
+                errors += 1
+                seen_tickers.add(ticker)
+                logger.warning(f"  Error: {country} {ind_key} ({ticker}): {e}")
+
+    # Copy shared tickers to alias countries
+    shared_pairs = [
+        ("ChinaH", "ChinaA"), ("US SmallCap", "U.S."), ("NASDAQ", "U.S."),
+    ]
+    for target, source in shared_pairs:
+        for variable_name in indicator_map.values():
+            existing_src = [f for f in frames
+                           if isinstance(f, pd.DataFrame) and
+                           not f.empty and
+                           f["country"].iloc[0] == source and
+                           f["variable"].iloc[0] == variable_name]
+            if existing_src:
+                dup = existing_src[0].copy()
+                dup["country"] = target
+                frames.append(dup)
+
+    logger.info(f"  Pulled {pulled}/{len(seen_tickers)} unique tickers ({errors} errors)")
+
+    if frames:
+        result = pd.concat(frames, ignore_index=True)
+        result.to_parquet(cache, index=False)
+        logger.info(f"  PMI: {len(result):,} rows, "
+                     f"{result['country'].nunique()} countries")
+        return result
+
+    return pd.DataFrame()
+
+
+# =============================================================================
+# COLLECTOR 11: M2 — MONEY SUPPLY YEAR-OVER-YEAR
+# =============================================================================
+
+def collect_m2(bbg: BBG, force: bool) -> pd.DataFrame:
+    """
+    Pull M2 money supply YoY growth for each country.
+
+    No uniform ticker pattern exists; for each country we try a list of
+    candidate tickers and keep the first one that returns data.
+    """
+    logger.info("[11/11] M2 — Money Supply YoY ...")
+
+    cache = _cache_path("m2")
+    if _is_cached(cache, force):
+        logger.info("  Using cached data")
+        return pd.read_parquet(cache)
+
+    end_date = datetime.now().strftime("%Y%m%d")
+    frames = []
+    pulled = 0
+    errors = 0
+    seen_tickers = set()
+
+    for country, candidates in COUNTRY_M2_TICKERS.items():
+        got_data = False
+        for ticker in candidates:
+            if ticker in seen_tickers:
+                # Already pulled this exact ticker for another country alias
+                existing_src = [f for f in frames
+                               if isinstance(f, pd.DataFrame) and
+                               not f.empty and
+                               ticker in f.attrs.get("ticker", "")]
+                continue
+
+            try:
+                hist = bbg.hist(ticker, "PX_LAST", HIST_START, end_date,
+                                periodicity="MONTHLY")
+                df = _hist_to_df(hist, ticker, "BBG_M2_YoY", country)
+                if not df.empty:
+                    df.attrs["ticker"] = ticker
+                    frames.append(df)
+                    pulled += 1
+                    got_data = True
+                    seen_tickers.add(ticker)
+                    break
+                seen_tickers.add(ticker)
+            except Exception as e:
+                errors += 1
+                seen_tickers.add(ticker)
+                logger.debug(f"  {country}: M2 ticker failed ({ticker}): {e}")
+
+        if not got_data:
+            logger.debug(f"  {country}: no M2 ticker worked")
+
+    # Copy shared tickers to alias countries
+    shared_pairs = [
+        ("ChinaH", "ChinaA"), ("US SmallCap", "U.S."), ("NASDAQ", "U.S."),
+    ]
+    for target, source in shared_pairs:
+        existing_src = [f for f in frames
+                       if isinstance(f, pd.DataFrame) and
+                       not f.empty and
+                       f["country"].iloc[0] == source]
+        if existing_src:
+            dup = existing_src[0].copy()
+            dup["country"] = target
+            frames.append(dup)
+
+    logger.info(f"  Pulled {pulled}/{len(seen_tickers)} unique tickers ({errors} errors)")
+
+    if frames:
+        result = pd.concat(frames, ignore_index=True)
+        result.to_parquet(cache, index=False)
+        logger.info(f"  M2: {len(result):,} rows, "
+                     f"{result['country'].nunique()} countries")
+        return result
+
+    return pd.DataFrame()
+
+
+# =============================================================================
 # MERGE / ASSEMBLY
 # =============================================================================
 
@@ -1138,6 +1404,8 @@ def merge_panels(existing: Optional[pd.DataFrame],
         "WIRP":           ["BBG_WIRP_ImpliedRate"],
         "ECFC":           ["BBG_ECFC_GDP", "BBG_ECFC_CPI"],
         "DDIS":           ["BBG_Debt_GDP_Ratio"],
+        "PMI":            ["BBG_PMI_Manufacturing", "BBG_PMI_Services"],
+        "M2":             ["BBG_M2_YoY"],
     }
 
     parts = []
@@ -1268,6 +1536,8 @@ def main():
             ("WIRP",           lambda: collect_wirp(bbg, args.force)),
             ("ECFC",           lambda: collect_ecfc(bbg, args.force)),
             ("DDIS",           lambda: collect_ddis(bbg, args.force)),
+            ("PMI",            lambda: collect_pmi(bbg, args.force)),
+            ("M2",             lambda: collect_m2(bbg, args.force)),
         ]
 
         for name, fn in collectors:

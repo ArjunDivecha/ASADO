@@ -15,8 +15,11 @@
 - FRED and EIA credentials are expected in the project `.env` file.
 - `scripts/` pipeline: collectors `collect_external.py`, `collect_extended.py`, `collect_imf.py`, `collect_bilateral.py`, `collect_bloomberg.py` (Bloomberg via `/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg` and its venv as wired in the Bloomberg scripts); `setup_duckdb.py`, `setup_neo4j.py`, `build_embeddings.py`, `db_bridge.py`, and monthly orchestrator `monthly_update.py`.
 - IMF data uses the SDMX 3.0 API at `api.imf.org` with no API key required. The legacy `dataservices.imf.org` endpoint is defunct.
-- DuckDB at `Data/asado.duckdb`; `unified_panel` view joins 6 tables: `t2_master`, `external_factors`, `extended_factors`, `gdelt_panel`, `imf_factors`, `bloomberg_factors`.
-- Bloomberg collector (`collect_bloomberg.py`) has 9 data categories: bond yields (4 tenors), CDS 5Y, breakevens, OIS 10Y swap rates, WIRP implied policy rates, ECFC consensus GDP/CPI, plus 3 derived signals (yield curve slope, MIPD default probability, Z-spread vs OIS). The `BBG` class in OpusBloomberg supports `ref()`, `ref_batch()`, `hist()`, and `bds()` methods.
+- DuckDB at `Data/asado.duckdb`; `unified_panel` view joins 6 tables: `t2_master`, `external_factors`, `extended_factors`, `gdelt_panel`, `imf_factors`, `bloomberg_factors`. Currently 1,910,775 rows, 332 variables.
+- Bloomberg collector (`collect_bloomberg.py`) has 11 data categories across 3 phases: Phase 1 (bond yields 4 tenors, CDS 5Y, breakevens, credit ratings), Phase 2 (OIS 10Y swap rates, WIRP implied policy rates, ECFC consensus GDP/CPI with EHGD fallback, DDIS debt metrics), Phase 3 (PMI Manufacturing/Services, M2 money supply YoY), plus 3 derived signals (yield curve slope, MIPD default probability, Z-spread vs OIS). Total: 66,656 rows, 17 variables. The `BBG` class in OpusBloomberg supports `ref()`, `ref_batch()`, `hist()`, and `bds()` methods.
+- ECFC GDP tickers use a fallback strategy: try ECGD[CC] (consensus) first, fall back to EHGD[CC]Y (actual GDP YoY). Switzerland uses ECGDSW (not ECGDCH, which is China).
+- PMI tickers follow MPMI[CC]MA/SA pattern; Japan uses JA not JN in PMI tickers.
+- M2 tickers have no uniform pattern; collector tries multiple candidates per country.
 - Neo4j at `bolt://localhost:7687` — start with `brew services start neo4j` before any graph operations.
 - Monthly refresh: run `python scripts/monthly_update.py` from the repo root; it runs the collectors (source-level merge, 24h cache, timestamped backups) then rebuilds DuckDB, Neo4j, and embeddings as configured.
 - 34 countries tracked, defined in `config/country_mapping.json`.

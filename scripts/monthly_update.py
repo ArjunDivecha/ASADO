@@ -13,6 +13,7 @@ OUTPUT FILES:
 - Data/processed/imf_factors_panel.parquet        (via collect_imf.py)
 - Data/processed/bilateral_trade_matrix.parquet   (via collect_bilateral.py)
 - Data/processed/bilateral_banking_matrix.parquet (via collect_bilateral.py)
+- Data/processed/bloomberg_factors_panel.parquet  (via collect_bloomberg.py)
 - Data/asado.duckdb                               (via setup_duckdb.py)
 - Neo4j graph database                            (via setup_neo4j.py)
 - Neo4j vector index on Country nodes             (via build_embeddings.py)
@@ -33,9 +34,10 @@ Pipeline stages:
   2. collect_extended.py  --force   (12 sources, ~51 variables)
   3. collect_imf.py       --force   (7 datasets, ~26 variables)
   4. collect_bilateral.py           (IMF IMTS trade + BIS LBS banking)
-  5. setup_duckdb.py                (rebuild analytical DB)
-  6. setup_neo4j.py                 (rebuild knowledge graph + trade/banking edges)
-  7. build_embeddings.py            (country-state vectors + Neo4j vector index)
+  5. collect_bloomberg.py --force   (Bloomberg bonds, CDS, breakevens, ratings)
+  6. setup_duckdb.py                (rebuild analytical DB)
+  7. setup_neo4j.py                 (rebuild knowledge graph + trade/banking edges)
+  8. build_embeddings.py            (country-state vectors + Neo4j vector index)
 
 Each collector preserves existing data for any source that fails,
 so partial failures never lose historical data.
@@ -227,7 +229,7 @@ def verify_duckdb():
 
         con = duckdb.connect(str(db_path), read_only=True)
         tables = ["t2_master", "external_factors", "extended_factors",
-                   "gdelt_panel", "imf_factors"]
+                   "gdelt_panel", "imf_factors", "bloomberg_factors"]
 
         print("\n  DuckDB Verification:")
         total = 0
@@ -258,6 +260,8 @@ def main():
     )
     parser.add_argument("--skip-neo4j", action="store_true",
                         help="Skip Neo4j rebuild (useful if Neo4j not running)")
+    parser.add_argument("--skip-bloomberg", action="store_true",
+                        help="Skip Bloomberg collection (requires Terminal + Parallels)")
     parser.add_argument("--collectors-only", action="store_true",
                         help="Run data collectors only, skip database rebuilds")
     parser.add_argument("--db-only", action="store_true",
@@ -321,6 +325,45 @@ def main():
             [],
             log_file
         ))
+
+        if not args.skip_bloomberg:
+            bbg_env = '/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg/.venv'
+            bbg_script = str(SCRIPTS_DIR / "collect_bloomberg.py")
+            bbg_flags = ["--force"] if not args.dry_run else ["--force", "--dry-run"]
+            bbg_cmd = ["conda", "run", "-p", bbg_env, "python", bbg_script] + bbg_flags
+
+            print(f"\n{'─' * 60}")
+            print(f"STEP: Program 5: Bloomberg (bonds, CDS, breakevens, ratings)")
+            print(f"CMD:  {' '.join(bbg_cmd)}")
+            print(f"{'─' * 60}")
+
+            bbg_start = time.time()
+            bbg_result = subprocess.run(
+                bbg_cmd, capture_output=True, text=True, cwd=str(BASE_DIR),
+                env={**os.environ, "PYTHONUNBUFFERED": "1"},
+            )
+            bbg_elapsed = time.time() - bbg_start
+            bbg_output = bbg_result.stdout + bbg_result.stderr
+            bbg_status = "OK" if bbg_result.returncode == 0 else "FAILED"
+            print(bbg_output)
+
+            with open(log_file, "a") as f:
+                f.write(f"\n{'=' * 60}\n")
+                f.write(f"STEP: Program 5: Bloomberg\n")
+                f.write(f"STATUS: {bbg_status} (exit code {bbg_result.returncode})\n")
+                f.write(f"ELAPSED: {bbg_elapsed:.1f}s\n")
+                f.write(f"{'=' * 60}\n")
+                f.write(bbg_output + "\n")
+
+            results.append({
+                "name": "Program 5: Bloomberg",
+                "status": bbg_status,
+                "elapsed": bbg_elapsed,
+                "returncode": bbg_result.returncode,
+                "output_tail": bbg_output.strip().split("\n")[-10:],
+            })
+        else:
+            print("\n  (Bloomberg collection skipped via --skip-bloomberg)")
 
     # ── Stage 2: Database Rebuilds ────────────────────────────────────
     if not args.collectors_only:

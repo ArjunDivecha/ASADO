@@ -157,6 +157,10 @@ DATA_SOURCES = [
     {"name": "IMF ER", "url": "api.imf.org", "frequency": "monthly", "api_type": "sdmx3", "status": "active"},
     {"name": "IMF LS", "url": "api.imf.org", "frequency": "monthly", "api_type": "sdmx3", "status": "active"},
     {"name": "IMF ITG", "url": "api.imf.org", "frequency": "monthly", "api_type": "sdmx3", "status": "active"},
+    {"name": "Bloomberg Bonds", "url": "bloomberg.com", "frequency": "monthly", "api_type": "blpapi", "status": "active"},
+    {"name": "Bloomberg CDS", "url": "bloomberg.com", "frequency": "monthly", "api_type": "blpapi", "status": "active"},
+    {"name": "Bloomberg Breakevens", "url": "bloomberg.com", "frequency": "monthly", "api_type": "blpapi", "status": "active"},
+    {"name": "Bloomberg Ratings", "url": "bloomberg.com", "frequency": "snapshot", "api_type": "blpapi", "status": "active"},
 ]
 
 # ── Crisis events ─────────────────────────────────────────────────────────
@@ -377,6 +381,24 @@ def _categorize_factor(name: str) -> str:
         return "uncertainty"
     if name.startswith("GPR") or name.startswith("Global_GPR"):
         return "geopolitical"
+    if name.startswith("BBG_"):
+        if "Bond" in name or "Yield_Curve" in name:
+            return "rates"
+        if "CDS" in name or "MIPD" in name:
+            return "sovereign_risk"
+        if "Breakeven" in name:
+            return "inflation"
+        if "Rating" in name:
+            return "sovereign_risk"
+        if "OIS" in name or "ZSpread" in name:
+            return "rates"
+        if "WIRP" in name:
+            return "monetary_policy"
+        if "ECFC" in name:
+            return "macro_forecast"
+        if "Debt" in name:
+            return "fiscal"
+        return "rates"
 
     return "other"
 
@@ -413,6 +435,8 @@ def _factor_source(name: str) -> str:
         return "epu"
     if name.startswith("GPR") or name.startswith("Global_GPR"):
         return "gpr"
+    if name.startswith("BBG_"):
+        return "bloomberg"
     return "t2"
 
 

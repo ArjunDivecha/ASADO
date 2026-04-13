@@ -24,11 +24,9 @@ from pyvis.network import Network
 from scipy.spatial.distance import cosine as cosine_dist
 import streamlit as st
 
-# Project root on sys.path so we can import scripts.db_bridge
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR))
 
-# Constants
 DB_PATH = BASE_DIR / "Data" / "asado.duckdb"
 TRADE_PQ = BASE_DIR / "Data" / "processed" / "bilateral_trade_matrix.parquet"
 BANK_PQ = BASE_DIR / "Data" / "processed" / "bilateral_banking_matrix.parquet"
@@ -55,7 +53,6 @@ REGION_COLORS = {
     "North America": "#8B5CF6", "Middle East": "#EF4444", "Africa": "#F97316",
 }
 
-# Custom CSS
 st.set_page_config(
     page_title="ASADO Research",
     page_icon="🌐",
@@ -74,7 +71,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Cached Data Loaders
+# ── Cached Data Loaders ──────────────────────────────────────────
 
 @st.cache_data(ttl=3600)
 def get_countries():
@@ -137,10 +134,9 @@ def get_db():
     from scripts.db_bridge import AsadoDB
     return AsadoDB()
 
-# Utility Functions
+# ── Utility Functions ─────────────────────────────────────────────
 
 def _safe_float(val, decimals=1):
-    """Safely format a float value."""
     try:
         return round(float(val), decimals)
     except (TypeError, ValueError):
@@ -148,7 +144,7 @@ def _safe_float(val, decimals=1):
 
 @st.cache_data(ttl=3600)
 def get_country_meta():
-    """Get country name -> iso3, dm_em, region mapping from Neo4j."""
+    """Neo4j keys: name, iso3, dm_em, region (all AS-aliased)."""
     try:
         db = get_db()
         records = db.query_graph(
@@ -164,8 +160,14 @@ def get_country_meta():
     except Exception:
         return {}, {}, {}, {}
 
+
+def _top_n_per_group(df, group_col, sort_col, n):
+    """Return top-n rows per group without groupby().apply() multi-index issues."""
+    df = df.sort_values(sort_col, ascending=False)
+    return df.groupby(group_col).head(n).reset_index(drop=True)
+
+
 def build_pyvis_network(nodes_df, edges_df, directed=True):
-    """Build a Pyvis interactive network graph and return HTML."""
     G = nx.DiGraph() if directed else nx.Graph()
 
     for _, row in nodes_df.iterrows():
@@ -175,18 +177,15 @@ def build_pyvis_network(nodes_df, edges_df, directed=True):
             label=str(row.get("label", nid)),
             size=float(row.get("size", 10)),
             color=row.get("color", "#3B82F6"),
-            title=f"{row.get('label', nid)}",
+            title=str(row.get("label", nid)),
         )
 
     for _, row in edges_df.iterrows():
-        src = str(row["source"])
-        tgt = str(row["target"])
-        w = float(row.get("width", 1))
-        label = str(row.get("label", ""))
         G.add_edge(
-            src, tgt,
-            value=max(w, 0.5),
-            title=label,
+            str(row["source"]),
+            str(row["target"]),
+            value=max(float(row.get("width", 1)), 0.5),
+            title=str(row.get("label", "")),
             color="rgba(156,163,175,0.4)",
         )
 
@@ -228,7 +227,36 @@ def build_pyvis_network(nodes_df, edges_df, directed=True):
     )
     return html
 
-# Sidebar
+
+def _build_network_data(df, reporter_col, counterpart_col, value_col,
+                         iso3_to_name, iso3_to_region, size_fn, label_fn):
+    """Build node/edge DataFrames for Pyvis from a bilateral DataFrame."""
+    nd = []
+    seen = set()
+    for _, row in df.iterrows():
+        for iso in [row[reporter_col], row[counterpart_col]]:
+            if iso not in seen:
+                seen.add(iso)
+                vol = df.loc[df[reporter_col] == iso, value_col].sum()
+                nd.append({
+                    "id": iso,
+                    "label": iso3_to_name.get(iso, iso),
+                    "size": size_fn(vol),
+                    "color": REGION_COLORS.get(iso3_to_region.get(iso, ""), "#6B7280"),
+                })
+
+    ed = []
+    for _, row in df.iterrows():
+        ed.append({
+            "source": row[reporter_col],
+            "target": row[counterpart_col],
+            "width": max(np.log10(row[value_col] + 1) * 2, 1),
+            "label": label_fn(row[value_col]),
+        })
+    return pd.DataFrame(nd), pd.DataFrame(ed)
+
+
+# ── Sidebar ───────────────────────────────────────────────────────
 
 countries = get_countries()
 if not countries:
@@ -246,7 +274,7 @@ with st.sidebar:
     st.markdown("---")
     selected_country = st.selectbox("Country", ["All Countries"] + countries, index=0)
 
-# Main Navigation
+# ── Tabs ──────────────────────────────────────────────────────────
 
 tab_dashboard, tab_trade, tab_banking, tab_similarity, tab_factors, tab_query = st.tabs([
     "Dashboard", "Trade Network", "Banking Exposure", "Similarity",
@@ -259,7 +287,6 @@ tab_dashboard, tab_trade, tab_banking, tab_similarity, tab_factors, tab_query = 
 
 with tab_dashboard:
     st.markdown("### Country Overview")
-
     country = selected_country if selected_country != "All Countries" else None
 
     if country:
@@ -319,12 +346,7 @@ with tab_dashboard:
                     "Date": pd.Timestamp(row_data["date"].iloc[0]).strftime("%Y-%m-%d"),
                 })
         if shown:
-            st.dataframe(
-                pd.DataFrame(shown),
-                use_container_width=True,
-                height=300,
-                hide_index=True,
-            )
+            st.dataframe(pd.DataFrame(shown), use_container_width=True, height=300, hide_index=True)
         st.markdown(f"**{len(c_fac)} variables** available for {country}")
 
     else:
@@ -339,8 +361,7 @@ with tab_dashboard:
                 if not val.empty:
                     row[var] = _safe_float(val.iloc[0], 2)
             summary_rows.append(row)
-        summary_df = pd.DataFrame(summary_rows)
-        st.dataframe(summary_df, use_container_width=True, height=500)
+        st.dataframe(pd.DataFrame(summary_rows), use_container_width=True, height=500)
 
         st.markdown("##### Variables Available per Country")
         coverage = factors_all.groupby("country").agg(
@@ -401,16 +422,12 @@ with tab_trade:
 
         fig = go.Figure()
         fig.add_trace(go.Bar(
-            x=top10["Counterpart"],
-            y=top10["exports_usd"] / 1e9,
-            name="Exports",
-            marker_color="#10B981",
+            x=top10["Counterpart"], y=top10["exports_usd"] / 1e9,
+            name="Exports", marker_color="#10B981",
         ))
         fig.add_trace(go.Bar(
-            x=top10["Counterpart"],
-            y=top10["imports_usd"] / 1e9,
-            name="Imports",
-            marker_color="#3B82F6",
+            x=top10["Counterpart"], y=top10["imports_usd"] / 1e9,
+            name="Imports", marker_color="#3B82F6",
         ))
         fig.update_layout(
             title="Top 10 Trade Partners (USD Billions)",
@@ -418,10 +435,7 @@ with tab_trade:
             margin=dict(t=40, b=40, l=40, r=20),
             paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
             font=dict(color="#E5E7EB", size=10),
-            legend=dict(
-                orientation="h", yanchor="bottom", y=1.02,
-                font=dict(color="#E5E7EB"),
-            ),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, font=dict(color="#E5E7EB")),
             xaxis=dict(tickangle=45, gridcolor="#1f2937", tickfont=dict(color="#9CA3AF")),
             yaxis=dict(gridcolor="#1f2937", tickfont=dict(color="#9CA3AF")),
         )
@@ -429,37 +443,14 @@ with tab_trade:
 
         if selected_country == "All Countries":
             st.markdown("#### Global Trade Network")
-            top_network = trade.groupby("reporter_iso3").apply(
-                lambda g: g.nlargest(8, "total_trade_usd")
-            ).reset_index(drop=True)
-
-            nd = []
-            seen = set()
-            for _, r in top_network.iterrows():
-                for iso in [r["reporter_iso3"], r["counterpart_iso3"]]:
-                    if iso not in seen:
-                        seen.add(iso)
-                        vol = top_network[top_network["reporter_iso3"] == iso]["total_trade_usd"].sum()
-                        size = max(np.sqrt(vol / 1e9) * 5, 8)
-                        color = REGION_COLORS.get(iso3_to_region.get(iso, ""), "#6B7280")
-                        nd.append({
-                            "id": iso,
-                            "label": iso3_to_name.get(iso, iso),
-                            "size": size, "color": color,
-                        })
-
-            ed = []
-            for _, r in top_network.iterrows():
-                ed.append({
-                    "source": r["reporter_iso3"],
-                    "target": r["counterpart_iso3"],
-                    "width": max(np.log10(r["total_trade_usd"] + 1) * 2, 1),
-                    "label": f"${r['total_trade_usd'] / 1e9:.1f}B",
-                })
-
-            html = build_pyvis_network(
-                pd.DataFrame(nd), pd.DataFrame(ed), directed=True,
+            top_network = _top_n_per_group(trade, "reporter_iso3", "total_trade_usd", 8)
+            nd, ed = _build_network_data(
+                top_network, "reporter_iso3", "counterpart_iso3", "total_trade_usd",
+                iso3_to_name, iso3_to_region,
+                size_fn=lambda v: max(np.sqrt(v / 1e9) * 5, 8),
+                label_fn=lambda v: f"${v / 1e9:.1f}B",
             )
+            html = build_pyvis_network(nd, ed, directed=True)
             st.components.v1.html(html, height=650, scrolling=True)
         else:
             st.markdown(f"#### {selected_country} - Top Trade Partners")
@@ -507,11 +498,7 @@ with tab_banking:
                 ]
                 top_pct = bank_c["share_of_total_claims_pct"].max()
                 top_name = iso3_to_name.get(top_iso, top_iso)
-                st.metric(
-                    "Largest Exposure",
-                    f"{_safe_float(top_pct, 1)}%",
-                    delta=top_name,
-                )
+                st.metric("Largest Exposure", f"{_safe_float(top_pct, 1)}%", delta=top_name)
         with col4:
             if len(bank_c) > 0:
                 shares = bank_c["share_of_total_claims_pct"] / 100
@@ -526,10 +513,7 @@ with tab_banking:
         fig_b.add_trace(go.Bar(
             x=top15["Counterparty"],
             y=top15["Claims_T"],
-            marker=dict(
-                color=top15["claims_usd_millions"],
-                colorscale="Blues",
-            ),
+            marker=dict(color=top15["claims_usd_millions"].tolist(), colorscale="Blues"),
         ))
         fig_b.update_layout(
             title="Top 15 Banking Exposures (USD Trillions)",
@@ -538,47 +522,20 @@ with tab_banking:
             paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
             font=dict(color="#E5E7EB", size=10),
             xaxis=dict(tickangle=45, gridcolor="#1f2937", tickfont=dict(color="#9CA3AF")),
-            yaxis=dict(
-                title="Claims ($T)",
-                gridcolor="#1f2937",
-                tickfont=dict(color="#9CA3AF"),
-            ),
+            yaxis=dict(title="Claims ($T)", gridcolor="#1f2937", tickfont=dict(color="#9CA3AF")),
         )
         st.plotly_chart(fig_b, use_container_width=True)
 
         if selected_country == "All Countries":
             st.markdown("#### Global Banking Network")
-            top_bank = banking.groupby("reporter_iso3").apply(
-                lambda g: g.nlargest(6, "claims_usd_millions")
-            ).reset_index(drop=True)
-
-            nd = []
-            seen = set()
-            for _, r in top_bank.iterrows():
-                for iso in [r["reporter_iso3"], r["counterpart_iso3"]]:
-                    if iso not in seen:
-                        seen.add(iso)
-                        total = top_bank[top_bank["reporter_iso3"] == iso]["claims_usd_millions"].sum()
-                        size = max(np.log10(total + 1) * 3, 8)
-                        color = REGION_COLORS.get(iso3_to_region.get(iso, ""), "#6B7280")
-                        nd.append({
-                            "id": iso,
-                            "label": iso3_to_name.get(iso, iso),
-                            "size": size, "color": color,
-                        })
-
-            ed = []
-            for _, r in top_bank.iterrows():
-                ed.append({
-                    "source": r["reporter_iso3"],
-                    "target": r["counterpart_iso3"],
-                    "width": max(np.log10(r["claims_usd_millions"] + 1) * 2, 1),
-                    "label": f"${r['claims_usd_millions'] / 1e3:.0f}B",
-                })
-
-            html = build_pyvis_network(
-                pd.DataFrame(nd), pd.DataFrame(ed), directed=True,
+            top_bank = _top_n_per_group(banking, "reporter_iso3", "claims_usd_millions", 6)
+            nd, ed = _build_network_data(
+                top_bank, "reporter_iso3", "counterpart_iso3", "claims_usd_millions",
+                iso3_to_name, iso3_to_region,
+                size_fn=lambda v: max(np.log10(v + 1) * 3, 8),
+                label_fn=lambda v: f"${v / 1e3:.0f}B",
             )
+            html = build_pyvis_network(nd, ed, directed=True)
             st.components.v1.html(html, height=650, scrolling=True)
         else:
             st.markdown(f"#### {selected_country} - Banking Exposures")
@@ -608,13 +565,12 @@ with tab_similarity:
     if not emb_records:
         st.warning("No embeddings found. Run `python scripts/build_embeddings.py`")
     else:
-        emb_countries = sorted([r.get("c.name", r.get("country", r.get("name", ""))) for r in emb_records if any(k in r for k in ["c.name", "country", "name"])])
-        emb_countries = [c for c in emb_countries if c]
-        sim_country = st.selectbox(
-            "Pick a country to find similar ones:", emb_countries,
-        )
+        # Keys are AS-aliased: name, iso3, dem, region, date, embedding
+        emb_countries = sorted([r["name"] for r in emb_records if r.get("name")])
+        sim_country = st.selectbox("Pick a country to find similar ones:", emb_countries)
 
         if sim_country:
+            # Keys returned: country, dm_em, region, score
             results = db.query_graph(
                 "MATCH (c:Country {t2_name: $name}) "
                 "WHERE c.state_embedding IS NOT NULL "
@@ -628,38 +584,17 @@ with tab_similarity:
             )
 
             if results:
+                sim_df = pd.DataFrame([{
+                    "Country": r["country"],
+                    "DM/EM": r.get("dm_em", ""),
+                    "Region": r.get("region", ""),
+                    "Score": round(float(r["score"]), 3),
+                } for r in results])
+
                 col_a, col_b = st.columns([2, 1])
 
                 with col_a:
                     st.markdown(f"**Most similar to {sim_country}:**")
-
-                    # Normalize keys: Neo4j returns aliases like 'node.t2_name' or just 'country'
-                    # Try both key styles
-                    def _get(r, *keys):
-                        for k in keys:
-                            if k in r:
-                                return r[k]
-                        # Try compound keys like 'node.country'
-                        for k in keys:
-                            for actual_key in r:
-                                if actual_key.endswith('.' + k):
-                                    return r[actual_key]
-                        return None
-
-                    sim_rows = []
-                    for r in results:
-                        country = _get(r, "country", "node.country", "node.t2_name")
-                        dm_em = _get(r, "dm_em", "node.dm_em", "node.dem")
-                        region = _get(r, "region", "node.region")
-                        score = _get(r, "score")
-                        if country is not None:
-                            sim_rows.append({
-                                "Country": str(country),
-                                "DM/EM": str(dm_em) if dm_em else "",
-                                "Region": str(region) if region else "",
-                                "Score": round(float(score), 3) if score else 0,
-                            })
-                    sim_df = pd.DataFrame(sim_rows)
                     st.dataframe(sim_df, use_container_width=True, hide_index=True, height=220)
 
                 with col_b:
@@ -670,75 +605,70 @@ with tab_similarity:
                             x=sim_df["Score"],
                             orientation="h",
                             marker=dict(
-                                color=sim_df["Score"],
+                                color=sim_df["Score"].tolist(),
                                 colorscale=[[0, "#1E3A5F"], [1, "#3B82F6"]],
-                                colorbar=dict(tickfont=dict(color="#9CA3AF"), title="Score"),
                             ),
                             text=[f"{s:.3f}" for s in sim_df["Score"]],
                             textposition="outside",
                             textfont=dict(color="#E5E7EB", size=10),
                         ))
                         fig_s.update_layout(
-                            title="Similarity Scores",
-                            height=400,
+                            title="Similarity Scores", height=400,
                             margin=dict(t=40, b=40, l=80, r=20),
                             showlegend=False,
-                            paper_bgcolor="rgba(0,0,0,0)",
-                            plot_bgcolor="rgba(0,0,0,0)",
+                            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
                             font=dict(color="#E5E7EB", size=10),
-                            xaxis=dict(
-                                gridcolor="#1f2937",
-                                tickfont=dict(color="#9CA3AF"),
-                                range=[0, sim_df["Score"].max() + 0.05]
-                            ),
-                            yaxis=dict(
-                                gridcolor="#1f2937",
-                                tickfont=dict(color="#E5E7EB")
-                            ),
+                            xaxis=dict(gridcolor="#1f2937", tickfont=dict(color="#9CA3AF"),
+                                       range=[0, sim_df["Score"].max() + 0.05]),
+                            yaxis=dict(gridcolor="#1f2937", tickfont=dict(color="#E5E7EB")),
                         )
                         st.plotly_chart(fig_s, use_container_width=True)
 
                 st.markdown("#### Pairwise Similarity Matrix")
                 st.caption("Cosine similarity across all 34 countries")
 
+                # Keys are AS-aliased: name, embedding
                 embeddings = {}
                 for r in emb_records:
-                    name = r["c.name"]
-                    vec_str = r["c.embedding"]
-                    if not isinstance(vec_str, list):
-                        s = str(vec_str).strip("[]")
-                        embeddings[name] = [float(x.strip()) for x in s.split(",")]
-                    else:
-                        embeddings[name] = list(vec_str)
+                    cname = r["name"]
+                    vec = r["embedding"]
+                    if cname and vec is not None:
+                        if isinstance(vec, list):
+                            embeddings[cname] = list(vec)
+                        else:
+                            s = str(vec).strip("[]")
+                            embeddings[cname] = [float(x.strip()) for x in s.split(",")]
 
                 country_names = sorted(embeddings.keys())
                 n = len(country_names)
-                sim_matrix = np.zeros((n, n))
-                for i in range(n):
-                    for j in range(n):
-                        if i == j:
-                            sim_matrix[i, j] = 1.0
-                        else:
-                            sim_matrix[i, j] = 1 - cosine_dist(
-                                embeddings[country_names[i]],
-                                embeddings[country_names[j]],
-                            )
 
-                fig_heat = px.imshow(
-                    sim_matrix,
-                    x=country_names,
-                    y=country_names,
-                    color_continuous_scale="Blues",
-                    zmin=0.2,
-                    zmax=1.0,
-                )
-                fig_heat.update_layout(
-                    height=700,
-                    margin=dict(l=120, b=120, t=40, r=20),
-                    xaxis=dict(tickfont=dict(size=8, color="#9CA3AF"), tickangle=60),
-                    yaxis=dict(tickfont=dict(size=8, color="#9CA3AF")),
-                )
-                st.plotly_chart(fig_heat, use_container_width=True)
+                if n == 0:
+                    st.warning("No valid embedding data found.")
+                else:
+                    sim_matrix = np.zeros((n, n))
+                    for i in range(n):
+                        for j in range(n):
+                            if i == j:
+                                sim_matrix[i, j] = 1.0
+                            else:
+                                sim_matrix[i, j] = 1 - cosine_dist(
+                                    embeddings[country_names[i]],
+                                    embeddings[country_names[j]],
+                                )
+
+                    fig_heat = px.imshow(
+                        sim_matrix,
+                        x=country_names, y=country_names,
+                        color_continuous_scale="Blues",
+                        zmin=0.2, zmax=1.0,
+                    )
+                    fig_heat.update_layout(
+                        height=700,
+                        margin=dict(l=120, b=120, t=40, r=20),
+                        xaxis=dict(tickfont=dict(size=8, color="#9CA3AF"), tickangle=60),
+                        yaxis=dict(tickfont=dict(size=8, color="#9CA3AF")),
+                    )
+                    st.plotly_chart(fig_heat, use_container_width=True)
 
 # =================================================================
 # TAB 5 - Factor Explorer
@@ -768,39 +698,25 @@ with tab_factors:
         if var_data.empty:
             st.info("No data for this variable")
         else:
-            # Make sure we have country names not ISO3
-            if "country" in var_data.columns:
-                first_val = var_data["country"].iloc[0]
-                if first_val not in iso3_to_name and len(first_val) != 3:
-                    display_df = var_data[["country", "value", "date"]].copy()
-                    display_df.columns = ["Country", "Value", "Date"]
-                else:
-                    var_data["country_name"] = var_data["country"].map(iso3_to_name)
-                    display_df = var_data[["country_name", "value", "date"]].copy()
-                    display_df.columns = ["Country", "Value", "Date"]
-            else:
-                display_df = var_data[["value", "date"]].copy()
-                display_df.columns = ["Value", "Date"]
-                display_df["Country"] = var_data.get("country", "Unknown")
-                display_df = display_df[["Country", "Value", "Date"]]
-
+            display_df = var_data[["country", "value", "date"]].copy()
+            display_df.columns = ["Country", "Value", "Date"]
             display_df = display_df.sort_values("Value", ascending=False)
             display_df["Date"] = pd.to_datetime(display_df["Date"]).dt.strftime("%Y-%m-%d")
 
-            fig = px.bar(
-                display_df,
-                x="Country",
-                y="Value",
-                title=f"Cross-Sectional Ranking: {selected_var}",
-                color="Value",
-                color_continuous_scale="RdYlBu_r",
-                labels={"Value": "Value", "Country": "Country"},
-            )
+            fig = go.Figure()
+            fig.add_trace(go.Bar(
+                x=display_df["Country"],
+                y=display_df["Value"],
+                marker=dict(
+                    color=display_df["Value"].tolist(),
+                    colorscale="RdYlBu_r",
+                ),
+            ))
             fig.update_layout(
+                title=f"Cross-Sectional Ranking: {selected_var}",
                 height=500,
                 margin=dict(t=40, l=20, r=40, b=100),
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
                 font=dict(color="#E5E7EB", size=9),
                 xaxis=dict(tickangle=60, gridcolor="#1f2937", tickfont=dict(color="#9CA3AF")),
                 yaxis=dict(gridcolor="#1f2937", tickfont=dict(color="#9CA3AF")),
@@ -853,29 +769,18 @@ with tab_query:
                 st.session_state["query_prefill"] = query
 
     query_engine = st.selectbox("Database", ["DuckDB (SQL)", "Neo4j (Cypher)"])
-    default_query = st.session_state.get(
-        "query_prefill",
-        "SELECT * FROM unified_panel LIMIT 10"
-    )
-    query_text = st.text_area(
-        "Enter Query",
-        value=default_query,
-        height=150,
-        key="main_query",
-    )
+    default_query = st.session_state.get("query_prefill", "SELECT * FROM unified_panel LIMIT 10")
+    query_text = st.text_area("Enter Query", value=default_query, height=150, key="main_query")
 
     if st.button("Run Query", type="primary"):
         try:
             db = get_db()
             if query_engine == "DuckDB (SQL)":
                 result_df = db.query_panel(query_text)
-                st.dataframe(result_df, use_container_width=True, height=500)
-                st.info(f"{len(result_df)} rows | {len(result_df.columns)} columns")
             else:
-                result = db.query_graph(query_text)
-                result_df = pd.DataFrame(result)
-                st.dataframe(result_df, use_container_width=True, height=500)
-                st.info(f"{len(result_df)} rows | {len(result_df.columns)} columns")
+                result_df = pd.DataFrame(db.query_graph(query_text))
+            st.dataframe(result_df, use_container_width=True, height=500)
+            st.info(f"{len(result_df)} rows | {len(result_df.columns)} columns")
         except Exception as e:
             st.error(f"Query failed: {e}")
 

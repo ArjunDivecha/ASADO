@@ -292,7 +292,7 @@ COUNTRY_ECFC_TICKERS = {
     "ChinaH":        {"gdp": "ECGDCH Index", "gdp_fallback": "EHGDCHY Index", "cpi": "CHCPIYOY Index"},
     "Denmark":       {"gdp": "ECGDDK Index", "gdp_fallback": "EHGDDKY Index", "cpi": None},
     "France":        {"gdp": "ECGDFR Index", "gdp_fallback": "EHGDFRY Index", "cpi": "FRCPIYOY Index"},
-    "Germany":       {"gdp": "ECGDDE Index", "gdp_fallback": "EHGDGEY Index", "cpi": "GRCP20YY Index"},
+    "Germany":       {"gdp": "ECGDDE Index", "gdp_fallback": "EHGDDEY Index", "cpi": "GRCP20YY Index"},
     "Hong Kong":     {"gdp": "ECGDHK Index", "gdp_fallback": "EHGDHKY Index", "cpi": "HKCPIY Index"},
     "India":         {"gdp": "ECGDIN Index", "gdp_fallback": "EHGDINY Index", "cpi": "INCPIYOY Index"},
     "Indonesia":     {"gdp": "ECGDID Index", "gdp_fallback": "EHGDIDY Index", "cpi": "IDCPIY Index"},
@@ -313,7 +313,7 @@ COUNTRY_ECFC_TICKERS = {
     "Switzerland":   {"gdp": "ECGDSW Index", "gdp_fallback": "EHGDSWY Index", "cpi": "SZCPIYOY Index"},
     "Taiwan":        {"gdp": "ECGDTW Index", "gdp_fallback": "EHGDTWY Index", "cpi": "TWCPIYOY Index"},
     "Thailand":      {"gdp": "ECGDTH Index", "gdp_fallback": "EHGDTHY Index", "cpi": "THCPIYOY Index"},
-    "Turkey":        {"gdp": "ECGDTR Index", "gdp_fallback": "EHGDTUY Index", "cpi": "TUCPIYOY Index"},
+    "Turkey":        {"gdp": "ECGDTU Index", "gdp_fallback": "EHGDTUY Index", "cpi": "TUCPIYOY Index"},
     "U.K.":          {"gdp": "ECGDGB Index", "gdp_fallback": "EHGDGBY Index", "cpi": "UKRPCJYR Index"},
     "U.S.":          {"gdp": "ECGDUS Index", "gdp_fallback": "EHGDUSY Index", "cpi": "CPI YOY Index"},
     "US SmallCap":   {"gdp": "ECGDUS Index", "gdp_fallback": "EHGDUSY Index", "cpi": "CPI YOY Index"},
@@ -369,12 +369,12 @@ COUNTRY_DEBT_TICKERS = {
 # S&P Global/Markit PMI tickers follow pattern: MPMI[CC]MA (Manufacturing),
 # MPMI[CC]SA (Services). Gotcha: Japan uses "JA" not "JN" in PMI tickers.
 COUNTRY_PMI_TICKERS = {
-    "Australia":     {"mfg": "MPMIAUMA Index", "svc": "MPMIAUСА Index"},
+    "Australia":     {"mfg": "MPMIAUMA Index", "svc": "MPMIAUSA Index"},
     "Brazil":        {"mfg": "MPMIBZMA Index", "svc": "MPMIBZSA Index"},
     "Canada":        {"mfg": "MPMICAMA Index", "svc": "MPMICASA Index"},
     "Chile":         {"mfg": None,              "svc": None},
-    "ChinaA":        {"mfg": "MPMICHMA Index", "svc": "MPMICHSA Index"},
-    "ChinaH":        {"mfg": "MPMICHMA Index", "svc": "MPMICHSA Index"},
+    "ChinaA":        {"mfg": "MPMICNMA Index", "svc": "MPMICNSA Index"},
+    "ChinaH":        {"mfg": "MPMICNMA Index", "svc": "MPMICNSA Index"},
     "Denmark":       {"mfg": None,              "svc": None},
     "France":        {"mfg": "MPMIFRMA Index", "svc": "MPMIFRSA Index"},
     "Germany":       {"mfg": "MPMIDEMA Index", "svc": "MPMIDESA Index"},
@@ -382,7 +382,7 @@ COUNTRY_PMI_TICKERS = {
     "India":         {"mfg": "MPMIINMA Index", "svc": "MPMIINSA Index"},
     "Indonesia":     {"mfg": "MPMIIDMA Index", "svc": None},
     "Italy":         {"mfg": "MPMIITMA Index", "svc": "MPMIITSA Index"},
-    "Japan":         {"mfg": "MPMIJAMA Index", "svc": "MPMIJASA Index"},
+    "Japan":         {"mfg": "JNPMMAFI Index", "svc": "JNPMSVFI Index"},
     "Korea":         {"mfg": "MPMIKOMA Index", "svc": None},
     "Malaysia":      {"mfg": "MPMIMYMA Index", "svc": None},
     "Mexico":        {"mfg": "MPMIMXMA Index", "svc": None},
@@ -393,7 +393,7 @@ COUNTRY_PMI_TICKERS = {
     "Saudi Arabia":  {"mfg": "MPMISAMA Index", "svc": None},
     "Singapore":     {"mfg": "MPMISGMA Index", "svc": None},
     "South Africa":  {"mfg": "MPMIZAMA Index", "svc": None},
-    "Spain":         {"mfg": "MPMIESMA Index", "svc": "MPMIIESSA Index"},
+    "Spain":         {"mfg": "MPMIESMA Index", "svc": "MPMIESSA Index"},
     "Sweden":        {"mfg": "MPMISEMA Index", "svc": "MPMISESA Index"},
     "Switzerland":   {"mfg": None,              "svc": None},
     "Taiwan":        {"mfg": "MPMITWMA Index", "svc": None},
@@ -1109,21 +1109,33 @@ def collect_ecfc(bbg: BBG, force: bool) -> pd.DataFrame:
                 seen_tickers.add(gdp_fallback)
                 logger.debug(f"  {country}: GDP fallback also failed ({gdp_fallback}): {e}")
 
-    # Handle countries that share tickers (ChinaA/H, NASDAQ/U.S./US SmallCap)
-    shared_pairs = [
-        ("ChinaH", "ChinaA"), ("US SmallCap", "U.S."), ("NASDAQ", "U.S."),
+    # Ensure alias groups share data: whichever alias pulled data, copy to all others
+    alias_groups = [
+        ["ChinaA", "ChinaH"],
+        ["U.S.", "NASDAQ", "US SmallCap"],
     ]
-    for target, source in shared_pairs:
+    for group in alias_groups:
         for variable_name in ("BBG_ECFC_GDP", "BBG_ECFC_CPI"):
-            existing_src = [f for f in frames
-                           if isinstance(f, pd.DataFrame) and
-                           not f.empty and
-                           f["country"].iloc[0] == source and
-                           f["variable"].iloc[0] == variable_name]
-            if existing_src:
-                dup = existing_src[0].copy()
-                dup["country"] = target
-                frames.append(dup)
+            # Find which alias in the group has data
+            source_df = None
+            for member in group:
+                match = [f for f in frames
+                        if isinstance(f, pd.DataFrame) and not f.empty
+                        and f["country"].iloc[0] == member
+                        and f["variable"].iloc[0] == variable_name]
+                if match:
+                    source_df = match[0]
+                    break
+            if source_df is not None:
+                for member in group:
+                    already = any(isinstance(f, pd.DataFrame) and not f.empty
+                                 and f["country"].iloc[0] == member
+                                 and f["variable"].iloc[0] == variable_name
+                                 for f in frames)
+                    if not already:
+                        dup = source_df.copy()
+                        dup["country"] = member
+                        frames.append(dup)
 
     logger.info(f"  Pulled {pulled} unique ticker series ({errors} errors, "
                 f"{fallback_used} GDP fallbacks used)")
@@ -1271,21 +1283,32 @@ def collect_pmi(bbg: BBG, force: bool) -> pd.DataFrame:
                 seen_tickers.add(ticker)
                 logger.warning(f"  Error: {country} {ind_key} ({ticker}): {e}")
 
-    # Copy shared tickers to alias countries
-    shared_pairs = [
-        ("ChinaH", "ChinaA"), ("US SmallCap", "U.S."), ("NASDAQ", "U.S."),
+    # Ensure alias groups share data
+    alias_groups = [
+        ["ChinaA", "ChinaH"],
+        ["U.S.", "NASDAQ", "US SmallCap"],
     ]
-    for target, source in shared_pairs:
+    for group in alias_groups:
         for variable_name in indicator_map.values():
-            existing_src = [f for f in frames
-                           if isinstance(f, pd.DataFrame) and
-                           not f.empty and
-                           f["country"].iloc[0] == source and
-                           f["variable"].iloc[0] == variable_name]
-            if existing_src:
-                dup = existing_src[0].copy()
-                dup["country"] = target
-                frames.append(dup)
+            source_df = None
+            for member in group:
+                match = [f for f in frames
+                        if isinstance(f, pd.DataFrame) and not f.empty
+                        and f["country"].iloc[0] == member
+                        and f["variable"].iloc[0] == variable_name]
+                if match:
+                    source_df = match[0]
+                    break
+            if source_df is not None:
+                for member in group:
+                    already = any(isinstance(f, pd.DataFrame) and not f.empty
+                                 and f["country"].iloc[0] == member
+                                 and f["variable"].iloc[0] == variable_name
+                                 for f in frames)
+                    if not already:
+                        dup = source_df.copy()
+                        dup["country"] = member
+                        frames.append(dup)
 
     logger.info(f"  Pulled {pulled}/{len(seen_tickers)} unique tickers ({errors} errors)")
 
@@ -1354,19 +1377,29 @@ def collect_m2(bbg: BBG, force: bool) -> pd.DataFrame:
         if not got_data:
             logger.debug(f"  {country}: no M2 ticker worked")
 
-    # Copy shared tickers to alias countries
-    shared_pairs = [
-        ("ChinaH", "ChinaA"), ("US SmallCap", "U.S."), ("NASDAQ", "U.S."),
+    # Ensure alias groups share data
+    alias_groups = [
+        ["ChinaA", "ChinaH"],
+        ["U.S.", "NASDAQ", "US SmallCap"],
     ]
-    for target, source in shared_pairs:
-        existing_src = [f for f in frames
-                       if isinstance(f, pd.DataFrame) and
-                       not f.empty and
-                       f["country"].iloc[0] == source]
-        if existing_src:
-            dup = existing_src[0].copy()
-            dup["country"] = target
-            frames.append(dup)
+    for group in alias_groups:
+        source_df = None
+        for member in group:
+            match = [f for f in frames
+                    if isinstance(f, pd.DataFrame) and not f.empty
+                    and f["country"].iloc[0] == member]
+            if match:
+                source_df = match[0]
+                break
+        if source_df is not None:
+            for member in group:
+                already = any(isinstance(f, pd.DataFrame) and not f.empty
+                             and f["country"].iloc[0] == member
+                             for f in frames)
+                if not already:
+                    dup = source_df.copy()
+                    dup["country"] = member
+                    frames.append(dup)
 
     logger.info(f"  Pulled {pulled}/{len(seen_tickers)} unique tickers ({errors} errors)")
 

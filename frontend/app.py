@@ -276,9 +276,9 @@ with st.sidebar:
 
 # ── Tabs ──────────────────────────────────────────────────────────
 
-tab_dashboard, tab_trade, tab_banking, tab_similarity, tab_factors, tab_query = st.tabs([
+tab_dashboard, tab_trade, tab_banking, tab_similarity, tab_factors, tab_ask, tab_query = st.tabs([
     "Dashboard", "Trade Network", "Banking Exposure", "Similarity",
-    "Factor Explorer", "Free Query",
+    "Factor Explorer", "Ask ASADO", "Free Query",
 ])
 
 # =================================================================
@@ -727,7 +727,130 @@ with tab_factors:
             st.dataframe(display_df, use_container_width=True, hide_index=True, height=400)
 
 # =================================================================
-# TAB 6 - Free Query Playground
+# TAB 6 - Ask ASADO
+# =================================================================
+
+with tab_ask:
+    st.markdown("### Ask ASADO")
+    st.caption("Natural-language query assistant over DuckDB + Neo4j, with plan preview and safe read-only execution.")
+
+    action_col1, action_col2, action_col3 = st.columns([1, 1, 4])
+    with action_col1:
+        refresh_schema = st.button("Refresh Schema")
+
+    if refresh_schema:
+        try:
+            from scripts.build_schema_registry import build_and_write_schema_cache
+
+            with st.spinner("Refreshing ASADO schema cache ..."):
+                payload = build_and_write_schema_cache()
+            st.success(
+                "Schema cache refreshed. "
+                f"DuckDB tables/views: {len(payload['duckdb']['tables'])}, "
+                f"variables: {payload['variable_catalog']['variable_count']}."
+            )
+            if not payload["neo4j"].get("available"):
+                st.warning(f"Neo4j schema refresh skipped: {payload['neo4j'].get('error', 'unknown error')}")
+        except Exception as exc:
+            st.error(f"Schema refresh failed: {exc}")
+
+    with st.form("asado_query_form", clear_on_submit=False):
+        control_col1, control_col2, control_col3, control_col4 = st.columns([1.2, 1.8, 0.8, 0.8])
+        with control_col1:
+            provider = st.selectbox("Provider", ["auto", "openai", "anthropic"], index=0, key="asado_provider")
+        with control_col2:
+            model_override = st.text_input(
+                "Model Override",
+                value=os.getenv("ASADO_QUERY_MODEL", ""),
+                placeholder="Optional; otherwise env/default model is used",
+                key="asado_model_override",
+            )
+        with control_col3:
+            max_rows = st.number_input("Max Rows", min_value=10, max_value=500, value=100, step=10)
+        with control_col4:
+            preview_only = st.checkbox("Preview Only", value=False)
+
+        question = st.text_area(
+            "Ask A Research Question",
+            height=130,
+            placeholder=(
+                "Which countries have high BIS credit gaps and worsening GDELT tone?\n"
+                "Find countries most similar to Turkey and compare inflation + growth.\n"
+                "Show EM countries trading heavily with sanctioned economies."
+            ),
+            key="asado_question",
+        )
+
+        run_assistant = st.form_submit_button("Run Assistant", type="primary")
+
+    if run_assistant:
+        if not question.strip():
+            st.warning("Enter a question first.")
+        else:
+            try:
+                from scripts.query_assistant import ASADOQueryAssistant
+
+                with st.spinner("Planning and executing query ..."):
+                    assistant = ASADOQueryAssistant(
+                        provider=provider,
+                        model=model_override.strip() or None,
+                    )
+                    response = assistant.ask(
+                        question,
+                        preview_only=preview_only,
+                        max_rows=int(max_rows),
+                    )
+
+                st.markdown("#### Understanding")
+                st.write(response["plan"].get("understanding") or "—")
+
+                if response["plan"].get("reasoning_summary"):
+                    st.caption(response["plan"]["reasoning_summary"])
+
+                if response["plan"].get("clarification_question"):
+                    st.info(response["plan"]["clarification_question"])
+
+                warnings = response["plan"].get("warnings") or []
+                if warnings:
+                    for warning in warnings:
+                        st.warning(warning)
+
+                st.markdown("#### Generated Query")
+                if response["plan"].get("duckdb_sql"):
+                    st.code(response["plan"]["duckdb_sql"], language="sql")
+                if response["plan"].get("neo4j_cypher"):
+                    st.code(response["plan"]["neo4j_cypher"], language="cypher")
+                for idx, step in enumerate(response["plan"].get("hybrid_steps") or [], start=1):
+                    label = "sql" if step.get("engine") == "duckdb" else "cypher"
+                    st.caption(f"Hybrid Step {idx} - {step.get('engine', 'unknown')}")
+                    st.code(step.get("query", ""), language=label)
+
+                with st.expander("Plan JSON"):
+                    st.json(response["plan"])
+
+                if not preview_only and not response["result_df"].empty:
+                    st.markdown("#### Results")
+                    st.dataframe(
+                        response["result_df"],
+                        use_container_width=True,
+                        hide_index=True,
+                        height=420,
+                    )
+                    st.caption(
+                        f"{response['row_count']} rows returned | "
+                        f"Provider: {response['provider']} | Model: {response['model']}"
+                    )
+                elif not preview_only:
+                    st.info("Query executed successfully but returned no rows.")
+
+                st.markdown("#### Interpretation")
+                st.write(response.get("interpretation") or "—")
+
+            except Exception as exc:
+                st.error(f"Assistant failed: {exc}")
+
+# =================================================================
+# TAB 7 - Free Query Playground
 # =================================================================
 
 with tab_query:

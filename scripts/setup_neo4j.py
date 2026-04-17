@@ -56,6 +56,7 @@ import argparse
 import json
 import sys
 import time
+from datetime import date, datetime
 from pathlib import Path
 
 import duckdb
@@ -204,6 +205,116 @@ COMMODITY_EXPORTERS = {
     "Agriculture": ["BRA", "AUS", "THA", "IDN", "IND", "VNM", "CAN", "USA"],
 }
 
+COUNTRY_GRAPH_ROLES = {
+    "ChinaA": "sovereign_proxy",
+    "ChinaH": "market_sleeve",
+    "NASDAQ": "market_sleeve",
+    "US SmallCap": "market_sleeve",
+}
+
+SOURCE_METADATA = {
+    "bis_credit": {"display_name": "BIS Credit Gap", "url": "stats.bis.org", "frequency": "quarterly", "api_type": "sdmx"},
+    "bis_debt_service": {"display_name": "BIS Debt Service", "url": "stats.bis.org", "frequency": "quarterly", "api_type": "sdmx"},
+    "bis_policy_rate": {"display_name": "BIS Policy Rates", "url": "stats.bis.org", "frequency": "daily", "api_type": "sdmx"},
+    "bis_property": {"display_name": "BIS Property", "url": "stats.bis.org", "frequency": "quarterly", "api_type": "sdmx"},
+    "bis_reer": {"display_name": "BIS REER", "url": "stats.bis.org", "frequency": "monthly", "api_type": "sdmx"},
+    "bloomberg": {"display_name": "Bloomberg", "url": "bloomberg.com", "frequency": "monthly", "api_type": "blpapi"},
+    "ecb_fx": {"display_name": "ECB FX", "url": "data-api.ecb.europa.eu", "frequency": "monthly", "api_type": "sdmx"},
+    "eia": {"display_name": "EIA", "url": "api.eia.gov", "frequency": "annual", "api_type": "rest"},
+    "epu": {"display_name": "EPU", "url": "policyuncertainty.com", "frequency": "monthly", "api_type": "download"},
+    "faostat": {"display_name": "FAOSTAT", "url": "fao.org", "frequency": "annual", "api_type": "download"},
+    "fred": {"display_name": "FRED", "url": "fred.stlouisfed.org", "frequency": "monthly", "api_type": "rest"},
+    "gdelt": {"display_name": "GDELT", "url": "gdeltproject.org", "frequency": "monthly", "api_type": "file"},
+    "gpr": {"display_name": "GPR", "url": "matteoiacoviello.com", "frequency": "monthly", "api_type": "download"},
+    "ilostat": {"display_name": "ILOSTAT", "url": "sdmx.ilo.org", "frequency": "annual", "api_type": "sdmx"},
+    "imf_bop": {"display_name": "IMF BOP", "url": "api.imf.org", "frequency": "annual", "api_type": "sdmx3"},
+    "imf_cpi": {"display_name": "IMF CPI", "url": "api.imf.org", "frequency": "monthly", "api_type": "sdmx3"},
+    "imf_er": {"display_name": "IMF ER", "url": "api.imf.org", "frequency": "monthly", "api_type": "sdmx3"},
+    "imf_itg": {"display_name": "IMF ITG", "url": "api.imf.org", "frequency": "monthly", "api_type": "sdmx3"},
+    "imf_ls": {"display_name": "IMF LS", "url": "api.imf.org", "frequency": "monthly", "api_type": "sdmx3"},
+    "imf_mfs_ir": {"display_name": "IMF MFS_IR", "url": "api.imf.org", "frequency": "monthly", "api_type": "sdmx3"},
+    "imf_weo": {"display_name": "IMF WEO", "url": "api.imf.org", "frequency": "annual", "api_type": "sdmx3"},
+    "ndgain": {"display_name": "ND-GAIN", "url": "gain.nd.edu", "frequency": "annual", "api_type": "download"},
+    "oecd": {"display_name": "OECD", "url": "sdmx.oecd.org", "frequency": "monthly", "api_type": "sdmx"},
+    "oecd_bci": {"display_name": "OECD BCI", "url": "sdmx.oecd.org", "frequency": "monthly", "api_type": "rest"},
+    "oecd_cci": {"display_name": "OECD CCI", "url": "sdmx.oecd.org", "frequency": "monthly", "api_type": "rest"},
+    "ofac": {"display_name": "OFAC", "url": "treasury.gov", "frequency": "event-driven", "api_type": "download"},
+    "t2": {"display_name": "T2", "url": "local workbook", "frequency": "monthly", "api_type": "file"},
+    "t2_raw": {"display_name": "T2 Raw", "url": "local workbook", "frequency": "monthly", "api_type": "file"},
+    "undp_hdi": {"display_name": "UNDP HDI", "url": "hdr.undp.org", "frequency": "annual", "api_type": "download"},
+    "worldbank": {"display_name": "World Bank", "url": "api.worldbank.org", "frequency": "annual", "api_type": "rest"},
+}
+
+FRESHNESS_THRESHOLDS = {
+    "daily": 45,
+    "monthly": 120,
+    "quarterly": 220,
+    "annual": 550,
+    "event-driven": 365,
+    "snapshot": 550,
+}
+
+
+def _freshness_days(last_date_value) -> int | None:
+    if last_date_value is None:
+        return None
+    if isinstance(last_date_value, datetime):
+        last_day = last_date_value.date()
+    elif isinstance(last_date_value, date):
+        last_day = last_date_value
+    else:
+        try:
+            last_day = datetime.fromisoformat(str(last_date_value)).date()
+        except ValueError:
+            return None
+    return (date.today() - last_day).days
+
+
+def _date_string(value) -> str | None:
+    if value is None or (hasattr(pd, "isna") and pd.isna(value)):
+        return None
+    if isinstance(value, datetime):
+        return value.date().isoformat()
+    if isinstance(value, date):
+        return value.isoformat()
+    return str(value).split(" ")[0]
+
+
+def _duckdb_source_summary() -> pd.DataFrame:
+    con = duckdb.connect(str(DB_PATH), read_only=True)
+    try:
+        return con.execute(
+            """
+            SELECT
+                source,
+                COUNT(*) AS row_count,
+                COUNT(DISTINCT country) AS country_count,
+                COUNT(DISTINCT variable) AS variable_count,
+                MIN(date) AS first_date,
+                MAX(date) AS last_date
+            FROM unified_panel
+            GROUP BY source
+            ORDER BY source
+            """
+        ).fetchdf()
+    finally:
+        con.close()
+
+
+def _duckdb_source_coverage() -> pd.DataFrame:
+    con = duckdb.connect(str(DB_PATH), read_only=True)
+    try:
+        return con.execute(
+            """
+            SELECT DISTINCT source, country
+            FROM unified_panel
+            WHERE country IS NOT NULL
+            ORDER BY source, country
+            """
+        ).fetchdf()
+    finally:
+        con.close()
+
 # ── Source coverage (which sources cover which ISO3 codes) ────────────────
 
 SOURCE_COVERAGE = {
@@ -295,16 +406,19 @@ def create_country_nodes(session):
         iso3 = codes["iso3"]
         iso2 = codes["iso2"]
         meta = COUNTRY_META.get(iso3, {})
+        graph_role = COUNTRY_GRAPH_ROLES.get(t2_name, "sovereign")
 
         session.run("""
             MERGE (c:Country {t2_name: $t2_name})
             SET c.iso3 = $iso3,
                 c.iso2 = $iso2,
                 c.name = $t2_name,
+                c.graph_role = $graph_role,
                 c.dm_em = $dm_em,
                 c.region = $region,
                 c.currency_code = $currency
         """, t2_name=t2_name, iso3=iso3, iso2=iso2,
+            graph_role=graph_role,
             dm_em=meta.get("dm_em", ""),
             region=meta.get("region", ""),
             currency=meta.get("currency", ""))
@@ -448,14 +562,19 @@ def create_factor_nodes(session):
     """Create Factor nodes from DuckDB variable list."""
     con = duckdb.connect(str(DB_PATH), read_only=True)
     variables = con.execute(
-        "SELECT DISTINCT variable FROM unified_panel ORDER BY variable"
+        """
+        SELECT variable, MIN(source) AS source
+        FROM unified_panel
+        GROUP BY variable
+        ORDER BY variable
+        """
     ).fetchall()
     con.close()
 
     count = 0
-    for (var_name,) in variables:
+    for var_name, source_key in variables:
         category = _categorize_factor(var_name)
-        source = _factor_source(var_name)
+        source = source_key or _factor_source(var_name)
         session.run("""
             MERGE (f:Factor {name: $name})
             SET f.category = $category,
@@ -492,16 +611,49 @@ def create_central_bank_nodes(session):
 
 
 def create_datasource_nodes(session):
-    """Create DataSource nodes."""
-    for ds in DATA_SOURCES:
+    """Create DataSource nodes from live DuckDB source coverage."""
+    summary_df = _duckdb_source_summary()
+    count = 0
+    for row in summary_df.to_dict("records"):
+        source_key = row["source"]
+        metadata = SOURCE_METADATA.get(source_key, {})
+        frequency = metadata.get("frequency", "monthly")
+        freshness_days = _freshness_days(row["last_date"])
+        threshold = FRESHNESS_THRESHOLDS.get(frequency, 180)
+        status = "active"
+        if freshness_days is not None and freshness_days > threshold:
+            status = "stale"
         session.run("""
             MERGE (d:DataSource {name: $name})
-            SET d.url = $url,
+            SET d.source_key = $source_key,
+                d.display_name = $display_name,
+                d.url = $url,
                 d.frequency = $frequency,
                 d.api_type = $api_type,
-                d.status = $status
-        """, **ds)
-    print(f"  DataSource nodes: {len(DATA_SOURCES)}")
+                d.status = $status,
+                d.row_count = $row_count,
+                d.country_count = $country_count,
+                d.variable_count = $variable_count,
+                d.first_date = date($first_date),
+                d.last_date = date($last_date),
+                d.freshness_days = $freshness_days
+        """,
+            name=source_key,
+            source_key=source_key,
+            display_name=metadata.get("display_name", source_key),
+            url=metadata.get("url", ""),
+            frequency=frequency,
+            api_type=metadata.get("api_type", "file"),
+            status=status,
+            row_count=int(row["row_count"]),
+            country_count=int(row["country_count"]),
+            variable_count=int(row["variable_count"]),
+            first_date=_date_string(row["first_date"]),
+            last_date=_date_string(row["last_date"]),
+            freshness_days=freshness_days,
+        )
+        count += 1
+    print(f"  DataSource nodes: {count}")
 
 
 def create_sanctions_nodes(session):
@@ -541,7 +693,7 @@ def create_central_bank_edges(session):
         cb_name = meta.get("cb_name")
         if cb_name:
             result = session.run("""
-                MATCH (c:Country WHERE c.iso3 = $iso3)
+                MATCH (c:Country WHERE c.iso3 = $iso3 AND c.graph_role <> 'market_sleeve')
                 MATCH (cb:CentralBank {name: $cb_name})
                 MERGE (c)-[:HAS_CENTRAL_BANK]->(cb)
                 RETURN COUNT(*) AS cnt
@@ -556,7 +708,7 @@ def create_commodity_edges(session):
     for commodity, exporters in COMMODITY_EXPORTERS.items():
         for iso3 in exporters:
             result = session.run("""
-                MATCH (c:Country WHERE c.iso3 = $iso3)
+                MATCH (c:Country WHERE c.iso3 = $iso3 AND c.graph_role <> 'market_sleeve')
                 MATCH (com:Commodity {name: $commodity})
                 MERGE (c)-[:EXPORT_EXPOSED_TO]->(com)
                 RETURN COUNT(*) AS cnt
@@ -585,6 +737,7 @@ def create_sanctions_edges(session):
         for t2_name in sanctioned:
             result = session.run("""
                 MATCH (c:Country {t2_name: $t2_name})
+                WHERE c.graph_role <> 'market_sleeve'
                 MATCH (s:SanctionsProgram)
                 WHERE s.active = true
                 WITH c, collect(s)[0] AS sp
@@ -604,7 +757,7 @@ def create_crisis_edges(session):
     for ce in CRISIS_EVENTS:
         for iso3 in ce["countries"]:
             result = session.run("""
-                MATCH (c:Country WHERE c.iso3 = $iso3)
+                MATCH (c:Country WHERE c.iso3 = $iso3 AND c.graph_role <> 'market_sleeve')
                 MATCH (ce:CrisisEvent {name: $name})
                 MERGE (c)-[:HAS_CRISIS_HISTORY]->(ce)
                 RETURN COUNT(*) AS cnt
@@ -614,48 +767,52 @@ def create_crisis_edges(session):
 
 
 def create_datasource_edges(session):
-    """Link Country -> DataSource (coverage)."""
-    mapping_path = CONFIG_DIR / "country_mapping.json"
-    with open(mapping_path) as f:
-        mapping = json.load(f)
-
-    iso3_set = set()
-    for codes in mapping["countries"].values():
-        iso3_set.add(codes["iso3"])
-
+    """Link Country -> DataSource using live DuckDB source coverage."""
+    coverage_df = _duckdb_source_coverage()
+    rows = coverage_df.to_dict("records")
     count = 0
-    for ds_name, iso3_list in SOURCE_COVERAGE.items():
-        for iso3 in iso3_list:
-            if iso3 in iso3_set:
-                result = session.run("""
-                    MATCH (c:Country WHERE c.iso3 = $iso3)
-                    MATCH (ds:DataSource {name: $ds_name})
-                    MERGE (c)-[:DATA_AVAILABLE_FROM]->(ds)
-                    RETURN COUNT(*) AS cnt
-                """, iso3=iso3, ds_name=ds_name)
-                count += result.single()["cnt"]
+    batch_size = 500
+    for start in range(0, len(rows), batch_size):
+        batch = rows[start:start + batch_size]
+        result = session.run("""
+            UNWIND $batch AS row
+            MATCH (c:Country {t2_name: row.country})
+            WHERE c.graph_role <> 'market_sleeve'
+            MATCH (ds:DataSource {name: row.source})
+            MERGE (c)-[:DATA_AVAILABLE_FROM]->(ds)
+            RETURN COUNT(*) AS cnt
+        """, batch=batch)
+        count += result.single()["cnt"]
     print(f"  DATA_AVAILABLE_FROM edges: {count}")
 
 
 def create_factor_exposure_edges(session):
-    """Link Country -> Factor with latest values from DuckDB."""
+    """Link Country -> Factor with latest non-null values from DuckDB."""
     con = duckdb.connect(str(DB_PATH), read_only=True)
 
-    latest_date = con.execute(
-        "SELECT MAX(date) FROM unified_panel WHERE variable = '1MRet'"
-    ).fetchone()[0]
-
     latest = con.execute("""
-        SELECT country, variable, value
-        FROM unified_panel
-        WHERE date = ?
-        AND value IS NOT NULL
-    """, [latest_date]).fetchdf()
+        SELECT country, variable, source, value, date
+        FROM (
+            SELECT
+                country,
+                variable,
+                source,
+                value,
+                date,
+                ROW_NUMBER() OVER (
+                    PARTITION BY country, variable
+                    ORDER BY date DESC
+                ) AS rn
+            FROM unified_panel
+            WHERE value IS NOT NULL
+        )
+        WHERE rn = 1
+    """).fetchdf()
     con.close()
 
     count = 0
     batch_size = 500
-    rows = latest.to_dict("records")
+    rows = latest.assign(date=latest["date"].astype(str)).to_dict("records")
 
     for i in range(0, len(rows), batch_size):
         batch = rows[i:i + batch_size]
@@ -664,11 +821,14 @@ def create_factor_exposure_edges(session):
             MATCH (c:Country {t2_name: row.country})
             MATCH (f:Factor {name: row.variable})
             MERGE (c)-[r:HAS_FACTOR_EXPOSURE]->(f)
-            SET r.value = row.value, r.date = date($date)
-        """, batch=batch, date=str(latest_date))
+            SET r.value = row.value,
+                r.date = date(row.date),
+                r.source = row.source
+        """, batch=batch)
         count += len(batch)
 
-    print(f"  HAS_FACTOR_EXPOSURE edges: {count} (as of {latest_date})")
+    latest_date = latest["date"].max() if not latest.empty else None
+    print(f"  HAS_FACTOR_EXPOSURE edges: {count} (latest edge date {latest_date})")
 
 
 def create_trade_edges(session):
@@ -690,6 +850,35 @@ def create_trade_edges(session):
         return
 
     df = df[df["total_trade_usd"] > 100_000_000].copy()
+    reporter_set = set(df["reporter_iso3"].unique())
+    counterpart_set = set(df["counterpart_iso3"].unique())
+    missing_reporters = sorted((counterpart_set - reporter_set) & set(COUNTRY_META.keys()))
+    synthetic_rows = []
+    for missing_iso3 in missing_reporters:
+        inbound = df[df["counterpart_iso3"] == missing_iso3].copy()
+        if inbound.empty:
+            continue
+        mirrored = pd.DataFrame(
+            {
+                "reporter_iso3": missing_iso3,
+                "counterpart_iso3": inbound["reporter_iso3"],
+                "year": inbound["year"],
+                "exports_usd": inbound["imports_usd"],
+                "imports_usd": inbound["exports_usd"],
+                "total_trade_usd": inbound["total_trade_usd"],
+            }
+        )
+        total_trade = mirrored["total_trade_usd"].sum()
+        mirrored["trade_share_pct"] = (
+            mirrored["total_trade_usd"] / total_trade * 100.0 if total_trade else 0.0
+        )
+        synthetic_rows.append(mirrored)
+    if synthetic_rows:
+        df = pd.concat([df, *synthetic_rows], ignore_index=True)
+        print(
+            "  TRADES_WITH fallback reporters: "
+            + ", ".join(missing_reporters)
+        )
 
     year = int(df["year"].iloc[0]) if "year" in df.columns else 0
     records = df.to_dict("records")
@@ -700,8 +889,8 @@ def create_trade_edges(session):
         batch = records[i:i + batch_size]
         result = session.run("""
             UNWIND $batch AS row
-            MATCH (r:Country WHERE r.iso3 = row.reporter_iso3)
-            MATCH (cp:Country WHERE cp.iso3 = row.counterpart_iso3)
+            MATCH (r:Country WHERE r.iso3 = row.reporter_iso3 AND r.graph_role <> 'market_sleeve')
+            MATCH (cp:Country WHERE cp.iso3 = row.counterpart_iso3 AND cp.graph_role <> 'market_sleeve')
             MERGE (r)-[e:TRADES_WITH]->(cp)
             SET e.exports_usd = row.exports_usd,
                 e.imports_usd = row.imports_usd,
@@ -741,8 +930,8 @@ def create_banking_edges(session):
         batch = records[i:i + batch_size]
         result = session.run("""
             UNWIND $batch AS row
-            MATCH (r:Country WHERE r.iso3 = row.reporter_iso3)
-            MATCH (cp:Country WHERE cp.iso3 = row.counterpart_iso3)
+            MATCH (r:Country WHERE r.iso3 = row.reporter_iso3 AND r.graph_role <> 'market_sleeve')
+            MATCH (cp:Country WHERE cp.iso3 = row.counterpart_iso3 AND cp.graph_role <> 'market_sleeve')
             MERGE (r)-[e:HAS_BANKING_EXPOSURE_TO]->(cp)
             SET e.claims_usd_millions = row.claims_usd_millions,
                 e.share_of_total_claims_pct = coalesce(row.share_of_total_claims_pct, 0.0),

@@ -5,8 +5,10 @@ SCRIPT NAME: setup_duckdb.py
 =============================================================================
 
 INPUT FILES:
-- /Users/arjundivecha/Dropbox/AAA Backup/Transformer/Normalized_T2_MasterCSV.csv
+- /Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 Factor Timing Fuzzy/Normalized_T2_MasterCSV.csv
                                                    (1.19M rows, 111 variables, 34 countries)
+- /Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 Factor Timing Fuzzy/T2 Master.xlsx
+                                                   (58 sheets, raw factor levels)
 - Data/processed/external_factors_panel.parquet  (112K rows, 35 variables)
 - Data/processed/extended_factors_panel.parquet  (77K rows, 51 variables)
 - /Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 GDELT/GDELT_Factors_MasterCSV.csv
@@ -28,13 +30,14 @@ sentiment data into separate tables, then creates a unified view for
 cross-source queries.
 
 Tables created:
-  - t2_master:          T2 factor data (111 vars, 34 countries, 2000-2026)
+  - t2_master:          T2 normalized factor data (111 vars, 34 countries, 2000-2026)
+  - t2_raw:             Raw T2 factor levels from the authoritative workbook
   - external_factors:   Program 1 panel (35 vars from 7 sources)
   - extended_factors:   Program 2 panel (51 vars from 12 sources)
   - gdelt_panel:        GDELT normalized factors (93 vars, 34 countries, 2015-2026)
   - imf_factors:        Program 3 panel (18 vars from 6 IMF datasets)
   - bloomberg_factors:  Bloomberg sovereign data (bonds, CDS, ratings, 34 countries)
-  - unified_panel:      VIEW union of all six tables
+  - unified_panel:      VIEW union of all seven tables
 
 DEPENDENCIES:
 - duckdb, pandas
@@ -51,6 +54,7 @@ NOTES:
 """
 
 import argparse
+import json
 import sys
 import time
 from pathlib import Path
@@ -61,13 +65,34 @@ import pandas as pd
 BASE_DIR = Path(__file__).parent.parent
 DATA_DIR = BASE_DIR / "Data"
 DB_PATH = DATA_DIR / "asado.duckdb"
+CONFIG_PATH = BASE_DIR / "config" / "country_mapping.json"
 
-T2_CSV = Path("/Users/arjundivecha/Dropbox/AAA Backup/Transformer/Normalized_T2_MasterCSV.csv")
+T2_DIR = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 Factor Timing Fuzzy")
+T2_CSV = T2_DIR / "Normalized_T2_MasterCSV.csv"
+T2_WORKBOOK = T2_DIR / "T2 Master.xlsx"
 EXTERNAL_PQ = DATA_DIR / "processed" / "external_factors_panel.parquet"
 EXTENDED_PQ = DATA_DIR / "processed" / "extended_factors_panel.parquet"
 GDELT_CSV = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 GDELT/GDELT_Factors_MasterCSV.csv")
+GDELT_FALLBACK_PQ = DATA_DIR / "processed" / "gdelt_panel_snapshot.parquet"
 IMF_PQ = DATA_DIR / "processed" / "imf_factors_panel.parquet"
 BLOOMBERG_PQ = DATA_DIR / "processed" / "bloomberg_factors_panel.parquet"
+
+T2_RETURN_SHEETS = {"1MRet", "3MRet", "6MRet", "9MRet", "12MRet"}
+GLOBAL_BROADCAST_VARIABLES = {
+    "FRED_UST_2Y",
+    "FRED_UST_10Y",
+    "FRED_Yield_Curve_10Y2Y",
+}
+
+
+def _canonical_variable_name(name: str) -> str:
+    return " ".join(str(name).split()).strip()
+
+
+def _tracked_countries() -> list[str]:
+    with open(CONFIG_PATH, encoding="utf-8") as handle:
+        mapping = json.load(handle)
+    return list(mapping["countries"].keys())
 
 
 def load_t2_master(con: duckdb.DuckDBPyConnection) -> int:
@@ -90,6 +115,97 @@ def load_t2_master(con: duckdb.DuckDBPyConnection) -> int:
     return count
 
 
+def load_t2_raw(con: duckdb.DuckDBPyConnection) -> int:
+    """Load raw T2 workbook factors into t2_raw."""
+    print("Loading raw T2 workbook factors ...")
+    con.execute("DROP TABLE IF EXISTS t2_raw")
+    con.execute("""
+        CREATE TABLE t2_raw (
+            date DATE,
+            country VARCHAR,
+            value DOUBLE,
+            variable VARCHAR
+        )
+    """)
+
+    total_rows = 0
+    with pd.ExcelFile(T2_WORKBOOK, engine="openpyxl") as workbook:
+        raw_sheets = [sheet for sheet in workbook.sheet_names if sheet not in T2_RETURN_SHEETS]
+        for sheet_name in raw_sheets:
+            wide_df = pd.read_excel(workbook, sheet_name=sheet_name)
+            if wide_df.empty:
+                continue
+
+            date_column = wide_df.columns[0]
+            long_df = (
+                wide_df.rename(columns={date_column: "date"})
+                .melt(id_vars="date", var_name="country", value_name="value")
+                .dropna(subset=["date", "value"])
+            )
+            if long_df.empty:
+                continue
+
+            long_df["date"] = pd.to_datetime(long_df["date"]).dt.date
+            long_df["country"] = long_df["country"].astype(str).str.strip()
+            long_df["variable"] = _canonical_variable_name(sheet_name)
+
+            con.register("t2_raw_stage", long_df[["date", "country", "value", "variable"]])
+            con.execute("""
+                INSERT INTO t2_raw
+                SELECT
+                    CAST(date AS DATE) AS date,
+                    country,
+                    CAST(value AS DOUBLE) AS value,
+                    variable
+                FROM t2_raw_stage
+            """)
+            con.unregister("t2_raw_stage")
+            total_rows += len(long_df)
+
+    vars_count = con.execute("SELECT COUNT(DISTINCT variable) FROM t2_raw").fetchone()[0]
+    countries = con.execute("SELECT COUNT(DISTINCT country) FROM t2_raw").fetchone()[0]
+    print(f"  t2_raw: {total_rows:,} rows, {vars_count} variables, {countries} countries")
+    return total_rows
+
+
+def broadcast_global_reference_series(con: duckdb.DuckDBPyConnection, table_name: str) -> int:
+    """Replicate truly global U.S. Treasury reference series across the tracked country set."""
+    countries_df = pd.DataFrame({"country": _tracked_countries()})
+    con.register("broadcast_countries", countries_df)
+    variable_list = ", ".join(f"'{name}'" for name in sorted(GLOBAL_BROADCAST_VARIABLES))
+    before_count = con.execute(f"SELECT COUNT(*) FROM {table_name}").fetchone()[0]
+    con.execute(f"""
+        INSERT INTO {table_name}
+        SELECT
+            src.date,
+            bc.country,
+            src.value,
+            src.variable,
+            src.source
+        FROM (
+            SELECT
+                date,
+                variable,
+                source,
+                MAX(value) AS value
+            FROM {table_name}
+            WHERE variable IN ({variable_list})
+            GROUP BY date, variable, source
+        ) AS src
+        CROSS JOIN broadcast_countries AS bc
+        LEFT JOIN {table_name} existing
+            ON existing.date = src.date
+           AND existing.variable = src.variable
+           AND existing.country = bc.country
+        WHERE existing.country IS NULL
+    """)
+    inserted = con.execute(f"SELECT COUNT(*) FROM {table_name}").fetchone()[0] - before_count
+    con.unregister("broadcast_countries")
+    if inserted:
+        print(f"  {table_name}: broadcast {inserted:,} global U.S. Treasury rows")
+    return inserted
+
+
 def load_parquet_table(con: duckdb.DuckDBPyConnection, table_name: str,
                        pq_path: Path, label: str) -> int:
     """Load a parquet panel file into a named table."""
@@ -105,6 +221,8 @@ def load_parquet_table(con: duckdb.DuckDBPyConnection, table_name: str,
             source
         FROM read_parquet('{pq_path}')
     """)
+    if table_name in {"external_factors", "extended_factors"}:
+        broadcast_global_reference_series(con, table_name)
     count = con.execute(f"SELECT COUNT(*) FROM {table_name}").fetchone()[0]
     vars_count = con.execute(f"SELECT COUNT(DISTINCT variable) FROM {table_name}").fetchone()[0]
     countries = con.execute(f"SELECT COUNT(DISTINCT country) FROM {table_name}").fetchone()[0]
@@ -113,18 +231,41 @@ def load_parquet_table(con: duckdb.DuckDBPyConnection, table_name: str,
 
 
 def load_gdelt(con: duckdb.DuckDBPyConnection) -> int:
-    """Load normalized GDELT tidy CSV into gdelt_panel table."""
-    print("Loading GDELT normalized CSV ...")
+    """Load normalized GDELT panel into gdelt_panel table."""
+    if GDELT_CSV.exists():
+        source_path = GDELT_CSV
+        source_kind = "csv"
+        print("Loading GDELT normalized CSV ...")
+    elif GDELT_FALLBACK_PQ.exists():
+        source_path = GDELT_FALLBACK_PQ
+        source_kind = "parquet"
+        print("Loading GDELT fallback snapshot ...")
+    else:
+        raise FileNotFoundError(
+            f"Neither canonical GDELT CSV nor fallback snapshot exists: {GDELT_CSV} | {GDELT_FALLBACK_PQ}"
+        )
+
     con.execute("DROP TABLE IF EXISTS gdelt_panel")
-    con.execute(f"""
-        CREATE TABLE gdelt_panel AS
-        SELECT
-            CAST(date AS DATE) AS date,
-            country,
-            value,
-            variable
-        FROM read_csv_auto('{GDELT_CSV}')
-    """)
+    if source_kind == "csv":
+        con.execute(f"""
+            CREATE TABLE gdelt_panel AS
+            SELECT
+                CAST(date AS DATE) AS date,
+                country,
+                value,
+                variable
+            FROM read_csv_auto('{source_path}')
+        """)
+    else:
+        con.execute(f"""
+            CREATE TABLE gdelt_panel AS
+            SELECT
+                CAST(date AS DATE) AS date,
+                country,
+                value,
+                variable
+            FROM read_parquet('{source_path}')
+        """)
     count = con.execute("SELECT COUNT(*) FROM gdelt_panel").fetchone()[0]
     vars_count = con.execute("SELECT COUNT(DISTINCT variable) FROM gdelt_panel").fetchone()[0]
     countries = con.execute("SELECT COUNT(DISTINCT country) FROM gdelt_panel").fetchone()[0]
@@ -133,12 +274,14 @@ def load_gdelt(con: duckdb.DuckDBPyConnection) -> int:
 
 
 def create_unified_view(con: duckdb.DuckDBPyConnection):
-    """Create a unified view across all six tables."""
+    """Create a unified view across all ASADO factor tables."""
     print("Creating unified_panel view ...")
     con.execute("DROP VIEW IF EXISTS unified_panel")
     con.execute("""
         CREATE VIEW unified_panel AS
         SELECT date, country, value, variable, 't2' AS source FROM t2_master
+        UNION ALL
+        SELECT date, country, value, variable, 't2_raw' AS source FROM t2_raw
         UNION ALL
         SELECT date, country, value, variable, source FROM external_factors
         UNION ALL
@@ -160,7 +303,7 @@ def create_unified_view(con: duckdb.DuckDBPyConnection):
 def create_indexes(con: duckdb.DuckDBPyConnection):
     """Create indexes for fast analytical queries."""
     print("Creating indexes ...")
-    for table in ["t2_master", "external_factors", "extended_factors", "gdelt_panel",
+    for table in ["t2_master", "t2_raw", "external_factors", "extended_factors", "gdelt_panel",
                    "imf_factors", "bloomberg_factors"]:
         con.execute(f"CREATE INDEX IF NOT EXISTS idx_{table}_ctry_date ON {table}(country, date)")
         con.execute(f"CREATE INDEX IF NOT EXISTS idx_{table}_var ON {table}(variable)")
@@ -182,7 +325,7 @@ def check_database():
     print(f"Tables: {[t[0] for t in tables]}")
     print()
 
-    for table in ["t2_master", "external_factors", "extended_factors", "gdelt_panel",
+    for table in ["t2_master", "t2_raw", "external_factors", "extended_factors", "gdelt_panel",
                    "imf_factors", "bloomberg_factors"]:
         try:
             count = con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
@@ -213,12 +356,16 @@ def main():
         check_database()
         return
 
-    required = [T2_CSV, EXTERNAL_PQ, EXTENDED_PQ, GDELT_CSV, IMF_PQ]
+    required = [T2_CSV, T2_WORKBOOK, EXTERNAL_PQ, EXTENDED_PQ, IMF_PQ]
     optional = [BLOOMBERG_PQ]
     for f in required:
         if not f.exists():
             print(f"MISSING: {f}")
             sys.exit(1)
+    if not GDELT_CSV.exists() and not GDELT_FALLBACK_PQ.exists():
+        print(f"MISSING: {GDELT_CSV}")
+        print(f"MISSING: {GDELT_FALLBACK_PQ}")
+        sys.exit(1)
     for f in optional:
         if not f.exists():
             print(f"OPTIONAL NOT FOUND (will skip): {f}")
@@ -238,6 +385,8 @@ def main():
 
     total = 0
     total += load_t2_master(con)
+    print()
+    total += load_t2_raw(con)
     print()
     total += load_parquet_table(con, "external_factors", EXTERNAL_PQ, "External Factors Panel")
     print()

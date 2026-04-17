@@ -7,15 +7,16 @@ Collects macro/governance/risk/climate/trade data from **26 free external source
 ```
 ASADO/
 ├── Data/
-│   ├── [T2 Master.xlsx]                  # Read from .../AAA Backup/Transformer/
-│   ├── [Normalized_T2_MasterCSV.csv]     # Read from .../AAA Backup/Transformer/
-│   ├── [GDELT_Factors_MasterCSV.csv]     # Read from .../A Complete/T2 GDELT/
-│   ├── asado.duckdb                      # DuckDB analytical database (75.5 MB)
+│   ├── [T2 Master.xlsx]                  # Read from .../A Complete/T2 Factor Timing Fuzzy/
+│   ├── [Normalized_T2_MasterCSV.csv]     # Read from .../A Complete/T2 Factor Timing Fuzzy/
+│   ├── [GDELT_Factors_MasterCSV.csv]     # Preferred external source from .../A Complete/T2 GDELT/
+│   ├── asado.duckdb                      # DuckDB analytical database (~96 MB after current rebuild)
 │   ├── raw/                              # Cached downloads (24h expiry)
 │   ├── processed/                        # Output panels + catalogs + run history
 │   │   ├── external_factors_panel.parquet # Program 1 output (112K rows, 35 vars)
-│   │   ├── extended_factors_panel.parquet # Program 2 output (77K rows, 51 vars)
+│   │   ├── extended_factors_panel.parquet # Program 2 output (106K rows after UST broadcast fix, 51 vars)
 │   │   ├── imf_factors_panel.parquet     # Program 3 output (107K rows, 26 vars)
+│   │   ├── gdelt_panel_snapshot.parquet  # Repo-local fallback when external GDELT CSV is absent
 │   │   ├── bilateral_trade_matrix.parquet  # Program 4 output (899 trade pairs)
 │   │   ├── bilateral_banking_matrix.parquet # Program 4 output (582 banking pairs)
 │   │   ├── bloomberg_factors_panel.parquet # Program 5 output (67K rows, 17 vars)

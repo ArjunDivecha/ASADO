@@ -75,6 +75,20 @@ SANCTIONS_WARNING = (
 )
 CURRENT_DATE = date.today()
 
+
+def _next_month_start(anchor: date) -> date:
+    if anchor.month == 12:
+        return date(anchor.year + 1, 1, 1)
+    return date(anchor.year, anchor.month + 1, 1)
+
+
+GDELT_PARTIAL_LABEL_DATE = _next_month_start(CURRENT_DATE)
+GDELT_PARTIAL_LABEL_NOTE = (
+    "ASADO's GDELT monthly partial updates may use the first day of the next month "
+    f"as the label; for CURRENT_DATE={CURRENT_DATE.isoformat()}, treat "
+    f"{GDELT_PARTIAL_LABEL_DATE.isoformat()} as the current partial-month GDELT label, not a forecast."
+)
+
 COUNTRY_GROUPS: Dict[str, List[str]] = {
     "asean": ["Indonesia", "Malaysia", "Philippines", "Singapore", "Thailand", "Vietnam"],
     "g7": ["Canada", "France", "Germany", "Italy", "Japan", "U.K.", "U.S."],
@@ -303,6 +317,7 @@ class ASADOQueryAssistant:
                     "description": table.get("description"),
                     "row_count": table.get("row_count"),
                     "columns": [col["column_name"] for col in table.get("columns", [])],
+                    "column_value_samples": table.get("column_value_samples", {}),
                     "date_range": table.get("date_range"),
                     "country_count": table.get("country_count"),
                     "variable_count": table.get("variable_count"),
@@ -346,6 +361,7 @@ class ASADOQueryAssistant:
                         "for forecasts or projections."
                     ),
                     "Prefer observed/non-forecast series over forecast series for current/latest questions.",
+                    GDELT_PARTIAL_LABEL_NOTE,
                     "Country graph nodes include both sovereign states and market sleeves; use graph_role to distinguish them.",
                     "For sovereign graph questions, exclude graph_role = 'market_sleeve'.",
                     "ChinaA is the sovereign proxy for China in graph network relationships; ChinaH, NASDAQ, and US SmallCap are market sleeves.",
@@ -362,6 +378,7 @@ class ASADOQueryAssistant:
                 "If a later hybrid step needs country names from an earlier step, use the literal token {{country_list}}.",
                 "The step that produces a reusable country set should alias the relevant column as country.",
                 "For sovereign graph/network questions, filter Country nodes to graph_role <> 'market_sleeve'.",
+                "For latest/current GDELT questions, prefer source = 'gdelt' or gdelt_panel so the next-month partial label convention is handled correctly.",
                 "If a question asks which countries are under sanctions, clarify unless the user explicitly wants OFAC/SDN-linked exposure or association data.",
                 "Recognize common region/group terms such as ASEAN, G7, BRICS, LatAm, EMEA, EM, and DM when they appear in the question.",
             ],
@@ -605,6 +622,7 @@ class ASADOQueryAssistant:
             f"Top variable candidates for this question:\n{json.dumps(candidate_variables, indent=2)}\n\n"
             f"User question:\n{question}\n\n"
             "For latest/current questions, avoid future-dated rows and prefer observed/non-forecast series unless the user explicitly asks for forecasts. "
+            f"{GDELT_PARTIAL_LABEL_NOTE} "
             "Prefer matching against the candidate variables when they fit the question. "
             "Return JSON only."
         )
@@ -694,9 +712,22 @@ class ASADOQueryAssistant:
         date_literal = CURRENT_DATE.isoformat()
         if date_literal in sql or "CURRENT_DATE" in sql.upper():
             return sql
+        gdelt_literal = GDELT_PARTIAL_LABEL_DATE.isoformat()
+        gdelt_specific_query = bool(
+            re.search(r"\bgdelt_panel\b", sql, re.IGNORECASE)
+            or re.search(r"\bsource\s*=\s*'gdelt'\b", sql, re.IGNORECASE)
+            or re.search(r'\bsource\s*=\s*"gdelt"\b', sql, re.IGNORECASE)
+        )
+        if gdelt_specific_query:
+            replacement = (
+                rf"MAX(CASE WHEN \1date <= DATE '{date_literal}' "
+                rf"OR \1date = DATE '{gdelt_literal}' THEN \1date END)"
+            )
+        else:
+            replacement = rf"MAX(CASE WHEN \1date <= DATE '{date_literal}' THEN \1date END)"
         return re.sub(
             r"MAX\s*\(\s*((?:[A-Za-z_][\w]*\.)?)date\s*\)",
-            rf"MAX(CASE WHEN \1date <= DATE '{date_literal}' THEN \1date END)",
+            replacement,
             sql,
             flags=re.IGNORECASE,
         )
@@ -1007,6 +1038,7 @@ class ASADOQueryAssistant:
             "If results are empty, say so plainly. "
             "Mention important caveats or missing coverage. "
             f"Treat CURRENT_DATE={CURRENT_DATE.isoformat()} as authoritative. "
+            f"{GDELT_PARTIAL_LABEL_NOTE} "
             "Do not call data projected or future-dated just because it is later than your training cutoff. "
             "Only mention forecasts/projections when the variable family, source, or returned dates actually indicate that."
         )

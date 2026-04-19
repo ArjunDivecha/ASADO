@@ -276,13 +276,28 @@ with st.sidebar:
 
 # ── Tabs ──────────────────────────────────────────────────────────
 
-tab_dashboard, tab_trade, tab_banking, tab_similarity, tab_factors, tab_ask, tab_query = st.tabs([
-    "Dashboard", "Trade Network", "Banking Exposure", "Similarity",
+tab_update, tab_dashboard, tab_trade, tab_banking, tab_similarity, tab_factors, tab_ask, tab_query = st.tabs([
+    "Monthly Update", "Dashboard", "Trade Network", "Banking Exposure", "Similarity",
     "Factor Explorer", "Ask ASADO", "Free Query",
 ])
 
 # =================================================================
-# TAB 1 - Country Overview Dashboard
+# TAB 1 - Monthly Update
+# =================================================================
+
+with tab_update:
+    update_html_path = Path(__file__).parent / "monthly_update.html"
+    if not update_html_path.exists():
+        st.error(
+            "Monthly Update UI not found at "
+            f"`{update_html_path}`. Add `frontend/monthly_update.html` first."
+        )
+    else:
+        with open(update_html_path, encoding="utf-8") as handle:
+            st.components.v1.html(handle.read(), height=860, scrolling=False)
+
+# =================================================================
+# TAB 2 - Country Overview Dashboard
 # =================================================================
 
 with tab_dashboard:

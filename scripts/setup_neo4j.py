@@ -9,6 +9,7 @@ INPUT FILES:
 - Data/processed/extended_factors_panel.parquet      (OFAC sanctions data)
 - Data/processed/bilateral_trade_matrix.parquet      (IMF IMTS bilateral trade)
 - Data/processed/bilateral_banking_matrix.parquet    (BIS LBS banking claims)
+- Data/processed/bilateral_portfolio_matrix.parquet  (IMF PIP + U.S. TIC portfolio holdings)
 - Data/asado.duckdb                                 (for latest factor values)
 
 OUTPUT FILES:
@@ -36,7 +37,7 @@ Node types:
 Edge types:
   - HAS_CENTRAL_BANK, EXPORT_EXPOSED_TO, SUBJECT_TO,
     HAS_CRISIS_HISTORY, DATA_AVAILABLE_FROM, HAS_FACTOR_EXPOSURE,
-    TRADES_WITH, HAS_BANKING_EXPOSURE_TO
+    TRADES_WITH, HAS_BANKING_EXPOSURE_TO, HOLDS_PORTFOLIO
 
 DEPENDENCIES:
 - neo4j, duckdb, pandas
@@ -230,15 +231,22 @@ SOURCE_METADATA = {
     "imf_bop": {"display_name": "IMF BOP", "url": "api.imf.org", "frequency": "annual", "api_type": "sdmx3"},
     "imf_cpi": {"display_name": "IMF CPI", "url": "api.imf.org", "frequency": "monthly", "api_type": "sdmx3"},
     "imf_er": {"display_name": "IMF ER", "url": "api.imf.org", "frequency": "monthly", "api_type": "sdmx3"},
+    "imf_fsi": {"display_name": "IMF FSI", "url": "api.imf.org", "frequency": "quarterly", "api_type": "sdmx3"},
     "imf_itg": {"display_name": "IMF ITG", "url": "api.imf.org", "frequency": "monthly", "api_type": "sdmx3"},
     "imf_ls": {"display_name": "IMF LS", "url": "api.imf.org", "frequency": "monthly", "api_type": "sdmx3"},
     "imf_mfs_ir": {"display_name": "IMF MFS_IR", "url": "api.imf.org", "frequency": "monthly", "api_type": "sdmx3"},
+    "imf_pip": {"display_name": "IMF PIP", "url": "api.imf.org", "frequency": "annual", "api_type": "sdmx3"},
     "imf_weo": {"display_name": "IMF WEO", "url": "api.imf.org", "frequency": "annual", "api_type": "sdmx3"},
+    "macrostructure_derived": {"display_name": "Macrostructure Derived", "url": "local formulas", "frequency": "quarterly", "api_type": "derived"},
     "ndgain": {"display_name": "ND-GAIN", "url": "gain.nd.edu", "frequency": "annual", "api_type": "download"},
     "oecd": {"display_name": "OECD", "url": "sdmx.oecd.org", "frequency": "monthly", "api_type": "sdmx"},
     "oecd_bci": {"display_name": "OECD BCI", "url": "sdmx.oecd.org", "frequency": "monthly", "api_type": "rest"},
     "oecd_cci": {"display_name": "OECD CCI", "url": "sdmx.oecd.org", "frequency": "monthly", "api_type": "rest"},
+    "oecd_household_dashboard": {"display_name": "OECD Household Dashboard", "url": "sdmx.oecd.org", "frequency": "annual", "api_type": "rest"},
+    "oecd_institutional_investors": {"display_name": "OECD Institutional Investors Indicators", "url": "sdmx.oecd.org", "frequency": "quarterly", "api_type": "rest"},
     "ofac": {"display_name": "OFAC", "url": "treasury.gov", "frequency": "event-driven", "api_type": "download"},
+    "portfolio_ownership": {"display_name": "Portfolio Ownership Derived", "url": "local formulas", "frequency": "annual", "api_type": "derived"},
+    "qpsd": {"display_name": "World Bank QPSD", "url": "api.worldbank.org", "frequency": "quarterly", "api_type": "rest"},
     "t2": {"display_name": "T2", "url": "local workbook", "frequency": "monthly", "api_type": "file"},
     "t2_raw": {"display_name": "T2 Raw", "url": "local workbook", "frequency": "monthly", "api_type": "file"},
     "undp_hdi": {"display_name": "UNDP HDI", "url": "hdr.undp.org", "frequency": "annual", "api_type": "download"},
@@ -431,6 +439,9 @@ def create_country_nodes(session):
 def _categorize_factor(name: str) -> str:
     """Determine category for a factor variable name."""
     base = name.replace("_CS", "").replace("_TS", "").strip()
+
+    if name.startswith("MS_"):
+        return "macrostructure"
 
     for cat, patterns in FACTOR_CATEGORIES.items():
         for p in patterns:
@@ -943,6 +954,74 @@ def create_banking_edges(session):
     print(f"  HAS_BANKING_EXPOSURE_TO edges: {count} (quarter={quarter})")
 
 
+def create_portfolio_edges(session):
+    """
+    Create HOLDS_PORTFOLIO edges from the latest portfolio ownership snapshot.
+
+    Reads Data/processed/bilateral_portfolio_matrix.parquet and creates
+    instrument-specific edges between sovereign-proxy Country nodes.
+    The latest snapshot is taken separately for each source so the monthly
+    U.S. TIC supplement can coexist with the annual IMF PIP benchmark.
+    """
+    pq_path = DATA_DIR / "processed" / "bilateral_portfolio_matrix.parquet"
+    if not pq_path.exists():
+        print("  HOLDS_PORTFOLIO edges: SKIPPED (bilateral_portfolio_matrix.parquet not found)")
+        return
+
+    df = pd.read_parquet(pq_path)
+    if df.empty:
+        print("  HOLDS_PORTFOLIO edges: 0 (empty parquet)")
+        return
+
+    df["date"] = pd.to_datetime(df["date"])
+    latest_parts = []
+    for source in sorted(df["source"].dropna().unique()):
+        source_df = df[df["source"] == source].copy()
+        if source_df.empty:
+            continue
+        latest_date = source_df["date"].max()
+        latest = source_df[(source_df["date"] == latest_date) & (source_df["amount_usd"] > 0)].copy()
+        if latest.empty:
+            continue
+        latest["source_latest_date"] = latest_date
+        latest_parts.append(latest)
+
+    if not latest_parts:
+        print("  HOLDS_PORTFOLIO edges: 0 (no positive holdings in latest source snapshots)")
+        return
+
+    latest = pd.concat(latest_parts, ignore_index=True)
+    records_df = latest.assign(date=latest["date"].dt.strftime("%Y-%m-%d"))
+    records_df = records_df.where(pd.notna(records_df), None)
+    records = records_df.to_dict("records")
+
+    batch_size = 200
+    count = 0
+    for i in range(0, len(records), batch_size):
+        batch = records[i:i + batch_size]
+        session.run("""
+            UNWIND $batch AS row
+            MATCH (r:Country WHERE r.iso3 = row.reporter_iso3 AND r.graph_role <> 'market_sleeve')
+            MATCH (cp:Country WHERE cp.iso3 = row.counterpart_iso3 AND cp.graph_role <> 'market_sleeve')
+            MERGE (r)-[e:HOLDS_PORTFOLIO {instrument_type: row.instrument_type, source: row.source}]->(cp)
+            SET e.amount_usd = row.amount_usd,
+                e.share_of_reporter_portfolio_pct = row.share_of_reporter_portfolio_pct,
+                e.share_of_counterpart_inbound_pct = row.share_of_counterpart_inbound_pct,
+                e.frequency = row.frequency,
+                e.date = date(row.date),
+                e.is_official_sector = coalesce(row.is_official_sector, false)
+        """, batch=batch)
+        count += len(batch)
+
+    source_dates = ", ".join(
+        f"{source}={date_value.date()}"
+        for source, date_value in sorted(
+            latest.groupby("source", as_index=False)["source_latest_date"].max().itertuples(index=False, name=None)
+        )
+    )
+    print(f"  HOLDS_PORTFOLIO edges: {count} ({source_dates})")
+
+
 def check_graph():
     """Print summary of existing graph."""
     driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASS))
@@ -1021,6 +1100,7 @@ def main():
         create_factor_exposure_edges(session)
         create_trade_edges(session)
         create_banking_edges(session)
+        create_portfolio_edges(session)
 
     driver.close()
     elapsed = time.time() - start

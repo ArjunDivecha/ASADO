@@ -33,6 +33,7 @@ CACHE_DIR = BASE_DIR / "Data" / "cache" / "query_assistant"
 DUCKDB_SCHEMA_PATH = CACHE_DIR / "duckdb_schema.json"
 NEO4J_SCHEMA_PATH = CACHE_DIR / "neo4j_schema.json"
 VARIABLE_CATALOG_PATH = CACHE_DIR / "variable_catalog.json"
+ACCESS_GUIDE_PATH = CACHE_DIR / "access_guide.json"
 MANIFEST_PATH = CACHE_DIR / "manifest.json"
 
 TABLE_DESCRIPTIONS = {
@@ -42,7 +43,12 @@ TABLE_DESCRIPTIONS = {
     "extended_factors": "Extended country dataset built from additional free sources.",
     "gdelt_panel": "Country-level GDELT-derived media, tone, and risk signals.",
     "imf_factors": "IMF datasets normalized into the ASADO tidy panel shape.",
-    "bloomberg_factors": "Bloomberg market-implied and macro data collected via OpusBloomberg.",
+    "macrostructure_factors": "Macrostructure panel spanning bank fragility, debt structure, institutional depth, sticky-capital proxies, and transparent derived signals.",
+    "bilateral_portfolio_matrix": (
+        "Historical portfolio ownership matrix combining IMF PIP annual benchmarks and the U.S. TIC supplement. "
+        "Common instrument_type values include equity_fund_shares, debt_long, debt_short, equity, debt_long_govt, and debt_long_corp."
+    ),
+    "bloomberg_factors": "Bloomberg market-implied, macro, and ETF passive-flow data collected via OpusBloomberg.",
     "unified_panel": "Unified analytic view across all ASADO factor tables.",
 }
 
@@ -93,7 +99,13 @@ SOURCE_TOKEN_MAP = {
 TOKEN_SYNONYMS = {
     "cds": ["credit default swap", "credit default swaps", "cds spread", "cds spreads", "sovereign cds"],
     "cpi": ["consumer price index", "inflation"],
+    "fragility": ["vulnerability", "stress", "fragile investor base"],
     "inflation": ["cpi", "price growth"],
+    "insurance": ["insurer", "insurance corporations"],
+    "investor": ["holder", "owner", "ownership base"],
+    "household": ["retail", "domestic household base"],
+    "ownership": ["holder base", "investor base"],
+    "pension": ["retirement assets", "pension funds"],
     "yoy": ["year over year", "year-on-year", "annual change", "annual growth"],
     "gdp": ["gross domestic product", "growth"],
     "fx": ["foreign exchange", "exchange rate", "currency"],
@@ -114,6 +126,19 @@ TOKEN_SYNONYMS = {
     "exports": ["export"],
     "imports": ["import"],
     "debt": ["indebtedness"],
+    "holder": ["owner", "investor"],
+    "foreign": ["external", "offshore"],
+    "local": ["domestic", "home currency"],
+    "currency": ["fx denomination", "domestic currency", "foreign currency"],
+    "maturity": ["tenor", "duration bucket", "rollover"],
+    "qpsd": ["quarterly public sector debt", "public debt structure", "debt holder structure"],
+    "tic": ["treasury international capital", "u.s. treasury tic", "us foreign holdings"],
+    "portfolio": ["portfolio ownership", "cross-border holdings", "investor base"],
+    "etf": ["exchange traded fund", "fund proxy", "country etf"],
+    "passive": ["index-driven", "mechanical flows", "passive flows"],
+    "creation": ["primary market basket", "creation basket", "shares outstanding"],
+    "redemption": ["redeem basket", "redemption basket"],
+    "swap": ["liquidity swap", "swap line", "central bank swap"],
     "unemployment": ["jobless rate"],
     "employment": ["jobs", "labor market", "labour market"],
     "population": ["population level"],
@@ -153,15 +178,21 @@ SOURCE_FREQUENCIES = {
     "imf_bop": "annual",
     "imf_cpi": "monthly",
     "imf_er": "monthly",
+    "imf_fsi": "quarterly",
     "imf_itg": "monthly",
     "imf_ls": "monthly",
     "imf_mfs_ir": "monthly",
+    "macrostructure_derived": "quarterly",
     "imf_weo": "annual",
     "ndgain": "annual",
     "oecd": "monthly",
     "oecd_bci": "monthly",
     "oecd_cci": "monthly",
+    "oecd_household_dashboard": "annual",
+    "oecd_institutional_investors": "quarterly",
     "ofac": "event-driven",
+    "portfolio_ownership": "annual",
+    "qpsd": "quarterly",
     "t2": "monthly",
     "t2_raw": "monthly",
     "undp_hdi": "annual",
@@ -364,9 +395,38 @@ def _json_ready(value: Any) -> Any:
     return value
 
 
+def _next_month_start(anchor: date) -> date:
+    if anchor.month == 12:
+        return date(anchor.year + 1, 1, 1)
+    return date(anchor.year, anchor.month + 1, 1)
+
+
 def _fetch_sample_rows(con: duckdb.DuckDBPyConnection, table_name: str) -> List[Dict[str, Any]]:
     query = f'SELECT * FROM "{table_name}" LIMIT 5'
     return [_json_ready(row) for row in con.execute(query).fetchdf().to_dict("records")]
+
+
+def _column_value_samples(
+    con: duckdb.DuckDBPyConnection,
+    table_name: str,
+    column_names: Set[str],
+) -> Dict[str, List[Any]]:
+    """Capture distinct value hints for key categorical columns used in NL planning."""
+    sample_columns = {"instrument_type", "source", "frequency"}
+    samples: Dict[str, List[Any]] = {}
+
+    for column_name in sorted(sample_columns & column_names):
+        values = [
+            row[0]
+            for row in con.execute(
+                f'SELECT DISTINCT "{column_name}" FROM "{table_name}" '
+                f'WHERE "{column_name}" IS NOT NULL ORDER BY "{column_name}" LIMIT 20'
+            ).fetchall()
+        ]
+        if values:
+            samples[column_name] = [_json_ready(value) for value in values]
+
+    return samples
 
 
 def _duckdb_table_schema(con: duckdb.DuckDBPyConnection, table_name: str, table_type: str) -> Dict[str, Any]:
@@ -391,6 +451,7 @@ def _duckdb_table_schema(con: duckdb.DuckDBPyConnection, table_name: str, table_
         "row_count": row_count,
         "columns": columns,
         "sample_rows": _fetch_sample_rows(con, table_name),
+        "column_value_samples": _column_value_samples(con, table_name, column_names),
     }
 
     if "date" in column_names:
@@ -657,6 +718,181 @@ def build_neo4j_schema(
         driver.close()
 
 
+def build_access_guide(
+    duckdb_schema: Dict[str, Any],
+    neo4j_schema: Dict[str, Any],
+    variable_catalog: Dict[str, Any],
+) -> Dict[str, Any]:
+    current_date = date.today()
+    gdelt_partial_label_date = _next_month_start(current_date)
+    duck_tables = duckdb_schema.get("tables", {})
+
+    return _json_ready(
+        {
+            "project": "ASADO",
+            "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "purpose": (
+                "Agent-facing access contract for the live ASADO DuckDB, Neo4j, and "
+                "schema-cache artifacts. Use this as the first-stop machine-readable "
+                "guide for how to access the database safely."
+            ),
+            "preferred_access_order": [
+                "python_bridge",
+                "duckdb_sql",
+                "query_assistant",
+                "neo4j_cypher",
+            ],
+            "artifacts": {
+                "base_dir": str(BASE_DIR),
+                "duckdb_path": str(DB_PATH),
+                "neo4j_uri": NEO4J_URI,
+                "duckdb_schema_path": str(DUCKDB_SCHEMA_PATH),
+                "neo4j_schema_path": str(NEO4J_SCHEMA_PATH),
+                "variable_catalog_path": str(VARIABLE_CATALOG_PATH),
+                "python_bridge_module": "scripts.db_bridge",
+                "query_assistant_script": str(BASE_DIR / "scripts" / "query_assistant.py"),
+                "macrostructure_formula_catalog_path": str(
+                    BASE_DIR / "Data" / "processed" / "macrostructure_formula_catalog.json"
+                ),
+                "panel_variable_catalog_paths": {
+                    "external": str(BASE_DIR / "Data" / "processed" / "external_variable_catalog.csv"),
+                    "extended": str(BASE_DIR / "Data" / "processed" / "extended_variable_catalog.csv"),
+                    "imf": str(BASE_DIR / "Data" / "processed" / "imf_variable_catalog.csv"),
+                    "macrostructure": str(BASE_DIR / "Data" / "processed" / "macrostructure_variable_catalog.csv"),
+                    "bloomberg": str(BASE_DIR / "Data" / "processed" / "bloomberg_variable_catalog.csv"),
+                },
+            },
+            "connections": {
+                "python_bridge": {
+                    "preferred": True,
+                    "module": "scripts.db_bridge",
+                    "class": "AsadoDB",
+                    "duckdb_method": "query_panel(sql)",
+                    "neo4j_method": "query_graph(cypher)",
+                    "notes": [
+                        "Best default entrypoint for agents because it exposes both DuckDB and Neo4j.",
+                        "Use context-manager style: with AsadoDB() as db: ...",
+                    ],
+                },
+                "duckdb_sql": {
+                    "type": "duckdb_file",
+                    "path": str(DB_PATH),
+                    "read_only_recommended": True,
+                    "preferred_entrypoint": "scripts.db_bridge.AsadoDB.query_panel",
+                    "primary_view": "unified_panel",
+                    "canonical_factor_columns": ["date", "country", "value", "variable", "source"],
+                    "tables_available": sorted(duck_tables.keys()),
+                    "unified_panel_row_count": duck_tables.get("unified_panel", {}).get("row_count"),
+                    "unified_panel_variable_count": variable_catalog.get("variable_count"),
+                    "notes": [
+                        "Use unified_panel for most cross-source factor questions.",
+                        "Use table-specific panels when you need raw source behavior or panel-specific columns.",
+                    ],
+                },
+                "neo4j_cypher": {
+                    "type": "neo4j_bolt",
+                    "uri": NEO4J_URI,
+                    "username": NEO4J_USER,
+                    "password": NEO4J_PASS,
+                    "available": neo4j_schema.get("available", False),
+                    "preferred_entrypoint": "scripts.db_bridge.AsadoDB.query_graph",
+                    "labels_available": sorted((neo4j_schema.get("labels") or {}).keys()),
+                    "relationships_available": sorted((neo4j_schema.get("relationships") or {}).keys()),
+                    "notes": [
+                        "Use Neo4j for relationship and network questions: trade, banking, portfolio ownership, crises, central banks, and factor-node traversals.",
+                        "Country nodes include graph_role to distinguish sovereign states from market sleeves.",
+                    ],
+                },
+                "query_assistant": {
+                    "type": "schema_aware_nl_query_layer",
+                    "script": str(BASE_DIR / "scripts" / "query_assistant.py"),
+                    "schema_cache_dir": str(CACHE_DIR),
+                    "rebuild_command": "./venv/bin/python scripts/build_schema_registry.py",
+                    "preferred_for": [
+                        "natural-language questions",
+                        "safe read-only query planning",
+                        "mixed DuckDB + Neo4j routing",
+                    ],
+                },
+            },
+            "surface_selection": [
+                {
+                    "surface": "unified_panel",
+                    "use_for": "Default analytical view for most country-factor questions across all factor tables.",
+                },
+                {
+                    "surface": "gdelt_panel",
+                    "use_for": "Raw GDELT-only questions, especially latest/current questions using the GDELT partial-month label convention.",
+                },
+                {
+                    "surface": "bilateral_portfolio_matrix",
+                    "use_for": "Reporter/counterparty/instrument portfolio ownership questions.",
+                },
+                {
+                    "surface": "Neo4j graph",
+                    "use_for": "Network and relationship questions across trade, banking, portfolio, crises, sanctions, and central-bank links.",
+                },
+            ],
+            "special_cases": {
+                "current_date": current_date.isoformat(),
+                "gdelt_partial_month_label": {
+                    "enabled": True,
+                    "applies_to_source": "gdelt",
+                    "current_partial_label_date": gdelt_partial_label_date.isoformat(),
+                    "description": (
+                        "ASADO's GDELT monthly partial updates may use the first day of the next month "
+                        "as the label for the current partial month. Treat this as observed current-month "
+                        "data, not a forecast, when the query is explicitly about GDELT."
+                    ),
+                },
+                "bilateral_portfolio_matrix_shape": {
+                    "description": (
+                        "This table is not in the standard factor-panel shape. It uses reporter_iso3, "
+                        "counterpart_iso3, instrument_type, and amount_usd rather than country/value/variable."
+                    )
+                },
+            },
+            "examples": {
+                "python_bridge": (
+                    "from scripts.db_bridge import AsadoDB\n"
+                    "with AsadoDB() as db:\n"
+                    "    df = db.query_panel(\"SELECT country, value, date FROM unified_panel "
+                    "WHERE variable = 'BIS_Credit_GDP_Gap' ORDER BY date DESC LIMIT 10\")"
+                ),
+                "duckdb_sql": (
+                    "SELECT country, value, date\n"
+                    "FROM unified_panel\n"
+                    "WHERE variable = 'MS_Policy_Backstop'\n"
+                    "ORDER BY date DESC, country\n"
+                    "LIMIT 50"
+                ),
+                "neo4j_cypher": (
+                    "MATCH (c:Country)-[r:TRADES_WITH]->(p:Country)\n"
+                    "RETURN c.t2_name AS country, p.t2_name AS partner, r.total_trade_usd\n"
+                    "ORDER BY r.total_trade_usd DESC\n"
+                    "LIMIT 25"
+                ),
+                "query_assistant": (
+                    "./venv/bin/python scripts/query_assistant.py "
+                    "\"Which countries have rising GDELT risk but low ETF passive distortion?\""
+                ),
+            },
+            "operational_commands": {
+                "refresh_schema_cache": "./venv/bin/python scripts/build_schema_registry.py",
+                "rebuild_databases_only": "./venv/bin/python scripts/monthly_update.py --db-only",
+                "full_monthly_update": "./venv/bin/python scripts/monthly_update.py",
+            },
+            "guardrails": [
+                "Prefer read-only access patterns.",
+                "Use SELECT/CTE only for DuckDB queries.",
+                "Use MATCH/CALL/WITH/RETURN only for Neo4j queries.",
+                "Prefer unified_panel unless a panel-specific table is clearly better.",
+                "For latest/current questions, constrain to dates on or before CURRENT_DATE unless the query explicitly concerns forecasts or the GDELT partial-month convention.",
+            ],
+        }
+    )
+
+
 def build_and_write_schema_cache(duck_only: bool = False) -> Dict[str, Any]:
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -670,6 +906,7 @@ def build_and_write_schema_cache(duck_only: bool = False) -> Dict[str, Any]:
         "relationships": {},
         "indexes": [],
     }
+    access_guide = build_access_guide(duckdb_schema, neo4j_schema, variable_catalog)
 
     manifest = {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -679,11 +916,13 @@ def build_and_write_schema_cache(duck_only: bool = False) -> Dict[str, Any]:
         "duckdb_schema_path": str(DUCKDB_SCHEMA_PATH),
         "neo4j_schema_path": str(NEO4J_SCHEMA_PATH),
         "variable_catalog_path": str(VARIABLE_CATALOG_PATH),
+        "access_guide_path": str(ACCESS_GUIDE_PATH),
     }
 
     DUCKDB_SCHEMA_PATH.write_text(json.dumps(duckdb_schema, indent=2), encoding="utf-8")
     NEO4J_SCHEMA_PATH.write_text(json.dumps(neo4j_schema, indent=2), encoding="utf-8")
     VARIABLE_CATALOG_PATH.write_text(json.dumps(variable_catalog, indent=2), encoding="utf-8")
+    ACCESS_GUIDE_PATH.write_text(json.dumps(access_guide, indent=2), encoding="utf-8")
     MANIFEST_PATH.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
 
     return {
@@ -691,11 +930,12 @@ def build_and_write_schema_cache(duck_only: bool = False) -> Dict[str, Any]:
         "duckdb": duckdb_schema,
         "neo4j": neo4j_schema,
         "variable_catalog": variable_catalog,
+        "access_guide": access_guide,
     }
 
 
 def load_schema_cache(auto_build: bool = True) -> Dict[str, Any]:
-    paths = [DUCKDB_SCHEMA_PATH, NEO4J_SCHEMA_PATH, VARIABLE_CATALOG_PATH, MANIFEST_PATH]
+    paths = [DUCKDB_SCHEMA_PATH, NEO4J_SCHEMA_PATH, VARIABLE_CATALOG_PATH, ACCESS_GUIDE_PATH, MANIFEST_PATH]
     if auto_build and not all(path.exists() for path in paths):
         return build_and_write_schema_cache()
 
@@ -704,6 +944,7 @@ def load_schema_cache(auto_build: bool = True) -> Dict[str, Any]:
         "duckdb": json.loads(DUCKDB_SCHEMA_PATH.read_text(encoding="utf-8")),
         "neo4j": json.loads(NEO4J_SCHEMA_PATH.read_text(encoding="utf-8")),
         "variable_catalog": json.loads(VARIABLE_CATALOG_PATH.read_text(encoding="utf-8")),
+        "access_guide": json.loads(ACCESS_GUIDE_PATH.read_text(encoding="utf-8")),
     }
 
 

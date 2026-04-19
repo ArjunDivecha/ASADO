@@ -8,11 +8,12 @@ INPUT FILES:
 - config/country_mapping.json: Maps 34 T2 countries to ISO-3 and BIS codes
 
 OUTPUT FILES:
-- Data/processed/bilateral_trade_matrix.parquet   (34x34 trade matrix)
-- Data/processed/bilateral_banking_matrix.parquet  (reporting x counterparty banking claims)
+- Data/processed/bilateral_trade_matrix.parquet     (34x34 trade matrix)
+- Data/processed/bilateral_banking_matrix.parquet   (reporting x counterparty banking claims)
+- Data/processed/bilateral_portfolio_matrix.parquet (portfolio ownership matrix)
 
-VERSION: 1.0
-LAST UPDATED: 2026-04-12
+VERSION: 1.1
+LAST UPDATED: 2026-04-18
 AUTHOR: Arjun Divecha
 
 DESCRIPTION:
@@ -22,11 +23,14 @@ Collects bilateral (country-to-country) data for Neo4j graph enrichment:
                  34 T2 country pairs via SDMX 3.0 API. Annual frequency.
   2. BIS LBS  — cross-border banking claims from BIS Locational Banking
                  Statistics via BIS SDMX CSV API. Quarterly frequency.
+  3. IMF PIP  — annual bilateral portfolio holdings benchmark.
+  4. U.S. TIC — monthly U.S.-resident holdings of foreign long-term securities.
 
 These are NOT panel variables — they produce adjacency matrices that become
 directed edges in the Neo4j knowledge graph:
   - (:Country)-[:TRADES_WITH]->(:Country)
   - (:Country)-[:HAS_BANKING_EXPOSURE_TO]->(:Country)
+  - (:Country)-[:HOLDS_PORTFOLIO]->(:Country)
 
 DEPENDENCIES:
 - pandas, numpy, requests, pyarrow, tqdm
@@ -35,10 +39,12 @@ USAGE:
   python scripts/collect_bilateral.py              # collect both
   python scripts/collect_bilateral.py --trade-only  # trade matrix only
   python scripts/collect_bilateral.py --bank-only   # banking matrix only
+  python scripts/collect_bilateral.py --portfolio-only  # portfolio matrix only
 
 NOTES:
 - IMF IMTS uses SDMX 3.0 at api.imf.org — no API key needed
 - BIS LBS uses CSV API at stats.bis.org — no API key needed
+- IMF PIP (formerly CPIS) uses SDMX 3.0 at api.imf.org — no API key needed
 - Rate limits: IMF ~10 req/5s, BIS ~1 req/s
 - Only ~25 of 34 T2 countries are BIS reporting countries
 - ChinaA/ChinaH share CHN; U.S./NASDAQ/US SmallCap share USA
@@ -60,15 +66,68 @@ from tqdm import tqdm
 BASE_DIR = Path(__file__).resolve().parent.parent
 CONFIG_PATH = BASE_DIR / "config" / "country_mapping.json"
 PROCESSED_DIR = BASE_DIR / "Data" / "processed"
+RAW_DIR = BASE_DIR / "Data" / "raw" / "bilateral" / "us_tic"
 TRADE_PQ = PROCESSED_DIR / "bilateral_trade_matrix.parquet"
 BANK_PQ = PROCESSED_DIR / "bilateral_banking_matrix.parquet"
+PORTFOLIO_PQ = PROCESSED_DIR / "bilateral_portfolio_matrix.parquet"
+TIC_RAW_PATH = RAW_DIR / "slt_table2.txt"
 
 IMF_BASE = "https://api.imf.org/external/sdmx/3.0/data/dataflow/IMF.STA/IMTS/~"
 BIS_BASE = "https://stats.bis.org/api/v2/data/dataflow/BIS/WS_LBS_D_PUB/1.0"
+PIP_BASE = "https://api.imf.org/external/sdmx/3.0/data/dataflow/IMF.STA/PIP/~"
+TIC_TABLE2_URL = "https://ticdata.treasury.gov/resource-center/data-chart-center/tic/Documents/slt_table2.txt"
+PIP_ACCOUNTING_ENTRY = "A"
+PIP_SECTOR = "S1"
+PIP_COUNTERPART_SECTOR = "S1"
+PIP_INDICATORS = {
+    # PIP does not split equity from fund shares, so keep the combined label explicit.
+    "equity_fund_shares": "P_F51_P_USD",
+    "debt_long": "P_F3_L_P_USD",
+    "debt_short": "P_F3_S_P_USD",
+}
 
 MULTI_MAP = {
     "ChinaA": "CHN", "ChinaH": "CHN",
     "U.S.": "USA", "NASDAQ": "USA", "US SmallCap": "USA",
+}
+
+TIC_COUNTRY_TO_ISO3 = {
+    "Australia": "AUS",
+    "Brazil": "BRA",
+    "Canada": "CAN",
+    "Chile": "CHL",
+    "China, Mainland": "CHN",
+    "Denmark": "DNK",
+    "France": "FRA",
+    "Germany": "DEU",
+    "Hong Kong": "HKG",
+    "India": "IND",
+    "Indonesia": "IDN",
+    "Italy": "ITA",
+    "Japan": "JPN",
+    "Korea, South": "KOR",
+    "Malaysia": "MYS",
+    "Mexico": "MEX",
+    "Netherlands": "NLD",
+    "Philippines": "PHL",
+    "Poland": "POL",
+    "Saudi Arabia": "SAU",
+    "Singapore": "SGP",
+    "South Africa": "ZAF",
+    "Spain": "ESP",
+    "Sweden": "SWE",
+    "Switzerland": "CHE",
+    "Taiwan": "TWN",
+    "Thailand": "THA",
+    "Turkey": "TUR",
+    "United Kingdom": "GBR",
+    "Vietnam": "VNM",
+}
+
+TIC_INSTRUMENT_MAP = {
+    "us_lt_govt_bond_pos": "debt_long_govt",
+    "us_lt_corp_bond_pos": "debt_long_corp",
+    "us_lt_eqty_pos": "equity",
 }
 
 
@@ -93,6 +152,22 @@ def load_countries():
             iso3_to_bis[iso3] = bis
 
     return list(iso3_set.keys()), iso3_set, t2_to_iso3, iso3_to_bis
+
+
+def period_to_date(period: str) -> pd.Timestamp | None:
+    """Convert IMF period strings to ASADO's aligned period dates."""
+    try:
+        if "-M" in period:
+            year, month = period.split("-M")
+            return pd.Timestamp(int(year), int(month), 1)
+        if "-Q" in period:
+            year, quarter = period.split("-Q")
+            return pd.Timestamp(int(year), int(quarter) * 3, 1)
+        if len(period) == 4 and period.isdigit():
+            return pd.Timestamp(int(period), 12, 1)
+    except Exception:
+        return None
+    return None
 
 
 def collect_trade(iso3_list: list, iso3_to_t2: dict) -> pd.DataFrame:
@@ -301,10 +376,343 @@ def collect_banking(iso3_list: list, iso3_to_bis: dict) -> pd.DataFrame:
     return result
 
 
+def collect_portfolio_cpis(iso3_list: list) -> pd.DataFrame:
+    """
+    Collect bilateral portfolio holdings from IMF PIP (formerly CPIS).
+
+    Query shape:
+      COUNTRY.ACCOUNTING_ENTRY.INDICATOR.SECTOR.COUNTERPART_SECTOR.COUNTERPART_COUNTRY.FREQUENCY
+
+    For Phase 1 we use:
+      - accounting entry = A (asset-side holdings)
+      - sector = S1 (total economy)
+      - counterpart sector = S1 (total economy)
+      - frequency = A (annual; this is the consistently populated PIP path)
+    """
+    print("\n" + "=" * 60)
+    print("Collecting bilateral portfolio ownership from IMF PIP ...")
+    print("=" * 60)
+
+    records = []
+    failed = []
+
+    for instrument_type, indicator in PIP_INDICATORS.items():
+        for reporter_iso3 in tqdm(iso3_list, desc=f"  IMF PIP {instrument_type}"):
+            counterparts = [iso3 for iso3 in iso3_list if iso3 != reporter_iso3]
+            if not counterparts:
+                continue
+
+            counterpart_key = "+".join(counterparts)
+            key = (
+                f"{reporter_iso3}.{PIP_ACCOUNTING_ENTRY}.{indicator}."
+                f"{PIP_SECTOR}.{PIP_COUNTERPART_SECTOR}.{counterpart_key}.A"
+            )
+            url = f"{PIP_BASE}/{key}?c[TIME_PERIOD]=ge:2000"
+
+            try:
+                response = requests.get(
+                    url,
+                    timeout=60,
+                    headers={"Accept": "application/vnd.sdmx.data+json"},
+                )
+                if response.status_code != 200:
+                    failed.append(f"{reporter_iso3}/{indicator}: HTTP {response.status_code}")
+                    continue
+
+                data = response.json().get("data", {})
+                datasets = data.get("dataSets", [])
+                structures = data.get("structures", [])
+                if not datasets or not structures:
+                    continue
+
+                structure = structures[0]
+                series_dims = structure.get("dimensions", {}).get("series", [])
+                observation_dims = structure.get("dimensions", {}).get("observation", [])
+                time_values = observation_dims[0].get("values", []) if observation_dims else []
+                series = datasets[0].get("series", {})
+                if not series:
+                    continue
+
+                counterpart_dim = next(
+                    (dim for dim in series_dims if dim["id"] == "COUNTERPART_COUNTRY"),
+                    None,
+                )
+                if not counterpart_dim:
+                    failed.append(f"{reporter_iso3}/{indicator}: missing COUNTERPART_COUNTRY dimension")
+                    continue
+
+                counterpart_values = [value.get("id") for value in counterpart_dim.get("values", [])]
+                counterpart_position = counterpart_dim["keyPosition"]
+
+                for series_key, series_data in series.items():
+                    key_parts = series_key.split(":")
+                    if len(key_parts) <= counterpart_position:
+                        continue
+
+                    counterpart_idx = int(key_parts[counterpart_position])
+                    if counterpart_idx >= len(counterpart_values):
+                        continue
+                    counterpart_iso3 = counterpart_values[counterpart_idx]
+                    if counterpart_iso3 not in iso3_list:
+                        continue
+
+                    for observation_key, observation_value in series_data.get("observations", {}).items():
+                        time_idx = int(observation_key)
+                        if time_idx >= len(time_values):
+                            continue
+                        period = time_values[time_idx].get("value", time_values[time_idx].get("id", ""))
+                        dt = period_to_date(period)
+                        value = observation_value[0] if observation_value else None
+                        if dt is None or value is None:
+                            continue
+
+                        records.append(
+                            {
+                                "date": dt,
+                                "reporter_iso3": reporter_iso3,
+                                "counterpart_iso3": counterpart_iso3,
+                                "instrument_type": instrument_type,
+                                "amount_usd": float(value),
+                                "source": "imf_pip",
+                                "frequency": "annual",
+                                "is_official_sector": False,
+                            }
+                        )
+            except Exception as exc:
+                failed.append(f"{reporter_iso3}/{indicator}: {exc}")
+
+            time.sleep(0.6)
+
+    if not records:
+        print("  No portfolio ownership data collected from IMF PIP")
+        return pd.DataFrame()
+
+    df = pd.DataFrame(records)
+    df = (
+        df.groupby(
+            ["date", "reporter_iso3", "counterpart_iso3", "instrument_type", "source", "frequency", "is_official_sector"],
+            as_index=False,
+        )
+        .agg({"amount_usd": "sum"})
+        .sort_values(["date", "reporter_iso3", "instrument_type", "counterpart_iso3"])
+        .reset_index(drop=True)
+    )
+
+    df["share_of_reporter_portfolio_pct"] = (
+        df["amount_usd"]
+        / df.groupby(["date", "reporter_iso3", "instrument_type"])["amount_usd"].transform("sum")
+        * 100.0
+    )
+    df["share_of_counterpart_inbound_pct"] = (
+        df["amount_usd"]
+        / df.groupby(["date", "counterpart_iso3", "instrument_type"])["amount_usd"].transform("sum")
+        * 100.0
+    )
+
+    latest_date = df["date"].max()
+    latest = df[df["date"] == latest_date]
+    print(
+        f"\n  Portfolio matrix: {len(df):,} rows, "
+        f"{latest['reporter_iso3'].nunique()} reporters on latest date {latest_date.date()}"
+    )
+    if failed:
+        print(f"  Failed PIP queries: {len(failed)}")
+
+    return df
+
+
+def _load_tic_text() -> str | None:
+    """Fetch the TIC text file, falling back to the last saved raw copy on error."""
+    RAW_DIR.mkdir(parents=True, exist_ok=True)
+
+    try:
+        response = requests.get(TIC_TABLE2_URL, timeout=60)
+        response.raise_for_status()
+        TIC_RAW_PATH.write_text(response.text, encoding="utf-8")
+        return response.text
+    except Exception:
+        if TIC_RAW_PATH.exists():
+            return TIC_RAW_PATH.read_text(encoding="utf-8")
+        return None
+
+
+def collect_portfolio_tic(iso3_list: list) -> pd.DataFrame:
+    """
+    Collect the U.S. Treasury TIC Table 2 workaround feed.
+
+    Table 2 reports foreign long-term securities held by U.S. residents.
+    We normalize the monthly holdings columns into the same portfolio matrix
+    contract used by IMF PIP, but keep the source-specific instrument classes.
+    """
+    print("\n" + "=" * 60)
+    print("Collecting U.S. TIC Table 2 supplement ...")
+    print("=" * 60)
+
+    text = _load_tic_text()
+    if not text:
+        print("  U.S. TIC supplement: unavailable (no live fetch and no cached raw file)")
+        return pd.DataFrame()
+
+    lines = text.splitlines()
+    header_idx = next(
+        (idx for idx, line in enumerate(lines) if line.startswith("country\tcountry_code\tdate\t")),
+        None,
+    )
+    if header_idx is None:
+        print("  U.S. TIC supplement: header not found in raw text")
+        return pd.DataFrame()
+
+    df = pd.read_csv(io.StringIO("\n".join(lines[header_idx:])), sep="\t")
+    if df.empty:
+        print("  U.S. TIC supplement: parsed file is empty")
+        return pd.DataFrame()
+
+    df = df[df["date"].astype(str).str.fullmatch(r"\d{4}-\d{2}")].copy()
+    df = df[df["country"].isin(TIC_COUNTRY_TO_ISO3)].copy()
+    df["counterpart_iso3"] = df["country"].map(TIC_COUNTRY_TO_ISO3)
+    df = df[df["counterpart_iso3"].isin(iso3_list)].copy()
+    if df.empty:
+        print("  U.S. TIC supplement: no tracked countries present in parsed file")
+        return pd.DataFrame()
+
+    df["reporter_iso3"] = "USA"
+    df["date"] = pd.to_datetime(df["date"] + "-01", errors="coerce")
+    df = df.dropna(subset=["date"])
+
+    for column in TIC_INSTRUMENT_MAP:
+        df[column] = pd.to_numeric(df[column], errors="coerce")
+
+    frames = []
+    for column, instrument_type in TIC_INSTRUMENT_MAP.items():
+        subset = (
+            df[["date", "reporter_iso3", "counterpart_iso3", column]]
+            .dropna(subset=[column])
+            .rename(columns={column: "amount_millions_usd"})
+        )
+        if subset.empty:
+            continue
+
+        subset["instrument_type"] = instrument_type
+        subset["amount_usd"] = subset["amount_millions_usd"] * 1_000_000.0
+        subset["source"] = "us_tic"
+        subset["frequency"] = "monthly"
+        subset["is_official_sector"] = False
+        frames.append(
+            subset[
+                [
+                    "date",
+                    "reporter_iso3",
+                    "counterpart_iso3",
+                    "instrument_type",
+                    "amount_usd",
+                    "source",
+                    "frequency",
+                    "is_official_sector",
+                ]
+            ]
+        )
+
+    if not frames:
+        print("  U.S. TIC supplement: no TIC holdings columns populated for tracked countries")
+        return pd.DataFrame()
+
+    result = (
+        pd.concat(frames, ignore_index=True)
+        .groupby(
+            [
+                "date",
+                "reporter_iso3",
+                "counterpart_iso3",
+                "instrument_type",
+                "source",
+                "frequency",
+                "is_official_sector",
+            ],
+            as_index=False,
+        )
+        .agg({"amount_usd": "sum"})
+        .sort_values(["date", "instrument_type", "counterpart_iso3"])
+        .reset_index(drop=True)
+    )
+
+    reporter_totals = result.groupby(
+        ["date", "reporter_iso3", "instrument_type", "source"]
+    )["amount_usd"].transform("sum")
+    result["share_of_reporter_portfolio_pct"] = np.where(
+        reporter_totals > 0,
+        result["amount_usd"] / reporter_totals * 100.0,
+        np.nan,
+    )
+    result["share_of_counterpart_inbound_pct"] = np.nan
+
+    latest_date = result["date"].max()
+    latest = result[result["date"] == latest_date]
+    print(
+        f"\n  U.S. TIC supplement: {len(result):,} rows, "
+        f"{latest['counterpart_iso3'].nunique()} tracked counterparts on latest date {latest_date.date()}"
+    )
+    return result
+
+
+def normalize_portfolio_holdings(*frames: pd.DataFrame) -> pd.DataFrame:
+    """Combine portfolio sources and compute normalized ownership shares."""
+    non_empty = [frame for frame in frames if frame is not None and not frame.empty]
+    if not non_empty:
+        return pd.DataFrame(
+            columns=[
+                "date",
+                "reporter_iso3",
+                "counterpart_iso3",
+                "instrument_type",
+                "amount_usd",
+                "share_of_reporter_portfolio_pct",
+                "share_of_counterpart_inbound_pct",
+                "source",
+                "frequency",
+                "is_official_sector",
+            ]
+        )
+
+    df = pd.concat(non_empty, ignore_index=True)
+    df = (
+        df.sort_values(["date", "reporter_iso3", "counterpart_iso3", "instrument_type", "source"])
+        .drop_duplicates(
+            subset=["date", "reporter_iso3", "counterpart_iso3", "instrument_type", "source"],
+            keep="last",
+        )
+        .reset_index(drop=True)
+    )
+
+    # Recompute shares after combining sources so the saved matrix is internally consistent.
+    reporter_totals = df.groupby(
+        ["date", "reporter_iso3", "instrument_type", "source"]
+    )["amount_usd"].transform("sum")
+    df["share_of_reporter_portfolio_pct"] = np.where(
+        reporter_totals > 0,
+        df["amount_usd"] / reporter_totals * 100.0,
+        np.nan,
+    )
+
+    inbound_totals = df.groupby(
+        ["date", "counterpart_iso3", "instrument_type", "source"]
+    )["amount_usd"].transform("sum")
+    inbound_reporters = df.groupby(
+        ["date", "counterpart_iso3", "instrument_type", "source"]
+    )["reporter_iso3"].transform("nunique")
+    df["share_of_counterpart_inbound_pct"] = np.where(
+        (inbound_totals > 0) & (inbound_reporters > 1),
+        df["amount_usd"] / inbound_totals * 100.0,
+        np.nan,
+    )
+    return df
+
+
 def main():
     parser = argparse.ArgumentParser(description="ASADO Bilateral Data Collector")
     parser.add_argument("--trade-only", action="store_true", help="Collect trade data only")
     parser.add_argument("--bank-only", action="store_true", help="Collect banking data only")
+    parser.add_argument("--portfolio-only", action="store_true", help="Collect portfolio ownership data only")
+    parser.add_argument("--skip-portfolio", action="store_true", help="Skip portfolio ownership collection")
     args = parser.parse_args()
 
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
@@ -312,8 +720,9 @@ def main():
     iso3_list, iso3_to_t2, t2_to_iso3, iso3_to_bis = load_countries()
     print(f"Universe: {len(iso3_list)} unique ISO3 codes from 34 T2 countries\n")
 
-    do_trade = not args.bank_only
-    do_bank = not args.trade_only
+    do_trade = not args.bank_only and not args.portfolio_only
+    do_bank = not args.trade_only and not args.portfolio_only
+    do_portfolio = not args.trade_only and not args.bank_only and not args.skip_portfolio
 
     if do_trade:
         trade_df = collect_trade(iso3_list, iso3_to_t2)
@@ -330,6 +739,16 @@ def main():
             print(f"  Saved: {BANK_PQ}")
         else:
             print("  WARNING: No banking data to save")
+
+    if do_portfolio or args.portfolio_only:
+        pip_df = collect_portfolio_cpis(iso3_list)
+        tic_df = collect_portfolio_tic(iso3_list)
+        portfolio_df = normalize_portfolio_holdings(pip_df, tic_df)
+        if not portfolio_df.empty:
+            portfolio_df.to_parquet(PORTFOLIO_PQ, index=False)
+            print(f"  Saved: {PORTFOLIO_PQ}")
+        else:
+            print("  WARNING: No portfolio ownership data to save")
 
     print("\nDone.")
 

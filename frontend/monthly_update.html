@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASADO — Monthly Update</title>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f4f6f9;
+    --surface: #ffffff;
+    --surface2: #f0f4f8;
+    --border: #dde3ec;
+    --border2: #c8d2e0;
+    --text: #1a2233;
+    --muted: #64748b;
+    --blue: #1d6fd8;
+    --blue-dim: #dbeafe;
+    --green: #0d7f5f;
+    --green-dim: #d1fae5;
+    --amber: #b45309;
+    --amber-dim: #fef3c7;
+    --red: #c0392b;
+    --red-dim: #fee2e2;
+    --purple: #6d28d9;
+    --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  }
+  html, body, #root { height: 100%; background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; font-size: 13px; line-height: 1.5; }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  @keyframes slide-in { from{opacity:0;transform:translateY(3px)} to{opacity:1;transform:translateY(0)} }
+  .blink { animation: blink 1.2s ease-in-out infinite; }
+  .slide-in { animation: slide-in 0.15s ease; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+const SERVER_URL = 'http://127.0.0.1:7821';
+
+// ── Pipeline stage definitions (display metadata only) ────────────
+const PIPELINE = [
+  { id: 'preflight',   name: 'Preflight Checks',       script: null,                    desc: 'Verify environment, Neo4j, log directory' },
+  { id: 'external',    name: 'External Sources',        script: 'collect_external.py',   desc: '7 sources · ~35 variables — FRED, World Bank, BIS, EIA, EPU, GPR, OECD' },
+  { id: 'extended',    name: 'Extended Sources',        script: 'collect_extended.py',   desc: '12 sources · ~51 variables — REER, PMI, HDI, governance' },
+  { id: 'imf',         name: 'IMF Datasets',            script: 'collect_imf.py',        desc: '7 datasets · ~26 variables — WEO, IFS, DOT, BOP, FSI, GFS, CPI' },
+  { id: 'bilateral',   name: 'Bilateral Data',          script: 'collect_bilateral.py',  desc: 'IMF IMTS trade matrix · BIS LBS banking exposures' },
+  { id: 'bloomberg',   name: 'Bloomberg',               script: 'collect_bloomberg.py',  desc: 'Sovereign bonds · CDS spreads · breakevens · credit ratings' },
+  { id: 'duckdb',      name: 'DuckDB Rebuild',          script: 'setup_duckdb.py',       desc: 'Rebuild analytical database from all parquet sources' },
+  { id: 'neo4j',       name: 'Neo4j Knowledge Graph',   script: 'setup_neo4j.py',        desc: 'Rebuild graph — country nodes, trade & banking edges' },
+  { id: 'embeddings',  name: 'Country Embeddings',      script: 'build_embeddings.py',   desc: 'PCA country-state vectors · Neo4j vector index' },
+  { id: 'validation',  name: 'Final Validation',        script: null,                    desc: 'Verify database completeness · write summary report' },
+];
+
+// Script substring → stage id (for log-line parsing)
+const SCRIPT_TO_STAGE = {
+  'collect_external': 'external',
+  'collect_extended': 'extended',
+  'collect_imf':      'imf',
+  'collect_bilateral':'bilateral',
+  'collect_bloomberg':'bloomberg',
+  'setup_duckdb':     'duckdb',
+  'setup_neo4j':      'neo4j',
+  'build_embeddings': 'embeddings',
+};
+
+// ── Status metadata ───────────────────────────────────────────────
+const SM = {
+  pending:  { color: '#94a3b8', bg: '#f1f5f9', label: 'Pending',  icon: '○' },
+  running:  { color: '#1d6fd8', bg: '#dbeafe', label: 'Running',  icon: '◉' },
+  success:  { color: '#0d7f5f', bg: '#d1fae5', label: 'Success',  icon: '✓' },
+  warning:  { color: '#b45309', bg: '#fef3c7', label: 'Warning',  icon: '△' },
+  failed:   { color: '#c0392b', bg: '#fee2e2', label: 'Failed',   icon: '✕' },
+  skipped:  { color: '#c0392b', bg: '#fff0f0', label: 'Blocked',  icon: '⊘' },
+};
+
+// ── Tiny components ───────────────────────────────────────────────
+function Badge({ status, small }) {
+  const m = SM[status] || SM.pending;
+  return (
+    <span style={{
+      display:'inline-flex', alignItems:'center', gap:4,
+      padding: small ? '1px 6px' : '2px 8px', borderRadius:4,
+      background:m.bg, border:`1px solid ${m.color}44`,
+      color:m.color, fontSize: small?10:11, fontWeight:500, whiteSpace:'nowrap',
+    }}>
+      {status === 'running'
+        ? <span className="blink" style={{width:6,height:6,borderRadius:'50%',background:m.color,display:'inline-block'}}/>
+        : <span style={{fontSize:small?9:10}}>{m.icon}</span>}
+      {m.label}
+    </span>
+  );
+}
+
+function Dot({ status }) {
+  const m = SM[status] || SM.pending;
+  return <span style={{width:8,height:8,borderRadius:'50%',background:m.color,display:'inline-block',flexShrink:0}}/>;
+}
+
+function Spinner() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 13 13" style={{animation:'spin 0.7s linear infinite',flexShrink:0}}>
+      <circle cx="6.5" cy="6.5" r="5" fill="none" stroke="#dde3ec" strokeWidth="2"/>
+      <path d="M6.5 1.5 A5 5 0 0 1 11.5 6.5" fill="none" stroke="#1d6fd8" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function LogLine({ entry }) {
+  const c = {info:'#475569', success:'#0d7f5f', warning:'#b45309', error:'#c0392b'}[entry.level] || '#475569';
+  return (
+    <div className="slide-in" style={{fontFamily:'var(--mono)',fontSize:11,color:c,padding:'1px 0',lineHeight:1.6}}>
+      <span style={{color:'#cbd5e1',marginRight:8,userSelect:'none'}}>›</span>{entry.msg}
+    </div>
+  );
+}
+
+function fmtDur(sec) {
+  if (sec == null) return '—';
+  if (sec < 60) return `${sec.toFixed(1)}s`;
+  return `${Math.floor(sec/60)}m ${(sec%60).toFixed(0)}s`;
+}
+function fmtElapsed(ms) {
+  const s = Math.floor(ms/1000);
+  if (s < 60) return `${s}s`;
+  return `${Math.floor(s/60)}m ${s%60}s`;
+}
+
+// ── Stage card ────────────────────────────────────────────────────
+function StageCard({ stage, state, isActive, expanded, onToggle }) {
+  const status = state?.status || 'pending';
+  const m = SM[status];
+  const clickable = status !== 'pending';
+
+  return (
+    <div
+      onClick={clickable ? onToggle : undefined}
+      style={{
+        background: isActive ? '#eef4ff' : 'var(--surface)',
+        border:`1px solid ${isActive ? '#bfdbfe' : status==='failed'?'#fecaca':status==='warning'?'#fde68a':'var(--border)'}`,
+        borderLeft:`3px solid ${m.color}`,
+        borderRadius:6, padding:'9px 11px', cursor:clickable?'pointer':'default',
+        marginBottom:4, transition:'border-color 0.15s',
+      }}
+    >
+      <div style={{display:'flex',alignItems:'center',gap:8}}>
+        <div style={{flexShrink:0}}>
+          {status==='running' ? <Spinner/> : <Dot status={status}/>}
+        </div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{display:'flex',alignItems:'center',gap:7,flexWrap:'wrap'}}>
+            <span style={{fontWeight:600,fontSize:12,color:status==='pending'?'#94a3b8':'#1a2233'}}>{stage.name}</span>
+            <Badge status={status} small/>
+          </div>
+          {stage.script && <div style={{fontFamily:'var(--mono)',fontSize:10,color:'#94a3b8',marginTop:1}}>{stage.script}</div>}
+        </div>
+        <div style={{flexShrink:0,textAlign:'right'}}>
+          {state?.duration!=null && <div style={{fontFamily:'var(--mono)',fontSize:11,color:'#64748b'}}>{fmtDur(state.duration)}</div>}
+          {clickable && <div style={{color:'#94a3b8',fontSize:9,marginTop:1}}>{expanded?'▲':'▼'}</div>}
+        </div>
+      </div>
+
+      {/* Expanded logs */}
+      {expanded && (state?.logs||[]).length > 0 && (
+        <div style={{marginTop:8,background:'#f8fafc',border:'1px solid var(--border)',borderRadius:4,padding:'8px 10px',maxHeight:200,overflowY:'auto'}}>
+          {state.logs.map((l,i) => <LogLine key={i} entry={l}/>)}
+        </div>
+      )}
+
+      {/* Error */}
+      {expanded && state?.error && (
+        <div style={{marginTop:6,background:'#fff5f5',border:'1px solid #fecaca',borderRadius:4,padding:'8px 10px'}}>
+          <div style={{fontSize:10,fontWeight:600,color:'#c0392b',letterSpacing:'0.06em',textTransform:'uppercase',marginBottom:4}}>Error</div>
+          <pre style={{fontFamily:'var(--mono)',fontSize:11,color:'#7f1d1d',whiteSpace:'pre-wrap',lineHeight:1.6}}>{state.error}</pre>
+        </div>
+      )}
+
+      {/* Blocked reason */}
+      {status === 'skipped' && state?.reason && (
+        <div style={{marginTop:5,fontSize:11,color:'#c0392b',fontStyle:'italic',paddingLeft:16}}>
+          {state.reason}
+        </div>
+      )}
+
+      {/* Outputs */}
+      {expanded && (state?.outputs||[]).length>0 && !['pending','running'].includes(status) && (
+        <div style={{marginTop:6,display:'flex',flexWrap:'wrap',gap:4}}>
+          {state.outputs.map((o,i)=>(
+            <span key={i} style={{fontSize:10,color:'#64748b',background:'#f0f4f8',padding:'1px 7px',borderRadius:3}}>✓ {o}</span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Active stage detail panel ─────────────────────────────────────
+function ActiveStagePanel({ stage, state }) {
+  const logRef = useRef(null);
+  useEffect(() => {
+    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
+  }, [state?.logs?.length]);
+
+  if (!stage || !state) return null;
+  const status = state.status || 'running';
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:14}}>
+      <div style={{display:'flex',alignItems:'flex-start',gap:12}}>
+        <div style={{flex:1}}>
+          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:4}}>
+            <span style={{fontSize:16,fontWeight:700}}>{stage.name}</span>
+            <Badge status={status}/>
+          </div>
+          <div style={{fontSize:11,color:'#64748b'}}>{stage.desc}</div>
+          {stage.script && <div style={{fontFamily:'var(--mono)',fontSize:10,color:'#94a3b8',marginTop:2}}>{stage.script}</div>}
+        </div>
+        {state.duration!=null && (
+          <div style={{textAlign:'right',flexShrink:0}}>
+            <div style={{fontFamily:'var(--mono)',fontSize:18,fontWeight:700,color:'#1a2233'}}>{fmtDur(state.duration)}</div>
+            <div style={{fontSize:10,color:'#94a3b8'}}>duration</div>
+          </div>
+        )}
+      </div>
+
+      {/* Live log */}
+      <div>
+        <div style={{fontSize:10,fontWeight:600,color:'#94a3b8',letterSpacing:'0.08em',textTransform:'uppercase',marginBottom:6}}>
+          Live Log {status==='running' && <span className="blink" style={{color:'#1d6fd8'}}>●</span>}
+        </div>
+        <div ref={logRef} style={{
+          background:'#f8fafc', border:'1px solid var(--border)', borderRadius:6,
+          padding:'10px 12px', minHeight:180, maxHeight:320, overflowY:'auto',
+        }}>
+          {(state.logs||[]).map((l,i) => <LogLine key={i} entry={l}/>)}
+          {status==='running' && <span className="blink" style={{color:'#94a3b8',fontFamily:'var(--mono)',fontSize:11}}>▌</span>}
+          {(state.logs||[]).length===0 && status!=='running' && (
+            <div style={{color:'#cbd5e1',fontFamily:'var(--mono)',fontSize:11}}>No log output captured.</div>
+          )}
+        </div>
+      </div>
+
+      {/* Error */}
+      {state.error && (
+        <div style={{background:'#fff5f5',border:'1px solid #fecaca',borderRadius:6,padding:'10px 14px'}}>
+          <div style={{fontSize:10,fontWeight:600,color:'#c0392b',letterSpacing:'0.06em',textTransform:'uppercase',marginBottom:6}}>Error Detail</div>
+          <pre style={{fontFamily:'var(--mono)',fontSize:11,color:'#7f1d1d',whiteSpace:'pre-wrap',lineHeight:1.7}}>{state.error}</pre>
+        </div>
+      )}
+
+      {/* Outputs */}
+      {(state.outputs||[]).length>0 && !['pending','running'].includes(status) && (
+        <div>
+          <div style={{fontSize:10,fontWeight:600,color:'#94a3b8',letterSpacing:'0.08em',textTransform:'uppercase',marginBottom:6}}>Outputs</div>
+          <div style={{display:'flex',flexDirection:'column',gap:4}}>
+            {state.outputs.map((o,i)=>(
+              <div key={i} style={{fontSize:12,color:'#475569',display:'flex',gap:8,alignItems:'center'}}>
+                <span style={{color:'#0d7f5f',fontSize:11}}>✓</span>{o}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Idle panel ────────────────────────────────────────────────────
+function IdlePanel({ serverOnline, onRun }) {
+  return (
+    <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',gap:20,color:'#94a3b8'}}>
+      <div style={{fontSize:44,opacity:0.15}}>⬡</div>
+      <div style={{textAlign:'center'}}>
+        <div style={{fontWeight:600,fontSize:15,color:'#475569',marginBottom:6}}>System idle</div>
+        <div style={{fontSize:12}}>10 pipeline stages · ~12–18 min estimated runtime</div>
+      </div>
+
+      {serverOnline === false && (
+        <div style={{
+          background:'#fff5f5', border:'1px solid #fecaca', borderRadius:8,
+          padding:'14px 20px', maxWidth:400, textAlign:'left',
+        }}>
+          <div style={{fontWeight:600,color:'#c0392b',fontSize:13,marginBottom:8}}>Update server not running</div>
+          <div style={{fontSize:12,color:'#7f1d1d',lineHeight:1.7}}>
+            Start it with:<br/>
+            <code style={{fontFamily:'var(--mono)',background:'#fee2e2',padding:'2px 6px',borderRadius:3,fontSize:11}}>
+              python scripts/update_server.py
+            </code>
+            <br/><br/>
+            Also install dependencies if needed:<br/>
+            <code style={{fontFamily:'var(--mono)',background:'#fee2e2',padding:'2px 6px',borderRadius:3,fontSize:11}}>
+              pip install fastapi uvicorn sse-starlette
+            </code>
+          </div>
+        </div>
+      )}
+
+      {serverOnline === true && (
+        <div style={{fontSize:12,color:'#0d7f5f',background:'#d1fae5',padding:'5px 14px',borderRadius:20,border:'1px solid #a7f3d0'}}>
+          ✓ Server connected — ready to run
+        </div>
+      )}
+
+      {serverOnline === null && (
+        <div style={{fontSize:12,color:'#64748b',display:'flex',alignItems:'center',gap:6}}>
+          <Spinner/> Checking server…
+        </div>
+      )}
+
+      <div style={{display:'flex',flexDirection:'column',gap:3,width:260}}>
+        {PIPELINE.map(s => (
+          <div key={s.id} style={{display:'flex',alignItems:'center',gap:10,padding:'3px 8px'}}>
+            <Dot status="pending"/>
+            <span style={{fontSize:11,color:'#94a3b8'}}>{s.name}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Summary tab ───────────────────────────────────────────────────
+function SummaryFull({ stageStates, elapsed }) {
+  const failed  = PIPELINE.filter(s => stageStates[s.id]?.status === 'failed');
+  const warned  = PIPELINE.filter(s => stageStates[s.id]?.status === 'warning');
+  const skipped = PIPELINE.filter(s => stageStates[s.id]?.status === 'skipped');
+  const succeeded = PIPELINE.filter(s => ['success','warning'].includes(stageStates[s.id]?.status));
+  const overallOk = failed.length === 0;
+
+  return (
+    <div style={{maxWidth:700}}>
+      <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:20}}>
+        <div style={{width:40,height:40,borderRadius:'50%',background:overallOk?'#d1fae5':'#fee2e2',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,color:overallOk?'#0d7f5f':'#c0392b'}}>
+          {overallOk?'✓':'✕'}
+        </div>
+        <div>
+          <div style={{fontWeight:700,fontSize:15}}>{overallOk?'Run completed successfully':'Run completed with failures'}</div>
+          <div style={{fontSize:11,color:'#64748b'}}>Total runtime: {fmtElapsed(elapsed)}</div>
+        </div>
+      </div>
+
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8,marginBottom:20}}>
+        {[
+          ['Succeeded', succeeded.length, '#0d7f5f'],
+          ['Failed',    failed.length,    '#c0392b'],
+          ['Warnings',  warned.length,    '#b45309'],
+          ['Blocked',   skipped.length,   '#c0392b'],
+        ].map(([l,v,c]) => (
+          <div key={l} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:6,padding:'10px 14px'}}>
+            <div style={{fontSize:22,fontWeight:700,color:c}}>{v}</div>
+            <div style={{fontSize:10,color:'#94a3b8'}}>{l}</div>
+          </div>
+        ))}
+      </div>
+
+      {failed.length > 0 && (
+        <div style={{background:'#fff5f5',border:'1px solid #fecaca',borderRadius:6,padding:'12px 14px',marginBottom:12}}>
+          <div style={{fontWeight:600,color:'#c0392b',fontSize:12,marginBottom:8}}>✕ Failed Stages</div>
+          {failed.map(s => (
+            <div key={s.id} style={{marginBottom:6}}>
+              <div style={{fontSize:12,color:'#7f1d1d',fontWeight:500}}>{s.name}</div>
+              {stageStates[s.id]?.error && (
+                <div style={{fontSize:11,color:'#991b1b',fontFamily:'var(--mono)',marginTop:2}}>{stageStates[s.id].error.split('\n')[0]}</div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {warned.length > 0 && (
+        <div style={{background:'#fffbeb',border:'1px solid #fde68a',borderRadius:6,padding:'12px 14px',marginBottom:12}}>
+          <div style={{fontWeight:600,color:'#b45309',fontSize:12,marginBottom:8}}>△ Warnings</div>
+          {warned.map(s => (
+            <div key={s.id} style={{fontSize:11,color:'#92400e',marginBottom:4}}>
+              {s.name}: {stageStates[s.id]?.error?.split('\n')[0]}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{fontSize:10,fontWeight:600,color:'#94a3b8',letterSpacing:'0.08em',textTransform:'uppercase',marginBottom:8}}>Stage Timings</div>
+      <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:6,overflow:'hidden'}}>
+        {PIPELINE.map((s,i) => {
+          const st = stageStates[s.id];
+          return (
+            <div key={s.id} style={{display:'flex',alignItems:'center',gap:10,padding:'7px 14px',borderBottom:i<PIPELINE.length-1?'1px solid var(--border)':'none'}}>
+              <Dot status={st?.status||'pending'}/>
+              <span style={{flex:1,fontSize:12,color:'#475569'}}>{s.name}</span>
+              <span style={{fontFamily:'var(--mono)',fontSize:11,color:'#94a3b8',minWidth:60,textAlign:'right'}}>{st?.duration!=null?fmtDur(st.duration):'—'}</span>
+              <Badge status={st?.status||'pending'} small/>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── History tab ───────────────────────────────────────────────────
+function HistoryPanel({ history, runState, elapsed }) {
+  if (!history.length) return (
+    <div style={{color:'#94a3b8',fontSize:13,marginTop:40,textAlign:'center'}}>No previous runs recorded yet.</div>
+  );
+  return (
+    <div style={{maxWidth:620}}>
+      <div style={{fontWeight:700,fontSize:14,marginBottom:16}}>Recent Runs</div>
+      <div style={{display:'flex',flexDirection:'column',gap:6}}>
+        {history.map(run => {
+          const isNow = run.status === 'running';
+          const status = run.status === 'success' ? 'success' : run.status === 'running' ? 'running' : run.status === 'failed' ? 'failed' : 'warning';
+          return (
+            <div key={run.run_id} style={{
+              background:'var(--surface)', border:`1px solid ${isNow?'#bfdbfe':'var(--border)'}`,
+              borderRadius:6, padding:'10px 16px', display:'flex', alignItems:'center', gap:14,
+            }}>
+              <Dot status={status}/>
+              <div style={{flex:1}}>
+                <div style={{fontFamily:'var(--mono)',fontSize:12,color:'#1a2233'}}>{run.started_at?.slice(0,16).replace('T',' ')}</div>
+                {run.returncode != null && run.returncode !== 0 && (
+                  <div style={{fontSize:10,color:'#c0392b',marginTop:1}}>exit code {run.returncode}</div>
+                )}
+              </div>
+              <span style={{fontFamily:'var(--mono)',fontSize:11,color:'#94a3b8'}}>
+                {isNow ? fmtElapsed(elapsed) : (run.finished_at ? '—' : '—')}
+              </span>
+              <Badge status={status} small/>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Main app ──────────────────────────────────────────────────────
+function App() {
+  const [serverOnline, setServerOnline] = useState(null);
+  const [runState, setRunState]     = useState('idle');
+  const [stageStates, setStageStates] = useState({});
+  const [activeStageId, setActiveStageId] = useState(null);
+  const [expanded, setExpanded]     = useState({});
+  const [elapsed, setElapsed]       = useState(0);
+  const [startTime, setStartTime]   = useState(null);
+  const [activeTab, setActiveTab]   = useState('pipeline');
+  const [history, setHistory]       = useState([]);
+  const [showTweaks, setShowTweaks] = useState(false);
+  const timerRef = useRef(null);
+  const esRef = useRef(null);
+
+  const TWEAKS = /*EDITMODE-BEGIN*/{"skipNeo4j":false,"skipBloomberg":false,"dryRun":false}/*EDITMODE-END*/;
+
+  // Health check
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const r = await fetch(`${SERVER_URL}/health`, { signal: AbortSignal.timeout(1500) });
+        setServerOnline(r.ok);
+        if (r.ok) {
+          const h = await fetch(`${SERVER_URL}/history`);
+          if (h.ok) setHistory(await h.json());
+        }
+      } catch { setServerOnline(false); }
+    };
+    check();
+    const iv = setInterval(check, 8000);
+    return () => clearInterval(iv);
+  }, []);
+
+  // Elapsed timer
+  useEffect(() => {
+    if (runState === 'running') {
+      timerRef.current = setInterval(() => setElapsed(Date.now() - startTime), 500);
+    } else {
+      clearInterval(timerRef.current);
+    }
+    return () => clearInterval(timerRef.current);
+  }, [runState, startTime]);
+
+  // Tweaks toggle
+  useEffect(() => {
+    window.addEventListener('message', e => {
+      if (e.data?.type === '__activate_edit_mode')   setShowTweaks(true);
+      if (e.data?.type === '__deactivate_edit_mode') setShowTweaks(false);
+    });
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+  }, []);
+
+  const startRun = useCallback(async () => {
+    if (runState === 'running' || !serverOnline) return;
+
+    setRunState('running');
+    setStageStates({});
+    setExpanded({});
+    setElapsed(0);
+    setStartTime(Date.now());
+    setActiveTab('pipeline');
+
+    // Init all stages as pending
+    const init = {};
+    PIPELINE.forEach(s => { init[s.id] = { status: 'pending', logs: [], outputs: [] }; });
+    setStageStates(init);
+
+    // POST /run
+    let runId;
+    try {
+      const resp = await fetch(`${SERVER_URL}/run`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          skip_neo4j:   TWEAKS.skipNeo4j,
+          skip_bloomberg: TWEAKS.skipBloomberg,
+          dry_run:      TWEAKS.dryRun,
+        }),
+      });
+      const data = await resp.json();
+      runId = data.run_id;
+    } catch (e) {
+      alert('Could not start run: ' + e.message);
+      setRunState('idle');
+      return;
+    }
+
+    // SSE stream
+    const es = new EventSource(`${SERVER_URL}/stream/${runId}`);
+    esRef.current = es;
+    let currentStage = 'preflight';
+    setActiveStageId('preflight');
+    setStageStates(s => ({ ...s, preflight: { ...s.preflight, status: 'running', logs: [] } }));
+
+    es.onmessage = (e) => {
+      const evt = JSON.parse(e.data);
+      const { kind, stage, msg, level, duration, error } = evt;
+
+      if (kind === 'stage_started') {
+        currentStage = stage;
+        setActiveStageId(stage);
+        setStageStates(s => ({ ...s, [stage]: { ...s[stage], status: 'running', logs: s[stage]?.logs || [] } }));
+      }
+      else if (kind === 'log') {
+        // Detect stage from log content
+        for (const [key, sid] of Object.entries(SCRIPT_TO_STAGE)) {
+          if (msg && msg.includes(key)) {
+            if (sid !== currentStage) {
+              // Transitioning to new stage
+              setStageStates(s => ({
+                ...s,
+                [currentStage]: { ...s[currentStage], status: 'running' },
+                [sid]: { ...s[sid], status: 'running', logs: s[sid]?.logs || [] },
+              }));
+              currentStage = sid;
+              setActiveStageId(sid);
+            }
+            break;
+          }
+        }
+        const logEntry = { msg, level: level || 'info' };
+        setStageStates(s => ({
+          ...s,
+          [currentStage]: { ...s[currentStage], logs: [...(s[currentStage]?.logs || []), logEntry] }
+        }));
+      }
+      else if (kind === 'stage_completed') {
+        const sid = stage || currentStage;
+        setStageStates(s => ({ ...s, [sid]: { ...s[sid], status: 'success', duration } }));
+      }
+      else if (kind === 'stage_failed') {
+        const sid = stage || currentStage;
+        setStageStates(s => ({ ...s, [sid]: { ...s[sid], status: 'failed', duration, error } }));
+        // Auto-expand the failed stage so the error is immediately visible
+        setExpanded(ex => ({ ...ex, [sid]: true }));
+      }
+      else if (kind === 'stage_skipped') {
+        // Downstream stages blocked by an upstream failure
+        setStageStates(s => ({ ...s, [stage]: { ...s[stage], status: 'skipped', reason: evt.reason, logs: [], outputs: [] } }));
+      }
+      else if (kind === 'run_completed') {
+        setActiveStageId(null);
+        setRunState('done');
+        setActiveTab('summary');
+        // Refresh history
+        fetch(`${SERVER_URL}/history`).then(r => r.json()).then(setHistory).catch(()=>{});
+        es.close();
+      }
+      else if (kind === 'stream_closed') {
+        es.close();
+      }
+    };
+
+    es.onerror = () => {
+      setRunState('done');
+      setActiveStageId(null);
+      es.close();
+    };
+  }, [runState, serverOnline]);
+
+  const cancelRun = useCallback(async () => {
+    if (esRef.current) esRef.current.close();
+    setRunState('done');
+    setActiveStageId(null);
+  }, []);
+
+  // Counts
+  const counts = {};
+  PIPELINE.forEach(s => {
+    const st = stageStates[s.id]?.status || 'pending';
+    counts[st] = (counts[st]||0) + 1;
+  });
+  const completedCount = (counts.success||0)+(counts.warning||0);
+  const failedCount    = counts.failed||0;
+  const skippedCount   = counts.skipped||0;
+  const pendingCount   = counts.pending||0;
+  const progressPct    = Math.round((completedCount+failedCount+skippedCount)/PIPELINE.length*100);
+  const overallStatus  = runState==='idle'?'idle' : runState==='running'?'running' : failedCount>0?'failed' : (counts.warning||0)>0?'warning':'success';
+  const overallColor   = {idle:'#94a3b8',running:'#1d6fd8',success:'#0d7f5f',warning:'#b45309',failed:'#c0392b'}[overallStatus];
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',height:'100vh',background:'var(--bg)',overflow:'hidden'}}>
+
+      {/* Header */}
+      <div style={{height:52,padding:'0 20px',display:'flex',alignItems:'center',gap:14,borderBottom:'1px solid var(--border)',background:'var(--surface)',flexShrink:0}}>
+        <div style={{display:'flex',alignItems:'center',gap:9}}>
+          <div style={{width:24,height:24,borderRadius:5,background:'#dbeafe',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13}}>⬡</div>
+          <span style={{fontWeight:700,fontSize:14,letterSpacing:'-0.01em',color:'#1a2233'}}>ASADO</span>
+          <span style={{color:'#cbd5e1',fontSize:14}}>/</span>
+          <span style={{color:'#64748b',fontSize:13}}>Monthly Update</span>
+        </div>
+        <div style={{flex:1}}/>
+
+        {/* Server status pill */}
+        <div style={{
+          fontSize:11, padding:'3px 10px', borderRadius:20,
+          background: serverOnline===true?'#d1fae5':serverOnline===false?'#fee2e2':'#f1f5f9',
+          color: serverOnline===true?'#0d7f5f':serverOnline===false?'#c0392b':'#94a3b8',
+          border:`1px solid ${serverOnline===true?'#a7f3d0':serverOnline===false?'#fecaca':'#e2e8f0'}`,
+          display:'flex',alignItems:'center',gap:5,
+        }}>
+          {serverOnline===null ? <><Spinner/> Connecting…</> : serverOnline ? '✓ Server connected' : '✕ Server offline'}
+        </div>
+
+        <span style={{fontSize:11,color:'#94a3b8'}}>Last OK: Mar 15, 2026</span>
+        <span style={{fontSize:10,padding:'2px 8px',background:'#f1f5f9',border:'1px solid var(--border)',borderRadius:4,color:'#64748b',fontFamily:'var(--mono)'}}>local</span>
+
+        {runState === 'running' ? (
+          <button onClick={cancelRun} style={{padding:'6px 14px',borderRadius:5,border:'1px solid #fecaca',background:'#fff5f5',color:'#c0392b',fontWeight:600,fontSize:12,cursor:'pointer'}}>
+            ■ Cancel
+          </button>
+        ) : (
+          <button
+            onClick={startRun}
+            disabled={!serverOnline}
+            title={!serverOnline ? 'Start update_server.py first' : ''}
+            style={{
+              padding:'6px 16px',borderRadius:5,border:'none',
+              background: serverOnline ? '#1d6fd8' : '#e2e8f0',
+              color: serverOnline ? '#fff' : '#94a3b8',
+              fontWeight:600,fontSize:12,cursor:serverOnline?'pointer':'not-allowed',
+            }}
+          >
+            {runState==='done' ? '↺ Rerun Update' : '▶ Run Update'}
+          </button>
+        )}
+      </div>
+
+      {/* Progress bar (only when running/done) */}
+      {runState !== 'idle' && (
+        <div style={{padding:'8px 20px',background:'#eaf0fb',borderBottom:'1px solid #dbeafe',flexShrink:0,display:'flex',alignItems:'center',gap:16}}>
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <Dot status={overallStatus}/>
+            <span style={{fontWeight:600,fontSize:12,color:overallColor}}>
+              {overallStatus==='running'?'Running…':overallStatus==='success'?'Completed':overallStatus==='warning'?'Completed with warnings':'Failed'}
+            </span>
+          </div>
+          <div style={{flex:1,height:4,background:'#dbeafe',borderRadius:2}}>
+            <div style={{height:'100%',width:`${progressPct}%`,background:overallColor,borderRadius:2,transition:'width 0.4s'}}/>
+          </div>
+          <span style={{fontFamily:'var(--mono)',fontSize:11,color:'#64748b',minWidth:36}}>{progressPct}%</span>
+          <div style={{display:'flex',gap:12,fontSize:11}}>
+            <span style={{color:'#0d7f5f'}}>✓ {completedCount}</span>
+            {failedCount>0 && <span style={{color:'#c0392b'}}>✕ {failedCount}</span>}
+            {skippedCount>0 && <span style={{color:'#94a3b8'}}>— {skippedCount}</span>}
+            <span style={{color:'#94a3b8'}}>○ {pendingCount}</span>
+          </div>
+          <span style={{fontFamily:'var(--mono)',fontSize:11,color:'#94a3b8'}}>{fmtElapsed(elapsed)}</span>
+        </div>
+      )}
+
+      {/* Tabs */}
+      <div style={{display:'flex',padding:'0 20px',borderBottom:'1px solid var(--border)',background:'var(--surface)',flexShrink:0}}>
+        {[['pipeline','Pipeline'],['summary','Summary'],['history','History']].map(([id,label]) => (
+          <button key={id} onClick={()=>setActiveTab(id)} style={{
+            padding:'8px 14px',border:'none',background:'transparent',
+            borderBottom:activeTab===id?'2px solid #1d6fd8':'2px solid transparent',
+            color:activeTab===id?'#1a2233':'#94a3b8',fontSize:12,fontWeight:activeTab===id?600:400,
+            cursor:'pointer',marginBottom:-1,
+          }}>{label}</button>
+        ))}
+      </div>
+
+      {/* Content */}
+      <div style={{flex:1,overflow:'hidden',display:'flex'}}>
+
+        {activeTab === 'pipeline' && (
+          <div style={{flex:1,display:'flex',overflow:'hidden'}}>
+            {/* Stage list */}
+            <div style={{width:360,borderRight:'1px solid var(--border)',overflowY:'auto',padding:'12px 12px',flexShrink:0}}>
+              <div style={{fontSize:10,fontWeight:600,color:'#94a3b8',letterSpacing:'0.08em',textTransform:'uppercase',marginBottom:8}}>Pipeline Stages</div>
+              {PIPELINE.map(stage => (
+                <StageCard
+                  key={stage.id}
+                  stage={stage}
+                  state={stageStates[stage.id]}
+                  isActive={activeStageId===stage.id}
+                  expanded={expanded[stage.id]}
+                  onToggle={()=>setExpanded(e=>({...e,[stage.id]:!e[stage.id]}))}
+                />
+              ))}
+            </div>
+
+            {/* Right panel */}
+            <div style={{flex:1,overflowY:'auto',padding:'16px 20px'}}>
+              {activeStageId
+                ? <ActiveStagePanel stage={PIPELINE.find(s=>s.id===activeStageId)} state={stageStates[activeStageId]}/>
+                : runState==='idle'
+                ? <IdlePanel serverOnline={serverOnline} onRun={startRun}/>
+                : runState==='done'
+                ? <SummaryFull stageStates={stageStates} elapsed={elapsed}/>
+                : null}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'summary' && (
+          <div style={{flex:1,overflowY:'auto',padding:'16px 24px'}}>
+            {runState==='idle'
+              ? <div style={{color:'#94a3b8',fontSize:13,marginTop:40,textAlign:'center'}}>No run completed yet.</div>
+              : <SummaryFull stageStates={stageStates} elapsed={elapsed}/>}
+          </div>
+        )}
+
+        {activeTab === 'history' && (
+          <div style={{flex:1,overflowY:'auto',padding:'16px 24px'}}>
+            <HistoryPanel history={history} runState={runState} elapsed={elapsed}/>
+          </div>
+        )}
+      </div>
+
+      {/* Tweaks panel */}
+      {showTweaks && (
+        <div style={{position:'fixed',bottom:16,right:16,background:'var(--surface)',border:'1px solid var(--border2)',borderRadius:8,padding:16,width:230,zIndex:999,boxShadow:'0 8px 32px rgba(0,0,0,0.12)'}}>
+          <div style={{fontWeight:700,fontSize:12,marginBottom:12}}>Tweaks</div>
+          {[
+            ['skipNeo4j',    'Skip Neo4j rebuild'],
+            ['skipBloomberg','Skip Bloomberg collection'],
+            ['dryRun',       'Dry run (no writes)'],
+          ].map(([key,label]) => (
+            <label key={key} style={{display:'flex',alignItems:'center',gap:8,fontSize:12,color:'#475569',cursor:'pointer',marginBottom:8}}>
+              <input type="checkbox" defaultChecked={TWEAKS[key]} style={{accentColor:'#1d6fd8'}}
+                onChange={e => {
+                  TWEAKS[key] = e.target.checked;
+                  const edits = {}; edits[key] = e.target.checked;
+                  window.parent.postMessage({type:'__edit_mode_set_keys',edits},'*');
+                }}
+              />
+              {label}
+            </label>
+          ))}
+          <div style={{marginTop:8,fontSize:10,color:'#94a3b8'}}>Changes apply on next run</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

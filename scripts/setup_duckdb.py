@@ -14,6 +14,8 @@ INPUT FILES:
 - /Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 GDELT/GDELT_Factors_MasterCSV.csv
                                                    (405K rows, 93 variables, 34 countries)
 - Data/processed/imf_factors_panel.parquet       (61K rows, 18 variables, 34 countries)
+- Data/processed/macrostructure_panel.parquet    (macrostructure fragility / ownership panel)
+- Data/processed/bilateral_portfolio_matrix.parquet (historical portfolio ownership matrix)
 - Data/processed/bloomberg_factors_panel.parquet (Bloomberg sovereign data, 34 countries)
 
 OUTPUT FILES:
@@ -36,8 +38,10 @@ Tables created:
   - extended_factors:   Program 2 panel (51 vars from 12 sources)
   - gdelt_panel:        GDELT normalized factors (93 vars, 34 countries, 2015-2026)
   - imf_factors:        Program 3 panel (18 vars from 6 IMF datasets)
+  - macrostructure_factors: Macrostructure panel (IMF FSI, QPSD debt structure, derived scores)
+  - bilateral_portfolio_matrix: Historical portfolio ownership matrix
   - bloomberg_factors:  Bloomberg sovereign data (bonds, CDS, ratings, 34 countries)
-  - unified_panel:      VIEW union of all seven tables
+  - unified_panel:      VIEW union of all factor-panel tables
 
 DEPENDENCIES:
 - duckdb, pandas
@@ -75,6 +79,8 @@ EXTENDED_PQ = DATA_DIR / "processed" / "extended_factors_panel.parquet"
 GDELT_CSV = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 GDELT/GDELT_Factors_MasterCSV.csv")
 GDELT_FALLBACK_PQ = DATA_DIR / "processed" / "gdelt_panel_snapshot.parquet"
 IMF_PQ = DATA_DIR / "processed" / "imf_factors_panel.parquet"
+MACROSTRUCTURE_PQ = DATA_DIR / "processed" / "macrostructure_panel.parquet"
+BILATERAL_PORTFOLIO_PQ = DATA_DIR / "processed" / "bilateral_portfolio_matrix.parquet"
 BLOOMBERG_PQ = DATA_DIR / "processed" / "bloomberg_factors_panel.parquet"
 
 T2_RETURN_SHEETS = {"1MRet", "3MRet", "6MRet", "9MRet", "12MRet"}
@@ -230,6 +236,70 @@ def load_parquet_table(con: duckdb.DuckDBPyConnection, table_name: str,
     return count
 
 
+def create_empty_factor_table(con: duckdb.DuckDBPyConnection, table_name: str) -> int:
+    """Create an empty factor-style table when an optional panel is absent."""
+    con.execute(f"DROP TABLE IF EXISTS {table_name}")
+    con.execute(f"""
+        CREATE TABLE {table_name} (
+            date DATE,
+            country VARCHAR,
+            value DOUBLE,
+            variable VARCHAR,
+            source VARCHAR
+        )
+    """)
+    return 0
+
+
+def load_bilateral_portfolio_table(con: duckdb.DuckDBPyConnection) -> int:
+    """Load the historical portfolio ownership matrix into DuckDB."""
+    print("Loading bilateral portfolio matrix ...")
+    con.execute("DROP TABLE IF EXISTS bilateral_portfolio_matrix")
+    con.execute(f"""
+        CREATE TABLE bilateral_portfolio_matrix AS
+        SELECT
+            CAST(date AS DATE) AS date,
+            reporter_iso3,
+            counterpart_iso3,
+            instrument_type,
+            CAST(amount_usd AS DOUBLE) AS amount_usd,
+            CAST(share_of_reporter_portfolio_pct AS DOUBLE) AS share_of_reporter_portfolio_pct,
+            CAST(share_of_counterpart_inbound_pct AS DOUBLE) AS share_of_counterpart_inbound_pct,
+            source,
+            frequency,
+            CAST(is_official_sector AS BOOLEAN) AS is_official_sector
+        FROM read_parquet('{BILATERAL_PORTFOLIO_PQ}')
+    """)
+    count = con.execute("SELECT COUNT(*) FROM bilateral_portfolio_matrix").fetchone()[0]
+    reporters = con.execute("SELECT COUNT(DISTINCT reporter_iso3) FROM bilateral_portfolio_matrix").fetchone()[0]
+    counterparts = con.execute("SELECT COUNT(DISTINCT counterpart_iso3) FROM bilateral_portfolio_matrix").fetchone()[0]
+    print(
+        "  bilateral_portfolio_matrix: "
+        f"{count:,} rows, {reporters} reporters, {counterparts} counterparts"
+    )
+    return count
+
+
+def create_empty_bilateral_portfolio_table(con: duckdb.DuckDBPyConnection) -> int:
+    """Create an empty historical portfolio matrix table when the parquet is absent."""
+    con.execute("DROP TABLE IF EXISTS bilateral_portfolio_matrix")
+    con.execute("""
+        CREATE TABLE bilateral_portfolio_matrix (
+            date DATE,
+            reporter_iso3 VARCHAR,
+            counterpart_iso3 VARCHAR,
+            instrument_type VARCHAR,
+            amount_usd DOUBLE,
+            share_of_reporter_portfolio_pct DOUBLE,
+            share_of_counterpart_inbound_pct DOUBLE,
+            source VARCHAR,
+            frequency VARCHAR,
+            is_official_sector BOOLEAN
+        )
+    """)
+    return 0
+
+
 def load_gdelt(con: duckdb.DuckDBPyConnection) -> int:
     """Load normalized GDELT panel into gdelt_panel table."""
     if GDELT_CSV.exists():
@@ -291,6 +361,8 @@ def create_unified_view(con: duckdb.DuckDBPyConnection):
         UNION ALL
         SELECT date, country, value, variable, source FROM imf_factors
         UNION ALL
+        SELECT date, country, value, variable, source FROM macrostructure_factors
+        UNION ALL
         SELECT date, country, CAST(value AS DOUBLE) AS value, variable, source
         FROM bloomberg_factors
         WHERE TRY_CAST(value AS DOUBLE) IS NOT NULL
@@ -304,9 +376,13 @@ def create_indexes(con: duckdb.DuckDBPyConnection):
     """Create indexes for fast analytical queries."""
     print("Creating indexes ...")
     for table in ["t2_master", "t2_raw", "external_factors", "extended_factors", "gdelt_panel",
-                   "imf_factors", "bloomberg_factors"]:
+                   "imf_factors", "macrostructure_factors", "bloomberg_factors"]:
         con.execute(f"CREATE INDEX IF NOT EXISTS idx_{table}_ctry_date ON {table}(country, date)")
         con.execute(f"CREATE INDEX IF NOT EXISTS idx_{table}_var ON {table}(variable)")
+    con.execute("""
+        CREATE INDEX IF NOT EXISTS idx_bilateral_portfolio_matrix_rep_cp_date
+        ON bilateral_portfolio_matrix(reporter_iso3, counterpart_iso3, date)
+    """)
     print("  Indexes created on (country, date) and (variable) for all tables")
 
 
@@ -326,7 +402,7 @@ def check_database():
     print()
 
     for table in ["t2_master", "t2_raw", "external_factors", "extended_factors", "gdelt_panel",
-                   "imf_factors", "bloomberg_factors"]:
+                   "imf_factors", "macrostructure_factors", "bloomberg_factors"]:
         try:
             count = con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
             vars_c = con.execute(f"SELECT COUNT(DISTINCT variable) FROM {table}").fetchone()[0]
@@ -336,6 +412,20 @@ def check_database():
             print(f"  {table:20s}: {count:>10,} rows | {vars_c:>3} vars | {ctry_c:>2} countries | {date_min} → {date_max}")
         except Exception as e:
             print(f"  {table}: ERROR — {e}")
+
+    try:
+        count = con.execute("SELECT COUNT(*) FROM bilateral_portfolio_matrix").fetchone()[0]
+        reporters = con.execute("SELECT COUNT(DISTINCT reporter_iso3) FROM bilateral_portfolio_matrix").fetchone()[0]
+        counterparts = con.execute("SELECT COUNT(DISTINCT counterpart_iso3) FROM bilateral_portfolio_matrix").fetchone()[0]
+        date_min = con.execute("SELECT MIN(date) FROM bilateral_portfolio_matrix").fetchone()[0]
+        date_max = con.execute("SELECT MAX(date) FROM bilateral_portfolio_matrix").fetchone()[0]
+        print(
+            "  bilateral_portfolio_matrix: "
+            f"{count:>10,} rows | {reporters:>2} reporters | {counterparts:>2} counterparts | "
+            f"{date_min} → {date_max}"
+        )
+    except Exception as e:
+        print(f"  bilateral_portfolio_matrix: ERROR — {e}")
 
     try:
         total = con.execute("SELECT COUNT(*) FROM unified_panel").fetchone()[0]
@@ -357,7 +447,7 @@ def main():
         return
 
     required = [T2_CSV, T2_WORKBOOK, EXTERNAL_PQ, EXTENDED_PQ, IMF_PQ]
-    optional = [BLOOMBERG_PQ]
+    optional = [MACROSTRUCTURE_PQ, BILATERAL_PORTFOLIO_PQ, BLOOMBERG_PQ]
     for f in required:
         if not f.exists():
             print(f"MISSING: {f}")
@@ -395,6 +485,19 @@ def main():
     total += load_gdelt(con)
     print()
     total += load_parquet_table(con, "imf_factors", IMF_PQ, "IMF Factors Panel")
+    print()
+    if MACROSTRUCTURE_PQ.exists():
+        total += load_parquet_table(con, "macrostructure_factors", MACROSTRUCTURE_PQ,
+                                    "Macrostructure Panel")
+    else:
+        print("Macrostructure panel not found — creating empty table")
+        create_empty_factor_table(con, "macrostructure_factors")
+    print()
+    if BILATERAL_PORTFOLIO_PQ.exists():
+        total += load_bilateral_portfolio_table(con)
+    else:
+        print("Bilateral portfolio matrix not found — creating empty table")
+        create_empty_bilateral_portfolio_table(con)
     print()
     if BLOOMBERG_PQ.exists():
         total += load_parquet_table(con, "bloomberg_factors", BLOOMBERG_PQ,

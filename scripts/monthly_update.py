@@ -13,6 +13,8 @@ OUTPUT FILES:
 - Data/processed/imf_factors_panel.parquet        (via collect_imf.py)
 - Data/processed/bilateral_trade_matrix.parquet   (via collect_bilateral.py)
 - Data/processed/bilateral_banking_matrix.parquet (via collect_bilateral.py)
+- Data/processed/bilateral_portfolio_matrix.parquet (via collect_bilateral.py)
+- Data/processed/macrostructure_panel.parquet     (via collect_macrostructure.py)
 - Data/processed/bloomberg_factors_panel.parquet  (via collect_bloomberg.py)
 - Data/asado.duckdb                               (via setup_duckdb.py)
 - Neo4j graph database                            (via setup_neo4j.py)
@@ -33,11 +35,12 @@ Pipeline stages:
   1. collect_external.py  --force   (7 sources,  ~35 variables)
   2. collect_extended.py  --force   (12 sources, ~51 variables)
   3. collect_imf.py       --force   (7 datasets, ~26 variables)
-  4. collect_bilateral.py           (IMF IMTS trade + BIS LBS banking)
-  5. collect_bloomberg.py --force   (Bloomberg bonds, CDS, breakevens, ratings)
-  6. setup_duckdb.py                (rebuild analytical DB)
-  7. setup_neo4j.py                 (rebuild knowledge graph + trade/banking edges)
-  8. build_embeddings.py            (country-state vectors + Neo4j vector index)
+  4. collect_bilateral.py           (IMF IMTS trade + BIS LBS banking + IMF PIP/TIC ownership)
+  5. collect_macrostructure.py --force (IMF FSI + QPSD + sticky-capital + policy-backstop layer)
+  6. collect_bloomberg.py --force   (Bloomberg bonds, CDS, breakevens, ratings, ETF passive layer)
+  7. setup_duckdb.py                (rebuild analytical DB)
+  8. setup_neo4j.py                 (rebuild knowledge graph + bilateral edges)
+  9. build_embeddings.py            (country-state vectors + Neo4j vector index)
 
 Each collector preserves existing data for any source that fails,
 so partial failures never lose historical data.
@@ -228,8 +231,8 @@ def verify_duckdb():
             return
 
         con = duckdb.connect(str(db_path), read_only=True)
-        tables = ["t2_master", "external_factors", "extended_factors",
-                   "gdelt_panel", "imf_factors", "bloomberg_factors"]
+        tables = ["t2_master", "t2_raw", "external_factors", "extended_factors",
+                   "gdelt_panel", "imf_factors", "macrostructure_factors", "bloomberg_factors"]
 
         print("\n  DuckDB Verification:")
         total = 0
@@ -246,6 +249,12 @@ def verify_duckdb():
             ucount = con.execute("SELECT COUNT(*) FROM unified_panel").fetchone()[0]
             uvars = con.execute("SELECT COUNT(DISTINCT variable) FROM unified_panel").fetchone()[0]
             print(f"    {'unified_panel':20s}: {ucount:>10,} rows, {uvars:>3} vars (view)")
+        except Exception:
+            pass
+
+        try:
+            pcount = con.execute("SELECT COUNT(*) FROM bilateral_portfolio_matrix").fetchone()[0]
+            print(f"    {'bilateral_portfolio_matrix':20s}: {pcount:>10,} rows")
         except Exception:
             pass
 
@@ -320,9 +329,16 @@ def main():
         ))
 
         results.append(run_step(
-            "Program 4: Bilateral Data (trade + banking)",
+            "Program 4: Bilateral Data (trade + banking + portfolio)",
             "collect_bilateral.py",
             [],
+            log_file
+        ))
+
+        results.append(run_step(
+            "Program 5: Macrostructure Panel (FSI + QPSD + backstop)",
+            "collect_macrostructure.py",
+            collector_flags,
             log_file
         ))
 
@@ -333,7 +349,7 @@ def main():
             bbg_cmd = ["conda", "run", "-p", bbg_env, "python", bbg_script] + bbg_flags
 
             print(f"\n{'─' * 60}")
-            print(f"STEP: Program 5: Bloomberg (bonds, CDS, breakevens, ratings)")
+            print(f"STEP: Program 6: Bloomberg (rates + credit + ETF passive layer)")
             print(f"CMD:  {' '.join(bbg_cmd)}")
             print(f"{'─' * 60}")
 
@@ -349,14 +365,14 @@ def main():
 
             with open(log_file, "a") as f:
                 f.write(f"\n{'=' * 60}\n")
-                f.write(f"STEP: Program 5: Bloomberg\n")
+                f.write(f"STEP: Program 6: Bloomberg\n")
                 f.write(f"STATUS: {bbg_status} (exit code {bbg_result.returncode})\n")
                 f.write(f"ELAPSED: {bbg_elapsed:.1f}s\n")
                 f.write(f"{'=' * 60}\n")
                 f.write(bbg_output + "\n")
 
             results.append({
-                "name": "Program 5: Bloomberg",
+                "name": "Program 6: Bloomberg",
                 "status": bbg_status,
                 "elapsed": bbg_elapsed,
                 "returncode": bbg_result.returncode,

@@ -12,8 +12,8 @@ OUTPUT FILES:
 - Data/processed/bloomberg_factors_panel.csv      (secondary — CSV copy)
 - Data/processed/bloomberg_variable_catalog.csv   (metadata per variable)
 
-VERSION: 1.0
-LAST UPDATED: 2026-04-12
+VERSION: 1.1
+LAST UPDATED: 2026-04-19
 AUTHOR: Arjun Divecha
 
 DESCRIPTION:
@@ -48,6 +48,11 @@ Data collected (Phase 1 + Phase 2 + Phase 3):
    10. PMI: S&P Global Manufacturing & Services indices per country
    11. M2: Money supply YoY growth per country
 
+  Phase 4 — ETF Passive / Mechanical-Flow Layer:
+   12. Country ETF AUM, net flows, creation basket metadata, and passive-share
+       proxies derived from representative single-country ETFs plus World Bank
+       market-cap data
+
 PREREQUISITES:
 - Bloomberg Terminal open and logged in on Windows (Parallels)
 - Run via OpusBloomberg conda env:
@@ -80,6 +85,8 @@ import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
 
 import numpy as np
 import pandas as pd
@@ -100,9 +107,12 @@ PANEL_PQ = PROCESSED_DIR / "bloomberg_factors_panel.parquet"
 PANEL_CSV = PROCESSED_DIR / "bloomberg_factors_panel.csv"
 CATALOG_CSV = PROCESSED_DIR / "bloomberg_variable_catalog.csv"
 HISTORY_JSON = PROCESSED_DIR / "bloomberg_run_history.json"
+WORLD_BANK_API_BASE = "https://api.worldbank.org/v2"
+WORLD_BANK_MARKET_CAP_USD_INDICATOR = "CM.MKT.LCAP.CD"
 
 CACHE_HOURS = 24
 HIST_START = "20000101"
+ETF_HISTORY_START = "20150101"
 
 for d in [RAW_DIR, PROCESSED_DIR, BACKUP_DIR]:
     d.mkdir(parents=True, exist_ok=True)
@@ -365,6 +375,62 @@ COUNTRY_DEBT_TICKERS = {
     "Vietnam":       {"debt_gdp": None},
 }
 
+# ── Phase 2B: ETF passive / creation-redemption structure ────────────────
+# Each T2 country is mapped to one liquid U.S.-listed ETF proxy so we can
+# retrieve a durable, automatable read on ETF AUM, net creations/redemptions,
+# and basket mechanics. China is split explicitly:
+#   - ChinaA  → ASHR (onshore A-shares proxy)
+#   - ChinaH  → FXI  (offshore/H-share large-cap proxy)
+COUNTRY_ETF_TICKERS = {
+    "Australia": "EWA US Equity",
+    "Brazil": "EWZ US Equity",
+    "Canada": "EWC US Equity",
+    "Chile": "ECH US Equity",
+    "ChinaA": "ASHR US Equity",
+    "ChinaH": "FXI US Equity",
+    "Denmark": "EDEN US Equity",
+    "France": "EWQ US Equity",
+    "Germany": "EWG US Equity",
+    "Hong Kong": "EWH US Equity",
+    "India": "INDA US Equity",
+    "Indonesia": "EIDO US Equity",
+    "Italy": "EWI US Equity",
+    "Japan": "EWJ US Equity",
+    "Korea": "EWY US Equity",
+    "Malaysia": "EWM US Equity",
+    "Mexico": "EWW US Equity",
+    "NASDAQ": "QQQ US Equity",
+    "Netherlands": "EWN US Equity",
+    "Philippines": "EPHE US Equity",
+    "Poland": "EPOL US Equity",
+    "Saudi Arabia": "KSA US Equity",
+    "Singapore": "EWS US Equity",
+    "South Africa": "EZA US Equity",
+    "Spain": "EWP US Equity",
+    "Sweden": "EWD US Equity",
+    "Switzerland": "EWL US Equity",
+    "Taiwan": "EWT US Equity",
+    "Thailand": "THD US Equity",
+    "Turkey": "TUR US Equity",
+    "U.K.": "EWU US Equity",
+    "U.S.": "SPY US Equity",
+    "US SmallCap": "IWM US Equity",
+    "Vietnam": "VNM US Equity",
+}
+
+ETF_STATIC_FIELD_MAP = {
+    "FUND_CREATION_UNIT_SIZE": "MS_ETF_Creation_Unit_Size_Shares",
+    "CREATION_FEE": "MS_ETF_Creation_Fee_USD",
+    "FUND_REDEMPTION_FLAT": "MS_ETF_Redemption_Fee_USD",
+}
+
+PASSIVE_DISTORTION_COMPONENTS = (
+    "MS_Passive_AUM_to_MarketCap",
+    "MS_Index_Weight",
+    "MS_Index_Weight_Change",
+    "MS_ETF_NetFlow_to_MarketCap",
+)
+
 # ── Phase 3: PMI — Purchasing Managers' Indices ──────────────────────────
 # S&P Global/Markit PMI tickers follow pattern: MPMI[CC]MA (Manufacturing),
 # MPMI[CC]SA (Services). Gotcha: Japan uses "JA" not "JN" in PMI tickers.
@@ -454,6 +520,16 @@ def load_country_mapping() -> Dict[str, Dict]:
         return json.load(f)["countries"]
 
 
+def build_wb_to_t2(country_mapping: Dict[str, Dict]) -> Dict[str, List[str]]:
+    """Build World Bank code -> T2 country mapping."""
+    wb_to_t2: Dict[str, List[str]] = {}
+    for t2_name, codes in country_mapping.items():
+        wb_code = codes.get("wb")
+        if wb_code:
+            wb_to_t2.setdefault(wb_code, []).append(t2_name)
+    return wb_to_t2
+
+
 def _cache_path(category: str) -> Path:
     return RAW_DIR / f"{category}.parquet"
 
@@ -490,6 +566,23 @@ def to_monthly_first(dates: pd.Series) -> pd.Series:
     return dates.dt.to_period("M").dt.to_timestamp()
 
 
+def _coerce_float(value: Any) -> Optional[float]:
+    """Convert Bloomberg string-ish payloads to floats when possible."""
+    if value is None:
+        return None
+    if isinstance(value, (int, float, np.number)):
+        return float(value)
+
+    text = str(value).strip().replace(",", "")
+    if text in {"", "N/A", "NA", "None", "null"}:
+        return None
+
+    try:
+        return float(text)
+    except ValueError:
+        return None
+
+
 def _hist_to_df(hist_data: list, ticker: str, variable: str,
                 country: str) -> pd.DataFrame:
     """Convert BBG hist() output to a tidy DataFrame row set."""
@@ -519,6 +612,198 @@ def _hist_to_df(hist_data: list, ticker: str, variable: str,
     df["variable"] = variable
     df["source"] = "bloomberg"
     return df[["date", "country", "value", "variable", "source"]]
+
+
+def _fetch_world_bank_indicator(
+    wb_codes: List[str],
+    indicator: str,
+    cache_name: str,
+    force: bool,
+) -> List[dict]:
+    """Fetch a World Bank indicator payload and cache the raw JSON rows."""
+    cache = _cache_path(cache_name)
+    if _is_cached(cache, force):
+        return pd.read_parquet(cache).to_dict("records")
+
+    if not wb_codes:
+        return []
+
+    country_batch = ";".join(wb_codes)
+    query = urlencode({"format": "json", "per_page": 20000})
+    url = f"{WORLD_BANK_API_BASE}/country/{country_batch}/indicator/{indicator}?{query}"
+    request = Request(url, headers={"User-Agent": "Mozilla/5.0"})
+
+    with urlopen(request, timeout=60) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+
+    rows = payload[1] if isinstance(payload, list) and len(payload) > 1 else []
+    pd.DataFrame(rows).to_parquet(cache, index=False)
+    return rows
+
+
+def fetch_world_bank_market_cap_usd(country_mapping: Dict[str, Dict], force: bool) -> pd.DataFrame:
+    """Fetch annual listed-equity market cap in current USD for tracked countries."""
+    wb_to_t2 = build_wb_to_t2(country_mapping)
+    wb_codes = sorted(wb_to_t2)
+    rows = _fetch_world_bank_indicator(
+        wb_codes=wb_codes,
+        indicator=WORLD_BANK_MARKET_CAP_USD_INDICATOR,
+        cache_name="worldbank_market_cap_usd",
+        force=force,
+    )
+
+    records: List[Dict[str, Any]] = []
+    for row in rows:
+        wb_code = row.get("countryiso3code")
+        year = str(row.get("date", ""))
+        value = row.get("value")
+        if wb_code not in wb_to_t2 or not year.isdigit() or value in (None, ""):
+            continue
+
+        dt = pd.Timestamp(int(year), 12, 1)
+        for t2_name in wb_to_t2[wb_code]:
+            records.append(
+                {
+                    "date": dt,
+                    "country": t2_name,
+                    "market_cap_usd": float(value),
+                }
+            )
+
+    if not records:
+        return pd.DataFrame(columns=["date", "country", "market_cap_usd"])
+
+    result = pd.DataFrame(records)
+    result = (
+        result.sort_values(["country", "date"])
+        .drop_duplicates(subset=["date", "country"], keep="last")
+        .reset_index(drop=True)
+    )
+    return result
+
+
+def _merge_latest_market_cap(series_df: pd.DataFrame, market_cap_df: pd.DataFrame) -> pd.DataFrame:
+    """Attach the latest available annual market cap to a monthly series."""
+    if series_df.empty or market_cap_df.empty:
+        return pd.DataFrame()
+
+    merged_parts: List[pd.DataFrame] = []
+
+    for country in sorted(set(series_df["country"]) & set(market_cap_df["country"])):
+        left = series_df[series_df["country"] == country].sort_values("date").copy()
+        right = market_cap_df[market_cap_df["country"] == country].sort_values("date").copy()
+        if left.empty or right.empty:
+            continue
+
+        merged = pd.merge_asof(
+            left,
+            right[["date", "market_cap_usd"]],
+            on="date",
+            direction="backward",
+        )
+        merged["country"] = country
+        merged_parts.append(merged)
+
+    if not merged_parts:
+        return pd.DataFrame()
+
+    combined = pd.concat(merged_parts, ignore_index=True)
+    return combined[combined["market_cap_usd"].notna() & (combined["market_cap_usd"] > 0)].copy()
+
+
+def _percentile_score(series: pd.Series) -> pd.Series:
+    return series.rank(method="average", pct=True, ascending=True) * 100.0
+
+
+def compute_index_weight_proxies(market_cap_df: pd.DataFrame) -> pd.DataFrame:
+    """Convert annual country market caps into transparent index-weight proxies."""
+    if market_cap_df.empty:
+        return pd.DataFrame(columns=["date", "country", "value", "variable", "source"])
+
+    weights = market_cap_df.copy()
+    totals = weights.groupby("date")["market_cap_usd"].transform("sum")
+    weights = weights[totals > 0].copy()
+    if weights.empty:
+        return pd.DataFrame(columns=["date", "country", "value", "variable", "source"])
+
+    weights["value"] = weights["market_cap_usd"] / totals[totals > 0] * 100.0
+    weights["variable"] = "MS_Index_Weight"
+    weights["source"] = "bloomberg"
+    weight_panel = weights[["date", "country", "value", "variable", "source"]].copy()
+
+    changes = weight_panel.copy()
+    changes = changes.sort_values(["country", "date"])
+    changes["value"] = changes.groupby("country")["value"].diff()
+    changes = changes.dropna(subset=["value"]).copy()
+    changes["variable"] = "MS_Index_Weight_Change"
+
+    return pd.concat([weight_panel, changes], ignore_index=True)
+
+
+def compute_passive_ratio_proxies(etf_panel: pd.DataFrame, market_cap_df: pd.DataFrame) -> pd.DataFrame:
+    """Combine ETF AUM/flows with market cap to derive passive-share ratios."""
+    if etf_panel.empty or market_cap_df.empty:
+        return pd.DataFrame(columns=["date", "country", "value", "variable", "source"])
+
+    frames: List[pd.DataFrame] = []
+
+    aum = etf_panel[etf_panel["variable"] == "MS_Country_ETF_AUM_USD"][["date", "country", "value"]].copy()
+    aum_ratio = _merge_latest_market_cap(aum, market_cap_df)
+    if not aum_ratio.empty:
+        aum_ratio["value"] = aum_ratio["value"] / aum_ratio["market_cap_usd"] * 100.0
+        aum_ratio["variable"] = "MS_Passive_AUM_to_MarketCap"
+        aum_ratio["source"] = "bloomberg"
+        frames.append(aum_ratio[["date", "country", "value", "variable", "source"]])
+
+    flows = etf_panel[etf_panel["variable"] == "MS_Country_ETF_NetFlow_USD"][["date", "country", "value"]].copy()
+    flow_ratio = _merge_latest_market_cap(flows, market_cap_df)
+    if not flow_ratio.empty:
+        flow_ratio["value"] = flow_ratio["value"] / flow_ratio["market_cap_usd"] * 100.0
+        flow_ratio["variable"] = "MS_ETF_NetFlow_to_MarketCap"
+        flow_ratio["source"] = "bloomberg"
+        frames.append(flow_ratio[["date", "country", "value", "variable", "source"]])
+
+    if not frames:
+        return pd.DataFrame(columns=["date", "country", "value", "variable", "source"])
+
+    return pd.concat(frames, ignore_index=True)
+
+
+def compute_passive_flow_distortion(panel: pd.DataFrame) -> pd.DataFrame:
+    """Build a transparent passive-flow distortion score from available proxies."""
+    subset = panel[panel["variable"].isin(PASSIVE_DISTORTION_COMPONENTS)].copy()
+    if subset.empty:
+        return pd.DataFrame(columns=["date", "country", "value", "variable", "source"])
+
+    pivot = subset.pivot_table(
+        index=["date", "country"],
+        columns="variable",
+        values="value",
+        aggfunc="last",
+    ).reset_index()
+    if pivot.empty:
+        return pd.DataFrame(columns=["date", "country", "value", "variable", "source"])
+
+    score_columns: List[str] = []
+    for variable in PASSIVE_DISTORTION_COMPONENTS:
+        if variable not in pivot.columns:
+            continue
+        score_col = f"score__{variable}"
+        pivot[score_col] = pivot.groupby("date")[variable].transform(_percentile_score)
+        score_columns.append(score_col)
+
+    if not score_columns:
+        return pd.DataFrame(columns=["date", "country", "value", "variable", "source"])
+
+    pivot["component_count"] = pivot[score_columns].notna().sum(axis=1)
+    pivot["value"] = pivot[score_columns].mean(axis=1, skipna=True)
+    pivot = pivot[pivot["component_count"] >= 2].copy()
+    if pivot.empty:
+        return pd.DataFrame(columns=["date", "country", "value", "variable", "source"])
+
+    pivot["variable"] = "MS_Passive_Flow_Distortion"
+    pivot["source"] = "bloomberg"
+    return pivot[["date", "country", "value", "variable", "source"]]
 
 
 # =============================================================================
@@ -1236,7 +1521,167 @@ def collect_ddis(bbg: BBG, force: bool) -> pd.DataFrame:
 
 
 # =============================================================================
-# COLLECTOR 10: PMI — PURCHASING MANAGERS' INDICES
+# COLLECTOR 10: ETF PASSIVE / CREATION-REDEMPTION STRUCTURE
+# =============================================================================
+
+def collect_country_etf_passive_flows(bbg: BBG, force: bool) -> pd.DataFrame:
+    """
+    Pull representative country ETF mechanics using a lightweight Bloomberg load.
+
+    This collector intentionally uses a shorter history window and a narrow
+    field set so it does not overload the shared Bloomberg pathway.
+    """
+    logger.info("[10/11] ETF Passive / Mechanical-Flow Layer ...")
+
+    cache = _cache_path("country_etf_passive")
+    if _is_cached(cache, force):
+        logger.info("  Using cached data")
+        return pd.read_parquet(cache)
+
+    today = pd.Timestamp.now().normalize()
+    current_month = to_monthly_first(pd.Series([today]))[0]
+    end_date = datetime.now().strftime("%Y%m%d")
+    country_mapping = load_country_mapping()
+    market_cap_df = fetch_world_bank_market_cap_usd(country_mapping, force)
+
+    frames: List[pd.DataFrame] = []
+    pulled = 0
+    errors = 0
+
+    for country, ticker in COUNTRY_ETF_TICKERS.items():
+        try:
+            hist = bbg.hist(
+                ticker,
+                ["PX_LAST", "EQY_SH_OUT", "FUND_FLOW"],
+                ETF_HISTORY_START,
+                end_date,
+                periodicity="MONTHLY",
+            )
+
+            hist_rows: List[Dict[str, Any]] = []
+            for point in hist:
+                dt = point.get("date")
+                if not dt:
+                    continue
+                hist_rows.append(
+                    {
+                        "date": pd.to_datetime(dt),
+                        "px_last": _coerce_float(point.get("PX_LAST")),
+                        "shares_out": _coerce_float(point.get("EQY_SH_OUT")),
+                        "fund_flow": _coerce_float(point.get("FUND_FLOW")),
+                    }
+                )
+
+            monthly = pd.DataFrame(hist_rows)
+            if not monthly.empty:
+                monthly["date"] = to_monthly_first(monthly["date"])
+                monthly = (
+                    monthly.groupby("date", as_index=False)
+                    .agg(
+                        px_last=("px_last", "last"),
+                        shares_out=("shares_out", "last"),
+                        fund_flow=("fund_flow", "sum"),
+                    )
+                    .sort_values("date")
+                    .reset_index(drop=True)
+                )
+
+                if monthly["px_last"].notna().any() and monthly["shares_out"].notna().any():
+                    aum = monthly[monthly["px_last"].notna() & monthly["shares_out"].notna()].copy()
+                    aum["value"] = aum["px_last"] * aum["shares_out"]
+                    aum["country"] = country
+                    aum["variable"] = "MS_Country_ETF_AUM_USD"
+                    aum["source"] = "bloomberg"
+                    frames.append(aum[["date", "country", "value", "variable", "source"]])
+
+                if monthly["fund_flow"].notna().any():
+                    flows = monthly[monthly["fund_flow"].notna()].copy()
+                    flows["value"] = flows["fund_flow"]
+                    flows["country"] = country
+                    flows["variable"] = "MS_Country_ETF_NetFlow_USD"
+                    flows["source"] = "bloomberg"
+                    frames.append(flows[["date", "country", "value", "variable", "source"]])
+
+                if monthly["shares_out"].notna().sum() >= 2:
+                    creations = monthly[monthly["shares_out"].notna()][["date", "shares_out"]].copy()
+                    creations["value"] = creations["shares_out"].diff()
+                    creations = creations.dropna(subset=["value"])
+                    if not creations.empty:
+                        creations["country"] = country
+                        creations["variable"] = "MS_ETF_NetCreation_Shares"
+                        creations["source"] = "bloomberg"
+                        frames.append(creations[["date", "country", "value", "variable", "source"]])
+
+            ref = bbg.ref(ticker, list(ETF_STATIC_FIELD_MAP.keys()))
+            if "error" not in ref:
+                static_rows = []
+                for field, variable in ETF_STATIC_FIELD_MAP.items():
+                    value = _coerce_float(ref.get(field))
+                    if value is None:
+                        continue
+                    static_rows.append(
+                        {
+                            "date": current_month,
+                            "country": country,
+                            "value": value,
+                            "variable": variable,
+                            "source": "bloomberg",
+                        }
+                    )
+                if static_rows:
+                    frames.append(pd.DataFrame(static_rows))
+
+            pulled += 1
+        except Exception as e:
+            errors += 1
+            logger.warning(f"  Error ETF passive ({country}, {ticker}): {e}")
+
+    logger.info(f"  Pulled {pulled}/{len(COUNTRY_ETF_TICKERS)} ETF proxies ({errors} errors)")
+
+    raw_panel = (
+        pd.concat(frames, ignore_index=True)
+        if frames
+        else pd.DataFrame(columns=["date", "country", "value", "variable", "source"])
+    )
+    if raw_panel.empty:
+        return raw_panel
+
+    derived_frames: List[pd.DataFrame] = [raw_panel]
+
+    index_weights = compute_index_weight_proxies(market_cap_df)
+    if not index_weights.empty:
+        derived_frames.append(index_weights)
+
+    passive_ratios = compute_passive_ratio_proxies(raw_panel, market_cap_df)
+    if not passive_ratios.empty:
+        derived_frames.append(passive_ratios)
+
+    combined = pd.concat(derived_frames, ignore_index=True)
+
+    passive_distortion = compute_passive_flow_distortion(combined)
+    if not passive_distortion.empty:
+        combined = pd.concat([combined, passive_distortion], ignore_index=True)
+
+    combined["date"] = pd.to_datetime(combined["date"])
+    combined["value"] = pd.to_numeric(combined["value"], errors="coerce")
+    combined = (
+        combined.dropna(subset=["date", "country", "value", "variable", "source"])
+        .sort_values(["variable", "country", "date"])
+        .drop_duplicates(subset=["date", "country", "variable"], keep="last")
+        .reset_index(drop=True)
+    )
+
+    combined.to_parquet(cache, index=False)
+    logger.info(
+        f"  ETF passive layer: {len(combined):,} rows, "
+        f"{combined['variable'].nunique()} variables, "
+        f"{combined['country'].nunique()} countries"
+    )
+    return combined
+
+
+# =============================================================================
+# COLLECTOR 11: PMI — PURCHASING MANAGERS' INDICES
 # =============================================================================
 
 def collect_pmi(bbg: BBG, force: bool) -> pd.DataFrame:
@@ -1246,7 +1691,7 @@ def collect_pmi(bbg: BBG, force: bool) -> pd.DataFrame:
     Tries MPMI[CC]MA/SA tickers for each country. Countries without
     liquid PMI data will fail gracefully and be skipped.
     """
-    logger.info("[10/11] PMI — Manufacturing & Services ...")
+    logger.info("[11/11] PMI — Manufacturing & Services ...")
 
     cache = _cache_path("pmi")
     if _is_cached(cache, force):
@@ -1437,6 +1882,19 @@ def merge_panels(existing: Optional[pd.DataFrame],
         "WIRP":           ["BBG_WIRP_ImpliedRate"],
         "ECFC":           ["BBG_ECFC_GDP", "BBG_ECFC_CPI"],
         "DDIS":           ["BBG_Debt_GDP_Ratio"],
+        "ETF Passive":    [
+            "MS_Country_ETF_AUM_USD",
+            "MS_Country_ETF_NetFlow_USD",
+            "MS_ETF_NetCreation_Shares",
+            "MS_ETF_Creation_Unit_Size_Shares",
+            "MS_ETF_Creation_Fee_USD",
+            "MS_ETF_Redemption_Fee_USD",
+            "MS_Index_Weight",
+            "MS_Index_Weight_Change",
+            "MS_Passive_AUM_to_MarketCap",
+            "MS_ETF_NetFlow_to_MarketCap",
+            "MS_Passive_Flow_Distortion",
+        ],
         "PMI":            ["BBG_PMI_Manufacturing", "BBG_PMI_Services"],
         "M2":             ["BBG_M2_YoY"],
     }
@@ -1569,6 +2027,7 @@ def main():
             ("WIRP",           lambda: collect_wirp(bbg, args.force)),
             ("ECFC",           lambda: collect_ecfc(bbg, args.force)),
             ("DDIS",           lambda: collect_ddis(bbg, args.force)),
+            ("ETF Passive",    lambda: collect_country_etf_passive_flows(bbg, args.force)),
             ("PMI",            lambda: collect_pmi(bbg, args.force)),
             ("M2",             lambda: collect_m2(bbg, args.force)),
         ]

@@ -120,6 +120,11 @@ def build_state_vectors(n_dims: int = EMBEDDING_DIMS, use_pca: bool = True) -> d
     wide = latest_df.pivot_table(index="country", columns="variable", values="value")
     print(f"  Wide shape: {wide.shape}")
 
+    inf_count = int(np.isinf(wide.to_numpy(dtype=float, copy=True)).sum())
+    if inf_count:
+        print(f"  Found {inf_count} infinite values — converting to NaN before coverage filtering ...")
+        wide = wide.replace([np.inf, -np.inf], np.nan)
+
     n_countries, n_vars_raw = wide.shape
     missing_pct = wide.isnull().mean() * 100
     good_vars = missing_pct[missing_pct <= MIN_COVERAGE_PCT].index
@@ -133,6 +138,9 @@ def build_state_vectors(n_dims: int = EMBEDDING_DIMS, use_pca: bool = True) -> d
     remaining_nulls = wide.isnull().sum().sum()
     if remaining_nulls > 0:
         wide = wide.fillna(0)
+
+    if not np.isfinite(wide.to_numpy(dtype=float, copy=True)).all():
+        raise ValueError("Wide embedding matrix still contains non-finite values after cleanup.")
 
     print("  Standardizing (z-score) ...")
     scaler = StandardScaler()

@@ -10,12 +10,12 @@
 ## Learned Workspace Facts
 
 - ASADO workspace root: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO`.
-- Canonical CSV inputs for T2 and GDELT when loading DuckDB (see `scripts/setup_duckdb.py`): `/Users/arjundivecha/Dropbox/AAA Backup/Transformer/Normalized_T2_MasterCSV.csv` and `/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 GDELT/GDELT_Factors_MasterCSV.csv`.
+- Canonical T2 inputs for DuckDB (see `scripts/setup_duckdb.py`): `/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 Factor Timing Fuzzy/Normalized_T2_MasterCSV.csv` and `/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 Factor Timing Fuzzy/T2 Master.xlsx`. GDELT prefers `/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 GDELT/GDELT_Factors_MasterCSV.csv` when present and otherwise falls back to `Data/processed/gdelt_panel_snapshot.parquet` inside this repo.
 - Phase 1 external data specs, paths, and indicator definitions live in `CLAUDE_CODE_BRIEF.md` and `PRD_Phase1_Program1_External_Data.md` in this repo.
 - FRED and EIA credentials are expected in the project `.env` file.
 - `scripts/` pipeline: collectors `collect_external.py`, `collect_extended.py`, `collect_imf.py`, `collect_bilateral.py`, `collect_bloomberg.py` (Bloomberg via `/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg` and its venv as wired in the Bloomberg scripts); `setup_duckdb.py`, `setup_neo4j.py`, `build_embeddings.py`, `db_bridge.py`, and monthly orchestrator `monthly_update.py`.
 - IMF data uses the SDMX 3.0 API at `api.imf.org` with no API key required. The legacy `dataservices.imf.org` endpoint is defunct.
-- DuckDB at `Data/asado.duckdb`; `unified_panel` view joins 6 tables: `t2_master`, `external_factors`, `extended_factors`, `gdelt_panel`, `imf_factors`, `bloomberg_factors`. Currently 1,910,775 rows, 332 variables.
+- DuckDB at `Data/asado.duckdb`; `unified_panel` view joins 7 tables: `t2_master`, `t2_raw`, `external_factors`, `extended_factors`, `gdelt_panel`, `imf_factors`, `bloomberg_factors`. Current rebuilt size is roughly 96 MB with about 2.46M rows and 385 variables.
 - Bloomberg collector (`collect_bloomberg.py`) has 11 data categories across 3 phases: Phase 1 (bond yields 4 tenors, CDS 5Y, breakevens, credit ratings), Phase 2 (OIS 10Y swap rates, WIRP implied policy rates, ECFC consensus GDP/CPI with EHGD fallback, DDIS debt metrics), Phase 3 (PMI Manufacturing/Services, M2 money supply YoY), plus 3 derived signals (yield curve slope, MIPD default probability, Z-spread vs OIS). Total: 66,656 rows, 17 variables. The `BBG` class in OpusBloomberg supports `ref()`, `ref_batch()`, `hist()`, and `bds()` methods.
 - ECFC GDP tickers use a fallback strategy: try ECGD[CC] (consensus) first, fall back to EHGD[CC]Y (actual GDP YoY). Switzerland uses ECGDSW (not ECGDCH, which is China).
 - PMI tickers follow MPMI[CC]MA/SA pattern; Japan uses JA not JN in PMI tickers.

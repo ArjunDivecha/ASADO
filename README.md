@@ -1,6 +1,6 @@
 # ASADO — Country Data Collection & Research Platform
 
-Collects macro/governance/risk/climate/trade data from **26 free external sources** (including 7 IMF datasets) **plus 17 Bloomberg Terminal variables** (sovereign bonds, CDS, breakevens, OIS rates, WIRP, ECFC, PMI, M2, MIPD), aligns to the 34-country T2 Master universe, stores everything in a **hybrid DuckDB + Neo4j database** with **bilateral trade/banking network edges** and **country-state vector embeddings** for similarity search.
+Collects macro/governance/risk/climate/trade data from **26 free external sources** (including 7 IMF datasets) **plus 17 Bloomberg Terminal variables** (sovereign bonds, CDS, breakevens, OIS rates, WIRP, ECFC, PMI, M2, MIPD), aligns to the 34-country T2 Master universe, and stores everything in a **hybrid DuckDB + Neo4j database** with a **raw warehouse, canonical normalized feature layer, bilateral trade/banking/portfolio edges,** and **country-state vector embeddings** for similarity search.
 
 ## Project Structure
 
@@ -14,12 +14,14 @@ ASADO/
 │   ├── raw/                              # Cached downloads (24h expiry)
 │   ├── processed/                        # Output panels + catalogs + run history
 │   │   ├── external_factors_panel.parquet # Program 1 output (112K rows, 35 vars)
-│   │   ├── extended_factors_panel.parquet # Program 2 output (106K rows after UST broadcast fix, 51 vars)
+│   │   ├── extended_factors_panel.parquet # Program 2 output (97K rows, 51 vars)
 │   │   ├── imf_factors_panel.parquet     # Program 3 output (107K rows, 26 vars)
 │   │   ├── gdelt_panel_snapshot.parquet  # Repo-local fallback when external GDELT CSV is absent
+│   │   ├── macrostructure_factors_panel.parquet # Program 5 output (55K rows, ownership/fragility/backstop layer)
 │   │   ├── bilateral_trade_matrix.parquet  # Program 4 output (899 trade pairs)
 │   │   ├── bilateral_banking_matrix.parquet # Program 4 output (582 banking pairs)
-│   │   ├── bloomberg_factors_panel.parquet # Program 5 output (67K rows, 17 vars)
+│   │   ├── bilateral_portfolio_matrix.parquet # Program 4 output (historical portfolio ownership matrix)
+│   │   ├── bloomberg_factors_panel.parquet # Program 6 output (98K rows incl. ETF passive layer)
 │   │   └── ...catalogs, CSV copies, run history
 │   ├── backups/                          # Timestamped backups before overwrites
 │   └── cache/                            # Log files
@@ -28,11 +30,14 @@ ASADO/
 │   ├── collect_external.py               # Program 1 — 7 core sources
 │   ├── collect_extended.py               # Program 2 — 12 extended sources
 │   ├── collect_imf.py                    # Program 3 — 7 IMF datasets
-│   ├── collect_bilateral.py              # Program 4 — bilateral trade + banking matrices
-│   ├── collect_bloomberg.py              # Program 5 — Bloomberg Terminal (bonds, CDS, OIS, WIRP, ECFC, PMI, M2)
-│   ├── setup_duckdb.py                   # DuckDB schema + data loader
+│   ├── collect_bilateral.py              # Program 4 — bilateral trade + banking + portfolio ownership
+│   ├── collect_macrostructure.py         # Program 5 — macrostructure / fragility / backstop panel
+│   ├── collect_bloomberg.py              # Program 6 — Bloomberg Terminal (bonds, CDS, OIS, WIRP, ECFC, PMI, M2)
+│   ├── setup_duckdb.py                   # DuckDB raw warehouse loader
+│   ├── build_normalized_panel.py         # Canonical _CS/_TS feature layer + feature_panel view
 │   ├── setup_neo4j.py                    # Neo4j knowledge graph builder
 │   ├── build_embeddings.py               # Country-state PCA vectors + Neo4j vector index
+│   ├── build_schema_registry.py          # Query-assistant schema cache / access guide
 │   └── db_bridge.py                      # AsadoDB unified query interface
 ├── config/
 │   └── country_mapping.json              # 34-country Rosetta Stone (ISO codes, etc.)
@@ -53,7 +58,7 @@ ASADO/
 cd ASADO
 source venv/bin/activate
 
-# Full monthly update — collects all data, rebuilds DuckDB + Neo4j
+# Full monthly update — collects all data, rebuilds DuckDB + normalization layer + Neo4j
 python scripts/monthly_update.py
 ```
 
@@ -64,15 +69,18 @@ This single command runs the entire pipeline:
 | 1 | `collect_external.py --force` | 7 core sources (EPU, GPR, BIS, OECD, World Bank) | ~25s |
 | 2 | `collect_extended.py --force` | 12 extended sources (BIS rates, OECD BCI/CCI, ECB, ILOSTAT, FRED, EIA) | ~45s |
 | 3 | `collect_imf.py --force` | 7 IMF datasets (CPI, WEO, BOP, rates, FX, labor, trade) | ~70s |
-| 4 | `collect_bilateral.py` | Bilateral trade (IMF IMTS) + banking claims (BIS LBS) | ~120s |
-| 5 | `collect_bloomberg.py` | Bloomberg Terminal data (bonds, CDS, OIS, WIRP, ECFC, PMI, M2, breakevens) | ~140s |
-| 6 | `setup_duckdb.py` | Rebuild DuckDB analytical database | ~2s |
-| 7 | `setup_neo4j.py` | Rebuild Neo4j knowledge graph + trade/banking edges | ~9s |
-| 8 | `build_embeddings.py` | Country-state PCA vectors + Neo4j vector index | ~3s |
+| 4 | `collect_bilateral.py` | Bilateral trade + banking + portfolio ownership matrices | ~120s |
+| 5 | `collect_macrostructure.py --force` | Macrostructure fragility, debt-structure, sticky-capital, and backstop layer | ~40s |
+| 6 | `collect_bloomberg.py` | Bloomberg Terminal data (bonds, CDS, OIS, WIRP, ECFC, PMI, M2, ETF passive layer) | ~140s |
+| 7 | `setup_duckdb.py` | Rebuild the raw DuckDB analytical warehouse | ~3s |
+| 8 | `build_normalized_panel.py` | Build canonical `_CS` / `_TS` features and `feature_panel` | ~9s |
+| 9 | `setup_neo4j.py` | Rebuild Neo4j knowledge graph + trade/banking/portfolio edges | ~9s |
+| 10 | `build_embeddings.py` | Country-state PCA vectors + Neo4j vector index | ~3s |
+| 11 | `build_schema_registry.py` | Refresh schema cache + access guide for the query assistant | ~1s |
 
-**Total runtime: ~6 minutes.** Log file saved to `Data/logs/monthly_update_YYYY_MM_DD.log`.
+**Total runtime: ~6-8 minutes.** Log file saved to `Data/logs/monthly_update_YYYY_MM_DD.log`.
 
-> **Bloomberg prerequisite:** Stage 5 requires Bloomberg Terminal running on the Parallels Windows 11 VM. If Bloomberg is not available, add `--skip-bloomberg` to skip it — all other stages run normally.
+> **Bloomberg prerequisite:** Stage 6 requires Bloomberg Terminal running on the Parallels Windows 11 VM. If Bloomberg is not available, add `--skip-bloomberg` to skip it — all other stages run normally.
 
 ### Options
 
@@ -90,20 +98,23 @@ python scripts/monthly_update.py --dry-run          # preview, no writes
 python scripts/collect_external.py --force    # Program 1 only
 python scripts/collect_extended.py --force    # Program 2 only
 python scripts/collect_imf.py --force         # Program 3 only
-python scripts/collect_bilateral.py           # Program 4 (trade + banking)
+python scripts/collect_bilateral.py           # Program 4 (trade + banking + portfolio ownership)
 python scripts/collect_bilateral.py --trade-only   # trade matrix only
 python scripts/collect_bilateral.py --bank-only    # banking matrix only
 
-# Program 5 — Bloomberg (requires Bloomberg Terminal on Parallels VM)
+# Program 6 — Bloomberg (requires Bloomberg Terminal on Parallels VM)
 conda run -p ".../OpusBloomberg/.venv" python scripts/collect_bloomberg.py
 conda run -p ".../OpusBloomberg/.venv" python scripts/collect_bloomberg.py --force
 
 python scripts/setup_duckdb.py                # rebuild DuckDB
 python scripts/setup_duckdb.py --check        # verify existing database
+python scripts/build_normalized_panel.py      # rebuild normalized_panel + feature_panel
+python scripts/build_normalized_panel.py --check
 python scripts/setup_neo4j.py                 # rebuild Neo4j graph
 python scripts/setup_neo4j.py --check         # verify existing graph
 python scripts/build_embeddings.py            # rebuild country-state vectors
 python scripts/build_embeddings.py --dims 64  # use 64-d instead of 128
+python scripts/build_schema_registry.py       # refresh query-assistant schema cache
 ```
 
 ## Data Resilience
@@ -330,21 +341,27 @@ blpapi pandas pyarrow numpy  # in OpusBloomberg/.venv
 
 ## Database Architecture (Phase 1B)
 
-### DuckDB — Analytical Store (`Data/asado.duckdb`, 72.5 MB)
+### DuckDB — Analytical Store (`Data/asado.duckdb`, ~96 MB)
 
-Columnar database for fast time-series analytics. Contains six tables + one unified view:
+Columnar database for fast time-series analytics. Core surfaces currently include:
 
-| Table | Rows | Variables | Countries | Date Range |
-|-------|------|-----------|-----------|------------|
-| `t2_master` | 1,142,672 | 111 | 34 | 2000-02 → 2026-04 |
-| `external_factors` | 112,633 | 35 | 34 | 1985-01 → 2026-03 |
-| `extended_factors` | 77,123 | 51 | 34 | 1990-12 → 2026-04 |
-| `gdelt_panel` | 404,702 | 93 | 34 | 2015-09 → 2026-04 |
-| `imf_factors` | 106,989 | 26 | 34 | 1980-12 → 2030-12 |
-| `bloomberg_factors` | 66,656 | 17 | 34 | 2000-01 → 2026-03 |
-| **`unified_panel`** (view) | **1,910,775** | **332** | 34 | 1980-12 → 2030-12 |
+| Table / View | Rows | Date Range | Primary Use |
+|-------|------|------------|------------|
+| `t2_master` | 1,188,810 | 2000-02-01 → 2026-04-01 | Canonical normalized T2 panel |
+| `t2_raw` | 474,636 | 2000-02-01 → 2026-04-01 | Raw T2 factor levels from the workbook |
+| `country_reference` | generated monthly | n/a | Canonical ISO3 -> ASADO country mapping surface for bilateral joins |
+| `external_factors` | 112,633 | 1985-01-01 → 2026-03-01 | Program 1 free-source macro / risk / structural panel |
+| `extended_factors` | 96,604 | 1990-12-01 → 2026-04-01 | Program 2 extended free-source panel |
+| `gdelt_panel` | 407,864 | 2015-09-01 → 2026-05-01 | Country-level media / tone / risk panel, including partial current month labels |
+| `imf_factors` | 107,298 | 1980-12-01 → 2031-12-01 | IMF CPI, WEO, BOP, FX, labor, trade, and FSI-derived series |
+| `macrostructure_factors` | 55,118 | 1995-03-01 → 2026-04-01 | Fragility, debt-structure, ownership, sticky-capital, and policy-backstop layer |
+| `bloomberg_factors` | 98,129 | 1975-12-01 → 2026-04-01 | Bloomberg sovereign rates/credit/macro plus ETF passive-flow layer |
+| `normalized_panel` | generated monthly | derived from live DuckDB | Canonical `_CS` / `_TS` normalized feature layer |
+| `feature_panel` (view) | generated monthly | derived from live DuckDB | Primary query-facing union of raw + normalized factor rows |
+| `bilateral_portfolio_matrix` | 56,786 | 1997-12-01 → 2026-02-01 | Reporter-counterparty portfolio ownership matrix |
+| **`unified_panel`** (view) | **2,541,092** | **1975-12-01 → 2031-12-01** | **Raw cross-source analytical warehouse** |
 
-All tables share the tidy schema `(date DATE, country VARCHAR, value DOUBLE, variable VARCHAR)`. Indexes on `(country, date)` and `(variable)`.
+Factor tables and views (`t2_master`, source panels, `unified_panel`, `normalized_panel`, `feature_panel`) share the tidy schema `(date DATE, country VARCHAR, value DOUBLE, variable VARCHAR)`. `country_reference` and `bilateral_portfolio_matrix` are helper surfaces used for ISO mapping and ownership joins. Indexes cover factor tables plus `country_reference` and the main bilateral ownership keys.
 
 ### Neo4j — Knowledge Graph (bolt://localhost:7687)
 
@@ -389,7 +406,7 @@ from scripts.db_bridge import AsadoDB
 
 with AsadoDB() as db:
     # SQL queries on DuckDB (returns DataFrame)
-    df = db.query_panel("SELECT * FROM unified_panel WHERE country = 'Brazil' LIMIT 10")
+    df = db.query_panel("SELECT * FROM feature_panel WHERE country = 'Brazil' LIMIT 10")
 
     # Cypher queries on Neo4j (returns list of dicts)
     records = db.query_graph("MATCH (c:Country)-[:HAS_CRISIS_HISTORY]->(e) RETURN c.t2_name, e.name")

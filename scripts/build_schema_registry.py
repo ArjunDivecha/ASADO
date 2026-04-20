@@ -39,6 +39,10 @@ MANIFEST_PATH = CACHE_DIR / "manifest.json"
 TABLE_DESCRIPTIONS = {
     "t2_master": "Original T2 monthly factor panel.",
     "t2_raw": "Raw T2 factor levels from the authoritative T2 Master workbook.",
+    "country_reference": (
+        "Canonical ISO-to-ASADO country mapping surface. Use this to join bilateral tables "
+        "that store reporter_iso3/counterpart_iso3 onto ASADO factor surfaces that use country names."
+    ),
     "external_factors": "Free-source external macro, risk, and structural data.",
     "extended_factors": "Extended country dataset built from additional free sources.",
     "gdelt_panel": "Country-level GDELT-derived media, tone, and risk signals.",
@@ -49,6 +53,14 @@ TABLE_DESCRIPTIONS = {
         "Common instrument_type values include equity_fund_shares, debt_long, debt_short, equity, debt_long_govt, and debt_long_corp."
     ),
     "bloomberg_factors": "Bloomberg market-implied, macro, and ETF passive-flow data collected via OpusBloomberg.",
+    "normalized_panel": (
+        "Canonical ASADO-generated normalized factors. Contains _CS same-date cross-sectional z-scores "
+        "and _TS rolling time-series z-scores for eligible raw source variables."
+    ),
+    "feature_panel": (
+        "Query-facing union of unified_panel (raw warehouse) plus normalized_panel "
+        "for analytics, assistants, and feature discovery."
+    ),
     "unified_panel": "Unified analytic view across all ASADO factor tables.",
 }
 
@@ -513,11 +525,12 @@ def build_duckdb_schema(db_path: Path = DB_PATH) -> Dict[str, Any]:
             indexes = []
 
         countries = []
-        if "unified_panel" in schema_tables:
+        factor_surface = "feature_panel" if "feature_panel" in schema_tables else "unified_panel"
+        if factor_surface in schema_tables:
             countries = [
                 row[0]
                 for row in con.execute(
-                    "SELECT DISTINCT country FROM unified_panel ORDER BY country"
+                    f"SELECT DISTINCT country FROM {factor_surface} ORDER BY country"
                 ).fetchall()
             ]
 
@@ -525,6 +538,7 @@ def build_duckdb_schema(db_path: Path = DB_PATH) -> Dict[str, Any]:
             {
                 "available": True,
                 "db_path": db_path,
+                "factor_surface": factor_surface,
                 "tables": schema_tables,
                 "indexes": indexes,
                 "countries": countries,
@@ -537,8 +551,10 @@ def build_duckdb_schema(db_path: Path = DB_PATH) -> Dict[str, Any]:
 def build_variable_catalog(db_path: Path = DB_PATH) -> Dict[str, Any]:
     con = duckdb.connect(str(db_path), read_only=True)
     try:
+        tables = {row[0] for row in con.execute("SHOW TABLES").fetchall()}
+        factor_surface = "feature_panel" if "feature_panel" in tables else "unified_panel"
         catalog_df = con.execute(
-            """
+            f"""
             SELECT
                 variable,
                 source,
@@ -546,7 +562,7 @@ def build_variable_catalog(db_path: Path = DB_PATH) -> Dict[str, Any]:
                 COUNT(DISTINCT country) AS country_count,
                 MIN(date) AS first_date,
                 MAX(date) AS last_date
-            FROM unified_panel
+            FROM {factor_surface}
             GROUP BY variable, source
             ORDER BY variable, source
             """
@@ -594,6 +610,7 @@ def build_variable_catalog(db_path: Path = DB_PATH) -> Dict[str, Any]:
         return _json_ready(
             {
                 "available": True,
+                "factor_surface": factor_surface,
                 "variable_count": int(catalog_df["variable"].nunique()),
                 "variables": catalog_df.to_dict("records"),
                 "variable_names": sorted(catalog_df["variable"].unique().tolist()),
@@ -726,6 +743,7 @@ def build_access_guide(
     current_date = date.today()
     gdelt_partial_label_date = _next_month_start(current_date)
     duck_tables = duckdb_schema.get("tables", {})
+    factor_surface = variable_catalog.get("factor_surface") or duckdb_schema.get("factor_surface") or "unified_panel"
 
     return _json_ready(
         {
@@ -749,8 +767,10 @@ def build_access_guide(
                 "duckdb_schema_path": str(DUCKDB_SCHEMA_PATH),
                 "neo4j_schema_path": str(NEO4J_SCHEMA_PATH),
                 "variable_catalog_path": str(VARIABLE_CATALOG_PATH),
+                "primary_factor_view": factor_surface,
                 "python_bridge_module": "scripts.db_bridge",
                 "query_assistant_script": str(BASE_DIR / "scripts" / "query_assistant.py"),
+                "normalized_builder_script": str(BASE_DIR / "scripts" / "build_normalized_panel.py"),
                 "macrostructure_formula_catalog_path": str(
                     BASE_DIR / "Data" / "processed" / "macrostructure_formula_catalog.json"
                 ),
@@ -779,14 +799,16 @@ def build_access_guide(
                     "path": str(DB_PATH),
                     "read_only_recommended": True,
                     "preferred_entrypoint": "scripts.db_bridge.AsadoDB.query_panel",
-                    "primary_view": "unified_panel",
+                    "primary_view": factor_surface,
                     "canonical_factor_columns": ["date", "country", "value", "variable", "source"],
                     "tables_available": sorted(duck_tables.keys()),
-                    "unified_panel_row_count": duck_tables.get("unified_panel", {}).get("row_count"),
-                    "unified_panel_variable_count": variable_catalog.get("variable_count"),
+                    "primary_view_row_count": duck_tables.get(factor_surface, {}).get("row_count"),
+                    "primary_view_variable_count": variable_catalog.get("variable_count"),
                     "notes": [
-                        "Use unified_panel for most cross-source factor questions.",
-                        "Use table-specific panels when you need raw source behavior or panel-specific columns.",
+                        f"Use {factor_surface} for most cross-source factor questions.",
+                        "Use unified_panel when you explicitly want the raw warehouse without generated normalized variants.",
+                        "Use country_reference to map ISO3 codes in bilateral tables onto canonical ASADO country names.",
+                        "Use table-specific panels when you need source-specific behavior or panel-specific columns.",
                     ],
                 },
                 "neo4j_cypher": {
@@ -817,8 +839,20 @@ def build_access_guide(
             },
             "surface_selection": [
                 {
+                    "surface": factor_surface,
+                    "use_for": "Primary query-facing factor surface across raw and normalized analytics rows.",
+                },
+                {
                     "surface": "unified_panel",
-                    "use_for": "Default analytical view for most country-factor questions across all factor tables.",
+                    "use_for": "Raw warehouse only. Use when you explicitly do not want generated normalized variants.",
+                },
+                {
+                    "surface": "normalized_panel",
+                    "use_for": "Canonical ASADO-generated _CS and _TS feature rows with explicit normalization metadata.",
+                },
+                {
+                    "surface": "country_reference",
+                    "use_for": "Canonical ISO3-to-ASADO join table for bilateral ownership/trade/banking queries.",
                 },
                 {
                     "surface": "gdelt_panel",
@@ -856,15 +890,21 @@ def build_access_guide(
                 "python_bridge": (
                     "from scripts.db_bridge import AsadoDB\n"
                     "with AsadoDB() as db:\n"
-                    "    df = db.query_panel(\"SELECT country, value, date FROM unified_panel "
+                    f"    df = db.query_panel(\"SELECT country, value, date FROM {factor_surface} "
                     "WHERE variable = 'BIS_Credit_GDP_Gap' ORDER BY date DESC LIMIT 10\")"
                 ),
                 "duckdb_sql": (
-                    "SELECT country, value, date\n"
-                    "FROM unified_panel\n"
-                    "WHERE variable = 'MS_Policy_Backstop'\n"
-                    "ORDER BY date DESC, country\n"
-                    "LIMIT 50"
+                    "WITH latest_portfolio AS (\n"
+                    "  SELECT counterpart_iso3, SUM(amount_usd) AS total_holdings\n"
+                    "  FROM bilateral_portfolio_matrix\n"
+                    "  WHERE reporter_iso3 = 'USA'\n"
+                    "  GROUP BY counterpart_iso3\n"
+                    ")\n"
+                    "SELECT cr.country, lp.total_holdings\n"
+                    "FROM latest_portfolio lp\n"
+                    "JOIN country_reference cr ON lp.counterpart_iso3 = cr.iso3\n"
+                    "ORDER BY lp.total_holdings DESC\n"
+                    "LIMIT 10"
                 ),
                 "neo4j_cypher": (
                     "MATCH (c:Country)-[r:TRADES_WITH]->(p:Country)\n"
@@ -878,6 +918,7 @@ def build_access_guide(
                 ),
             },
             "operational_commands": {
+                "build_normalized_features": "./venv/bin/python scripts/build_normalized_panel.py",
                 "refresh_schema_cache": "./venv/bin/python scripts/build_schema_registry.py",
                 "rebuild_databases_only": "./venv/bin/python scripts/monthly_update.py --db-only",
                 "full_monthly_update": "./venv/bin/python scripts/monthly_update.py",
@@ -886,7 +927,8 @@ def build_access_guide(
                 "Prefer read-only access patterns.",
                 "Use SELECT/CTE only for DuckDB queries.",
                 "Use MATCH/CALL/WITH/RETURN only for Neo4j queries.",
-                "Prefer unified_panel unless a panel-specific table is clearly better.",
+                f"Prefer {factor_surface} unless a panel-specific table is clearly better.",
+                "For joins from bilateral tables onto factor panels, join reporter_iso3/counterpart_iso3 to country_reference.iso3 and then join country_reference.country to the factor surface country column.",
                 "For latest/current questions, constrain to dates on or before CURRENT_DATE unless the query explicitly concerns forecasts or the GDELT partial-month convention.",
             ],
         }

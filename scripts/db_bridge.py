@@ -78,6 +78,14 @@ class AsadoDB:
 
         self._neo4j_driver = GraphDatabase.driver(neo4j_uri, auth=(neo4j_user, neo4j_pass))
         self._neo4j_driver.verify_connectivity()
+        self._factor_surface_name: Optional[str] = None
+
+    def _factor_surface(self) -> str:
+        """Return the default factor-query surface, preferring feature_panel when present."""
+        if self._factor_surface_name is None:
+            tables = {row[0] for row in self._duck.execute("SHOW TABLES").fetchall()}
+            self._factor_surface_name = "feature_panel" if "feature_panel" in tables else "unified_panel"
+        return self._factor_surface_name
 
     def query_panel(self, sql: str, params: Optional[list] = None) -> pd.DataFrame:
         """
@@ -85,7 +93,8 @@ class AsadoDB:
 
         Args:
             sql: SQL query string (can reference t2_master, external_factors,
-                 extended_factors, gdelt_panel, or unified_panel).
+                 extended_factors, gdelt_panel, unified_panel, normalized_panel,
+                 or feature_panel when present).
             params: Optional list of bind parameters.
 
         Returns:
@@ -124,24 +133,24 @@ class AsadoDB:
             Dict with keys: country, date, factors (DataFrame), graph (dict of
             relationship types and connected entities).
         """
+        surface = self._factor_surface()
         if date:
             date_filter = f"AND date = '{date}'"
+            actual_date = date
         else:
-            date_filter = f"AND date = (SELECT MAX(date) FROM unified_panel WHERE country = '{country}')"
+            date_filter = f"AND date = (SELECT MAX(date) FROM {surface} WHERE country = '{country}')"
+            actual_date = self._duck.execute(f"""
+                SELECT MAX(date) FROM {surface}
+                WHERE country = '{country}'
+            """).fetchone()[0]
 
         factors_df = self._duck.execute(f"""
             SELECT variable, value, source
-            FROM unified_panel
+            FROM {surface}
             WHERE country = '{country}'
             {date_filter}
             ORDER BY source, variable
         """).fetchdf()
-
-        actual_date = self._duck.execute(f"""
-            SELECT MAX(date) FROM unified_panel
-            WHERE country = '{country}'
-            {date_filter.replace('AND ', 'AND ')}
-        """).fetchone()[0]
 
         graph = {}
         with self._neo4j_driver.session() as session:
@@ -207,14 +216,15 @@ class AsadoDB:
         Returns:
             DataFrame with columns: country, value, date, sorted by value descending.
         """
+        surface = self._factor_surface()
         if date:
             date_clause = f"= '{date}'"
         else:
-            date_clause = f"= (SELECT MAX(date) FROM unified_panel WHERE variable = '{variable}')"
+            date_clause = f"= (SELECT MAX(date) FROM {surface} WHERE variable = '{variable}')"
 
         return self._duck.execute(f"""
             SELECT country, value, date
-            FROM unified_panel
+            FROM {surface}
             WHERE variable = '{variable}'
             AND date {date_clause}
             AND value IS NOT NULL

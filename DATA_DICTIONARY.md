@@ -27,7 +27,9 @@ The two most important access surfaces are:
 ### DuckDB
 
 - File: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/asado.duckdb`
-- Best default view: `unified_panel`
+- Best default view: `feature_panel`
+- Raw warehouse view: `unified_panel`
+- Canonical normalized table: `normalized_panel`
 - Preferred programmatic entrypoint: `scripts.db_bridge.AsadoDB.query_panel()`
 
 ### Neo4j
@@ -120,6 +122,8 @@ This is the shape used by:
 - `macrostructure_factors`
 - `bloomberg_factors`
 - `unified_panel`
+- `normalized_panel`
+- `feature_panel`
 
 ### DuckDB Tables And Views
 
@@ -127,18 +131,24 @@ This is the shape used by:
 | --- | ---: | --- | --- |
 | `t2_master` | 1,188,810 | 2000-02-01 → 2026-04-01 | Canonical normalized T2 panel |
 | `t2_raw` | 474,636 | 2000-02-01 → 2026-04-01 | Raw T2 factor levels from the workbook |
+| `country_reference` | generated monthly | n/a | Canonical ISO3 -> ASADO country mapping surface for bilateral joins |
 | `external_factors` | 112,633 | 1985-01-01 → 2026-03-01 | Program 1 free-source macro / risk / structural panel |
 | `extended_factors` | 96,604 | 1990-12-01 → 2026-04-01 | Program 2 extended free-source panel |
 | `gdelt_panel` | 407,864 | 2015-09-01 → 2026-05-01 | Country-level media / tone / risk signals from GDELT |
 | `imf_factors` | 107,298 | 1980-12-01 → 2031-12-01 | IMF CPI, WEO, BOP, FX, labor, trade, and FSI-derived series |
 | `macrostructure_factors` | 55,118 | 1995-03-01 → 2026-04-01 | Bank fragility, debt structure, ownership, sticky-capital, policy-backstop |
 | `bloomberg_factors` | 98,129 | 1975-12-01 → 2026-04-01 | Bloomberg sovereign rates/credit/macro plus ETF passive-flow layer |
+| `normalized_panel` | generated monthly | derived from live DuckDB | Canonical `_CS` and `_TS` normalized feature layer |
+| `feature_panel` | generated monthly | derived from live DuckDB | Query-facing union of raw + normalized factor rows |
 | `bilateral_portfolio_matrix` | 56,786 | 1997-12-01 → 2026-02-01 | Reporter-counterparty portfolio ownership matrix |
 | `unified_panel` | 2,541,092 | 1975-12-01 → 2031-12-01 | Primary cross-source analytical view |
 
 ### Which Surface Should I Use?
 
-- Use `unified_panel` for most country-factor questions.
+- Use `feature_panel` for most country-factor questions.
+- Use `unified_panel` when you explicitly want the raw warehouse with no ASADO-generated normalized variants.
+- Use `normalized_panel` when you need explicit normalization metadata such as `base_variable`, `normalization`, or rolling-window settings.
+- Use `country_reference` whenever you need to map `reporter_iso3` or `counterpart_iso3` from bilateral tables onto ASADO country names.
 - Use `gdelt_panel` when the question is specifically about GDELT-only features or partial-month GDELT labels.
 - Use `bloomberg_factors` when you want only Bloomberg-native or Bloomberg-derived fields.
 - Use `macrostructure_factors` when you want the ownership / fragility / policy-backstop layer in isolation.
@@ -172,6 +182,8 @@ Use this table for questions like:
 - "Which countries hold the most Brazilian long-term debt?"
 - "How large is U.S. exposure to Mexican equities?"
 - "Who are the top holders of South African debt_long_govt?"
+
+To map `reporter_iso3` / `counterpart_iso3` into ASADO factor-country names, join through `country_reference`.
 
 ## Source Families In `unified_panel`
 
@@ -250,6 +262,15 @@ Common patterns:
 - `_CS` = cross-sectional normalized form
 - `_TS` = time-series normalized form
 - no suffix = usually raw level
+
+### Canonical ASADO-Generated Normalization Layer
+
+For eligible raw variables, ASADO now creates:
+
+- `_CS`: same-date cross-sectional z-score across countries
+- `_TS`: rolling within-country z-score using frequency-aware observation windows
+
+The generated rows live in `normalized_panel`, while `feature_panel` exposes both raw and normalized rows together for assistant/query use.
 
 ## GDELT Convention
 

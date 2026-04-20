@@ -17,8 +17,10 @@ OUTPUT FILES:
 - Data/processed/macrostructure_panel.parquet     (via collect_macrostructure.py)
 - Data/processed/bloomberg_factors_panel.parquet  (via collect_bloomberg.py)
 - Data/asado.duckdb                               (via setup_duckdb.py)
+- DuckDB normalized_panel + feature_panel         (via build_normalized_panel.py)
 - Neo4j graph database                            (via setup_neo4j.py)
 - Neo4j vector index on Country nodes             (via build_embeddings.py)
+- Data/cache/query_assistant/*                    (via build_schema_registry.py)
 - Data/logs/monthly_update_YYYY_MM_DD.log         (this run's log)
 
 VERSION: 1.1
@@ -39,8 +41,10 @@ Pipeline stages:
   5. collect_macrostructure.py --force (IMF FSI + QPSD + sticky-capital + policy-backstop layer)
   6. collect_bloomberg.py --force   (Bloomberg bonds, CDS, breakevens, ratings, ETF passive layer)
   7. setup_duckdb.py                (rebuild analytical DB)
-  8. setup_neo4j.py                 (rebuild knowledge graph + bilateral edges)
-  9. build_embeddings.py            (country-state vectors + Neo4j vector index)
+  8. build_normalized_panel.py      (canonical normalized features + feature_panel)
+  9. setup_neo4j.py                 (rebuild knowledge graph + bilateral edges)
+ 10. build_embeddings.py            (country-state vectors + Neo4j vector index)
+ 11. build_schema_registry.py       (refresh query-assistant schema cache)
 
 Each collector preserves existing data for any source that fails,
 so partial failures never lose historical data.
@@ -231,16 +235,22 @@ def verify_duckdb():
             return
 
         con = duckdb.connect(str(db_path), read_only=True)
-        tables = ["t2_master", "t2_raw", "external_factors", "extended_factors",
-                   "gdelt_panel", "imf_factors", "macrostructure_factors", "bloomberg_factors"]
+        tables = ["t2_master", "t2_raw", "country_reference", "external_factors", "extended_factors",
+                   "gdelt_panel", "imf_factors", "macrostructure_factors", "bloomberg_factors",
+                   "normalized_panel"]
 
         print("\n  DuckDB Verification:")
         total = 0
         for t in tables:
             try:
-                count = con.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
-                n_vars = con.execute(f"SELECT COUNT(DISTINCT variable) FROM {t}").fetchone()[0]
-                print(f"    {t:20s}: {count:>10,} rows, {n_vars:>3} vars")
+                if t == "country_reference":
+                    count = con.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
+                    iso3_count = con.execute(f"SELECT COUNT(DISTINCT iso3) FROM {t}").fetchone()[0]
+                    print(f"    {t:20s}: {count:>10,} rows, {iso3_count:>3} iso3")
+                else:
+                    count = con.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
+                    n_vars = con.execute(f"SELECT COUNT(DISTINCT variable) FROM {t}").fetchone()[0]
+                    print(f"    {t:20s}: {count:>10,} rows, {n_vars:>3} vars")
                 total += count
             except Exception:
                 print(f"    {t:20s}: NOT FOUND")
@@ -249,6 +259,13 @@ def verify_duckdb():
             ucount = con.execute("SELECT COUNT(*) FROM unified_panel").fetchone()[0]
             uvars = con.execute("SELECT COUNT(DISTINCT variable) FROM unified_panel").fetchone()[0]
             print(f"    {'unified_panel':20s}: {ucount:>10,} rows, {uvars:>3} vars (view)")
+        except Exception:
+            pass
+
+        try:
+            fcount = con.execute("SELECT COUNT(*) FROM feature_panel").fetchone()[0]
+            fvars = con.execute("SELECT COUNT(DISTINCT variable) FROM feature_panel").fetchone()[0]
+            print(f"    {'feature_panel':20s}: {fcount:>10,} rows, {fvars:>3} vars (view)")
         except Exception:
             pass
 
@@ -394,6 +411,13 @@ def main():
             log_file
         ))
 
+        results.append(run_step(
+            "Normalization Layer",
+            "build_normalized_panel.py",
+            [],
+            log_file
+        ))
+
         if not args.skip_neo4j:
             if ensure_neo4j():
                 results.append(run_step(
@@ -409,10 +433,29 @@ def main():
                     [],
                     log_file
                 ))
+
+                results.append(run_step(
+                    "Schema Cache Refresh",
+                    "build_schema_registry.py",
+                    [],
+                    log_file
+                ))
             else:
                 print("  Neo4j unavailable — skipping knowledge graph + embeddings")
+                results.append(run_step(
+                    "Schema Cache Refresh",
+                    "build_schema_registry.py",
+                    ["--duck-only"],
+                    log_file
+                ))
         else:
             print("\n  (Neo4j + embeddings skipped via --skip-neo4j)")
+            results.append(run_step(
+                "Schema Cache Refresh",
+                "build_schema_registry.py",
+                ["--duck-only"],
+                log_file
+            ))
 
     total_elapsed = time.time() - total_start
 

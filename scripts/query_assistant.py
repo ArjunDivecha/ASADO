@@ -348,18 +348,23 @@ class ASADOQueryAssistant:
             "indexes": neo.get("indexes", []),
         }
 
+        primary_view = "feature_panel" if "feature_panel" in duck_summary else "unified_panel"
+
         context = {
             "duckdb": {
                 "tables": duck_summary,
                 "countries": duck.get("countries", []),
                 "notes": [
-                    "unified_panel is the primary analytical view.",
-                    "unified_panel uses tidy rows: date, country, value, variable, source.",
+                    f"{primary_view} is the primary analytical view.",
+                    f"{primary_view} uses tidy rows: date, country, value, variable, source.",
+                    "unified_panel is the raw warehouse and excludes ASADO-generated normalized variants.",
+                    "country_reference is the canonical ISO3-to-ASADO country mapping table for joins from bilateral tables into factor surfaces.",
                     (
                         f"For latest/current questions, treat CURRENT_DATE as {CURRENT_DATE.isoformat()} "
                         "and constrain to dates on or before that date unless the user explicitly asks "
                         "for forecasts or projections."
                     ),
+                    "For latest/current bilateral ownership, trade, or banking questions, prefer the single latest available snapshot date on or before CURRENT_DATE unless the user explicitly asks for history or a multi-period total.",
                     "Prefer observed/non-forecast series over forecast series for current/latest questions.",
                     GDELT_PARTIAL_LABEL_NOTE,
                     "Country graph nodes include both sovereign states and market sleeves; use graph_role to distinguish them.",
@@ -378,6 +383,8 @@ class ASADOQueryAssistant:
                 "If a later hybrid step needs country names from an earlier step, use the literal token {{country_list}}.",
                 "The step that produces a reusable country set should alias the relevant column as country.",
                 "For sovereign graph/network questions, filter Country nodes to graph_role <> 'market_sleeve'.",
+                "For joins between bilateral_portfolio_matrix and feature_panel/unified_panel/normalized_panel, use country_reference rather than inventing CASE mappings.",
+                "For current/latest bilateral queries, use MAX(date) on or before CURRENT_DATE instead of summing over a date range unless the user explicitly asks for a period, trend, or cumulative history.",
                 "For latest/current GDELT questions, prefer source = 'gdelt' or gdelt_panel so the next-month partial label convention is handled correctly.",
                 "If a question asks which countries are under sanctions, clarify unless the user explicitly wants OFAC/SDN-linked exposure or association data.",
                 "Recognize common region/group terms such as ASEAN, G7, BRICS, LatAm, EMEA, EM, and DM when they appear in the question.",
@@ -622,6 +629,7 @@ class ASADOQueryAssistant:
             f"Top variable candidates for this question:\n{json.dumps(candidate_variables, indent=2)}\n\n"
             f"User question:\n{question}\n\n"
             "For latest/current questions, avoid future-dated rows and prefer observed/non-forecast series unless the user explicitly asks for forecasts. "
+            "For latest/current bilateral ownership, trade, or banking questions, use the latest available snapshot date on or before CURRENT_DATE rather than aggregating across a date range unless the user explicitly asks for history. "
             f"{GDELT_PARTIAL_LABEL_NOTE} "
             "Prefer matching against the candidate variables when they fit the question. "
             "Return JSON only."
@@ -863,6 +871,7 @@ class ASADOQueryAssistant:
         value_alias = value_alias_match.group(1) if value_alias_match else "value"
         date_alias = date_alias_match.group(1) if date_alias_match else "date"
 
+        surface = "feature_panel" if "feature_panel" in set(db.tables()) else "unified_panel"
         retry_sql = f"""
         WITH ranked AS (
             SELECT
@@ -870,7 +879,7 @@ class ASADOQueryAssistant:
                 value,
                 date,
                 ROW_NUMBER() OVER (PARTITION BY country ORDER BY date DESC) AS rn
-            FROM unified_panel
+            FROM {surface}
             WHERE variable = '{variable.replace("'", "''")}'
               AND country IN {ASADOQueryAssistant._country_list_sql(countries)}
               AND value IS NOT NULL

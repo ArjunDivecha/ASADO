@@ -34,6 +34,7 @@ cross-source queries.
 Tables created:
   - t2_master:          T2 normalized factor data (111 vars, 34 countries, 2000-2026)
   - t2_raw:             Raw T2 factor levels from the authoritative workbook
+  - country_reference:  Canonical ISO/ASADO country mapping surface for joins
   - external_factors:   Program 1 panel (35 vars from 7 sources)
   - extended_factors:   Program 2 panel (51 vars from 12 sources)
   - gdelt_panel:        GDELT normalized factors (93 vars, 34 countries, 2015-2026)
@@ -89,6 +90,8 @@ GLOBAL_BROADCAST_VARIABLES = {
     "FRED_UST_10Y",
     "FRED_Yield_Curve_10Y2Y",
 }
+MARKET_SLEEVE_COUNTRIES = {"ChinaH", "NASDAQ", "US SmallCap"}
+SOVEREIGN_PROXY_COUNTRIES = {"ChinaA"}
 
 
 def _canonical_variable_name(name: str) -> str:
@@ -99,6 +102,98 @@ def _tracked_countries() -> list[str]:
     with open(CONFIG_PATH, encoding="utf-8") as handle:
         mapping = json.load(handle)
     return list(mapping["countries"].keys())
+
+
+def _graph_role_for_country(country: str) -> str:
+    if country in MARKET_SLEEVE_COUNTRIES:
+        return "market_sleeve"
+    if country in SOVEREIGN_PROXY_COUNTRIES:
+        return "sovereign_proxy"
+    return "sovereign"
+
+
+def create_country_reference_table(con: duckdb.DuckDBPyConnection) -> int:
+    """Create a canonical ISO3 -> ASADO country mapping surface for cross-table joins."""
+    print("Creating country_reference table ...")
+    with open(CONFIG_PATH, encoding="utf-8") as handle:
+        mapping = json.load(handle)["countries"]
+
+    grouped: dict[str, list[dict[str, str | None]]] = {}
+    for country, codes in mapping.items():
+        iso3 = codes["iso3"]
+        grouped.setdefault(iso3, []).append(
+            {
+                "country": country,
+                "iso2": codes.get("iso2"),
+                "iso3": iso3,
+                "imf": codes.get("imf"),
+                "oecd": codes.get("oecd"),
+                "bis": codes.get("bis"),
+                "wb": codes.get("wb"),
+                "fred_epu": codes.get("fred_epu"),
+                "gpr": codes.get("gpr"),
+                "epu_col": codes.get("epu_col"),
+                "graph_role": _graph_role_for_country(country),
+            }
+        )
+
+    role_priority = {"sovereign_proxy": 0, "sovereign": 1, "market_sleeve": 2}
+    rows = []
+    for iso3, entries in grouped.items():
+        ordered = sorted(
+            entries,
+            key=lambda row: (role_priority.get(str(row["graph_role"]), 99), str(row["country"])),
+        )
+        canonical = ordered[0]
+        variants = [str(row["country"]) for row in ordered]
+        market_sleeves = [str(row["country"]) for row in ordered if row["graph_role"] == "market_sleeve"]
+        rows.append(
+            {
+                "country": canonical["country"],
+                "iso2": canonical["iso2"],
+                "iso3": canonical["iso3"],
+                "imf": canonical["imf"],
+                "oecd": canonical["oecd"],
+                "bis": canonical["bis"],
+                "wb": canonical["wb"],
+                "fred_epu": canonical["fred_epu"],
+                "gpr": canonical["gpr"],
+                "epu_col": canonical["epu_col"],
+                "graph_role": canonical["graph_role"],
+                "variant_count": len(variants),
+                "all_country_variants": ", ".join(variants),
+                "market_sleeve_variants": ", ".join(market_sleeves) if market_sleeves else None,
+                "has_market_sleeves": bool(market_sleeves),
+            }
+        )
+
+    reference_df = pd.DataFrame(rows).sort_values(["country"]).reset_index(drop=True)
+    con.execute("DROP TABLE IF EXISTS country_reference")
+    con.register("country_reference_df", reference_df)
+    con.execute("""
+        CREATE TABLE country_reference AS
+        SELECT
+            country,
+            iso2,
+            iso3,
+            imf,
+            oecd,
+            bis,
+            wb,
+            fred_epu,
+            gpr,
+            epu_col,
+            graph_role,
+            CAST(variant_count AS INTEGER) AS variant_count,
+            all_country_variants,
+            market_sleeve_variants,
+            CAST(has_market_sleeves AS BOOLEAN) AS has_market_sleeves
+        FROM country_reference_df
+    """)
+    con.unregister("country_reference_df")
+    count = con.execute("SELECT COUNT(*) FROM country_reference").fetchone()[0]
+    print(f"  country_reference: {count:,} canonical ISO3 mappings")
+    return count
 
 
 def load_t2_master(con: duckdb.DuckDBPyConnection) -> int:
@@ -379,11 +474,13 @@ def create_indexes(con: duckdb.DuckDBPyConnection):
                    "imf_factors", "macrostructure_factors", "bloomberg_factors"]:
         con.execute(f"CREATE INDEX IF NOT EXISTS idx_{table}_ctry_date ON {table}(country, date)")
         con.execute(f"CREATE INDEX IF NOT EXISTS idx_{table}_var ON {table}(variable)")
+    con.execute("CREATE INDEX IF NOT EXISTS idx_country_reference_country ON country_reference(country)")
+    con.execute("CREATE INDEX IF NOT EXISTS idx_country_reference_iso3 ON country_reference(iso3)")
     con.execute("""
         CREATE INDEX IF NOT EXISTS idx_bilateral_portfolio_matrix_rep_cp_date
         ON bilateral_portfolio_matrix(reporter_iso3, counterpart_iso3, date)
     """)
-    print("  Indexes created on (country, date) and (variable) for all tables")
+    print("  Indexes created on factor tables, country_reference, and bilateral ownership keys")
 
 
 def check_database():
@@ -401,15 +498,20 @@ def check_database():
     print(f"Tables: {[t[0] for t in tables]}")
     print()
 
-    for table in ["t2_master", "t2_raw", "external_factors", "extended_factors", "gdelt_panel",
+    for table in ["t2_master", "t2_raw", "country_reference", "external_factors", "extended_factors", "gdelt_panel",
                    "imf_factors", "macrostructure_factors", "bloomberg_factors"]:
         try:
-            count = con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
-            vars_c = con.execute(f"SELECT COUNT(DISTINCT variable) FROM {table}").fetchone()[0]
-            ctry_c = con.execute(f"SELECT COUNT(DISTINCT country) FROM {table}").fetchone()[0]
-            date_min = con.execute(f"SELECT MIN(date) FROM {table}").fetchone()[0]
-            date_max = con.execute(f"SELECT MAX(date) FROM {table}").fetchone()[0]
-            print(f"  {table:20s}: {count:>10,} rows | {vars_c:>3} vars | {ctry_c:>2} countries | {date_min} → {date_max}")
+            if table == "country_reference":
+                count = con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+                iso3_c = con.execute(f"SELECT COUNT(DISTINCT iso3) FROM {table}").fetchone()[0]
+                print(f"  {table:20s}: {count:>10,} rows | {iso3_c:>2} ISO3 codes")
+            else:
+                count = con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+                vars_c = con.execute(f"SELECT COUNT(DISTINCT variable) FROM {table}").fetchone()[0]
+                ctry_c = con.execute(f"SELECT COUNT(DISTINCT country) FROM {table}").fetchone()[0]
+                date_min = con.execute(f"SELECT MIN(date) FROM {table}").fetchone()[0]
+                date_max = con.execute(f"SELECT MAX(date) FROM {table}").fetchone()[0]
+                print(f"  {table:20s}: {count:>10,} rows | {vars_c:>3} vars | {ctry_c:>2} countries | {date_min} → {date_max}")
         except Exception as e:
             print(f"  {table}: ERROR — {e}")
 
@@ -477,6 +579,8 @@ def main():
     total += load_t2_master(con)
     print()
     total += load_t2_raw(con)
+    print()
+    total += create_country_reference_table(con)
     print()
     total += load_parquet_table(con, "external_factors", EXTERNAL_PQ, "External Factors Panel")
     print()

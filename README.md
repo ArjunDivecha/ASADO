@@ -1,6 +1,6 @@
 # ASADO — Country Data Collection & Research Platform
 
-Collects macro/governance/risk/climate/trade data from **26 free external sources** (including 7 IMF datasets) **plus 17 Bloomberg Terminal variables** (sovereign bonds, CDS, breakevens, OIS rates, WIRP, ECFC, PMI, M2, MIPD), aligns to the 34-country T2 Master universe, and stores everything in a **hybrid DuckDB + Neo4j database** with a **raw warehouse, canonical normalized feature layer, bilateral trade/banking/portfolio edges,** and **country-state vector embeddings** for similarity search.
+Collects macro/governance/risk/climate/trade data from **26 free external sources** (including 7 IMF datasets) **plus 28 Bloomberg Terminal variables** (sovereign bonds, CDS, breakevens, OIS, WIRP, ECFC, PMI, M2, ETF passive-flow, and related derived signals), aligns to the 34-country T2 Master universe, and stores everything in a **hybrid DuckDB + Neo4j database** with a **raw warehouse, canonical normalized feature layer, bilateral trade/banking/portfolio edges,** and **country-state vector embeddings** for similarity search.
 
 ## Project Structure
 
@@ -10,14 +10,14 @@ ASADO/
 │   ├── [T2 Master.xlsx]                  # Read from .../A Complete/T2 Factor Timing Fuzzy/
 │   ├── [Normalized_T2_MasterCSV.csv]     # Read from .../A Complete/T2 Factor Timing Fuzzy/
 │   ├── [GDELT_Factors_MasterCSV.csv]     # Preferred external source from .../A Complete/T2 GDELT/
-│   ├── asado.duckdb                      # DuckDB analytical database (~96 MB after current rebuild)
+│   ├── asado.duckdb                      # DuckDB analytical database (~105 MB after current rebuild)
 │   ├── raw/                              # Cached downloads (24h expiry)
 │   ├── processed/                        # Output panels + catalogs + run history
 │   │   ├── external_factors_panel.parquet # Program 1 output (112K rows, 35 vars)
 │   │   ├── extended_factors_panel.parquet # Program 2 output (97K rows, 51 vars)
 │   │   ├── imf_factors_panel.parquet     # Program 3 output (107K rows, 26 vars)
 │   │   ├── gdelt_panel_snapshot.parquet  # Repo-local fallback when external GDELT CSV is absent
-│   │   ├── macrostructure_factors_panel.parquet # Program 5 output (55K rows, ownership/fragility/backstop layer)
+│   │   ├── macrostructure_panel.parquet  # Program 5 output (75K rows, fragility/sticky-capital/central-bank/backstop layer)
 │   │   ├── bilateral_trade_matrix.parquet  # Program 4 output (899 trade pairs)
 │   │   ├── bilateral_banking_matrix.parquet # Program 4 output (582 banking pairs)
 │   │   ├── bilateral_portfolio_matrix.parquet # Program 4 output (historical portfolio ownership matrix)
@@ -31,7 +31,7 @@ ASADO/
 │   ├── collect_extended.py               # Program 2 — 12 extended sources
 │   ├── collect_imf.py                    # Program 3 — 7 IMF datasets
 │   ├── collect_bilateral.py              # Program 4 — bilateral trade + banking + portfolio ownership
-│   ├── collect_macrostructure.py         # Program 5 — macrostructure / fragility / backstop panel
+│   ├── collect_macrostructure.py         # Program 5 — macrostructure / fragility / central-bank footprint / backstop panel
 │   ├── collect_bloomberg.py              # Program 6 — Bloomberg Terminal (bonds, CDS, OIS, WIRP, ECFC, PMI, M2)
 │   ├── setup_duckdb.py                   # DuckDB raw warehouse loader
 │   ├── build_normalized_panel.py         # Canonical _CS/_TS feature layer + feature_panel view
@@ -70,10 +70,10 @@ This single command runs the entire pipeline:
 | 2 | `collect_extended.py --force` | 12 extended sources (BIS rates, OECD BCI/CCI, ECB, ILOSTAT, FRED, EIA) | ~45s |
 | 3 | `collect_imf.py --force` | 7 IMF datasets (CPI, WEO, BOP, rates, FX, labor, trade) | ~70s |
 | 4 | `collect_bilateral.py` | Bilateral trade + banking + portfolio ownership matrices | ~120s |
-| 5 | `collect_macrostructure.py --force` | Macrostructure fragility, debt-structure, sticky-capital, and backstop layer | ~40s |
+| 5 | `collect_macrostructure.py --force` | Macrostructure fragility, debt-structure, sticky-capital, central-bank footprint, and backstop layer | ~60s |
 | 6 | `collect_bloomberg.py` | Bloomberg Terminal data (bonds, CDS, OIS, WIRP, ECFC, PMI, M2, ETF passive layer) | ~140s |
 | 7 | `setup_duckdb.py` | Rebuild the raw DuckDB analytical warehouse | ~3s |
-| 8 | `build_normalized_panel.py` | Build canonical `_CS` / `_TS` features and `feature_panel` | ~9s |
+| 8 | `build_normalized_panel.py` | Build canonical `_CS` / `_TS` features and `feature_panel` | ~12s |
 | 9 | `setup_neo4j.py` | Rebuild Neo4j knowledge graph + trade/banking/portfolio edges | ~9s |
 | 10 | `build_embeddings.py` | Country-state PCA vectors + Neo4j vector index | ~3s |
 | 11 | `build_schema_registry.py` | Refresh schema cache + access guide for the query assistant | ~1s |
@@ -175,11 +175,11 @@ All collectors are designed for safe monthly re-runs:
 | LS (Labor Stats) | OK | 12/34 | 1 | 2000-01 → 2026-01 |
 | ITG (Trade in Goods) | OK | 34/34 | 8 | 2000-01 → 2026-01 |
 
-**Total: 106,989 rows, 26 variables, 34 countries, 7/7 datasets OK**
+**Total: 107,298 rows, 26 variables, 34 countries, 7/7 datasets OK**
 
 API: SDMX 3.0 REST at `api.imf.org` — no API key required.
 
-### Program 5: Bloomberg Terminal (collect_bloomberg.py)
+### Program 6: Bloomberg Terminal (collect_bloomberg.py)
 
 | Category | Status | Countries | Variables | Date Range |
 |----------|--------|-----------|-----------|------------|
@@ -196,11 +196,30 @@ API: SDMX 3.0 REST at `api.imf.org` — no API key required.
 | MIPD Default Prob (derived) | OK | 15/34 | 1 | 2000-10 → 2026-03 |
 | Z-Spread vs OIS (derived) | OK | 16/34 | 1 | 2000-01 → 2026-03 |
 
-**Total: 66,656 rows, 17 variables, 34 countries, 12/13 categories OK**
+**Total: 98,129 rows, 28 variables, 34 countries, 12/13 categories OK**
+
+The 28 Bloomberg variables include the ETF passive-flow / creation-redemption family:
+
+- `MS_Country_ETF_AUM_USD`
+- `MS_Country_ETF_NetFlow_USD`
+- `MS_ETF_Creation_Fee_USD`
+- `MS_ETF_Creation_Unit_Size_Shares`
+- `MS_ETF_NetCreation_Shares`
+- `MS_ETF_NetFlow_to_MarketCap`
+- `MS_ETF_Redemption_Fee_USD`
+- `MS_Index_Weight`
+- `MS_Index_Weight_Change`
+- `MS_Passive_AUM_to_MarketCap`
+- `MS_Passive_Flow_Distortion`
 
 Bloomberg connection: macOS Python → TCP:8194 → Parallels Windows 11 VM → bbcomm.exe → Bloomberg Terminal. Uses the OpusBloomberg library at `/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg`.
 
-### Combined Total: 1,910,775 rows, 332 variables across 26 free sources + Bloomberg Terminal
+### Warehouse Snapshot (2026-04-19 rebuild)
+
+- `macrostructure_panel`: 75,120 rows, 26 variables
+- `unified_panel`: 2,561,094 raw factor rows across 421 variables
+- `normalized_panel`: 778,984 normalized rows across 285 generated variables
+- `feature_panel`: 3,340,078 total rows across 706 raw + normalized variables
 
 ## Output Files
 
@@ -214,9 +233,13 @@ Bloomberg connection: macOS Python → TCP:8194 → Parallels Windows 11 VM → 
 | `Data/processed/imf_factors_panel.csv` | Program 3 CSV copy |
 | `Data/processed/bilateral_trade_matrix.parquet` | Program 4 — 899 bilateral trade pairs |
 | `Data/processed/bilateral_banking_matrix.parquet` | Program 4 — 582 banking exposure pairs |
-| `Data/processed/bloomberg_factors_panel.parquet` | Program 5 — 67K rows, 17 Bloomberg variables |
-| `Data/processed/bloomberg_factors_panel.csv` | Program 5 CSV copy |
-| `Data/processed/bloomberg_variable_catalog.csv` | Program 5 variable metadata |
+| `Data/processed/macrostructure_panel.parquet` | Program 5 — 75K rows, 26 macrostructure variables |
+| `Data/processed/macrostructure_panel.csv` | Program 5 CSV copy |
+| `Data/processed/macrostructure_variable_catalog.csv` | Program 5 variable metadata |
+| `Data/processed/macrostructure_formula_catalog.json` | Program 5 formula metadata |
+| `Data/processed/bloomberg_factors_panel.parquet` | Program 6 — 98K rows, 28 Bloomberg variables |
+| `Data/processed/bloomberg_factors_panel.csv` | Program 6 CSV copy |
+| `Data/processed/bloomberg_variable_catalog.csv` | Program 6 variable metadata |
 | `Data/processed/external_variable_catalog.csv` | Program 1 variable metadata |
 | `Data/processed/extended_variable_catalog.csv` | Program 2 variable metadata |
 | `Data/processed/imf_variable_catalog.csv` | Program 3 variable metadata |
@@ -231,7 +254,7 @@ Bloomberg connection: macOS Python → TCP:8194 → Parallels Windows 11 VM → 
 | variable | string | EPU |
 | source | string | epu |
 
-## Variables Collected (332 total)
+## Variable Families
 
 ### Program 1: Core Sources (35 variables)
 
@@ -264,7 +287,11 @@ Bloomberg connection: macOS Python → TCP:8194 → Parallels Windows 11 VM → 
 **Labor (1):** `IMF_Employment_Index`
 **Trade (8):** `IMF_Exports_USD`, `IMF_Imports_USD`, `IMF_Trade_Balance_USD` (computed), `IMF_Trade_Openness_USD` (computed), `IMF_Export_Price_Index`, `IMF_Import_Price_Index`, `IMF_Exports_YoY`, `IMF_Imports_YoY`
 
-### Program 5: Bloomberg Terminal (17 variables)
+### Program 5: Macrostructure Panel (26 variables)
+
+Includes IMF FSI bank-fragility indicators, World Bank QPSD debt-structure mix, OECD institutional-depth and sticky-capital proxies, portfolio-context variables, and transparent derived policy / official-sector measures such as `MS_CentralBank_BalanceSheet_GDP`, `MS_CentralBank_Claims_on_Government_Pct_GDP`, `MS_CentralBank_SovDebt_Share`, `MS_Reserve_Adequacy`, `MS_Swap_Line_Access`, `MS_Policy_Backstop`, and `MS_Investor_Base_Fragility`.
+
+### Program 6: Bloomberg Terminal (28 variables)
 
 **Sovereign Bonds (4):** `BBG_Govt_Bond_2Y`, `BBG_Govt_Bond_5Y`, `BBG_Govt_Bond_10Y`, `BBG_Govt_Bond_30Y`
 **CDS (1):** `BBG_CDS_5Y`
@@ -338,10 +365,11 @@ blpapi pandas pyarrow numpy  # in OpusBloomberg/.venv
 - Country-state embeddings use PCA-compressed z-scored factor values (34d vectors from 332 variables) stored on Neo4j Country nodes with a cosine similarity vector index
 - Bloomberg data uses the OpusBloomberg library for BLPAPI access via macOS → Parallels → Windows VM → Bloomberg Terminal. Runs in a dedicated conda environment (`OpusBloomberg/.venv`) with `blpapi`. Connection auto-detects VM IP, starts bbcomm, configures port forwarding and firewall rules.
 - Bloomberg collector outputs both pulled data (bond yields, CDS, OIS, breakevens, WIRP, ECFC, PMI, M2) and derived signals (MIPD from CDS via hazard rate model, Z-spread = bond yield minus OIS rate, yield curve slope = 10Y minus 2Y). ECFC GDP uses a fallback strategy: tries consensus forecast tickers first (`ECGD[CC]`), falls back to actual GDP YoY (`EHGD[CC]Y`) if consensus ticker fails.
+- Macrostructure Program 5 now includes an IMF MFS_CBS-based central-bank footprint layer: total assets / GDP, claims on government / GDP, and a transparent sovereign-debt-share proxy that prefers QPSD debt coverage and falls back to WEO debt / GDP when needed.
 
 ## Database Architecture (Phase 1B)
 
-### DuckDB — Analytical Store (`Data/asado.duckdb`, ~96 MB)
+### DuckDB — Analytical Store (`Data/asado.duckdb`, ~105 MB)
 
 Columnar database for fast time-series analytics. Core surfaces currently include:
 
@@ -354,12 +382,12 @@ Columnar database for fast time-series analytics. Core surfaces currently includ
 | `extended_factors` | 96,604 | 1990-12-01 → 2026-04-01 | Program 2 extended free-source panel |
 | `gdelt_panel` | 407,864 | 2015-09-01 → 2026-05-01 | Country-level media / tone / risk panel, including partial current month labels |
 | `imf_factors` | 107,298 | 1980-12-01 → 2031-12-01 | IMF CPI, WEO, BOP, FX, labor, trade, and FSI-derived series |
-| `macrostructure_factors` | 55,118 | 1995-03-01 → 2026-04-01 | Fragility, debt-structure, ownership, sticky-capital, and policy-backstop layer |
+| `macrostructure_factors` | 75,120 | 1995-03-01 → 2026-04-01 | Fragility, debt-structure, ownership, sticky-capital, central-bank footprint, and policy-backstop layer |
 | `bloomberg_factors` | 98,129 | 1975-12-01 → 2026-04-01 | Bloomberg sovereign rates/credit/macro plus ETF passive-flow layer |
-| `normalized_panel` | generated monthly | derived from live DuckDB | Canonical `_CS` / `_TS` normalized feature layer |
-| `feature_panel` (view) | generated monthly | derived from live DuckDB | Primary query-facing union of raw + normalized factor rows |
+| `normalized_panel` | 778,984 | 1990-12-01 → 2026-04-01 | Canonical `_CS` / `_TS` normalized feature layer |
+| `feature_panel` (view) | 3,340,078 | 1975-12-01 → 2031-12-01 | Primary query-facing union of raw + normalized factor rows |
 | `bilateral_portfolio_matrix` | 56,786 | 1997-12-01 → 2026-02-01 | Reporter-counterparty portfolio ownership matrix |
-| **`unified_panel`** (view) | **2,541,092** | **1975-12-01 → 2031-12-01** | **Raw cross-source analytical warehouse** |
+| **`unified_panel`** (view) | **2,561,094** | **1975-12-01 → 2031-12-01** | **Raw cross-source analytical warehouse** |
 
 Factor tables and views (`t2_master`, source panels, `unified_panel`, `normalized_panel`, `feature_panel`) share the tidy schema `(date DATE, country VARCHAR, value DOUBLE, variable VARCHAR)`. `country_reference` and `bilateral_portfolio_matrix` are helper surfaces used for ISO mapping and ownership joins. Indexes cover factor tables plus `country_reference` and the main bilateral ownership keys.
 

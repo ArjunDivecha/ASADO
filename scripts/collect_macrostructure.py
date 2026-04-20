@@ -15,13 +15,13 @@ OUTPUT FILES:
 - Data/processed/macrostructure_variable_catalog.csv
 - Data/processed/macrostructure_formula_catalog.json
 
-VERSION: 1.2
-LAST UPDATED: 2026-04-18
+VERSION: 1.3
+LAST UPDATED: 2026-04-19
 AUTHOR: Arjun Divecha
 
 DESCRIPTION:
-Collects ASADO's first macrostructure panel as a tidy country-date-variable
- dataset. The initial release lands three transparent blocks:
+Collects ASADO's macrostructure panel as a tidy country-date-variable
+ dataset. The current release lands five transparent blocks:
 
 1. IMF Financial Soundness Indicators
    - bank capital, liquidity, and credit-quality stress metrics
@@ -34,6 +34,10 @@ Collects ASADO's first macrostructure panel as a tidy country-date-variable
 4. Explicit derived signals
    - U.S. holder share from tracked IMF PIP ownership benchmarks
    - a transparent investor-base fragility composite
+5. Phase 3 policy / official-sector footprint signals
+   - central-bank balance-sheet size relative to GDP
+   - central-bank claims on central government relative to GDP
+   - central-bank sovereign-debt share proxy
 
 DEPENDENCIES:
 - pandas, requests, tqdm, pyarrow
@@ -268,6 +272,12 @@ US_HOME_BACKSTOP_COUNTRIES = {"U.S.", "NASDAQ", "US SmallCap"}
 STANDING_SWAP_LINE_START = pd.Timestamp(2013, 11, 1)
 TEMPORARY_SWAP_LINE_START = pd.Timestamp(2020, 3, 1)
 TEMPORARY_SWAP_LINE_END = pd.Timestamp(2021, 12, 1)
+
+WEO_NOMINAL_GDP_USD_INDICATOR = "NGDPD"
+WEO_DEBT_GDP_INDICATOR = "GGXWDG_NGDP"
+MFS_CBS_TOTAL_ASSETS_INDICATOR = "S121_A_TA_ASEC_CB1SR"
+MFS_CBS_CLAIMS_ON_GOVT_INDICATOR = "S121_A_ACO_S1311MIXED_CBS"
+MFS_FREQUENCY_PRIORITY = {"M": 0, "Q": 1, "A": 2}
 
 
 def load_countries() -> Dict[str, Dict[str, Any]]:
@@ -746,6 +756,304 @@ def collect_oecd_household_sticky_capital(
     )
 
 
+def collect_weo_indicator(
+    iso3_to_t2: Dict[str, List[str]],
+    iso3_list: List[str],
+    indicator_code: str,
+    variable_name: str,
+    force: bool,
+) -> pd.DataFrame:
+    """Collect an annual WEO indicator for helper denominators."""
+    batch_iso3 = "+".join(iso3_list)
+    data = fetch_sdmx_json(
+        "IMF.RES",
+        "WEO",
+        f"{batch_iso3}.{indicator_code}",
+        "c[TIME_PERIOD]=ge:2000",
+        force,
+    )
+    if not data:
+        return pd.DataFrame(columns=["date", "country", "value", "variable", "source"])
+
+    datasets = data.get("data", {}).get("dataSets", [])
+    structures = data.get("data", {}).get("structures", [])
+    if not datasets or not structures:
+        return pd.DataFrame(columns=["date", "country", "value", "variable", "source"])
+
+    series_dims = structures[0].get("dimensions", {}).get("series", [])
+    observation_dims = structures[0].get("dimensions", {}).get("observation", [])
+    if not series_dims or not observation_dims:
+        return pd.DataFrame(columns=["date", "country", "value", "variable", "source"])
+
+    country_dim = next((dim for dim in series_dims if dim["id"] == "COUNTRY"), None)
+    if not country_dim:
+        return pd.DataFrame(columns=["date", "country", "value", "variable", "source"])
+
+    country_position = country_dim["keyPosition"]
+    country_values = [value.get("id") for value in country_dim.get("values", [])]
+    time_values = observation_dims[0].get("values", [])
+    records: List[Dict[str, Any]] = []
+
+    for series_key, series_data in datasets[0].get("series", {}).items():
+        key_parts = series_key.split(":")
+        if len(key_parts) <= country_position:
+            continue
+
+        country_idx = int(key_parts[country_position])
+        if country_idx >= len(country_values):
+            continue
+        iso3 = country_values[country_idx]
+        if iso3 not in iso3_to_t2:
+            continue
+
+        for observation_key, observation_value in series_data.get("observations", {}).items():
+            time_idx = int(observation_key)
+            if time_idx >= len(time_values):
+                continue
+            period = time_values[time_idx].get("value", time_values[time_idx].get("id", ""))
+            dt = period_to_date(period)
+            value = observation_value[0] if observation_value else None
+            if dt is None or value is None:
+                continue
+
+            for t2_name in iso3_to_t2[iso3]:
+                records.append(
+                    {
+                        "date": dt,
+                        "country": t2_name,
+                        "value": float(value),
+                        "variable": variable_name,
+                        "source": "imf_weo_helper",
+                    }
+                )
+
+    if not records:
+        return pd.DataFrame(columns=["date", "country", "value", "variable", "source"])
+
+    df = pd.DataFrame(records)
+    return (
+        df.sort_values(["country", "variable", "date"])
+        .drop_duplicates(subset=["date", "country", "variable"], keep="last")
+        .reset_index(drop=True)
+    )
+
+
+def collect_mfs_cbs_indicator(
+    iso3_to_t2: Dict[str, List[str]],
+    iso3_list: List[str],
+    indicator_code: str,
+    force: bool,
+) -> pd.DataFrame:
+    """Collect a central-bank balance-sheet indicator from IMF MFS_CBS."""
+    batch_iso3 = "+".join(iso3_list)
+    data = fetch_sdmx_json("IMF.STA", "MFS_CBS", f"{batch_iso3}.{indicator_code}", force=force)
+    if not data:
+        return pd.DataFrame(columns=["date", "country", "value", "frequency", "indicator_code"])
+
+    series_dims, time_values, series = _extract_series_values(data)
+    if not series_dims or not series:
+        return pd.DataFrame(columns=["date", "country", "value", "frequency", "indicator_code"])
+
+    country_dim = next((dim for dim in series_dims if dim["id"] == "COUNTRY"), None)
+    frequency_dim = next((dim for dim in series_dims if dim["id"] == "FREQUENCY"), None)
+    if not country_dim or not frequency_dim:
+        return pd.DataFrame(columns=["date", "country", "value", "frequency", "indicator_code"])
+
+    country_position = country_dim["keyPosition"]
+    frequency_position = frequency_dim["keyPosition"]
+    country_values = [value.get("id") for value in country_dim.get("values", [])]
+    frequency_values = [value.get("id") for value in frequency_dim.get("values", [])]
+    records: List[Dict[str, Any]] = []
+
+    for series_key, series_data in series.items():
+        key_parts = series_key.split(":")
+        if len(key_parts) <= max(country_position, frequency_position):
+            continue
+
+        country_idx = int(key_parts[country_position])
+        frequency_idx = int(key_parts[frequency_position])
+        if country_idx >= len(country_values) or frequency_idx >= len(frequency_values):
+            continue
+
+        iso3 = country_values[country_idx]
+        frequency = frequency_values[frequency_idx]
+        if iso3 not in iso3_to_t2:
+            continue
+
+        for observation_key, observation_value in series_data.get("observations", {}).items():
+            time_idx = int(observation_key)
+            if time_idx >= len(time_values):
+                continue
+            period = time_values[time_idx].get("value", time_values[time_idx].get("id", ""))
+            dt = period_to_date(period)
+            value = observation_value[0] if observation_value else None
+            if dt is None or value is None:
+                continue
+
+            for t2_name in iso3_to_t2[iso3]:
+                records.append(
+                    {
+                        "date": dt,
+                        "country": t2_name,
+                        "value": float(value),
+                        "frequency": frequency,
+                        "indicator_code": indicator_code,
+                    }
+                )
+
+    if not records:
+        return pd.DataFrame(columns=["date", "country", "value", "frequency", "indicator_code"])
+
+    return pd.DataFrame(records)
+
+
+def _attach_same_year_annual_value(
+    df: pd.DataFrame,
+    annual_df: pd.DataFrame,
+    annual_value_name: str,
+) -> pd.DataFrame:
+    """Attach an annual helper series to higher-frequency rows by calendar year."""
+    if df.empty or annual_df.empty:
+        return pd.DataFrame()
+
+    left = df.copy()
+    right = annual_df.copy()
+    left["date"] = pd.to_datetime(left["date"], errors="coerce")
+    right["date"] = pd.to_datetime(right["date"], errors="coerce")
+    left = left.dropna(subset=["date", "country", "value"])
+    right = right.dropna(subset=["date", "country", "value"])
+    if left.empty or right.empty:
+        return pd.DataFrame()
+
+    left["year"] = left["date"].dt.year
+    right["year"] = right["date"].dt.year
+    right = (
+        right.sort_values(["country", "year", "date"])
+        .drop_duplicates(subset=["country", "year"], keep="last")
+        .rename(columns={"value": annual_value_name})
+    )
+    merged = left.merge(
+        right[["country", "year", annual_value_name]],
+        on=["country", "year"],
+        how="left",
+    )
+    return merged
+
+
+def derive_mfs_ratio_to_gdp(
+    raw_mfs_df: pd.DataFrame,
+    nominal_gdp_df: pd.DataFrame,
+    variable_name: str,
+) -> pd.DataFrame:
+    """Scale a raw USD MFS_CBS series by same-year nominal GDP in USD."""
+    merged = _attach_same_year_annual_value(raw_mfs_df, nominal_gdp_df, "nominal_gdp_usd")
+    if merged.empty:
+        return pd.DataFrame(columns=["date", "country", "value", "variable", "source"])
+
+    merged = merged[
+        merged["nominal_gdp_usd"].notna()
+        & (merged["nominal_gdp_usd"] != 0)
+        & merged["value"].notna()
+    ].copy()
+    if merged.empty:
+        return pd.DataFrame(columns=["date", "country", "value", "variable", "source"])
+
+    merged["value"] = merged["value"] / merged["nominal_gdp_usd"] * 100.0
+    merged["freq_rank"] = merged["frequency"].map(MFS_FREQUENCY_PRIORITY).fillna(9)
+    merged["variable"] = variable_name
+    merged["source"] = "imf_mfs_cbs"
+
+    result = (
+        merged.sort_values(["country", "variable", "date", "freq_rank"])
+        .drop_duplicates(subset=["date", "country", "variable"], keep="first")
+        .reset_index(drop=True)
+    )
+    return result[["date", "country", "value", "variable", "source"]]
+
+
+def derive_central_bank_sovdebt_share(
+    panel: pd.DataFrame,
+    debt_ratio_fallback: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Derive the central-bank sovereign-debt share proxy.
+
+    Numerator: central-bank claims on central government as a share of GDP.
+    Denominator preference:
+      1. QPSD total public debt / GDP
+      2. WEO debt / GDP annual fallback mapped by calendar year
+    """
+    claims = panel[panel["variable"] == "MS_CentralBank_Claims_on_Government_Pct_GDP"].copy()
+    if claims.empty:
+        return pd.DataFrame(columns=["date", "country", "value", "variable", "source"])
+
+    claims["date"] = pd.to_datetime(claims["date"], errors="coerce")
+    claims["value"] = pd.to_numeric(claims["value"], errors="coerce")
+    claims = claims.dropna(subset=["date", "country", "value"]).sort_values(["country", "date"])
+    if claims.empty:
+        return pd.DataFrame(columns=["date", "country", "value", "variable", "source"])
+
+    qpsd_debt = panel[panel["variable"] == "MS_Public_Debt_Total_Pct_GDP"][["date", "country", "value"]].copy()
+    qpsd_debt["date"] = pd.to_datetime(qpsd_debt["date"], errors="coerce")
+    qpsd_debt["value"] = pd.to_numeric(qpsd_debt["value"], errors="coerce")
+    qpsd_debt = qpsd_debt.dropna(subset=["date", "country", "value"]).sort_values(["country", "date"])
+
+    merged_parts: List[pd.DataFrame] = []
+    for country in sorted(claims["country"].unique()):
+        country_claims = claims[claims["country"] == country].sort_values("date").copy()
+        country_debt = qpsd_debt[qpsd_debt["country"] == country].sort_values("date").copy()
+
+        if not country_debt.empty:
+            merged = pd.merge_asof(
+                country_claims,
+                country_debt[["date", "value"]].rename(columns={"value": "debt_ratio_pct_gdp"}),
+                on="date",
+                direction="backward",
+            )
+        else:
+            merged = country_claims.copy()
+            merged["debt_ratio_pct_gdp"] = pd.NA
+
+        merged["country"] = country
+        merged_parts.append(merged)
+
+    if not merged_parts:
+        return pd.DataFrame(columns=["date", "country", "value", "variable", "source"])
+
+    merged = pd.concat(merged_parts, ignore_index=True)
+
+    if not debt_ratio_fallback.empty:
+        fallback = _attach_same_year_annual_value(
+            merged[merged["debt_ratio_pct_gdp"].isna()][["date", "country", "value"]].copy(),
+            debt_ratio_fallback,
+            "fallback_debt_ratio_pct_gdp",
+        )
+        if not fallback.empty:
+            fallback = fallback[["date", "country", "fallback_debt_ratio_pct_gdp"]].copy()
+            merged = merged.merge(fallback, on=["date", "country"], how="left")
+            merged["debt_ratio_pct_gdp"] = merged["debt_ratio_pct_gdp"].fillna(
+                merged["fallback_debt_ratio_pct_gdp"]
+            )
+            merged = merged.drop(columns=["fallback_debt_ratio_pct_gdp"])
+
+    merged = merged[
+        merged["debt_ratio_pct_gdp"].notna()
+        & (pd.to_numeric(merged["debt_ratio_pct_gdp"], errors="coerce") != 0)
+    ].copy()
+    if merged.empty:
+        return pd.DataFrame(columns=["date", "country", "value", "variable", "source"])
+
+    merged["debt_ratio_pct_gdp"] = pd.to_numeric(merged["debt_ratio_pct_gdp"], errors="coerce")
+    merged = merged[merged["debt_ratio_pct_gdp"].notna() & (merged["debt_ratio_pct_gdp"] != 0)].copy()
+    if merged.empty:
+        return pd.DataFrame(columns=["date", "country", "value", "variable", "source"])
+
+    merged["value"] = merged["value"] / merged["debt_ratio_pct_gdp"] * 100.0
+    merged["variable"] = "MS_CentralBank_SovDebt_Share"
+    merged["source"] = "macrostructure_derived"
+    return merged[["date", "country", "value", "variable", "source"]]
+
+
 def derive_portfolio_context(
     countries: Dict[str, Dict[str, Any]],
 ) -> pd.DataFrame:
@@ -1008,6 +1316,8 @@ def build_formula_catalog() -> Dict[str, Any]:
             "QPSD variables prefer central government coverage and fall back to budgetary central government when central government data is missing for a country-date.",
             "MS_US_Holder_Share_Pct is based on the annual IMF PIP benchmark only and measures the U.S. share of tracked cross-border portfolio holdings into each counterpart country.",
             "OECD institutional-depth variables use official dashboard indicators rather than reverse-engineered balance-sheet totals where OECD already publishes the target ratio directly.",
+            "IMF MFS central-bank footprint variables use the MFS_CBS dataset in USD terms and scale by same-year WEO nominal GDP in USD for cross-country comparability.",
+            "MS_CentralBank_SovDebt_Share is a transparent public-data proxy: it uses central-bank claims on central government as the numerator and total public debt / GDP as the denominator, preferring QPSD debt coverage and falling back to WEO debt / GDP when QPSD is missing.",
             "MS_Reserve_Adequacy blends import-cover strength with inverse external-debt burden where the latter exists; countries without external-debt coverage still receive the import-cover component.",
             "MS_Swap_Line_Access is a transparent policy-support proxy based on Federal Reserve standing and temporary USD liquidity swap arrangements, plus a full home-market backstop for the U.S. sleeves.",
             "MS_Investor_Base_Fragility is a transparent percentile composite; it does not use fitted weights or learned parameters.",
@@ -1040,6 +1350,37 @@ def build_formula_catalog() -> Dict[str, Any]:
                 "formula": "Average of available component percentile scores on the same date, with higher values always meaning more fragility.",
                 "min_components_required": MIN_COMPONENTS_FOR_FRAGILITY,
                 "components": INVESTOR_BASE_FRAGILITY_COMPONENTS,
+            },
+            {
+                "variable": "MS_CentralBank_BalanceSheet_GDP",
+                "source": "imf_mfs_cbs",
+                "description": "Central-bank total assets scaled by same-year nominal GDP in USD.",
+                "formula": "100 * MFS_CBS total_assets_usd / WEO nominal_gdp_usd for the same calendar year.",
+                "inputs": [
+                    MFS_CBS_TOTAL_ASSETS_INDICATOR,
+                    WEO_NOMINAL_GDP_USD_INDICATOR,
+                ],
+            },
+            {
+                "variable": "MS_CentralBank_Claims_on_Government_Pct_GDP",
+                "source": "imf_mfs_cbs",
+                "description": "Central-bank claims on central government scaled by same-year nominal GDP in USD.",
+                "formula": "100 * MFS_CBS claims_on_central_government_usd / WEO nominal_gdp_usd for the same calendar year.",
+                "inputs": [
+                    MFS_CBS_CLAIMS_ON_GOVT_INDICATOR,
+                    WEO_NOMINAL_GDP_USD_INDICATOR,
+                ],
+            },
+            {
+                "variable": "MS_CentralBank_SovDebt_Share",
+                "source": "macrostructure_derived",
+                "description": "Proxy for the central bank share of sovereign debt, using claims on central government relative to total public debt.",
+                "formula": "100 * MS_CentralBank_Claims_on_Government_Pct_GDP / debt_ratio_pct_gdp, where debt_ratio_pct_gdp prefers MS_Public_Debt_Total_Pct_GDP and falls back to IMF_WEO_Debt_GDP.",
+                "inputs": [
+                    "MS_CentralBank_Claims_on_Government_Pct_GDP",
+                    "MS_Public_Debt_Total_Pct_GDP",
+                    "IMF_WEO_Debt_GDP",
+                ],
             },
             {
                 "variable": "MS_Reserve_Adequacy",
@@ -1127,6 +1468,42 @@ def main() -> None:
     qpsd_panel = collect_qpsd(wb_to_t2, wb_codes, args.force)
     oecd_institutional_panel = collect_oecd_institutional_depth(iso3_to_t2, args.force)
     household_sticky_panel = collect_oecd_household_sticky_capital(iso3_to_t2, args.force)
+    nominal_gdp_panel = collect_weo_indicator(
+        iso3_to_t2,
+        iso3_list,
+        WEO_NOMINAL_GDP_USD_INDICATOR,
+        "IMF_WEO_Nominal_GDP_USD",
+        args.force,
+    )
+    weo_debt_panel = collect_weo_indicator(
+        iso3_to_t2,
+        iso3_list,
+        WEO_DEBT_GDP_INDICATOR,
+        "IMF_WEO_Debt_GDP",
+        args.force,
+    )
+    central_bank_assets_raw = collect_mfs_cbs_indicator(
+        iso3_to_t2,
+        iso3_list,
+        MFS_CBS_TOTAL_ASSETS_INDICATOR,
+        args.force,
+    )
+    central_bank_claims_raw = collect_mfs_cbs_indicator(
+        iso3_to_t2,
+        iso3_list,
+        MFS_CBS_CLAIMS_ON_GOVT_INDICATOR,
+        args.force,
+    )
+    central_bank_balance_sheet_panel = derive_mfs_ratio_to_gdp(
+        central_bank_assets_raw,
+        nominal_gdp_panel,
+        "MS_CentralBank_BalanceSheet_GDP",
+    )
+    central_bank_claims_panel = derive_mfs_ratio_to_gdp(
+        central_bank_claims_raw,
+        nominal_gdp_panel,
+        "MS_CentralBank_Claims_on_Government_Pct_GDP",
+    )
     portfolio_panel = derive_portfolio_context(countries)
     reserve_adequacy_panel = derive_reserve_adequacy()
     swap_line_panel = derive_swap_line_access(countries)
@@ -1139,6 +1516,8 @@ def main() -> None:
                 qpsd_panel,
                 oecd_institutional_panel,
                 household_sticky_panel,
+                central_bank_balance_sheet_panel,
+                central_bank_claims_panel,
                 portfolio_panel,
                 reserve_adequacy_panel,
                 swap_line_panel,
@@ -1153,6 +1532,8 @@ def main() -> None:
             qpsd_panel,
             oecd_institutional_panel,
             household_sticky_panel,
+            central_bank_balance_sheet_panel,
+            central_bank_claims_panel,
             portfolio_panel,
             reserve_adequacy_panel,
             swap_line_panel,
@@ -1162,14 +1543,25 @@ def main() -> None:
     )
 
     derived_panel = derive_investor_base_fragility(raw_panel)
+    central_bank_sovdebt_panel = derive_central_bank_sovdebt_share(raw_panel, weo_debt_panel)
     policy_backstop_panel = derive_policy_backstop(raw_panel)
 
     panel = pd.concat(
-        [frame for frame in [raw_panel, derived_panel, policy_backstop_panel] if not frame.empty],
+        [
+            frame
+            for frame in [
+                raw_panel,
+                derived_panel,
+                central_bank_sovdebt_panel,
+                policy_backstop_panel,
+            ]
+            if not frame.empty
+        ],
         ignore_index=True,
-    ) if any(not frame.empty for frame in [raw_panel, derived_panel, policy_backstop_panel]) else pd.DataFrame(
-        columns=["date", "country", "value", "variable", "source"]
-    )
+    ) if any(
+        not frame.empty
+        for frame in [raw_panel, derived_panel, central_bank_sovdebt_panel, policy_backstop_panel]
+    ) else pd.DataFrame(columns=["date", "country", "value", "variable", "source"])
 
     if not panel.empty:
         panel["date"] = pd.to_datetime(panel["date"])

@@ -12,7 +12,7 @@ ASADO combines:
 - free-source macro / risk / structural data
 - IMF datasets
 - GDELT country news signals
-- macrostructure / sticky-capital / policy-backstop signals
+- macrostructure / sticky-capital / central-bank-footprint / policy-backstop signals
 - Bloomberg sovereign and ETF passive-flow data
 - bilateral portfolio ownership
 - a Neo4j knowledge graph for network relationships
@@ -136,12 +136,12 @@ This is the shape used by:
 | `extended_factors` | 96,604 | 1990-12-01 → 2026-04-01 | Program 2 extended free-source panel |
 | `gdelt_panel` | 407,864 | 2015-09-01 → 2026-05-01 | Country-level media / tone / risk signals from GDELT |
 | `imf_factors` | 107,298 | 1980-12-01 → 2031-12-01 | IMF CPI, WEO, BOP, FX, labor, trade, and FSI-derived series |
-| `macrostructure_factors` | 55,118 | 1995-03-01 → 2026-04-01 | Bank fragility, debt structure, ownership, sticky-capital, policy-backstop |
+| `macrostructure_factors` | 75,120 | 1995-03-01 → 2026-04-01 | Bank fragility, debt structure, ownership, sticky-capital, central-bank footprint, policy-backstop |
 | `bloomberg_factors` | 98,129 | 1975-12-01 → 2026-04-01 | Bloomberg sovereign rates/credit/macro plus ETF passive-flow layer |
-| `normalized_panel` | generated monthly | derived from live DuckDB | Canonical `_CS` and `_TS` normalized feature layer |
-| `feature_panel` | generated monthly | derived from live DuckDB | Query-facing union of raw + normalized factor rows |
+| `normalized_panel` | 778,984 | 1990-12-01 → 2026-04-01 | Canonical `_CS` and `_TS` normalized feature layer |
+| `feature_panel` | 3,340,078 | 1975-12-01 → 2031-12-01 | Query-facing union of raw + normalized factor rows |
 | `bilateral_portfolio_matrix` | 56,786 | 1997-12-01 → 2026-02-01 | Reporter-counterparty portfolio ownership matrix |
-| `unified_panel` | 2,541,092 | 1975-12-01 → 2031-12-01 | Primary cross-source analytical view |
+| `unified_panel` | 2,561,094 | 1975-12-01 → 2031-12-01 | Primary cross-source analytical view |
 
 ### Which Surface Should I Use?
 
@@ -151,7 +151,7 @@ This is the shape used by:
 - Use `country_reference` whenever you need to map `reporter_iso3` or `counterpart_iso3` from bilateral tables onto ASADO country names.
 - Use `gdelt_panel` when the question is specifically about GDELT-only features or partial-month GDELT labels.
 - Use `bloomberg_factors` when you want only Bloomberg-native or Bloomberg-derived fields.
-- Use `macrostructure_factors` when you want the ownership / fragility / policy-backstop layer in isolation.
+- Use `macrostructure_factors` when you want the ownership / fragility / central-bank-footprint / policy-backstop layer in isolation.
 - Use `bilateral_portfolio_matrix` for reporter-counterparty portfolio ownership, not `unified_panel`.
 
 ## Special Table: `bilateral_portfolio_matrix`
@@ -209,6 +209,8 @@ Representative `source` values currently present in `unified_panel` include:
 - `imf_fsi`
 - `imf_itg`
 - `imf_ls`
+- `imf_mfs_cbs`
+- `macrostructure_derived`
 
 If you want the exact live set, inspect `duckdb_schema.json` or run:
 
@@ -247,6 +249,8 @@ For each variable it includes:
 | --- | --- | --- |
 | `BIS_Credit_GDP_Gap` | `bis_credit` | BIS credit-to-GDP gap signal |
 | `country_news_risk_CS` | `gdelt` | GDELT country news risk, cross-sectional normalized |
+| `MS_CentralBank_BalanceSheet_GDP` | `imf_mfs_cbs` | Central-bank total assets scaled by same-year nominal GDP |
+| `MS_CentralBank_SovDebt_Share` | `macrostructure_derived` | Proxy for the central-bank share of sovereign debt outstanding |
 | `MS_Policy_Backstop` | `macrostructure_derived` | Derived policy-backstop composite |
 | `BBG_CDS_5Y` | `bloomberg` | Bloomberg sovereign 5Y CDS level |
 | `MS_Passive_Flow_Distortion` | `bloomberg` | Derived ETF passive/mechanical-flow distortion signal |
@@ -271,6 +275,11 @@ For eligible raw variables, ASADO now creates:
 - `_TS`: rolling within-country z-score using frequency-aware observation windows
 
 The generated rows live in `normalized_panel`, while `feature_panel` exposes both raw and normalized rows together for assistant/query use.
+
+Current normalization boundary:
+
+- raw IMF MFS central-bank footprint variables such as `MS_CentralBank_BalanceSheet_GDP` and `MS_CentralBank_Claims_on_Government_Pct_GDP` do receive `_CS` and `_TS` variants
+- `macrostructure_derived` rows such as `MS_CentralBank_SovDebt_Share`, `MS_Reserve_Adequacy`, `MS_Swap_Line_Access`, and `MS_Policy_Backstop` currently remain raw-only unless the normalization policy is widened in code
 
 ## GDELT Convention
 
@@ -323,6 +332,23 @@ The Bloomberg panel now includes a market-structure / ETF-passive family:
 - `MS_Passive_Flow_Distortion`
 
 These live in `bloomberg_factors` and also appear in `unified_panel`.
+
+## Macrostructure Central-Bank Footprint Layer
+
+The macrostructure panel now includes a transparent Phase 3 central-bank footprint block:
+
+- `MS_CentralBank_BalanceSheet_GDP`
+  Central-bank total assets from IMF `MFS_CBS` scaled by same-year WEO nominal GDP in USD.
+- `MS_CentralBank_Claims_on_Government_Pct_GDP`
+  Central-bank claims on central government from IMF `MFS_CBS` scaled by same-year WEO nominal GDP in USD.
+- `MS_CentralBank_SovDebt_Share`
+  Transparent proxy for the central-bank share of sovereign debt. Numerator is `MS_CentralBank_Claims_on_Government_Pct_GDP`; denominator prefers `MS_Public_Debt_Total_Pct_GDP` from QPSD and falls back to annual WEO debt/GDP when QPSD is missing.
+
+Current live coverage from the 2026-04-19 rebuild:
+
+- `MS_CentralBank_BalanceSheet_GDP`: 5,754 rows, 21 countries, 1997-12-01 through 2026-03-01
+- `MS_CentralBank_Claims_on_Government_Pct_GDP`: 7,157 rows, 26 countries, 1997-12-01 through 2026-03-01
+- `MS_CentralBank_SovDebt_Share`: 7,091 rows, 26 countries, 1997-12-01 through 2026-03-01
 
 ## Neo4j Graph Model
 

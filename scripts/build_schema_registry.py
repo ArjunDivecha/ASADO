@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -23,7 +24,8 @@ from typing import Any, Dict, List, Set
 import duckdb
 from neo4j import GraphDatabase
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+DEFAULT_BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(os.environ.get("ASADO_BASE_DIR", str(DEFAULT_BASE_DIR))).expanduser().resolve()
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 

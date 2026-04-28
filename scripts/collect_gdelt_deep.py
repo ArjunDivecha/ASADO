@@ -42,11 +42,17 @@ DEPENDENCIES:
 - pandas, numpy, pyarrow
 
 USAGE:
-  python scripts/collect_gdelt_deep.py            # normal run
-  python scripts/collect_gdelt_deep.py --force    # ignore mtime cache
+  python scripts/collect_gdelt_deep.py            # incremental: append only
+                                                  # months not already present
+  python scripts/collect_gdelt_deep.py --force    # full rebuild from source
   python scripts/collect_gdelt_deep.py --dry-run  # validate, no writes
 
 NOTES:
+- Default behavior is INCREMENTAL: if Data/processed/gdelt_deep_panel.parquet
+  exists, only month rows newer than the existing max date are read from the
+  source parquet, melted, and appended. Past months are never re-read or
+  re-written. If source has no new months, the script exits with status
+  "no_change" without touching the parquet. --force triggers a full rebuild.
 - This collector ONLY produces the parquet. Loading into DuckDB
   (gdelt_deep_factors table) is a separate stage in
   scripts/load_gdelt_deep_to_duckdb.py.
@@ -245,7 +251,7 @@ def cache_is_fresh(path: Path, hours: int = 24) -> bool:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--force", action="store_true",
-                    help="Re-ingest even if existing parquet is fresh (<24h).")
+                    help="Full rebuild from source, ignoring any existing parquet.")
     ap.add_argument("--dry-run", action="store_true",
                     help="Validate the pipeline without writing the parquet.")
     args = ap.parse_args()
@@ -256,20 +262,69 @@ def main() -> int:
         logger.error("Source parquet missing: %s", DEEP_PARQUET)
         return 2
 
-    if not args.force and cache_is_fresh(OUT_PARQUET):
-        logger.info("Output is fresh (< 24h). Use --force to re-ingest.")
-        return 0
-
     iso3_to_t2 = load_iso3_to_t2()
 
-    logger.info("Reading %s ...", DEEP_PARQUET)
+    # Incremental path: append only months not already present.
+    # Past months never re-read; --force overrides for full rebuild.
+    incremental = OUT_PARQUET.exists() and not args.force
     schema_names = pq.ParquetFile(DEEP_PARQUET).schema_arrow.names
     feature_cols = [c for c in schema_names if classify_column(c) is not None]
     needed_cols = ["signal_month_end_date", "country_iso3", *feature_cols]
-    df = pd.read_parquet(DEEP_PARQUET, columns=needed_cols)
-    logger.info("Loaded raw panel: %d rows × %d cols", *df.shape)
 
-    tidy = build_tidy(df, iso3_to_t2)
+    if incremental:
+        existing = pd.read_parquet(OUT_PARQUET)
+        existing["date"] = pd.to_datetime(existing["date"]).dt.date
+        max_existing_date = pd.to_datetime(existing["date"].max())
+        # Existing dates are first-of-next-month; the underlying source
+        # signal_month_end_date is one day prior.
+        max_existing_sme = max_existing_date - pd.Timedelta(days=1)
+        logger.info("Existing parquet present: %d rows, max date = %s",
+                    len(existing), max_existing_date.date())
+
+        # Read source schema & filter rows beyond what we already have.
+        logger.info("Reading new months from %s ...", DEEP_PARQUET)
+        df = pd.read_parquet(DEEP_PARQUET, columns=needed_cols)
+        df["signal_month_end_date"] = pd.to_datetime(df["signal_month_end_date"])
+        new_mask = df["signal_month_end_date"] > max_existing_sme
+        n_new_rows = int(new_mask.sum())
+
+        if n_new_rows == 0:
+            logger.info("No new months in source. Already up to date.")
+            append_run_history(OUT_PARQUET, len(existing),
+                               existing["variable"].nunique(),
+                               time.time() - t0, "no_change")
+            return 0
+
+        df = df.loc[new_mask].copy()
+        new_dates = sorted(df["signal_month_end_date"].dt.to_period("M").unique())
+        logger.info("Source has %d new month(s) beyond existing: %s",
+                    len(new_dates), [str(d) for d in new_dates])
+        logger.info("Building tidy delta from %d source rows ...", len(df))
+        new_tidy = build_tidy(df, iso3_to_t2)
+
+        # Merge: append new rows, drop any accidental duplicates keeping new.
+        merged = pd.concat([existing, new_tidy], ignore_index=True)
+        before = len(merged)
+        merged = merged.drop_duplicates(
+            subset=["date", "country", "variable"], keep="last"
+        ).reset_index(drop=True)
+        n_dupes_dropped = before - len(merged)
+        if n_dupes_dropped:
+            logger.warning("Dropped %d duplicate rows after merge (kept newer)",
+                           n_dupes_dropped)
+
+        tidy = merged
+        n_added = len(merged) - len(existing)
+        logger.info("Merged: %d → %d rows (+%d new)", len(existing), len(merged), n_added)
+    else:
+        if args.force:
+            logger.info("--force: full rebuild from source.")
+        else:
+            logger.info("No existing parquet — initial full build.")
+        logger.info("Reading %s ...", DEEP_PARQUET)
+        df = pd.read_parquet(DEEP_PARQUET, columns=needed_cols)
+        logger.info("Loaded raw panel: %d rows × %d cols", *df.shape)
+        tidy = build_tidy(df, iso3_to_t2)
 
     # Sanity checks before write
     assert tidy[["date", "country", "variable"]].duplicated().sum() == 0, "duplicate (date, country, variable)"
@@ -295,7 +350,8 @@ def main() -> int:
     elapsed = time.time() - t0
     logger.info("Wrote %s (%.1f MB, %.1fs)",
                 OUT_PARQUET, OUT_PARQUET.stat().st_size / 1e6, elapsed)
-    append_run_history(OUT_PARQUET, len(tidy), n_vars, elapsed, "ok")
+    append_run_history(OUT_PARQUET, len(tidy), n_vars, elapsed,
+                       "ok_incremental" if incremental else "ok_full")
     return 0
 
 

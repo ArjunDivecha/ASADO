@@ -16,15 +16,19 @@ OUTPUT FILES:
 - Data/processed/bilateral_portfolio_matrix.parquet (via collect_bilateral.py)
 - Data/processed/macrostructure_panel.parquet     (via collect_macrostructure.py)
 - Data/processed/bloomberg_factors_panel.parquet  (via collect_bloomberg.py)
+- Data/processed/gdelt_deep_panel.parquet         (via collect_gdelt_deep.py)
 - Data/asado.duckdb                               (via setup_duckdb.py)
 - DuckDB normalized_panel + feature_panel         (via build_normalized_panel.py)
+- DuckDB gdelt_deep_factors                       (via load_gdelt_deep_to_duckdb.py)
+- DuckDB gdelt_deep_factors_cs                    (via build_gdelt_deep_cs.py)
+- Data/processed/pit_audit_gdelt_deep.csv         (via qa/pit_audit_gdelt_deep.py)
 - Neo4j graph database                            (via setup_neo4j.py)
 - Neo4j vector index on Country nodes             (via build_embeddings.py)
 - Data/cache/query_assistant/*                    (via build_schema_registry.py)
 - Data/logs/monthly_update_YYYY_MM_DD.log         (this run's log)
 
-VERSION: 1.1
-LAST UPDATED: 2026-04-12
+VERSION: 1.2
+LAST UPDATED: 2026-04-28
 AUTHOR: Arjun Divecha
 
 DESCRIPTION:
@@ -40,11 +44,15 @@ Pipeline stages:
   4. collect_bilateral.py           (IMF IMTS trade + BIS LBS banking + IMF PIP/TIC ownership)
   5. collect_macrostructure.py --force (IMF FSI + QPSD + sticky-capital + policy-backstop layer)
   6. collect_bloomberg.py --force   (Bloomberg bonds, CDS, breakevens, ratings, ETF passive layer)
-  7. setup_duckdb.py                (rebuild analytical DB)
-  8. build_normalized_panel.py      (canonical normalized features + feature_panel)
-  9. setup_neo4j.py                 (rebuild knowledge graph + bilateral edges)
- 10. build_embeddings.py            (country-state vectors + Neo4j vector index)
- 11. build_schema_registry.py       (refresh query-assistant schema cache)
+  7. collect_gdelt_deep.py          (GDELT Deep — incremental: themes + GCAM + events)
+  8. setup_duckdb.py                (rebuild analytical DB)
+  9. build_normalized_panel.py      (canonical normalized features + feature_panel)
+ 10. load_gdelt_deep_to_duckdb.py   (gdelt_deep_factors table)
+ 11. build_gdelt_deep_cs.py         (gdelt_deep_factors_cs cross-sectional variants)
+ 12. qa/pit_audit_gdelt_deep.py     (PIT audit on Deep tables)
+ 13. setup_neo4j.py                 (rebuild knowledge graph + bilateral edges)
+ 14. build_embeddings.py            (country-state vectors + Neo4j vector index)
+ 15. build_schema_registry.py       (refresh query-assistant schema cache)
 
 Each collector preserves existing data for any source that fails,
 so partial failures never lose historical data.
@@ -56,6 +64,8 @@ DEPENDENCIES:
 USAGE:
   python scripts/monthly_update.py                 # full update
   python scripts/monthly_update.py --skip-neo4j    # skip Neo4j rebuild
+  python scripts/monthly_update.py --skip-bloomberg # skip Bloomberg (no Terminal)
+  python scripts/monthly_update.py --skip-deep    # skip GDELT Deep ingest
   python scripts/monthly_update.py --collectors-only  # data collection only
   python scripts/monthly_update.py --db-only       # rebuild DBs only (no collection)
   python scripts/monthly_update.py --dry-run       # collectors in dry-run mode
@@ -288,6 +298,8 @@ def main():
                         help="Skip Neo4j rebuild (useful if Neo4j not running)")
     parser.add_argument("--skip-bloomberg", action="store_true",
                         help="Skip Bloomberg collection (requires Terminal + Parallels)")
+    parser.add_argument("--skip-deep", action="store_true",
+                        help="Skip GDELT Deep ingest (themes, GCAM, events)")
     parser.add_argument("--collectors-only", action="store_true",
                         help="Run data collectors only, skip database rebuilds")
     parser.add_argument("--db-only", action="store_true",
@@ -398,6 +410,20 @@ def main():
         else:
             print("\n  (Bloomberg collection skipped via --skip-bloomberg)")
 
+        # Program 7: GDELT Deep — incremental by default. Past months are
+        # never re-read; the collector skips with status "no_change" if the
+        # source has nothing newer than the existing parquet.
+        if not args.skip_deep:
+            deep_flags = ["--dry-run"] if args.dry_run else []
+            results.append(run_step(
+                "Program 7: GDELT Deep (themes + GCAM + events, incremental)",
+                "collect_gdelt_deep.py",
+                deep_flags,
+                log_file
+            ))
+        else:
+            print("\n  (GDELT Deep ingest skipped via --skip-deep)")
+
     # ── Stage 2: Database Rebuilds ────────────────────────────────────
     if not args.collectors_only:
         print("\n\n" + "=" * 60)
@@ -417,6 +443,32 @@ def main():
             [],
             log_file
         ))
+
+        # GDELT Deep DB stages — sibling tables to gdelt_panel; not unioned
+        # into feature_panel until the normalization decision lands.
+        if not args.skip_deep:
+            results.append(run_step(
+                "GDELT Deep → DuckDB (gdelt_deep_factors)",
+                "load_gdelt_deep_to_duckdb.py",
+                [],
+                log_file
+            ))
+
+            results.append(run_step(
+                "GDELT Deep _CS variants (gdelt_deep_factors_cs)",
+                "build_gdelt_deep_cs.py",
+                [],
+                log_file
+            ))
+
+            results.append(run_step(
+                "GDELT Deep PIT audit",
+                "qa/pit_audit_gdelt_deep.py",
+                [],
+                log_file
+            ))
+        else:
+            print("\n  (GDELT Deep DB stages skipped via --skip-deep)")
 
         if not args.skip_neo4j:
             if ensure_neo4j():

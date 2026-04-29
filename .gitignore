@@ -15,6 +15,9 @@ Data/processed/
 Data/backups/
 Data/cache/
 Data/logs/
+Data/research/
+Data/reports/
+Data/strategy/
 
 # OS
 .DS_Store

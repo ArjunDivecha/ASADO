@@ -27,6 +27,7 @@ OUTPUT FILES:
 - Neo4j graph database                            (via setup_neo4j.py)
 - Neo4j vector index on Country nodes             (via build_embeddings.py)
 - Data/cache/query_assistant/*                    (via build_schema_registry.py)
+- docs/factor_reference.md                        (via build_factor_reference.py)
 - Data/logs/monthly_update_YYYY_MM_DD.log         (this run's log)
 
 VERSION: 1.2
@@ -522,6 +523,15 @@ def main():
                 ["--duck-only"],
                 log_file
             ))
+
+        # Always regenerate docs/factor_reference.md from the freshly-rebuilt
+        # schema cache so the AI-readable factor catalog stays current.
+        results.append(run_step(
+            "Factor Reference (docs/factor_reference.md)",
+            "build_factor_reference.py",
+            [],
+            log_file
+        ))
 
     total_elapsed = time.time() - total_start
 

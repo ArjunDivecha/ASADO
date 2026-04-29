@@ -480,6 +480,142 @@ brew services stop neo4j       # stop service
 ```
 Credentials: `neo4j` / `mythos2026`
 
+## Factor Catalog & Graph Map
+
+For comprehensive per-variable detail (every variable in every panel, with frequency, country count, date range, normalization variants) plus the full Neo4j graph map (every node label, every relationship, every property, every index), see:
+
+**→ [`docs/factor_reference.md`](docs/factor_reference.md)** *(auto-regenerated each monthly update from `Data/cache/query_assistant/`)*
+
+That file is intended to be read end-to-end by an AI agent that needs to know what the warehouse is capable of answering. The summary below covers shape and counts; the reference covers every variable.
+
+### Snapshot
+
+- **DuckDB tables / views:** 14 (8 raw factor panels + 6 derived views/aux tables)
+- **Distinct variables in `unified_panel`:** 2,641 (raw 223 · `_CS` 1,209 · `_TS` 1,209)
+- **Country universe:** 34 (T2 names — see [`config/country_mapping.json`](config/country_mapping.json))
+- **Neo4j:** 7 node labels (`Country` 34, `Factor` 2929, `CentralBank` 31, `DataSource` 37, `Commodity` 4, `CrisisEvent` 9, `SanctionsProgram` 6) · 9 relationship types (`HAS_FACTOR_EXPOSURE`, `TRADES_WITH`, `HAS_BANKING_EXPOSURE_TO`, `HAS_CRISIS_HISTORY`, `SUBJECT_TO`, `HAS_CENTRAL_BANK`, `EXPORT_EXPOSED_TO`, `DATA_AVAILABLE_FROM`, `HOLDS_PORTFOLIO_OF`)
+
+### Data families covered
+
+| Family | Source tables | Examples |
+|---|---|---|
+| **Equity factors** (Bloomberg-driven, T2 pipeline) | `t2_master`, `t2_raw` | Best PE, Trailing PE, Earnings Yield, Best ROE, BEST EPS, MCAP, 120MA Signal, RSI14, 360 Day Vol, momentum series |
+| **External macro** | `external_factors` | EPU, GPR/Global GPR, BIS Credit/GDP Gap, BIS Property Price, BIS REER, OECD CLI, World Bank governance + structural |
+| **Extended macro** | `extended_factors` | BIS policy/debt-service rates, ECB FX (24 pairs), FRED (UST 2Y/10Y, VIX, USD index, HY OAS), ND-GAIN climate, OFAC sanctions, UNDP HDI/IHDI/GII, ILO labor, EIA energy, FAO trade, OECD BCI/CCI |
+| **IMF** | `imf_factors` | CPI, WEO macro projections, balance of payments, exchange rates, trade flows, money market and discount rates, employment |
+| **Macrostructure** | `macrostructure_factors` | Bank capital adequacy / liquidity / NPLs, public-debt structure (creditor / currency / maturity buckets), sticky-capital pension/insurance/household, central-bank balance-sheet metrics, swap-line access |
+| **Bloomberg market** | `bloomberg_factors` | Sovereign bonds, CDS, OIS, breakevens, WIRP implied policy rates, ECFC consensus, PMI, M2, ETF passive layer (`MS_*`) |
+| **GDELT news / sentiment** | `gdelt_panel` (2,313 vars) | Theme attention (~516), GCAM emotional dimensions (~450), event aggregates (~120), core tone signals (metronome / risk / sentiment / attention), all monthly |
+| **Optimizer outputs** (added 2026-04-29) | `factor_returns`, `factor_top20_membership`, `country_factor_attribution` | Top-20% portfolio monthly returns per factor (Econ, T2 Style, GDELT optimizers) + country-level membership + joinable attribution view |
+| **Bilateral networks** | `bilateral_portfolio_matrix` | Reporter-counterparty portfolio holdings (IMF PIP + U.S. TIC). Trade and banking edges live in Neo4j as `[:TRADES_WITH]` / `[:HAS_BANKING_EXPOSURE_TO]`. |
+
+### How to use the catalog
+
+- **Programmatic** — read `Data/cache/query_assistant/variable_catalog.json` directly. It has `variable_metadata`, `variable_aliases`, frequency, freshness, normalization tags, and forecast/sparse flags for every variable.
+- **From an agent (Claude Desktop)** — call `get_schema_summary` via the MCP server (next section) to get the same payload.
+- **Human-readable** — `docs/factor_reference.md` rendered as markdown.
+
+---
+
+## MCP Server — Query ASADO from Claude Desktop
+
+`scripts/asado_mcp_server.py` is a stdio MCP server that exposes the ASADO warehouse to Claude Desktop (and any other MCP-speaking client) as a small read-only tool surface. Once registered, you can ask Claude things like *"What's the latest BIS credit-gap reading for Brazil?"* and it will run the query against the live DuckDB / Neo4j stack and answer.
+
+### What it exposes
+
+| Tool | Purpose |
+|---|---|
+| `ask_asado(question)` | Natural-language Q&A over the warehouse. Calls Anthropic Claude under the hood (requires `ANTHROPIC_API_KEY` in env); plans the SQL/Cypher and returns the answer with cited rows. |
+| `get_schema_summary(refresh_schema=False)` | Returns the cached DuckDB + Neo4j schema (table descriptions, sample variables, label/relationship counts). Set `refresh_schema=True` to force a rebuild via `build_schema_registry.py`. |
+| `run_duckdb_sql(sql, max_rows=100)` | Executes a read-only SQL query against `Data/asado.duckdb` and returns the result as a frame payload. The DuckDB connection is opened read-only — writes will fail. |
+| `run_neo4j_cypher(cypher, max_rows=100)` | Executes a Cypher query against the local Neo4j (bolt://localhost:7687). |
+| `get_country_profile(country)` | Bundled per-country snapshot: latest factor values + all graph relationships (trade, banking, central bank, sanctions, crises). Pass exact T2 country names, e.g., `"Brazil"`, `"ChinaA"`, `"U.S."`. |
+
+### Setup — register in Claude Desktop
+
+Edit `~/Library/Application Support/Claude/claude_desktop_config.json` and add an entry under `mcpServers`. Use the absolute path to ASADO's venv Python so the server has `duckdb`, `neo4j`, `mcp`, and `pandas` available:
+
+```json
+{
+  "mcpServers": {
+    "asado": {
+      "command": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/venv/bin/python",
+      "args": [
+        "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/asado_mcp_server.py"
+      ],
+      "env": {
+        "ANTHROPIC_API_KEY": "sk-ant-..."
+      }
+    }
+  }
+}
+```
+
+`ANTHROPIC_API_KEY` is only required if you want to call `ask_asado`; the four other tools (`run_duckdb_sql`, `run_neo4j_cypher`, `get_schema_summary`, `get_country_profile`) work without it. Then **fully quit and relaunch Claude Desktop** — it spawns the MCP server as a subprocess on launch.
+
+ChatGPT Desktop is **not** supported as a connector for this server: ChatGPT's MCP integration only accepts remote HTTPS endpoints (SSE transport with OAuth), and `asado_mcp_server.py` runs over stdio. Stick with Claude Desktop unless you decide to expose an SSE transport via Cloudflare Tunnel — out of scope for the current build.
+
+### Example prompts
+
+```
+Use the ASADO connector. Run this SQL:
+  SELECT factor, value FROM factor_returns
+  WHERE date='2026-03-01' AND source='econ_optimizer'
+  ORDER BY value DESC LIMIT 5
+```
+
+```
+Which countries were in the top-20 bucket for BIS_Credit_GDP_Gap_CS in 2025-10?
+```
+
+```
+Pull a country profile for Indonesia: latest factor exposures plus its top
+trade and banking edges. Format as a markdown one-pager.
+```
+
+```
+For factors in factor_returns whose 12-month rolling Sharpe is in the top decile
+this month, sum country contributions from country_factor_attribution and
+return the 10 most-contributing countries.
+```
+
+```
+Find the 5 countries most similar to Turkey by state embedding (Cypher),
+then for each return the latest BIS_Credit_GDP_Gap and IMF_CPI_Inflation_YoY.
+```
+
+### Surfaces unlocked by the optimizer-returns layer (2026-04-29)
+
+- `factor_returns(date, factor, value, source)` — monthly net returns of top-20% portfolios across the Econ / T2 / GDELT optimizer pipelines (~402K rows). Factor names retain their `_CS` / `_TS` suffix.
+- `factor_top20_membership(date, country, factor, weight, source)` — sparse country-level membership in each factor's top-20% bucket (~3.08M rows).
+- `country_factor_attribution` (view) — `factor_top20_membership ⨝ factor_returns` on `(date, factor, source)`. Joinable for "which countries earned the bucket return this month" attribution.
+- Neo4j `Factor` nodes carry `latest_return_1m`, `latest_return_12m`, `sharpe_60m`, `latest_return_date`, `return_source` — useful for ranking factors directly via Cypher.
+
+### Limits
+
+- DuckDB connection is read-only — `run_duckdb_sql` cannot mutate the warehouse.
+- Neo4j connection is **not** wrapped read-only at the driver level; treat `run_neo4j_cypher` as conventionally read-only and avoid `MERGE` / `CREATE` / `DELETE` from Claude Desktop. (If you ever expose this server to a non-trusted client, add a write-guard before doing so.)
+- The server uses stdio transport; one Claude Desktop launch spawns one subprocess. Two clients can connect simultaneously (each gets its own subprocess) without coordination since the underlying DBs handle concurrent readers.
+- Returned frames are capped at `max_rows` (default 100). Bump it explicitly for larger pulls; very large results will fail Claude Desktop's tool-result size budget anyway.
+
+### Troubleshooting
+
+```bash
+# Verify the server boots cleanly outside Claude Desktop
+./venv/bin/python -c "from mcp.server.fastmcp import FastMCP; print('mcp ok')"
+./venv/bin/python scripts/asado_mcp_server.py < /dev/null   # should print stdio handshake then exit cleanly on EOF
+
+# Refresh the schema cache (so ask_asado / get_schema_summary see new tables)
+./venv/bin/python scripts/build_schema_registry.py
+
+# Confirm Neo4j is up before running cypher
+nc -z localhost 7687 && echo "neo4j reachable" || brew services start neo4j
+```
+
+If Claude Desktop reports "MCP server failed to start", check `~/Library/Logs/Claude/mcp*.log` for the subprocess stderr — the most common causes are (a) wrong venv path in `command`, (b) missing `ANTHROPIC_API_KEY` when something tries to call `ask_asado`, (c) Neo4j down for Cypher tools.
+
+---
+
 ## Skipped Sources (April 2026)
 
 The following sources from the original PRD were evaluated and intentionally skipped due to access blockers. Existing data from other sources provides adequate coverage for each gap.

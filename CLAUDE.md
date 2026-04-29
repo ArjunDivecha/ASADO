@@ -81,6 +81,28 @@ This ensures **no data loss** even if multiple sources are temporarily unavailab
 - Accessible at: bolt://localhost:7687, web UI at http://localhost:7474
 - Vector index on Country nodes: 34-dimensional cosine similarity index (state_embedding)
 
+### MCP Server (Query Surface for Claude Desktop / Other Agents)
+
+`scripts/asado_mcp_server.py` is a stdio MCP server that exposes the warehouse to MCP-speaking clients (primarily Claude Desktop). When the user references "use ASADO" or "ask the warehouse", this is the surface to reach for.
+
+**Tools exposed:**
+
+| Tool | Signature | Notes |
+|---|---|---|
+| `ask_asado(question)` | NL Q&A | Calls Anthropic Claude under the hood; needs `ANTHROPIC_API_KEY` in env. |
+| `get_schema_summary(refresh_schema=False)` | DuckDB + Neo4j schema | Reads from `Data/cache/query_assistant/`. `refresh=True` forces rebuild. |
+| `run_duckdb_sql(sql, max_rows=100)` | Read-only SQL | DuckDB connection opened read-only. |
+| `run_neo4j_cypher(cypher, max_rows=100)` | Cypher | Not driver-level read-only — convention is read-only. |
+| `get_country_profile(country)` | Bundled snapshot | Pass exact T2 names (`Brazil`, `ChinaA`, `U.S.`). |
+
+**Setup is documented in `README.md` → "MCP Server — Query ASADO from Claude Desktop"** (config file location, JSON shape, example prompts, troubleshooting). Do not duplicate that here.
+
+**For agent sessions writing code that touches the warehouse:** prefer `db_bridge.AsadoDB` for direct programmatic access (it's faster than going through MCP, and the MCP is for chat-driven use). The MCP is the right tool when the user is interactively asking questions in Claude Desktop, not when an agent is running a script.
+
+**For agent sessions that need to know what's IN the warehouse:** read `docs/factor_reference.md`. It is auto-regenerated each monthly update from the schema cache and lists every DuckDB table, every variable per source (with frequency, country count, date range, normalization variants), and the full Neo4j graph map (every label, every relationship type, every index). This is the canonical "what does ASADO know" doc — designed to be parseable end-to-end.
+
+**Cycle protection (matters for any new collector or builder):** the MCP and `db_bridge` both read from views like `feature_panel` and `unified_panel`. Optimizer outputs ingested by `collect_optimizer_returns.py` (factor_returns, factor_top20_membership, country_factor_attribution) are deliberately NOT unioned into those views — that's a structural guarantee against the optimizer-input/output cycle. If you find yourself adding `factor_returns` to `unified_panel` or `feature_panel`, stop and revisit — `Step Zero Build Econ.py` and `Step Zero Build GDELT.py` rely on the cycle being broken.
+
 ---
 
 ## Common Commands

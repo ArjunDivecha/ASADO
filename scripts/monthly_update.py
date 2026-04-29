@@ -15,6 +15,8 @@ OUTPUT FILES:
 - Data/processed/bilateral_banking_matrix.parquet (via collect_bilateral.py)
 - Data/processed/bilateral_portfolio_matrix.parquet (via collect_bilateral.py)
 - Data/processed/macrostructure_panel.parquet     (via collect_macrostructure.py)
+- Data/processed/factor_returns_panel.parquet     (via collect_optimizer_returns.py)
+- Data/processed/factor_top20_membership_panel.parquet (via collect_optimizer_returns.py)
 - Data/processed/bloomberg_factors_panel.parquet  (via collect_bloomberg.py)
 - Data/processed/gdelt_deep_panel.parquet         (via collect_gdelt_deep.py)
 - Data/asado.duckdb                               (via setup_duckdb.py)
@@ -43,6 +45,7 @@ Pipeline stages:
   3. collect_imf.py       --force   (7 datasets, ~26 variables)
   4. collect_bilateral.py           (IMF IMTS trade + BIS LBS banking + IMF PIP/TIC ownership)
   5. collect_macrostructure.py --force (IMF FSI + QPSD + sticky-capital + policy-backstop layer)
+  5b. collect_optimizer_returns.py     (Econ + T2 + GDELT optimizer factor returns + top-20 membership)
   6. collect_bloomberg.py --force   (Bloomberg bonds, CDS, breakevens, ratings, ETF passive layer)
   7. collect_gdelt_deep.py          (GDELT Deep — incremental: themes + GCAM + events)
   8. setup_duckdb.py                (rebuild analytical DB)
@@ -247,7 +250,7 @@ def verify_duckdb():
         con = duckdb.connect(str(db_path), read_only=True)
         tables = ["t2_master", "t2_raw", "country_reference", "external_factors", "extended_factors",
                    "gdelt_panel", "imf_factors", "macrostructure_factors", "bloomberg_factors",
-                   "normalized_panel"]
+                   "factor_returns", "factor_top20_membership", "normalized_panel"]
 
         print("\n  DuckDB Verification:")
         total = 0
@@ -257,6 +260,10 @@ def verify_duckdb():
                     count = con.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
                     iso3_count = con.execute(f"SELECT COUNT(DISTINCT iso3) FROM {t}").fetchone()[0]
                     print(f"    {t:20s}: {count:>10,} rows, {iso3_count:>3} iso3")
+                elif t in ("factor_returns", "factor_top20_membership"):
+                    count = con.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
+                    n_factors = con.execute(f"SELECT COUNT(DISTINCT factor) FROM {t}").fetchone()[0]
+                    print(f"    {t:20s}: {count:>10,} rows, {n_factors:>4} factors")
                 else:
                     count = con.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
                     n_vars = con.execute(f"SELECT COUNT(DISTINCT variable) FROM {t}").fetchone()[0]
@@ -367,6 +374,13 @@ def main():
         results.append(run_step(
             "Program 5: Macrostructure Panel (FSI + QPSD + backstop)",
             "collect_macrostructure.py",
+            collector_flags,
+            log_file
+        ))
+
+        results.append(run_step(
+            "Program 5b: Optimizer Returns + Top-20 Membership",
+            "collect_optimizer_returns.py",
             collector_flags,
             log_file
         ))

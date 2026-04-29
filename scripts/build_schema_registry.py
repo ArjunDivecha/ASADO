@@ -64,6 +64,26 @@ TABLE_DESCRIPTIONS = {
         "for analytics, assistants, and feature discovery."
     ),
     "unified_panel": "Unified analytic view across all ASADO factor tables.",
+    "factor_returns": (
+        "Monthly net returns of top-20%-of-countries portfolios per factor, sourced from "
+        "the Econ / T2 Style / GDELT optimizer pipelines. Tidy long format with columns "
+        "(date, factor, value, source). Factor names retain their _CS / _TS suffix because "
+        "the construction rules differ (cross-sectional vs time-series ranking). The series "
+        "is factor-keyed; there is no country axis on this table."
+    ),
+    "factor_top20_membership": (
+        "Sparse country-level membership in each factor's top-20% bucket per month. "
+        "Columns: (date, country, factor, weight, source). weight = 1/N within the bucket "
+        "(equal-weight); rows are present only when the country is in the bucket — absence "
+        "implies excluded. Joins to factor_returns on (date, factor, source) to compute "
+        "country-level attribution."
+    ),
+    "country_factor_attribution": (
+        "View joining factor_top20_membership ⨝ factor_returns on (date, factor, source). "
+        "Columns: (date, country, factor, weight, factor_return, contribution, source). "
+        "contribution = weight × factor_return is the country's monthly P&L attributable "
+        "to being in the bucket for that factor."
+    ),
 }
 
 LABEL_DESCRIPTIONS = {
@@ -209,6 +229,9 @@ SOURCE_FREQUENCIES = {
     "qpsd": "quarterly",
     "t2": "monthly",
     "t2_raw": "monthly",
+    "econ_optimizer": "monthly",
+    "t2_optimizer": "monthly",
+    "gdelt_optimizer": "monthly",
     "undp_hdi": "annual",
     "worldbank": "annual",
 }

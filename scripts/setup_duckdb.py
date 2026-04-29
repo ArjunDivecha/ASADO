@@ -42,6 +42,12 @@ Tables created:
   - macrostructure_factors: Macrostructure panel (IMF FSI, QPSD debt structure, derived scores)
   - bilateral_portfolio_matrix: Historical portfolio ownership matrix
   - bloomberg_factors:  Bloomberg sovereign data (bonds, CDS, ratings, 34 countries)
+  - factor_returns:     Monthly net returns of top-20% portfolios per factor variant
+                        (Econ / T2 Style / GDELT optimizer outputs; no country axis)
+  - factor_top20_membership: Sparse country-level membership in each factor's top-20%
+                        bucket per month (date, country, factor, weight, source)
+  - country_factor_attribution: VIEW = membership ⨝ factor_returns; contribution per
+                        (date, country, factor) computed as weight × factor_return
   - unified_panel:      VIEW union of all factor-panel tables
 
 DEPENDENCIES:
@@ -83,6 +89,8 @@ IMF_PQ = DATA_DIR / "processed" / "imf_factors_panel.parquet"
 MACROSTRUCTURE_PQ = DATA_DIR / "processed" / "macrostructure_panel.parquet"
 BILATERAL_PORTFOLIO_PQ = DATA_DIR / "processed" / "bilateral_portfolio_matrix.parquet"
 BLOOMBERG_PQ = DATA_DIR / "processed" / "bloomberg_factors_panel.parquet"
+FACTOR_RETURNS_PQ = DATA_DIR / "processed" / "factor_returns_panel.parquet"
+FACTOR_TOP20_MEMBERSHIP_PQ = DATA_DIR / "processed" / "factor_top20_membership_panel.parquet"
 
 T2_RETURN_SHEETS = {"1MRet", "3MRet", "6MRet", "9MRet", "12MRet"}
 GLOBAL_BROADCAST_VARIABLES = {
@@ -438,6 +446,104 @@ def load_gdelt(con: duckdb.DuckDBPyConnection) -> int:
     return count
 
 
+def load_factor_returns(con: duckdb.DuckDBPyConnection) -> int:
+    """Load factor_returns_panel.parquet into the factor_returns table."""
+    print("Loading Factor Returns Panel ...")
+    con.execute("DROP TABLE IF EXISTS factor_returns")
+    con.execute(f"""
+        CREATE TABLE factor_returns AS
+        SELECT
+            CAST(date AS DATE) AS date,
+            factor,
+            CAST(value AS DOUBLE) AS value,
+            source
+        FROM read_parquet('{FACTOR_RETURNS_PQ}')
+    """)
+    count = con.execute("SELECT COUNT(*) FROM factor_returns").fetchone()[0]
+    factors = con.execute("SELECT COUNT(DISTINCT factor) FROM factor_returns").fetchone()[0]
+    sources = con.execute("SELECT COUNT(DISTINCT source) FROM factor_returns").fetchone()[0]
+    print(f"  factor_returns: {count:,} rows, {factors} factors, {sources} sources")
+    return count
+
+
+def create_empty_factor_returns_table(con: duckdb.DuckDBPyConnection) -> int:
+    con.execute("DROP TABLE IF EXISTS factor_returns")
+    con.execute("""
+        CREATE TABLE factor_returns (
+            date DATE,
+            factor VARCHAR,
+            value DOUBLE,
+            source VARCHAR
+        )
+    """)
+    return 0
+
+
+def load_factor_top20_membership(con: duckdb.DuckDBPyConnection) -> int:
+    """Load factor_top20_membership_panel.parquet into factor_top20_membership."""
+    print("Loading Factor Top-20 Membership Panel ...")
+    con.execute("DROP TABLE IF EXISTS factor_top20_membership")
+    con.execute(f"""
+        CREATE TABLE factor_top20_membership AS
+        SELECT
+            CAST(date AS DATE) AS date,
+            country,
+            factor,
+            CAST(weight AS DOUBLE) AS weight,
+            source
+        FROM read_parquet('{FACTOR_TOP20_MEMBERSHIP_PQ}')
+    """)
+    count = con.execute("SELECT COUNT(*) FROM factor_top20_membership").fetchone()[0]
+    factors = con.execute("SELECT COUNT(DISTINCT factor) FROM factor_top20_membership").fetchone()[0]
+    countries = con.execute("SELECT COUNT(DISTINCT country) FROM factor_top20_membership").fetchone()[0]
+    print(
+        f"  factor_top20_membership: {count:,} rows, "
+        f"{factors} factors, {countries} countries"
+    )
+    return count
+
+
+def create_empty_factor_top20_membership_table(con: duckdb.DuckDBPyConnection) -> int:
+    con.execute("DROP TABLE IF EXISTS factor_top20_membership")
+    con.execute("""
+        CREATE TABLE factor_top20_membership (
+            date DATE,
+            country VARCHAR,
+            factor VARCHAR,
+            weight DOUBLE,
+            source VARCHAR
+        )
+    """)
+    return 0
+
+
+def create_country_factor_attribution_view(con: duckdb.DuckDBPyConnection):
+    """Country-level attribution = membership ⨝ factor returns, joined on (date, factor, source)."""
+    print("Creating country_factor_attribution view ...")
+    con.execute("DROP VIEW IF EXISTS country_factor_attribution")
+    con.execute("""
+        CREATE VIEW country_factor_attribution AS
+        SELECT
+            m.date,
+            m.country,
+            m.factor,
+            m.weight,
+            r.value AS factor_return,
+            m.weight * r.value AS contribution,
+            m.source
+        FROM factor_top20_membership AS m
+        JOIN factor_returns AS r
+          ON r.date = m.date
+         AND r.factor = m.factor
+         AND r.source = m.source
+    """)
+    try:
+        count = con.execute("SELECT COUNT(*) FROM country_factor_attribution").fetchone()[0]
+        print(f"  country_factor_attribution: {count:,} rows (view)")
+    except Exception as exc:
+        print(f"  country_factor_attribution: created (count unavailable: {exc})")
+
+
 def create_unified_view(con: duckdb.DuckDBPyConnection):
     """Create a unified view across all ASADO factor tables."""
     print("Creating unified_panel view ...")
@@ -480,7 +586,17 @@ def create_indexes(con: duckdb.DuckDBPyConnection):
         CREATE INDEX IF NOT EXISTS idx_bilateral_portfolio_matrix_rep_cp_date
         ON bilateral_portfolio_matrix(reporter_iso3, counterpart_iso3, date)
     """)
-    print("  Indexes created on factor tables, country_reference, and bilateral ownership keys")
+    con.execute("CREATE INDEX IF NOT EXISTS idx_factor_returns_date_factor ON factor_returns(date, factor)")
+    con.execute("CREATE INDEX IF NOT EXISTS idx_factor_returns_source ON factor_returns(source)")
+    con.execute("""
+        CREATE INDEX IF NOT EXISTS idx_factor_top20_membership_date_country
+        ON factor_top20_membership(date, country)
+    """)
+    con.execute("""
+        CREATE INDEX IF NOT EXISTS idx_factor_top20_membership_factor
+        ON factor_top20_membership(factor, date)
+    """)
+    print("  Indexes created on factor tables, country_reference, bilateral ownership, and optimizer panels")
 
 
 def check_database():
@@ -499,8 +615,25 @@ def check_database():
     print()
 
     for table in ["t2_master", "t2_raw", "country_reference", "external_factors", "extended_factors", "gdelt_panel",
-                   "imf_factors", "macrostructure_factors", "bloomberg_factors"]:
+                   "imf_factors", "macrostructure_factors", "bloomberg_factors",
+                   "factor_returns", "factor_top20_membership"]:
         try:
+            if table == "factor_returns":
+                count = con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+                fac_c = con.execute(f"SELECT COUNT(DISTINCT factor) FROM {table}").fetchone()[0]
+                src_c = con.execute(f"SELECT COUNT(DISTINCT source) FROM {table}").fetchone()[0]
+                date_min = con.execute(f"SELECT MIN(date) FROM {table}").fetchone()[0]
+                date_max = con.execute(f"SELECT MAX(date) FROM {table}").fetchone()[0]
+                print(f"  {table:20s}: {count:>10,} rows | {fac_c:>4} factors | {src_c} sources | {date_min} → {date_max}")
+                continue
+            if table == "factor_top20_membership":
+                count = con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+                fac_c = con.execute(f"SELECT COUNT(DISTINCT factor) FROM {table}").fetchone()[0]
+                ctry_c = con.execute(f"SELECT COUNT(DISTINCT country) FROM {table}").fetchone()[0]
+                date_min = con.execute(f"SELECT MIN(date) FROM {table}").fetchone()[0]
+                date_max = con.execute(f"SELECT MAX(date) FROM {table}").fetchone()[0]
+                print(f"  {table:20s}: {count:>10,} rows | {fac_c:>4} factors | {ctry_c:>2} countries | {date_min} → {date_max}")
+                continue
             if table == "country_reference":
                 count = con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
                 iso3_c = con.execute(f"SELECT COUNT(DISTINCT iso3) FROM {table}").fetchone()[0]
@@ -549,7 +682,10 @@ def main():
         return
 
     required = [T2_CSV, T2_WORKBOOK, EXTERNAL_PQ, EXTENDED_PQ, IMF_PQ]
-    optional = [MACROSTRUCTURE_PQ, BILATERAL_PORTFOLIO_PQ, BLOOMBERG_PQ]
+    optional = [
+        MACROSTRUCTURE_PQ, BILATERAL_PORTFOLIO_PQ, BLOOMBERG_PQ,
+        FACTOR_RETURNS_PQ, FACTOR_TOP20_MEMBERSHIP_PQ,
+    ]
     for f in required:
         if not f.exists():
             print(f"MISSING: {f}")
@@ -615,6 +751,20 @@ def main():
                 variable VARCHAR, source VARCHAR
             )
         """)
+    print()
+    if FACTOR_RETURNS_PQ.exists():
+        total += load_factor_returns(con)
+    else:
+        print("Factor returns panel not found — creating empty table")
+        create_empty_factor_returns_table(con)
+    print()
+    if FACTOR_TOP20_MEMBERSHIP_PQ.exists():
+        total += load_factor_top20_membership(con)
+    else:
+        print("Factor top-20 membership panel not found — creating empty table")
+        create_empty_factor_top20_membership_table(con)
+    print()
+    create_country_factor_attribution_view(con)
     print()
     create_unified_view(con)
     print()

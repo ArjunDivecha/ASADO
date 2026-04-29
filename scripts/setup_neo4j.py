@@ -597,6 +597,91 @@ def create_factor_nodes(session):
     return count
 
 
+def set_factor_return_properties(session):
+    """Push latest 1m / 12m total return + 60m Sharpe onto each Factor node.
+
+    Sourced from DuckDB's factor_returns table (Econ + T2 + GDELT optimizers).
+    Factor names in factor_returns retain their _CS / _TS suffix and match the
+    Factor.name property. If factor_returns is empty or absent, this is a no-op.
+    """
+    con = duckdb.connect(str(DB_PATH), read_only=True)
+    try:
+        try:
+            present = con.execute(
+                "SELECT COUNT(*) FROM information_schema.tables "
+                "WHERE table_schema='main' AND table_name='factor_returns'"
+            ).fetchone()[0]
+        except Exception:
+            present = 0
+        if not present:
+            con.close()
+            print("  Factor return properties: skipped (factor_returns table absent)")
+            return 0
+
+        rows = con.execute(
+            """
+            WITH ranked AS (
+                SELECT
+                    factor,
+                    source,
+                    date,
+                    value,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY factor, source ORDER BY date DESC
+                    ) AS rn
+                FROM factor_returns
+                WHERE value IS NOT NULL
+            )
+            SELECT
+                factor,
+                source,
+                MAX(CASE WHEN rn = 1 THEN value END) AS r_1m,
+                MAX(CASE WHEN rn = 1 THEN date  END) AS last_date,
+                SUM(CASE WHEN rn <= 12 THEN value ELSE 0 END) AS r_12m_sum,
+                COUNT(CASE WHEN rn <= 12 THEN 1 END)          AS r_12m_n,
+                AVG(CASE WHEN rn <= 60 THEN value END)        AS r_60m_mean,
+                STDDEV_SAMP(CASE WHEN rn <= 60 THEN value END) AS r_60m_std,
+                COUNT(CASE WHEN rn <= 60 THEN 1 END)          AS r_60m_n
+            FROM ranked
+            GROUP BY factor, source
+            """
+        ).fetchall()
+    finally:
+        con.close()
+
+    if not rows:
+        print("  Factor return properties: skipped (no rows in factor_returns)")
+        return 0
+
+    count = 0
+    for factor, source, r_1m, last_date, r_12m_sum, r_12m_n, r_60m_mean, r_60m_std, r_60m_n in rows:
+        r_12m = float(r_12m_sum) if r_12m_n and r_12m_n >= 12 else None
+        sharpe = None
+        if r_60m_n and r_60m_n >= 24 and r_60m_std and r_60m_std > 0:
+            sharpe = (float(r_60m_mean) * 12.0) / (float(r_60m_std) * (12 ** 0.5))
+        last_iso = last_date.isoformat() if last_date is not None else None
+        session.run(
+            """
+            MERGE (f:Factor {name: $name})
+            SET f.return_source = $source,
+                f.latest_return_1m = $r_1m,
+                f.latest_return_12m = $r_12m,
+                f.latest_return_date = CASE WHEN $last_iso IS NULL THEN NULL ELSE date($last_iso) END,
+                f.sharpe_60m = $sharpe
+            """,
+            name=factor,
+            source=source,
+            r_1m=float(r_1m) if r_1m is not None else None,
+            r_12m=r_12m,
+            last_iso=last_iso,
+            sharpe=sharpe,
+        )
+        count += 1
+
+    print(f"  Factor return properties applied: {count} factor x source pairs")
+    return count
+
+
 def create_commodity_nodes(session):
     """Create Commodity nodes."""
     for com in COMMODITIES:
@@ -1084,6 +1169,7 @@ def main():
         print("Creating nodes ...")
         create_country_nodes(session)
         create_factor_nodes(session)
+        set_factor_return_properties(session)
         create_commodity_nodes(session)
         create_central_bank_nodes(session)
         create_datasource_nodes(session)

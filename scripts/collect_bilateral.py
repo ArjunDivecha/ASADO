@@ -724,6 +724,9 @@ def main():
     do_bank = not args.trade_only and not args.portfolio_only
     do_portfolio = not args.trade_only and not args.bank_only and not args.skip_portfolio
 
+    # Sequential — concurrency was attempted but trade + portfolio_cpis both
+    # hit IMF (~2 req/s limit), and parallel runs measured slower (309s vs
+    # 259s sequential), so the rate-limit cost outweighs the IO overlap.
     if do_trade:
         trade_df = collect_trade(iso3_list, iso3_to_t2)
         if not trade_df.empty:

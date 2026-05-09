@@ -75,6 +75,8 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--check", action="store_true",
                     help="Summarize existing table without rebuilding.")
+    ap.add_argument("--force", action="store_true",
+                    help="Rebuild even if table is already up to date with parquet mtime.")
     args = ap.parse_args()
 
     if not DUCKDB_PATH.exists():
@@ -90,6 +92,36 @@ def main() -> int:
         logger.error("Source parquet missing: %s", DEEP_PARQUET)
         logger.error("Run scripts/collect_gdelt_deep.py first.")
         return 2
+
+    # Skip if the table is already loaded from a parquet that hasn't changed.
+    # Compare parquet mtime against the DuckDB file mtime — if the duck file
+    # is newer than the parquet AND the table already exists with rows that
+    # match the parquet's max date, we can safely skip.
+    if not args.force:
+        try:
+            with duckdb.connect(str(DUCKDB_PATH), read_only=True) as con:
+                exists = con.execute(
+                    f"SELECT COUNT(*) FROM information_schema.tables "
+                    f"WHERE table_name = '{TABLE}'"
+                ).fetchone()[0] > 0
+                if exists:
+                    table_max = con.execute(
+                        f"SELECT MAX(date) FROM {TABLE}"
+                    ).fetchone()[0]
+                    import pyarrow.parquet as pq
+                    pq_max = pq.read_table(
+                        str(DEEP_PARQUET), columns=["date"]
+                    )["date"].to_pandas().max()
+                    if table_max is not None and pq_max is not None and \
+                       str(table_max) >= str(pq_max):
+                        logger.info(
+                            "Table %s already up to date with parquet "
+                            "(table max=%s, parquet max=%s). Skipping.",
+                            TABLE, table_max, pq_max,
+                        )
+                        return 0
+        except Exception as e:
+            logger.warning("Up-to-date check failed (%s) — proceeding to rebuild.", e)
 
     with duckdb.connect(str(DUCKDB_PATH)) as con:
         logger.info("Dropping and rebuilding %s ...", TABLE)

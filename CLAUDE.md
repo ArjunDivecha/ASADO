@@ -11,7 +11,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Stores everything in **hybrid DuckDB + Neo4j** (analytical warehouse + knowledge graph)
 - Builds **bilateral trade/banking/portfolio networks** from IMF IMTS, BIS LBS, IMF PIP/TIC
 - Produces a **canonical normalized feature layer** (_CS / _TS variations + factor_panel view)
-- Outputs **1.9M+ rows, 332 variables** across multiple panels
+- Outputs **1.9M+ rows, 332 variables** across monthly panels
+- Maintains a **daily-frequency extension** with **58M+ rows** (T2, GDELT, optimizer returns) for event studies
 
 Core reference docs: `README.md`, `CLAUDE_CODE_BRIEF.md`, `Phase1_Data_Collection_Plan.md`
 
@@ -94,6 +95,8 @@ This ensures **no data loss** even if multiple sources are temporarily unavailab
 | `run_duckdb_sql(sql, max_rows=100)` | Read-only SQL | DuckDB connection opened read-only. |
 | `run_neo4j_cypher(cypher, max_rows=100)` | Cypher | Not driver-level read-only — convention is read-only. |
 | `get_country_profile(country)` | Bundled snapshot | Pass exact T2 names (`Brazil`, `ChinaA`, `U.S.`). |
+| `event_window(country, date, ...)` | Daily event study | Returns T2 factors, GDELT, factor returns, calendar in ±N day window. |
+| `daily_factor_series(country, variables, start_date, end_date, source)` | Daily extraction | General time-series from any daily table (`t2`, `t2_levels`, `gdelt`, `gdelt_raw`). |
 
 **Setup is documented in `README.md` → "MCP Server — Query ASADO from Claude Desktop"** (config file location, JSON shape, example prompts, troubleshooting). Do not duplicate that here.
 
@@ -124,7 +127,7 @@ python scripts/monthly_update.py --db-only          # rebuild DBs from existing 
 python scripts/monthly_update.py --dry-run          # preview, no writes
 ```
 
-**Total runtime: 6-8 minutes.** Log saved to `Data/logs/monthly_update_YYYY_MM_DD.log`.
+**Total runtime: 8-10 minutes** (includes daily panels). Log saved to `Data/logs/monthly_update_YYYY_MM_DD.log`.
 
 ### Individual Collectors
 
@@ -155,6 +158,9 @@ conda run -p ".../OpusBloomberg/.venv" python scripts/collect_bloomberg.py --for
 # Database rebuilds:
 python scripts/setup_duckdb.py                  # rebuild DuckDB from panels
 python scripts/setup_duckdb.py --check          # verify existing DB
+python scripts/build_daily_panels.py            # rebuild daily extension (~105s)
+python scripts/build_daily_panels.py --skip-levels  # fast daily build (skip raw xlsx, ~45s)
+python scripts/build_daily_panels.py --check    # verify daily tables
 python scripts/build_normalized_panel.py        # rebuild normalized_panel + feature_panel
 python scripts/setup_neo4j.py                   # rebuild Neo4j graph + edges
 python scripts/setup_neo4j.py --check           # verify existing graph
@@ -411,6 +417,13 @@ Core surfaces all use tidy schema: `(date DATE, country VARCHAR, value DOUBLE, v
 | `bilateral_portfolio_matrix` | 56K | Quarterly | Portfolio ownership (reporter-counterparty) |
 | `t2_master` | 1.1M | On request | T2 Master canonical panel |
 | `country_reference` | 34 | Monthly | ISO3 → ASADO country mapping |
+| `t2_factors_daily` | 32.3M | Monthly | 109 normalized _CS/_TS daily factors, 34 countries |
+| `t2_levels_daily` | 13.7M | Monthly | 47 raw factor levels (daily) |
+| `gdelt_factors_daily` | 10.1M | Monthly | 75 normalized GDELT daily factors |
+| `gdelt_raw_daily` | 955K | Monthly | 249-country raw GDELT signals |
+| `factor_returns_daily` | 1.1M | Monthly | 157 optimizer factor returns (T2 + GDELT) |
+| `variable_meta` | 269 | Monthly | Variable metadata: frequency, category, optimizer flag |
+| `daily_calendar` | 327K | Monthly | Per-country trading day calendar |
 
 **Vector index:**
 - `countryStateIndex` (Neo4j) — 34-dimensional cosine similarity on Country.state_embedding
@@ -419,8 +432,10 @@ Core surfaces all use tidy schema: `(date DATE, country VARCHAR, value DOUBLE, v
 
 **Nodes:**
 - **Country** (34) — t2_name, iso3, dm_em, region, currency_code, state_embedding (34d)
-- **Factor** (332) — name, category, source
-- **CentralBank** (31), **DataSource** (30), **CrisisEvent** (9), **SanctionsProgram** (6), **Commodity** (4)
+- **Factor** (1,651) — name, category, source, daily_sharpe_252d, daily_vol_252d, daily_cum_return_252d, daily_max_drawdown_252d, is_optimizer_selected
+- **CentralBank** (31), **DataSource** (37), **CrisisEvent** (9), **SanctionsProgram** (6), **Commodity** (4)
+
+**Daily stats on Factor nodes:** 157 factors (those with daily optimizer returns) carry `daily_*` properties computed from `factor_returns_daily`. Refreshed on each `setup_neo4j.py` rebuild. Use `f.is_optimizer_selected = true` to filter to the 8 live strategy factors.
 
 **Edges:**
 - **HAS_FACTOR_EXPOSURE** (3.7K) — Country → Factor (latest values)
@@ -559,8 +574,11 @@ python scripts/monthly_update.py --skip-bloomberg
 | File | Purpose |
 |------|---------|
 | `scripts/monthly_update.py` | Single-command orchestrator — run this for monthly updates |
+| `scripts/build_daily_panels.py` | Daily extension builder (58M rows: T2 + GDELT + optimizer returns) |
+| `scripts/asado_mcp_server.py` | MCP server (event_window, daily_factor_series, ask_asado, etc.) |
 | `scripts/db_bridge.py` | AsadoDB class — unified query interface for DuckDB + Neo4j |
 | `config/country_mapping.json` | 34-country code mappings (ISO, OECD, BIS, WB, EPU, GPR, etc.) |
+| `docs/DAILY_EXTENSION_STATUS.md` | Daily extension implementation status + test guide |
 | `README.md` | Full project documentation with data specs, sources, schemas |
 | `CLAUDE_CODE_BRIEF.md` | Quick-reference implementation spec |
 | `Phase1_Data_Collection_Plan.md` | Comprehensive PRD with all 22 sources + database design |
@@ -569,6 +587,7 @@ python scripts/monthly_update.py --skip-bloomberg
 
 ---
 
-**Last Updated:** 2026-04-19  
-**Architecture:** 34-country macro universe, 26 free sources + 17 Bloomberg variables, hybrid DuckDB + Neo4j  
-**Total Data:** 1.9M+ rows, 332 variables, monthly update cycle ~6-8 minutes
+**Last Updated:** 2026-05-08  
+**Architecture:** 34-country macro universe, 26 free sources + 28 Bloomberg variables, hybrid DuckDB + Neo4j  
+**Total Data:** Monthly: 2.5M+ rows, 385 variables | Daily: 58M+ rows, 269 variables | DB size: ~4 GB  
+**Monthly update cycle:** ~8-10 minutes

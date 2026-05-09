@@ -66,6 +66,7 @@ import os
 import shutil
 import time
 import zipfile
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 from io import BytesIO, StringIO
 from pathlib import Path
@@ -316,7 +317,11 @@ def merge_panels(existing: Optional[pd.DataFrame],
 def load_run_history() -> Dict:
     if HISTORY_PATH.exists():
         with open(HISTORY_PATH) as f:
-            return json.load(f)
+            data = json.load(f)
+        # Backwards-compat: older versions wrote a bare list
+        if isinstance(data, list):
+            return {"runs": data}
+        return data
     return {"runs": []}
 
 
@@ -1577,6 +1582,11 @@ def main():
     fresh_frames: Dict[str, pd.DataFrame] = {}
     status: Dict[str, str] = {}
 
+    # Sequential execution — parallelizing the 12 collectors causes ECB / BIS /
+    # OECD / FRED rate-limit collisions (each collector internally iterates many
+    # sub-requests against the same host) and makes total runtime *worse*.
+    # See git history for the parallel attempt; ECB FX in particular hangs when
+    # other threads are concurrently hammering shared rate-limit budgets.
     for name, fn in collectors:
         try:
             df = fn(countries)

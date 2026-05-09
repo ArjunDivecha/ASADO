@@ -8,19 +8,21 @@ This document is meant for analysts, developers, and future agents who need to u
 
 ASADO combines:
 
-- T2 factor data
+- T2 factor data (monthly + daily)
 - free-source macro / risk / structural data
 - IMF datasets
-- GDELT country news signals
+- GDELT country news signals (monthly + daily)
 - macrostructure / sticky-capital / central-bank-footprint / policy-backstop signals
 - Bloomberg sovereign and ETF passive-flow data
 - bilateral portfolio ownership
+- daily optimizer factor returns (T2 + GDELT)
 - a Neo4j knowledge graph for network relationships
 
-The two most important access surfaces are:
+The three most important access surfaces are:
 
-1. DuckDB for time-series and factor analytics
+1. DuckDB for time-series and factor analytics (monthly + daily)
 2. Neo4j for relationship and network questions
+3. MCP tools (`event_window`, `daily_factor_series`) for daily event studies
 
 ## Canonical Access Points
 
@@ -124,8 +126,15 @@ This is the shape used by:
 - `unified_panel`
 - `normalized_panel`
 - `feature_panel`
+- `t2_factors_daily`
+- `t2_levels_daily`
+- `gdelt_factors_daily`
+
+Note: `factor_returns_daily` uses `(date, factor, value, source)` — same shape as the monthly `factor_returns` table.
 
 ### DuckDB Tables And Views
+
+#### Monthly Tables
 
 | Table / View | Rows | Date Range | Primary Use |
 | --- | ---: | --- | --- |
@@ -143,6 +152,19 @@ This is the shape used by:
 | `bilateral_portfolio_matrix` | 56,786 | 1997-12-01 → 2026-02-01 | Reporter-counterparty portfolio ownership matrix |
 | `unified_panel` | 2,561,094 | 1975-12-01 → 2031-12-01 | Primary cross-source analytical view |
 
+#### Daily Tables (added 2026-05-08)
+
+| Table / View | Rows | Date Range | Primary Use |
+| --- | ---: | --- | --- |
+| `t2_factors_daily` | 32,340,392 | 2000-01-01 → 2026-05-07 | 109 normalized _CS/_TS daily factors, 34 countries |
+| `t2_levels_daily` | 13,698,294 | 2000-01-01 → 2026-04-21 | 47 raw factor levels (PX_LAST, MCAP, RSI14, REER, etc.) |
+| `gdelt_factors_daily` | 10,085,794 | 2015-06-24 → 2026-05-08 | 75 normalized GDELT daily factors, 34 countries |
+| `gdelt_raw_daily` | 955,473 | 2015-02-18 → 2026-04-19 | 249-country raw GDELT (off-universe entity bridge) |
+| `factor_returns_daily` | 1,085,412 | 2000-01-01 → 2026-05-07 | 157 optimizer factor returns (T2 + GDELT) |
+| `variable_meta` | 269 | n/a | Variable metadata: frequency, category, optimizer-selected flag |
+| `daily_calendar` | 327,216 | 2000-01-01 → 2026-05-07 | Per-country trading day calendar |
+| `t2_factors_monthly_from_daily` (view) | — | — | Last-trading-day-of-month snapshot for validation |
+
 ### Which Surface Should I Use?
 
 - Use `feature_panel` for most country-factor questions.
@@ -153,6 +175,12 @@ This is the shape used by:
 - Use `bloomberg_factors` when you want only Bloomberg-native or Bloomberg-derived fields.
 - Use `macrostructure_factors` when you want the ownership / fragility / central-bank-footprint / policy-backstop layer in isolation.
 - Use `bilateral_portfolio_matrix` for reporter-counterparty portfolio ownership, not `unified_panel`.
+- Use `t2_factors_daily` / `gdelt_factors_daily` for daily-frequency analysis, event windows, or intramonth behavior.
+- Use `t2_levels_daily` when you need raw (un-normalized) daily price/fundamental levels.
+- Use `factor_returns_daily` for daily optimizer portfolio returns (strategy P&L analysis).
+- Use `variable_meta` to discover which variables are optimizer-selected, their category, and monthly equivalents.
+- Use `daily_calendar` to identify trading vs. non-trading days per country (handles Saudi Sun-Thu, China holidays, etc.)
+- Use the MCP `event_window` tool for quick daily event studies instead of writing SQL from scratch.
 
 ## Special Table: `bilateral_portfolio_matrix`
 
@@ -378,6 +406,20 @@ Current relationship types:
 - `SUBJECT_TO`
 - `TRADES_WITH`
 
+### Factor Node Daily Properties (added 2026-05-08)
+
+157 Factor nodes (those with daily optimizer returns) carry daily performance stats:
+
+- `daily_return_latest`, `daily_return_date`
+- `daily_vol_30d`, `daily_vol_252d` (annualized)
+- `daily_sharpe_252d` (annualized)
+- `daily_max_drawdown_252d`
+- `daily_cum_return_30d`, `daily_cum_return_252d`
+- `daily_return_source` (`t2_optimizer_daily` or `gdelt_optimizer_daily`)
+- `is_optimizer_selected` (`true` for the 8 live strategy factors)
+
+These are refreshed on every `setup_neo4j.py` rebuild (automatic in monthly_update.py).
+
 ### When Neo4j Is Better Than DuckDB
 
 Prefer Neo4j for:
@@ -388,6 +430,8 @@ Prefer Neo4j for:
 - crisis-history lookups
 - central-bank relationship queries
 - factor-node relationship exploration
+- **factor performance ranking** (daily Sharpe, vol, drawdown via `daily_*` properties)
+- **"which factors connected to country X have the best daily Sharpe?"**
 
 Prefer DuckDB for:
 
@@ -395,6 +439,7 @@ Prefer DuckDB for:
 - time-series history
 - latest cross-sectional snapshots
 - cross-source factor joins and filters
+- daily event-window analysis (use MCP `event_window` tool)
 
 ## Concrete Query Examples
 
@@ -467,10 +512,73 @@ Run the full monthly pipeline:
 ./venv/bin/python scripts/monthly_update.py
 ```
 
+## Daily Extension (added 2026-05-08)
+
+The daily extension adds ~58M rows of daily-frequency data to the same `asado.duckdb` file. Built by `scripts/build_daily_panels.py`.
+
+### Key Concepts
+
+- **Normalized vs raw**: `t2_factors_daily` contains cross-sectional (`_CS`) and time-series (`_TS`) z-scored factors. `t2_levels_daily` contains the raw underlying values (prices, RSI14 level, REER level, etc.)
+- **Optimizer-selected factors**: 8 key factors that drive the strategy portfolio — queryable via `variable_meta.is_optimizer_selected`
+- **Factor returns**: `factor_returns_daily` contains daily portfolio returns for 157 factors, sourced from the T2 and GDELT optimizers. `source` is `t2_optimizer_daily` or `gdelt_optimizer_daily`.
+- **Trading calendar**: Not all countries trade on the same days (Saudi Arabia is Sun-Thu, China has Golden Week, etc.). `daily_calendar` provides per-country trading-day flags.
+- **Off-universe GDELT**: `gdelt_raw_daily` covers 249 countries (including Iran, North Korea, etc.) — useful as an entity bridge beyond the 34-country T2 universe.
+
+### Example Daily Queries
+
+Event study — Turkey 2018 lira crisis:
+
+```sql
+SELECT date, variable, value
+FROM t2_factors_daily
+WHERE country = 'Turkey'
+  AND date BETWEEN DATE '2018-08-08' AND DATE '2018-08-18'
+  AND variable IN (SELECT variable FROM variable_meta WHERE is_optimizer_selected)
+ORDER BY variable, date;
+```
+
+Factor return performance:
+
+```sql
+SELECT date, factor, value
+FROM factor_returns_daily
+WHERE factor = 'RSI14_CS'
+  AND source = 't2_optimizer_daily'
+  AND date >= DATE '2026-01-01'
+ORDER BY date;
+```
+
+GDELT off-universe lookup (Iran):
+
+```sql
+SELECT date, tone_mean, country_news_risk, country_news_sentiment
+FROM gdelt_raw_daily
+WHERE country_iso3 = 'IRN'
+ORDER BY date DESC
+LIMIT 20;
+```
+
+### MCP Tools for Daily Data
+
+| Tool | Use Case |
+|------|----------|
+| `event_window(country, date, days_before, days_after)` | Quick event studies — returns T2 factors, GDELT, factor returns, and calendar in one call |
+| `daily_factor_series(country, variables, start_date, end_date, source)` | General daily time-series extraction from any daily table |
+
+### Rebuild
+
+```bash
+python scripts/build_daily_panels.py --rebuild --no-backup   # full rebuild (~105s)
+python scripts/build_daily_panels.py --check                 # health check
+```
+
+Full implementation details: [`docs/DAILY_EXTENSION_STATUS.md`](/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/docs/DAILY_EXTENSION_STATUS.md)
+
 ## Guardrails
 
 - Prefer read-only access.
-- Use `unified_panel` by default unless a panel-specific table is clearly more appropriate.
+- Use `unified_panel` by default for monthly questions unless a panel-specific table is clearly more appropriate.
+- Use daily tables (`t2_factors_daily`, `gdelt_factors_daily`) for intramonth or event-study questions.
 - Use `gdelt_panel` for GDELT-specific latest/current questions if the date-label convention matters.
 - Do not assume `bilateral_portfolio_matrix` has `country`, `variable`, and `value`; it does not.
 - For human discovery, start with this file.

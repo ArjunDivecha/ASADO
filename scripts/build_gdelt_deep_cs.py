@@ -99,6 +99,9 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--check", action="store_true",
                     help="Summarize existing table without rebuilding.")
+    ap.add_argument("--force", action="store_true",
+                    help="Rebuild even if target table is already up to date "
+                         "with source max date.")
     args = ap.parse_args()
 
     if not DUCKDB_PATH.exists():
@@ -109,6 +112,32 @@ def main() -> int:
         with duckdb.connect(str(DUCKDB_PATH), read_only=True) as con:
             summarize(con)
         return 0
+
+    # Skip if target table already covers the source's full date range.
+    if not args.force:
+        try:
+            with duckdb.connect(str(DUCKDB_PATH), read_only=True) as con:
+                target_exists = con.execute(
+                    f"SELECT COUNT(*) FROM information_schema.tables "
+                    f"WHERE table_name = '{TARGET_TABLE}'"
+                ).fetchone()[0] > 0
+                if target_exists:
+                    src_max = con.execute(
+                        f"SELECT MAX(date) FROM {SOURCE_TABLE}"
+                    ).fetchone()[0]
+                    tgt_max = con.execute(
+                        f"SELECT MAX(date) FROM {TARGET_TABLE}"
+                    ).fetchone()[0]
+                    if src_max is not None and tgt_max is not None and \
+                       str(tgt_max) >= str(src_max):
+                        logger.info(
+                            "%s already up to date with %s "
+                            "(target max=%s, source max=%s). Skipping.",
+                            TARGET_TABLE, SOURCE_TABLE, tgt_max, src_max,
+                        )
+                        return 0
+        except Exception as e:
+            logger.warning("Up-to-date check failed (%s) — proceeding to rebuild.", e)
 
     with duckdb.connect(str(DUCKDB_PATH)) as con:
         logger.info("Reading %s ...", SOURCE_TABLE)

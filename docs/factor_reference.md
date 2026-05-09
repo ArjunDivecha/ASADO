@@ -1,6 +1,6 @@
 # ASADO Factor Reference
 
-_Generated: 2026-04-29 12:09:01_
+_Generated: 2026-05-07 17:58:07_
 _Source of truth: `Data/cache/query_assistant/` — refreshed by `scripts/build_schema_registry.py` on every monthly update._
 
 This document is intended to be read end-to-end by an AI agent (or human) who needs to understand exactly what the ASADO warehouse contains, what each surface means, and how to compose queries against it. Keep prose minimal; lean on tables.
@@ -12,9 +12,9 @@ Authoritative companion docs:
 
 ## At a glance
 
-- **DuckDB tables / views:** 14
-- **Distinct variables in `unified_panel`:** 2,641
-  - Raw: 223 · `_CS` cross-sectional: 1,209 · `_TS` time-series: 1,209
+- **DuckDB tables / views:** 18
+- **Distinct variables in `unified_panel`:** 1,938
+  - Raw: 224 · `_CS` cross-sectional: 846 · `_TS` time-series: 868
 - **Neo4j node labels:** 7
 - **Neo4j relationship types:** 9
 - **Country universe:** 34 (T2 names)
@@ -26,19 +26,23 @@ Every analytical surface in `Data/asado.duckdb`. The `t2_master`/`t2_raw` tables
 | Table | Type | Rows | Date range | Description |
 | --- | --- | --- | --- | --- |
 | `bilateral_portfolio_matrix` | BASE TABLE | 56,786 | 1997-12-01 → 2026-02-01 | Historical portfolio ownership matrix combining IMF PIP annual benchmarks and the U.S. TIC supplement. Common instrument_type values include equity_fund_shares, debt_long, debt_short, equity, debt_long_govt, and debt_… |
-| `bloomberg_factors` | BASE TABLE | 98,129 | 1975-12-01 → 2026-04-01 | Bloomberg market-implied, macro, and ETF passive-flow data collected via OpusBloomberg. |
-| `country_factor_attribution` | VIEW | 3,065,478 | 2000-02-01 → 2026-03-01 | View joining factor_top20_membership ⨝ factor_returns on (date, factor, source). Columns: (date, country, factor, weight, factor_return, contribution, source). contribution = weight × factor_return is the country's mo… |
+| `bloomberg_factors` | BASE TABLE | 98,132 | 1975-12-01 → 2026-04-01 | Bloomberg market-implied, macro, and ETF passive-flow data collected via OpusBloomberg. |
+| `country_factor_attribution` | VIEW | 2,094,636 | 2000-02-01 → 2026-03-01 | View joining factor_top20_membership ⨝ factor_returns on (date, factor, source). Columns: (date, country, factor, weight, factor_return, contribution, source). contribution = weight × factor_return is the country's mo… |
 | `country_reference` | BASE TABLE | 31 | — | Canonical ISO-to-ASADO country mapping surface. Use this to join bilateral tables that store reporter_iso3/counterpart_iso3 onto ASADO factor surfaces that use country names. |
-| `extended_factors` | BASE TABLE | 96,604 | 1990-12-01 → 2026-04-01 | Extended country dataset built from additional free sources. |
-| `external_factors` | BASE TABLE | 112,633 | 1985-01-01 → 2026-03-01 | Free-source external macro, risk, and structural data. |
-| `factor_returns` | BASE TABLE | 402,040 | 2000-02-01 → 2026-03-01 | Monthly net returns of top-20%-of-countries portfolios per factor, sourced from the Econ / T2 Style / GDELT optimizer pipelines. Tidy long format with columns (date, factor, value, source). Factor names retain their _… |
-| `factor_top20_membership` | BASE TABLE | 3,082,581 | 2000-02-01 → 2026-04-01 | Sparse country-level membership in each factor's top-20% bucket per month. Columns: (date, country, factor, weight, source). weight = 1/N within the bucket (equal-weight); rows are present only when the country is in … |
-| `gdelt_panel` | BASE TABLE | 9,750,758 | 2015-09-01 → 2026-03-01 | Country-level GDELT-derived media, tone, and risk signals. |
-| `imf_factors` | BASE TABLE | 107,298 | 1980-12-01 → 2031-12-01 | IMF datasets normalized into the ASADO tidy panel shape. |
-| `macrostructure_factors` | BASE TABLE | 75,120 | 1995-03-01 → 2026-04-01 | Macrostructure panel spanning bank fragility, debt structure, institutional depth, sticky-capital proxies, and transparent derived signals. |
+| `extended_factors` | BASE TABLE | 97,458 | 1990-12-01 → 2026-04-01 | Extended country dataset built from additional free sources. |
+| `external_factors` | BASE TABLE | 112,666 | 1985-01-01 → 2026-03-01 | Free-source external macro, risk, and structural data. |
+| `factor_returns` | BASE TABLE | 278,290 | 2000-02-01 → 2026-03-01 | Monthly net returns of top-20%-of-countries portfolios per factor, sourced from the Econ / T2 Style / GDELT optimizer pipelines. Tidy long format with columns (date, factor, value, source). Factor names retain their _… |
+| `factor_top20_membership` | BASE TABLE | 2,111,141 | 2000-02-01 → 2026-04-01 | Sparse country-level membership in each factor's top-20% bucket per month. Columns: (date, country, factor, weight, source). weight = 1/N within the bucket (equal-weight); rows are present only when the country is in … |
+| `feature_panel` | VIEW | 8,557,821 | 1975-12-01 → 2031-12-01 | Query-facing union of unified_panel (raw warehouse) plus normalized_panel for analytics, assistants, and feature discovery. |
+| `gdelt_deep_factors` | BASE TABLE | 4,816,027 | 2015-03-01 → 2026-05-01 |  |
+| `gdelt_deep_factors_cs` | BASE TABLE | 4,586,459 | 2015-03-01 → 2026-05-01 |  |
+| `gdelt_panel` | BASE TABLE | 5,622,818 | 2015-09-01 → 2026-03-01 | Country-level GDELT-derived media, tone, and risk signals. |
+| `imf_factors` | BASE TABLE | 107,417 | 1980-12-01 → 2031-12-01 | IMF datasets normalized into the ASADO tidy panel shape. |
+| `macrostructure_factors` | BASE TABLE | 75,323 | 1995-03-01 → 2026-04-01 | Macrostructure panel spanning bank fragility, debt structure, institutional depth, sticky-capital proxies, and transparent derived signals. |
+| `normalized_panel` | BASE TABLE | 780,561 | 1975-12-01 → 2031-12-01 | Canonical ASADO-generated normalized factors. Contains _CS same-date cross-sectional z-scores and _TS rolling time-series z-scores for eligible raw source variables. |
 | `t2_master` | BASE TABLE | 1,188,810 | 2000-02-01 → 2026-04-01 | Original T2 monthly factor panel. |
-| `t2_raw` | BASE TABLE | 473,397 | 2000-02-01 → 2026-04-01 | Raw T2 factor levels from the authoritative T2 Master workbook. |
-| `unified_panel` | VIEW | 11,902,749 | 1975-12-01 → 2031-12-01 | Unified analytic view across all ASADO factor tables. |
+| `t2_raw` | BASE TABLE | 474,636 | 2000-02-01 → 2026-04-01 | Raw T2 factor levels from the authoritative T2 Master workbook. |
+| `unified_panel` | VIEW | 7,777,260 | 1975-12-01 → 2031-12-01 | Unified analytic view across all ASADO factor tables. |
 
 ## A note on `_CS` / `_TS` variants
 
@@ -104,7 +108,7 @@ Variables in this section are listed at the *raw* level (no `_CS`/`_TS` suffix).
 | `Earnings Yield` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
 | `GDP` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
 | `Gold` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Gold 12` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `Gold 12` | t2_raw | monthly | 34 | 2001-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
 | `Inflation` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
 | `LT Growth` | t2_raw | monthly | 34 | 2005-08-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
 | `MCAP` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
@@ -165,7 +169,7 @@ Variables in this section are listed at the *raw* level (no `_CS`/`_TS` suffix).
 
 | Variable | Source | Frequency | Countries | Date range | Norm | Sparse | Forecast |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `BIS_REER` | bis_reer | monthly | 33 | 2000-01-01T00:00:00 → 2026-02-01T00:00:00 | raw |  |  |
+| `BIS_REER` | bis_reer | monthly | 33 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
 
 ### `oecd`
 
@@ -226,7 +230,7 @@ Variables in this section are listed at the *raw* level (no `_CS`/`_TS` suffix).
 
 ### `ecb_fx`
 
-**Total variables:** 23
+**Total variables:** 24
 
 | Variable | Source | Frequency | Countries | Date range | Norm | Sparse | Forecast |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -234,6 +238,7 @@ Variables in this section are listed at the *raw* level (no `_CS`/`_TS` suffix).
 | `ECB_FX_BRL_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw | ✓ |  |
 | `ECB_FX_CAD_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw | ✓ |  |
 | `ECB_FX_CHF_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw | ✓ |  |
+| `ECB_FX_CNY_EUR` | ecb_fx | monthly | 2 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw | ✓ |  |
 | `ECB_FX_DKK_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw | ✓ |  |
 | `ECB_FX_EUR_EUR` | ecb_fx | monthly | 5 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
 | `ECB_FX_GBP_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw | ✓ |  |
@@ -260,12 +265,12 @@ Variables in this section are listed at the *raw* level (no `_CS`/`_TS` suffix).
 
 | Variable | Source | Frequency | Countries | Date range | Norm | Sparse | Forecast |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `FRED_HY_OAS` | fred | monthly | 34 | 2023-05-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
-| `FRED_USD_Broad_Index` | fred | monthly | 34 | 2006-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
-| `FRED_UST_10Y` | fred | monthly | 34 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
-| `FRED_UST_2Y` | fred | monthly | 34 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
-| `FRED_VIX` | fred | monthly | 34 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
-| `FRED_Yield_Curve_10Y2Y` | fred | monthly | 34 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
+| `FRED_HY_OAS` | fred | monthly | 34 | 2023-05-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `FRED_USD_Broad_Index` | fred | monthly | 34 | 2006-01-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `FRED_UST_10Y` | fred | monthly | 34 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `FRED_UST_2Y` | fred | monthly | 34 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `FRED_VIX` | fred | monthly | 34 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `FRED_Yield_Curve_10Y2Y` | fred | monthly | 34 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
 
 ### `ndgain`
 
@@ -407,13 +412,13 @@ Variables in this section are listed at the *raw* level (no `_CS`/`_TS` suffix).
 | Variable | Source | Frequency | Countries | Date range | Norm | Sparse | Forecast |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `IMF_Export_Price_Index` | imf_itg | monthly | 18 | 2000-01-01T00:00:00 → 2025-12-01T00:00:00 | raw |  |  |
-| `IMF_Exports_USD` | imf_itg | monthly | 34 | 2000-01-01T00:00:00 → 2026-01-01T00:00:00 | raw |  |  |
-| `IMF_Exports_YoY` | imf_itg | monthly | 23 | 2000-01-01T00:00:00 → 2025-12-01T00:00:00 | raw |  |  |
-| `IMF_Import_Price_Index` | imf_itg | monthly | 23 | 2000-01-01T00:00:00 → 2026-01-01T00:00:00 | raw |  |  |
-| `IMF_Imports_USD` | imf_itg | monthly | 33 | 2000-01-01T00:00:00 → 2026-01-01T00:00:00 | raw |  |  |
-| `IMF_Imports_YoY` | imf_itg | monthly | 22 | 2000-01-01T00:00:00 → 2025-12-01T00:00:00 | raw |  |  |
-| `IMF_Trade_Balance_USD` | imf_itg | monthly | 33 | 2000-01-01T00:00:00 → 2026-01-01T00:00:00 | raw |  |  |
-| `IMF_Trade_Openness_USD` | imf_itg | monthly | 33 | 2000-01-01T00:00:00 → 2026-01-01T00:00:00 | raw |  |  |
+| `IMF_Exports_USD` | imf_itg | monthly | 34 | 2000-01-01T00:00:00 → 2026-02-01T00:00:00 | raw |  |  |
+| `IMF_Exports_YoY` | imf_itg | monthly | 23 | 2000-01-01T00:00:00 → 2026-01-01T00:00:00 | raw |  |  |
+| `IMF_Import_Price_Index` | imf_itg | monthly | 23 | 2000-01-01T00:00:00 → 2026-02-01T00:00:00 | raw |  |  |
+| `IMF_Imports_USD` | imf_itg | monthly | 33 | 2000-01-01T00:00:00 → 2026-02-01T00:00:00 | raw |  |  |
+| `IMF_Imports_YoY` | imf_itg | monthly | 22 | 2000-01-01T00:00:00 → 2026-01-01T00:00:00 | raw |  |  |
+| `IMF_Trade_Balance_USD` | imf_itg | monthly | 33 | 2000-01-01T00:00:00 → 2026-02-01T00:00:00 | raw |  |  |
+| `IMF_Trade_Openness_USD` | imf_itg | monthly | 33 | 2000-01-01T00:00:00 → 2026-02-01T00:00:00 | raw |  |  |
 
 ### `imf_ls`
 
@@ -421,7 +426,7 @@ Variables in this section are listed at the *raw* level (no `_CS`/`_TS` suffix).
 
 | Variable | Source | Frequency | Countries | Date range | Norm | Sparse | Forecast |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `IMF_Employment_Index` | imf_ls | monthly | 12 | 2000-01-01T00:00:00 → 2026-01-01T00:00:00 | raw |  |  |
+| `IMF_Employment_Index` | imf_ls | monthly | 12 | 2000-01-01T00:00:00 → 2026-02-01T00:00:00 | raw |  |  |
 
 ### `imf_mfs_ir`
 
@@ -603,7 +608,7 @@ Properties:
 - `url`
 - `variable_count`
 
-#### `:Factor` — 2,929 nodes
+#### `:Factor` — 1,930 nodes
 
 ASADO factor/variable node aligned to the unified panel variable catalog.
 
@@ -629,12 +634,12 @@ Properties:
 
 | Relationship | Count | From → To | Description |
 | --- | --- | --- | --- |
-| `[:DATA_AVAILABLE_FROM]` | 991 | Country → DataSource | Country coverage edge to an upstream source. |
+| `[:DATA_AVAILABLE_FROM]` | 992 | Country → DataSource | Country coverage edge to an upstream source. |
 | `[:EXPORT_EXPOSED_TO]` | 28 | Country → Commodity | Country linked to major commodity exposure. |
 | `[:HAS_BANKING_EXPOSURE_TO]` | 582 | Country → Country | Directed bilateral banking claims relationship. |
 | `[:HAS_CENTRAL_BANK]` | 31 | Country → CentralBank | Country linked to its central bank node. |
 | `[:HAS_CRISIS_HISTORY]` | 112 | Country → CrisisEvent | Country linked to historical crisis events. |
-| `[:HAS_FACTOR_EXPOSURE]` | 12,359 | Country → Factor | Latest non-null factor exposure edge per country and variable, built from DuckDB. |
+| `[:HAS_FACTOR_EXPOSURE]` | 54,181 | Country → Factor | Latest non-null factor exposure edge per country and variable, built from DuckDB. |
 | `[:HOLDS_PORTFOLIO]` | 1,960 | Country → Country |  |
 | `[:SUBJECT_TO]` | 31 | Country → SanctionsProgram | Country linked to OFAC/SDN-associated sanctions exposure. This is not a clean sovereign sanctions-target registry. |
 | `[:TRADES_WITH]` | 928 | Country → Country | Directed bilateral trade relationship. |
@@ -671,12 +676,19 @@ Properties:
 | `idx_factor_returns_source` | `factor_returns` | ['"source"'] |
 | `idx_factor_top20_membership_date_country` | `factor_top20_membership` | [date, country] |
 | `idx_factor_top20_membership_factor` | `factor_top20_membership` | [factor, date] |
+| `idx_gdelt_deep_factors_ctry_date` | `gdelt_deep_factors` | [country, date] |
+| `idx_gdelt_deep_factors_var` | `gdelt_deep_factors` | ['"variable"'] |
+| `idx_gdelt_deep_factors_cs_ctry_date` | `gdelt_deep_factors_cs` | [country, date] |
+| `idx_gdelt_deep_factors_cs_var` | `gdelt_deep_factors_cs` | ['"variable"'] |
 | `idx_gdelt_panel_ctry_date` | `gdelt_panel` | [country, date] |
 | `idx_gdelt_panel_var` | `gdelt_panel` | ['"variable"'] |
 | `idx_imf_factors_ctry_date` | `imf_factors` | [country, date] |
 | `idx_imf_factors_var` | `imf_factors` | ['"variable"'] |
 | `idx_macrostructure_factors_ctry_date` | `macrostructure_factors` | [country, date] |
 | `idx_macrostructure_factors_var` | `macrostructure_factors` | ['"variable"'] |
+| `idx_normalized_panel_base_norm` | `normalized_panel` | [base_variable, normalization, date] |
+| `idx_normalized_panel_ctry_date` | `normalized_panel` | [country, date] |
+| `idx_normalized_panel_var` | `normalized_panel` | ['"variable"'] |
 | `idx_t2_master_ctry_date` | `t2_master` | [country, date] |
 | `idx_t2_master_var` | `t2_master` | ['"variable"'] |
 | `idx_t2_raw_ctry_date` | `t2_raw` | [country, date] |

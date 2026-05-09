@@ -69,6 +69,7 @@ import json
 import logging
 import shutil
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -247,7 +248,11 @@ def load_run_history() -> Dict:
     """Load run history from JSON file."""
     if HISTORY_PATH.exists():
         with open(HISTORY_PATH) as f:
-            return json.load(f)
+            data = json.load(f)
+        # Backwards-compat: older versions wrote a bare list
+        if isinstance(data, list):
+            return {"runs": data}
+        return data
     return {"runs": []}
 
 
@@ -1122,20 +1127,27 @@ def main():
     fresh_frames: Dict[str, pd.DataFrame] = {}
     status: Dict[str, str] = {}
 
-    for name, fn in collectors:
+    # Run all 7 collectors in parallel — each hits a different host so they
+    # don't share rate-limit budgets and the per-source try/except keeps one
+    # failure from poisoning the others.
+    def _run_one(name: str, fn) -> Tuple[str, pd.DataFrame, str]:
         try:
             df = fn(countries)
             if df is not None and not df.empty:
-                fresh_frames[name] = df
-                status[name] = "SUCCESS"
-            else:
-                fresh_frames[name] = pd.DataFrame()
-                status[name] = "NO DATA"
-                logger.warning(f"  {name}: returned no data")
+                return name, df, "SUCCESS"
+            return name, pd.DataFrame(), "NO DATA"
         except Exception as e:
-            fresh_frames[name] = pd.DataFrame()
-            status[name] = f"FAILED: {e}"
             logger.error(f"  {name}: FAILED — {e}")
+            return name, pd.DataFrame(), f"FAILED: {e}"
+
+    with ThreadPoolExecutor(max_workers=len(collectors)) as ex:
+        futures = {ex.submit(_run_one, name, fn): name for name, fn in collectors}
+        for fut in as_completed(futures):
+            name, df, st = fut.result()
+            fresh_frames[name] = df
+            status[name] = st
+            if st == "NO DATA":
+                logger.warning(f"  {name}: returned no data")
 
     # ── Merge fresh data with existing panel ──────────────────────────
     logger.info("\n" + "-" * 60)

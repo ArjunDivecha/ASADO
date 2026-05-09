@@ -528,6 +528,28 @@ def build_variable_meta(con: duckdb.DuckDBPyConnection) -> int:
             "is_optimizer_selected": False,
         })
 
+    # Prediction-market derived signals (if Stage 2 table exists).
+    tables = {r[0] for r in con.execute("SHOW TABLES").fetchall()}
+    if "predmkt_signals_daily" in tables:
+        p_vars = [
+            r[0]
+            for r in con.execute(
+                "SELECT DISTINCT signal_name FROM predmkt_signals_daily ORDER BY signal_name"
+            ).fetchall()
+            if r[0]
+        ]
+        for v in p_vars:
+            rows.append({
+                "variable": v,
+                "source_table": "predmkt_signals_daily",
+                "source_file": "predmkt_derived",
+                "native_frequency": "D",
+                "monthly_equivalent": None,
+                "is_normalized": False,
+                "category": "predmkt_signal",
+                "is_optimizer_selected": False,
+            })
+
     meta_df = pd.DataFrame(rows)
     con.execute("DROP TABLE IF EXISTS variable_meta")
     con.register("meta_stage", meta_df)

@@ -49,11 +49,17 @@ Daily tables (parallel to monthly, same DB):
 - variable_meta: frequency / category / optimizer-selected metadata for all variables
 - daily_calendar: per-country trading day calendar
 - event_log: ~200 hand-curated dated events with category, severity, country tags
+- predmkt_daily/predmkt_*: Stage 2 prediction-market snapshots, metadata, and composites
 
 Event-anchored query pattern (two-step):
   1. events_in_window(start, end, category, country, tag) → find relevant events
   2. event_window(country, date, days_before, days_after) → per-event factor study
 Trigger phrases: "around the last X", "during the X crisis", "compare reactions to X"
+
+Prediction-market query pattern:
+  1. event_market_set(keyword) → find relevant curated markets
+  2. predmkt_snapshot(category, date) → inspect current probabilities and liquidity
+  3. country_signal_now(country, channels) → spillover-implied country risk/opportunity
 """.strip()
 
 mcp = FastMCP(
@@ -113,6 +119,10 @@ def _schema_snapshot(refresh_schema: bool = False) -> dict[str, Any]:
             "unified_panel is the main monthly analytical view.",
             "Daily tables: t2_factors_daily, t2_levels_daily, gdelt_factors_daily, "
             "gdelt_raw_daily, factor_returns_daily, variable_meta, daily_calendar.",
+            "Prediction-market tables: predmkt_daily, predmkt_market_meta, "
+            "predmkt_outcome_meta, predmkt_country_spillover, predmkt_resolutions, "
+            "predmkt_signals_daily.",
+            "Prediction-market tools: predmkt_snapshot, country_signal_now, event_market_set.",
             "Use event_window tool for daily event studies instead of raw SQL.",
             "variable_meta.is_optimizer_selected flags the 8 strategy-driving factors.",
             "Use graph_role to separate sovereign proxies from market sleeves in Neo4j.",
@@ -128,6 +138,12 @@ def _frame_payload(df: pd.DataFrame, max_rows: int) -> dict[str, Any]:
         "columns": list(df.columns),
         "rows": _json_ready(df.head(max_rows)),
     }
+
+
+def _predmkt_date_expression(date_str: str, table: str = "predmkt_daily", date_col: str = "snapshot_date") -> str:
+    if date_str.strip().lower() in {"today", "latest", "now", ""}:
+        return f"(SELECT MAX({date_col}) FROM {table})"
+    return f"(SELECT MAX({date_col}) FROM {table} WHERE {date_col} <= DATE '{date_str}')"
 
 
 @mcp.resource(
@@ -487,6 +503,291 @@ def events_in_window(
         "columns": list(df.columns),
         "rows": _json_ready(df.head(max_results)),
     })
+
+
+@mcp.tool(
+    description=(
+        "Return prediction-market rows for one ASADO category at a given snapshot date. "
+        "Defaults to latest available date."
+    )
+)
+def predmkt_snapshot(
+    category: str,
+    date: str = "today",
+    max_rows: int = 200,
+) -> dict[str, Any]:
+    import duckdb as _duckdb
+
+    db_path = str(BASE_DIR / "Data" / "asado.duckdb")
+    con = _duckdb.connect(db_path, read_only=True)
+
+    tables = {r[0] for r in con.execute("SHOW TABLES").fetchall()}
+    required = {"predmkt_daily", "predmkt_market_meta"}
+    if not required.issubset(tables):
+        con.close()
+        return {"error": "Prediction-market tables not found. Run build_predmkt_panel.py first."}
+
+    date_expr = _predmkt_date_expression(date, table="predmkt_daily", date_col="snapshot_date")
+    sql = f"""
+        WITH target AS (
+            SELECT {date_expr} AS snapshot_date
+        )
+        SELECT
+            d.snapshot_date,
+            d.platform,
+            d.market_id,
+            m.title,
+            m.asado_category,
+            m.asado_subcategory,
+            d.outcome_id,
+            o.label AS outcome_label,
+            d.probability,
+            d.bid,
+            d.ask,
+            d.spread_bps,
+            d.volume_24h_usd,
+            d.liquidity_usd,
+            d.is_stale,
+            m.resolution_clarity,
+            m.rules_url,
+            DATE_DIFF('day', d.snapshot_date, CAST(m.close_ts AS DATE)) AS days_to_resolution
+        FROM predmkt_daily d
+        JOIN target t
+          ON d.snapshot_date = t.snapshot_date
+        LEFT JOIN predmkt_market_meta m
+          ON m.platform = d.platform
+         AND m.market_id = d.market_id
+        LEFT JOIN predmkt_outcome_meta o
+          ON o.platform = d.platform
+         AND o.market_id = d.market_id
+         AND o.outcome_id = d.outcome_id
+        WHERE LOWER(COALESCE(m.asado_category, '')) = LOWER(?)
+        ORDER BY d.volume_24h_usd DESC NULLS LAST, d.liquidity_usd DESC NULLS LAST
+        LIMIT {max_rows}
+    """
+    df = con.execute(sql, [category]).fetchdf()
+    con.close()
+
+    snapshot_date = None
+    if not df.empty:
+        snapshot_date = str(df["snapshot_date"].iloc[0])
+    return _json_ready(
+        {
+            "category": category,
+            "snapshot_date": snapshot_date,
+            "result": _frame_payload(df, max_rows=max_rows),
+        }
+    )
+
+
+@mcp.tool(
+    description=(
+        "Return prediction-market-implied country signals and spillover channel decomposition "
+        "for one T2 country at a given date (defaults to latest)."
+    )
+)
+def country_signal_now(
+    country: str,
+    channels: str = None,
+    date: str = "today",
+    max_rows: int = 200,
+) -> dict[str, Any]:
+    import duckdb as _duckdb
+
+    db_path = str(BASE_DIR / "Data" / "asado.duckdb")
+    con = _duckdb.connect(db_path, read_only=True)
+
+    tables = {r[0] for r in con.execute("SHOW TABLES").fetchall()}
+    required = {"predmkt_signals_daily", "predmkt_country_spillover", "predmkt_daily"}
+    if not required.issubset(tables):
+        con.close()
+        return {"error": "Prediction-market tables not found. Run build_predmkt_panel.py first."}
+
+    date_expr = _predmkt_date_expression(date, table="predmkt_signals_daily", date_col="snapshot_date")
+    channel_items = []
+    if channels:
+        channel_items = [c.strip() for c in channels.split(",") if c.strip()]
+
+    signal_sql = f"""
+        WITH target AS (SELECT {date_expr} AS snapshot_date)
+        SELECT
+            snapshot_date,
+            signal_name,
+            country,
+            value,
+            n_markets,
+            total_liquidity_usd,
+            confidence_score
+        FROM predmkt_signals_daily
+        WHERE snapshot_date = (SELECT snapshot_date FROM target)
+          AND country = ?
+        ORDER BY signal_name
+        LIMIT {max_rows}
+    """
+    signal_df = con.execute(signal_sql, [country]).fetchdf()
+
+    if channel_items:
+        placeholders = ", ".join("?" for _ in channel_items)
+        channel_filter = f"AND s.channel IN ({placeholders})"
+        params: list[Any] = [country] + channel_items
+    else:
+        channel_filter = ""
+        params = [country]
+
+    breakdown_sql = f"""
+        WITH target AS (SELECT {date_expr} AS snapshot_date)
+        SELECT
+            s.channel,
+            s.confidence,
+            m.asado_category,
+            m.asado_subcategory,
+            m.title,
+            d.platform,
+            d.market_id,
+            d.probability,
+            s.elasticity,
+            d.liquidity_usd,
+            d.volume_24h_usd,
+            d.is_stale,
+            d.probability * s.elasticity AS implied_effect
+        FROM predmkt_country_spillover s
+        JOIN predmkt_daily d
+          ON d.platform = s.platform
+         AND d.market_id = s.market_id
+         AND d.snapshot_date = (SELECT snapshot_date FROM target)
+        LEFT JOIN predmkt_outcome_meta o
+          ON o.platform = d.platform
+         AND o.market_id = d.market_id
+         AND o.outcome_id = d.outcome_id
+        LEFT JOIN predmkt_market_meta m
+          ON m.platform = d.platform
+         AND m.market_id = d.market_id
+        WHERE s.country = ?
+          AND (LOWER(COALESCE(o.label, '')) = 'yes' OR o.label IS NULL)
+          {channel_filter}
+        ORDER BY ABS(d.probability * s.elasticity) DESC, d.liquidity_usd DESC NULLS LAST
+        LIMIT {max_rows}
+    """
+    breakdown_df = con.execute(breakdown_sql, params).fetchdf()
+    channel_agg = pd.DataFrame()
+    if not breakdown_df.empty:
+        channel_agg = (
+            breakdown_df.groupby("channel", as_index=False)
+            .agg(
+                market_count=("market_id", "nunique"),
+                avg_probability=("probability", "mean"),
+                avg_elasticity=("elasticity", "mean"),
+                net_implied_effect=("implied_effect", "sum"),
+                total_liquidity_usd=("liquidity_usd", "sum"),
+            )
+            .sort_values("net_implied_effect", ascending=False)
+        )
+    con.close()
+
+    snapshot_date = None
+    if not signal_df.empty:
+        snapshot_date = str(signal_df["snapshot_date"].iloc[0])
+    elif not breakdown_df.empty:
+        snapshot_date = date if date != "today" else None
+    return _json_ready(
+        {
+            "country": country,
+            "snapshot_date": snapshot_date,
+            "channels_filter": channel_items,
+            "signals": _frame_payload(signal_df, max_rows=max_rows),
+            "channel_breakdown": _frame_payload(channel_agg, max_rows=max_rows),
+            "market_breakdown": _frame_payload(breakdown_df, max_rows=max_rows),
+        }
+    )
+
+
+@mcp.tool(
+    description=(
+        "Search curated prediction markets by keyword across title/rules/slug, "
+        "ranked by recent liquidity."
+    )
+)
+def event_market_set(keyword: str, max_rows: int = 100) -> dict[str, Any]:
+    import duckdb as _duckdb
+
+    db_path = str(BASE_DIR / "Data" / "asado.duckdb")
+    con = _duckdb.connect(db_path, read_only=True)
+
+    tables = {r[0] for r in con.execute("SHOW TABLES").fetchall()}
+    required = {"predmkt_daily", "predmkt_market_meta"}
+    if not required.issubset(tables):
+        con.close()
+        return {"error": "Prediction-market tables not found. Run build_predmkt_panel.py first."}
+
+    token = keyword.strip().lower()
+    like = f"%{token}%"
+    sql = f"""
+        WITH latest AS (
+            SELECT MAX(snapshot_date) AS snapshot_date FROM predmkt_daily
+        ),
+        latest_primary AS (
+            SELECT
+                d.platform,
+                d.market_id,
+                d.probability,
+                d.volume_24h_usd,
+                d.liquidity_usd,
+                ROW_NUMBER() OVER (
+                    PARTITION BY d.platform, d.market_id
+                    ORDER BY
+                        CASE WHEN LOWER(COALESCE(o.label, '')) = 'yes' THEN 0 ELSE 1 END,
+                        d.probability DESC
+                ) AS rn
+            FROM predmkt_daily d
+            LEFT JOIN predmkt_outcome_meta o
+              ON o.platform = d.platform
+             AND o.market_id = d.market_id
+             AND o.outcome_id = d.outcome_id
+            WHERE d.snapshot_date = (SELECT snapshot_date FROM latest)
+        ),
+        vol7 AS (
+            SELECT
+                platform,
+                market_id,
+                SUM(COALESCE(volume_24h_usd, 0.0)) AS volume_7d_usd
+            FROM predmkt_daily
+            WHERE snapshot_date >= (SELECT snapshot_date FROM latest) - INTERVAL 6 DAY
+            GROUP BY platform, market_id
+        )
+        SELECT
+            m.platform,
+            m.market_id,
+            m.title,
+            m.slug,
+            m.asado_category,
+            m.asado_subcategory,
+            lp.probability AS primary_probability,
+            lp.volume_24h_usd,
+            lp.liquidity_usd,
+            v.volume_7d_usd,
+            m.resolution_clarity
+        FROM predmkt_market_meta m
+        LEFT JOIN latest_primary lp
+          ON lp.platform = m.platform
+         AND lp.market_id = m.market_id
+         AND lp.rn = 1
+        LEFT JOIN vol7 v
+          ON v.platform = m.platform
+         AND v.market_id = m.market_id
+        WHERE LOWER(COALESCE(m.title, '')) LIKE ?
+           OR LOWER(COALESCE(m.rules_text, '')) LIKE ?
+           OR LOWER(COALESCE(m.slug, '')) LIKE ?
+        ORDER BY COALESCE(v.volume_7d_usd, 0.0) DESC, COALESCE(lp.volume_24h_usd, 0.0) DESC
+        LIMIT {max_rows}
+    """
+    df = con.execute(sql, [like, like, like]).fetchdf()
+    con.close()
+    return _json_ready(
+        {
+            "keyword": keyword,
+            "result": _frame_payload(df, max_rows=max_rows),
+        }
+    )
 
 
 @mcp.tool(

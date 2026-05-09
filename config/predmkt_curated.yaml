@@ -1,0 +1,348 @@
+# =============================================================================
+# Curated Prediction Markets Registry — V1.1 (verified 2026-05-08)
+# =============================================================================
+# Every entry below was verified against the live API. Polymarket condition_ids
+# are full 66-char hex (0x + 64 chars). Kalshi tickers resolve via
+# api.elections.kalshi.com.
+#
+# To verify after pulling:
+#   python scripts/build_predmkt_panel.py --validate-only
+#
+# All entries should resolve. Failure means a market resolved or was relisted —
+# update the conditionId / ticker by querying the live API and re-saving here.
+# =============================================================================
+
+# ── Polymarket — Oil supply / WTI strike markets ─────────────────────────────
+- platform: polymarket
+  market_id: "0x1591b72dc504383d8fa2024e72a585c520b3c673614100d2e167507485e17e38"
+  slug: will-wti-reach-150-in-may-2026-196-364
+  asado_category: oil_shock
+  asado_subcategory: wti_stress_150_may
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: "Front-month WTI settlement (CME)"
+  spillover_countries:
+    - country: Saudi Arabia
+      elasticity: -0.70
+      channel: oil_export
+      confidence: high
+    - country: Japan
+      elasticity: 0.45
+      channel: oil_import_dependency
+      confidence: high
+    - country: Korea
+      elasticity: 0.35
+      channel: oil_import_dependency
+      confidence: medium
+
+- platform: polymarket
+  market_id: "0x0220e320852050a884e73bfe20447cbabe17ce934107cebc48a829b4a558204f"
+  slug: will-wti-crude-oil-wti-hit-high-200-in-may
+  asado_category: oil_shock
+  asado_subcategory: wti_stress_200_may
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: "Front-month WTI settlement (CME)"
+  spillover_countries:
+    - country: Saudi Arabia
+      elasticity: -0.85
+      channel: oil_export
+      confidence: high
+    - country: Indonesia
+      elasticity: 0.55
+      channel: oil_import_dependency
+      confidence: high
+    - country: India
+      elasticity: 0.50
+      channel: oil_import_dependency
+      confidence: high
+
+# ── Polymarket — Middle East regional conflict ───────────────────────────────
+- platform: polymarket
+  market_id: "0xffe381a80c1e36f9e0b03a542aa8fe56e74a67d2566a4e29396d4427aa4244c9"
+  slug: strait-of-hormuz-traffic-returns-to-normal-by-may-15
+  asado_category: regional_conflict_me
+  asado_subcategory: hormuz_disruption_90d
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: "Commercial maritime traffic reporting"
+  spillover_countries:
+    - country: Saudi Arabia
+      elasticity: 0.55
+      channel: regional_proximity
+      confidence: high
+    - country: India
+      elasticity: 0.30
+      channel: oil_import_dependency
+      confidence: medium
+    - country: Singapore
+      elasticity: 0.20
+      channel: trade_partner
+      confidence: medium
+
+- platform: polymarket
+  market_id: "0x518a5b030b205706b8ffe6bbad9bd3de59548348e5c0471827f5de21e513333c"
+  slug: strait-of-hormuz-traffic-returns-to-normal-by-end-of-may
+  asado_category: regional_conflict_me
+  asado_subcategory: hormuz_disruption_30d
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: "Commercial maritime traffic reporting"
+  spillover_countries:
+    - country: Saudi Arabia
+      elasticity: 0.50
+      channel: regional_proximity
+      confidence: high
+    - country: India
+      elasticity: 0.25
+      channel: oil_import_dependency
+      confidence: medium
+
+- platform: polymarket
+  market_id: "0xda2386dbc3f5c6ae7ecebc6c9c01ee682a83ea61f0cc57f5d64fed6e872bd275"
+  slug: us-x-iran-permanent-peace-deal-before-trump-visits-china
+  asado_category: regional_conflict_me
+  asado_subcategory: iran_ceasefire_timing
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: "Official diplomatic agreement confirmation"
+  spillover_countries:
+    - country: Saudi Arabia
+      elasticity: -0.35
+      channel: regional_proximity
+      confidence: medium
+    - country: Turkey
+      elasticity: -0.15
+      channel: regional_proxy
+      confidence: low
+
+# ── Polymarket — China / Taiwan / Pacific ────────────────────────────────────
+- platform: polymarket
+  market_id: "0xd9fb1184af0064e5e34b129f5b79afa5a17b7e32f2953ab05efed82315fee6d4"
+  slug: will-china-invade-taiwan-before-2027
+  asado_category: regional_conflict_pacific
+  asado_subcategory: taiwan_military_clash
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: "Recognized military engagement criteria"
+  spillover_countries:
+    - country: Taiwan
+      elasticity: 0.80
+      channel: regional_proximity
+      confidence: high
+    - country: Korea
+      elasticity: 0.45
+      channel: tech_supply_chain
+      confidence: high
+    - country: Japan
+      elasticity: 0.40
+      channel: regional_proximity
+      confidence: medium
+    - country: ChinaA
+      elasticity: 0.55
+      channel: regional_proximity
+      confidence: high
+
+- platform: polymarket
+  market_id: "0xa0b56d7e621c7cbcfa47fe1a9c24f3409e189180fd6bda55b7a8113129839afc"
+  slug: will-china-invade-taiwan-by-june-30-2026
+  asado_category: regional_conflict_pacific
+  asado_subcategory: taiwan_military_clash_near
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: "Recognized military engagement criteria"
+  spillover_countries:
+    - country: Taiwan
+      elasticity: 0.85
+      channel: regional_proximity
+      confidence: high
+    - country: Korea
+      elasticity: 0.50
+      channel: tech_supply_chain
+      confidence: high
+
+# ── Polymarket — Russia / Ukraine ────────────────────────────────────────────
+- platform: polymarket
+  market_id: "0xa93b28a6384aefff4e7d5adb2061c444e4a0e95b8ad17755f9cee123c7099b35"
+  slug: russia-x-ukraine-ceasefire-by-may-31-2026
+  asado_category: regional_conflict_eastern_europe
+  asado_subcategory: russia_ukraine_ceasefire_30d
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: "Recognized ceasefire agreement"
+  spillover_countries:
+    - country: Germany
+      elasticity: -0.30
+      channel: trade_partner
+      confidence: medium
+    - country: Poland
+      elasticity: 0.50
+      channel: regional_proximity
+      confidence: high
+    - country: Turkey
+      elasticity: 0.20
+      channel: regional_proxy
+      confidence: medium
+
+- platform: polymarket
+  market_id: "0xe546672750517f62c45a5a00067481981e62b9c20fa8220203232c9dc8fd2093"
+  slug: russia-x-ukraine-ceasefire-by-june-30-2026
+  asado_category: regional_conflict_eastern_europe
+  asado_subcategory: russia_ukraine_ceasefire_60d
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: "Recognized ceasefire agreement"
+  spillover_countries:
+    - country: Germany
+      elasticity: -0.25
+      channel: trade_partner
+      confidence: medium
+    - country: Poland
+      elasticity: 0.45
+      channel: regional_proximity
+      confidence: high
+
+# ── Polymarket — Fed policy ──────────────────────────────────────────────────
+- platform: polymarket
+  market_id: "0xde04b189b3f19eaccda02529a3ea67abfc46bff5c0c8fc42d8a2d0ed7b8f0d41"
+  slug: will-there-be-no-change-in-fed-interest-rates-after-the-june-2026-meeting
+  asado_category: fed_policy
+  asado_subcategory: fed_decision_next
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: "FOMC June 2026 statement"
+  spillover_countries:
+    - country: U.S.
+      elasticity: 0.10
+      channel: usd_beta
+      confidence: high
+    - country: Brazil
+      elasticity: -0.20
+      channel: em_beta
+      confidence: medium
+    - country: Mexico
+      elasticity: -0.15
+      channel: em_beta
+      confidence: medium
+
+# ── Polymarket — Trade / tariffs ─────────────────────────────────────────────
+- platform: polymarket
+  market_id: "0x2e17fe4fd80ffaa342b1ce15d59e56c0347a90422d90e6345048be78e1963b17"
+  slug: us-x-china-tariff-agreement-by-may-31
+  asado_category: tariff
+  asado_subcategory: us_china_tariff_agreement
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: "Official tariff implementation announcements"
+  spillover_countries:
+    - country: ChinaA
+      elasticity: -0.55
+      channel: trade_partner
+      confidence: high
+    - country: Taiwan
+      elasticity: -0.30
+      channel: tech_supply_chain
+      confidence: high
+    - country: Mexico
+      elasticity: 0.20
+      channel: trade_partner
+      confidence: medium
+
+# ── Polymarket — Recession / GDP ─────────────────────────────────────────────
+- platform: polymarket
+  market_id: "0xfdc73f10edf0266756686f35b5712cffa828b0940fc015e0426c76c934c2105d"
+  slug: us-recession-by-end-of-2026
+  asado_category: gdp_recession
+  asado_subcategory: recession_prob_12m
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: "NBER recession declaration"
+  spillover_countries:
+    - country: U.S.
+      elasticity: 0.65
+      channel: usd_beta
+      confidence: high
+    - country: Germany
+      elasticity: 0.30
+      channel: trade_partner
+      confidence: medium
+    - country: Korea
+      elasticity: 0.25
+      channel: tech_supply_chain
+      confidence: medium
+
+# ── Polymarket — Country elections ───────────────────────────────────────────
+- platform: polymarket
+  market_id: "0xe1d5733322fd2215f136412f419d9ff805d097f78c68de3261515ff736895f2b"
+  slug: will-eduardo-bolsonaro-win-the-2026-brazilian-presidential-election
+  asado_category: country_election
+  asado_subcategory: brazil_2026
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: "Official TSE result"
+  spillover_countries:
+    - country: Brazil
+      elasticity: 0.45
+      channel: regional_proxy
+      confidence: high
+    - country: Chile
+      elasticity: 0.10
+      channel: regional_proxy
+      confidence: medium
+
+# ── Kalshi — CPI macro ladder (will resolve via orderbook depth) ─────────────
+- platform: kalshi
+  market_id: "KXCPI-26MAY-T1.0"
+  asado_category: cpi
+  asado_subcategory: cpi_yoy_next
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: "BLS CPI release for May 2026"
+  spillover_countries:
+    - country: U.S.
+      elasticity: -0.40
+      channel: usd_beta
+      confidence: high
+    - country: NASDAQ
+      elasticity: -0.50
+      channel: usd_beta
+      confidence: medium
+
+- platform: kalshi
+  market_id: "KXCPI-26MAY-T-0.2"
+  asado_category: cpi
+  asado_subcategory: cpi_yoy_next
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: "BLS CPI release for May 2026"
+  spillover_countries:
+    - country: U.S.
+      elasticity: -0.40
+      channel: usd_beta
+      confidence: high
+    - country: US SmallCap
+      elasticity: -0.45
+      channel: usd_beta
+      confidence: medium
+
+# ── Kalshi — Fed rate-cut count ──────────────────────────────────────────────
+- platform: kalshi
+  market_id: "KXRATECUT-26DEC31"
+  asado_category: fed_policy
+  asado_subcategory: fed_cut_count
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: "FOMC rate decisions through Dec 31, 2026"
+  spillover_countries:
+    - country: U.S.
+      elasticity: -0.50
+      channel: usd_beta
+      confidence: high
+    - country: Mexico
+      elasticity: 0.30
+      channel: em_beta
+      confidence: medium
+    - country: India
+      elasticity: 0.25
+      channel: em_beta
+      confidence: medium

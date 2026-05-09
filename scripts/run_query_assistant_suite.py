@@ -227,6 +227,40 @@ SUITE_CASES: List[Dict[str, Any]] = [
     },
 ]
 
+PREDMKT_SUITE_CASES: List[Dict[str, Any]] = [
+    {
+        "id": "duckdb_predmkt_oil_shock_prob",
+        "question": "What is the latest oil_shock_prob_30d reading?",
+        "expected_mode": "duckdb",
+        "min_rows": 1,
+        "validators": [],
+    },
+    {
+        "id": "duckdb_predmkt_saudi_country_risk",
+        "question": "Show the latest predmkt_country_risk_composite value for Saudi Arabia.",
+        "expected_mode": "duckdb",
+        "min_rows": 1,
+        "validators": ["country_column"],
+    },
+    {
+        "id": "duckdb_predmkt_tariff_country",
+        "question": "What is the latest tariff_intensity_by_country for ChinaA?",
+        "expected_mode": "duckdb",
+        "min_rows": 1,
+        "validators": [],
+    },
+]
+
+
+def has_predmkt_tables(db_path: Path = DB_PATH) -> bool:
+    con = duckdb.connect(str(db_path), read_only=True)
+    try:
+        tables = {row[0] for row in con.execute("SHOW TABLES").fetchall()}
+    finally:
+        con.close()
+    required = {"predmkt_daily", "predmkt_signals_daily"}
+    return required.issubset(tables)
+
 
 def run_case(assistant: ASADOQueryAssistant, case: Dict[str, Any]) -> Dict[str, Any]:
     started = time.time()
@@ -474,7 +508,11 @@ def main() -> None:
     build_and_write_schema_cache()
     assistant = ASADOQueryAssistant(provider=args.provider, model=args.model)
 
-    cases = [run_case(assistant, case) for case in SUITE_CASES]
+    suite_cases = list(SUITE_CASES)
+    if has_predmkt_tables():
+        suite_cases.extend(PREDMKT_SUITE_CASES)
+
+    cases = [run_case(assistant, case) for case in suite_cases]
     integrity_checks = run_integrity_checks()
 
     payload = {

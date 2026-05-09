@@ -80,7 +80,8 @@ This single command runs the entire pipeline:
 | 7 | `setup_duckdb.py` | Rebuild the raw DuckDB analytical warehouse | ~3s |
 | 8 | `build_normalized_panel.py` | Build canonical `_CS` / `_TS` features and `feature_panel` | ~12s |
 | 8b | `build_daily_panels.py` | Load daily T2 + GDELT + optimizer returns (58M rows) | ~105s |
-| 8c | `build_event_log.py` | Load curated event registry (146 events, 8 categories) | <1s |
+| 8c | `build_predmkt_panel.py` | Build Stage 2 prediction-market layer (Kalshi + Polymarket snapshots + composites) | ~5-30s |
+| 8d | `build_event_log.py` | Load curated event registry (146 events, 8 categories) | <1s |
 | 9 | `setup_neo4j.py` | Rebuild Neo4j knowledge graph + trade/banking/portfolio edges (requires event_log) | ~9s |
 | 10 | `build_embeddings.py` | Country-state PCA vectors + Neo4j vector index | ~3s |
 | 11 | `build_schema_registry.py` | Refresh schema cache + access guide for the query assistant | ~1s |
@@ -118,6 +119,9 @@ python scripts/setup_duckdb.py --check        # verify existing database
 python scripts/build_daily_panels.py          # full daily extension rebuild (~105s)
 python scripts/build_daily_panels.py --skip-levels  # fast daily build (skip raw xlsx, ~45s)
 python scripts/build_daily_panels.py --check  # verify daily tables
+python scripts/build_predmkt_panel.py         # Stage 2 prediction-market build
+python scripts/build_predmkt_panel.py --check # validate registry + inspect predmkt tables
+python scripts/build_predmkt_panel.py --stats # print predmkt table counts/date ranges
 python scripts/build_event_log.py             # rebuild event_log table from YAML
 python scripts/build_event_log.py --check     # validate YAML without writing
 python scripts/build_event_log.py --stats     # show category/severity breakdown
@@ -417,6 +421,17 @@ Columnar database for fast time-series analytics. Core surfaces currently includ
 | `daily_calendar` | 327,216 | 2000-01-01 → 2026-05-07 | Per-country trading day calendar |
 | `t2_factors_monthly_from_daily` (view) | — | — | Last-trading-day-of-month snapshot for validation |
 
+#### Prediction-Market Tables (added 2026-05-08 via `build_predmkt_panel.py`)
+
+| Table | Primary Grain | Primary Use |
+|-------|---------------|-------------|
+| `predmkt_daily` | `(snapshot_date, platform, market_id, outcome_id)` | Daily implied probabilities + liquidity + stale/resolution flags |
+| `predmkt_market_meta` | `(platform, market_id)` | Curated category tags + rules/resolution metadata |
+| `predmkt_outcome_meta` | `(platform, market_id, outcome_id)` | Outcome labels and scalar threshold metadata |
+| `predmkt_country_spillover` | `(platform, market_id, country, channel)` | Off-universe spillover bridge with elasticity/channel/confidence |
+| `predmkt_resolutions` | `(platform, market_id)` | Resolution archive for calibration tracking |
+| `predmkt_signals_daily` | `(snapshot_date, signal_name, country)` | Derived daily composites (macro + geopolitical + country spillovers) |
+
 Factor tables and views (`t2_master`, source panels, `unified_panel`, `normalized_panel`, `feature_panel`) share the tidy schema `(date DATE, country VARCHAR, value DOUBLE, variable VARCHAR)`. Daily tables follow the same schema. `country_reference` and `bilateral_portfolio_matrix` are helper surfaces used for ISO mapping and ownership joins. Indexes cover factor tables plus `country_reference` and the main bilateral ownership keys.
 
 ### Neo4j — Knowledge Graph (bolt://localhost:7687)
@@ -561,6 +576,9 @@ That file is intended to be read end-to-end by an AI agent that needs to know wh
 | `event_window(country, date, ...)` | Daily event-study: returns T2 optimizer factors, GDELT signals, factor returns, and trading calendar in a ±N day window around any date. Use for event studies like "show me Turkey around the 2018 lira crisis." |
 | `events_in_window(start_date, end_date, ...)` | Search the curated event registry (146 events) by date range, category, subcategory, country, severity, or tags. Supports `strict_country=True` for country-specific-only events. Chain with `event_window` for date-anchored studies. |
 | `daily_factor_series(country, variables, start_date, end_date, source)` | General daily time-series extraction. Sources: `t2`, `t2_levels`, `gdelt`, `gdelt_raw`. |
+| `predmkt_snapshot(category, date=today)` | Prediction-market snapshot for one category with probabilities, liquidity, and rules metadata. |
+| `country_signal_now(country, channels=None, date=today)` | Country-level prediction-market risk/opportunity decomposition through spillover channels. |
+| `event_market_set(keyword)` | Keyword search over curated prediction markets ranked by recent liquidity. |
 
 ### Setup — register in Claude Desktop
 

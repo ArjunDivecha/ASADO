@@ -750,6 +750,16 @@ def main():
             log_file
         ))
 
+        # Stage 2 prediction-market layer (Kalshi + Polymarket), additive.
+        # Runs after daily factor surfaces are rebuilt so variable_meta can
+        # be upserted with fresh prediction-market signal names.
+        results.append(run_step(
+            "Prediction Markets (Kalshi + Polymarket)",
+            "build_predmkt_panel.py",
+            [],
+            log_file
+        ))
+
         results.append(run_step(
             "Event Log (curated event registry)",
             "build_event_log.py",

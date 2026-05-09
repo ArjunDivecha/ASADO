@@ -22,6 +22,7 @@ import re
 from typing import Any, Dict, List, Set
 
 import duckdb
+import pandas as pd
 from neo4j import GraphDatabase
 
 DEFAULT_BASE_DIR = Path(__file__).resolve().parent.parent
@@ -84,6 +85,31 @@ TABLE_DESCRIPTIONS = {
         "contribution = weight × factor_return is the country's monthly P&L attributable "
         "to being in the bucket for that factor."
     ),
+    "predmkt_daily": (
+        "Prediction-market daily snapshots from curated Kalshi and Polymarket markets. "
+        "One row per (snapshot_date, platform, market_id, outcome_id) with probability, "
+        "book fields, liquidity metrics, stale flag, and resolution status."
+    ),
+    "predmkt_market_meta": (
+        "Prediction-market metadata registry keyed by (platform, market_id). Includes "
+        "ASADO category tags, resolution clarity, and contract windows."
+    ),
+    "predmkt_outcome_meta": (
+        "Outcome-level metadata keyed by (platform, market_id, outcome_id), including "
+        "labels and scalar thresholds for distribution-style contracts."
+    ),
+    "predmkt_country_spillover": (
+        "Hand-curated market-to-country spillover edges with elasticity, channel taxonomy, "
+        "and confidence level. Used for off-universe entity bridge and country composites."
+    ),
+    "predmkt_resolutions": (
+        "Resolved-market calibration archive: realized outcome and probabilities captured "
+        "24h/1h before resolution."
+    ),
+    "predmkt_signals_daily": (
+        "Derived prediction-market composite signals by date (and optionally country), "
+        "including confidence scores and constituent market trace."
+    ),
 }
 
 LABEL_DESCRIPTIONS = {
@@ -126,6 +152,7 @@ SOURCE_TOKEN_MAP = {
     "NDGAIN": ["nd-gain", "ndgain", "climate readiness", "climate vulnerability"],
     "OECD": ["oecd"],
     "OFAC": ["ofac", "sanctions"],
+    "PREDMKT": ["prediction market", "kalshi", "polymarket", "event contracts", "market-implied"],
     "UNDP": ["undp", "united nations development programme", "united nations development program"],
     "WB": ["world bank", "wb"],
 }
@@ -226,6 +253,9 @@ SOURCE_FREQUENCIES = {
     "oecd_institutional_investors": "quarterly",
     "ofac": "event-driven",
     "portfolio_ownership": "annual",
+    "predmkt_signal": "daily",
+    "predmkt_kalshi": "daily",
+    "predmkt_polymarket": "daily",
     "qpsd": "quarterly",
     "t2": "monthly",
     "t2_raw": "monthly",
@@ -592,6 +622,26 @@ def build_variable_catalog(db_path: Path = DB_PATH) -> Dict[str, Any]:
             ORDER BY variable, source
             """
         ).fetchdf()
+
+        # Stage 2 additive surface: prediction-market derived signals are not
+        # unioned into feature_panel/unified_panel by design, so append them
+        # explicitly into the variable catalog.
+        if "predmkt_signals_daily" in tables:
+            predmkt_catalog = con.execute(
+                """
+                SELECT
+                    signal_name AS variable,
+                    'predmkt_signal' AS source,
+                    COUNT(*) AS row_count,
+                    COUNT(DISTINCT COALESCE(country, '__GLOBAL__')) AS country_count,
+                    MIN(snapshot_date) AS first_date,
+                    MAX(snapshot_date) AS last_date
+                FROM predmkt_signals_daily
+                GROUP BY signal_name
+                """
+            ).fetchdf()
+            if not predmkt_catalog.empty:
+                catalog_df = pd.concat([catalog_df, predmkt_catalog], ignore_index=True)
 
         variable_metadata: Dict[str, Dict[str, Any]] = {}
         for variable, group in catalog_df.groupby("variable", sort=True):

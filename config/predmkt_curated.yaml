@@ -176,11 +176,11 @@
       channel: trade_partner
       confidence: medium
     - country: Poland
-      elasticity: 0.50
+      elasticity: -0.50
       channel: regional_proximity
       confidence: high
     - country: Turkey
-      elasticity: 0.20
+      elasticity: -0.20
       channel: regional_proxy
       confidence: medium
 
@@ -198,9 +198,13 @@
       channel: trade_partner
       confidence: medium
     - country: Poland
-      elasticity: 0.45
+      elasticity: -0.45
       channel: regional_proximity
       confidence: high
+    - country: Turkey
+      elasticity: -0.20
+      channel: regional_proxy
+      confidence: medium
 
 # ── Polymarket — Fed policy ──────────────────────────────────────────────────
 - platform: polymarket
@@ -230,7 +234,7 @@
   market_id: "0x2e17fe4fd80ffaa342b1ce15d59e56c0347a90422d90e6345048be78e1963b17"
   slug: us-x-china-tariff-agreement-by-may-31
   asado_category: tariff
-  asado_subcategory: us_china_tariff_agreement
+  asado_subcategory: us_china_tariff_resolution_prob
   contract_type: binary
   resolution_clarity: medium
   resolution_source: "Official tariff implementation announcements"
@@ -245,6 +249,50 @@
       confidence: high
     - country: Mexico
       elasticity: 0.20
+      channel: trade_partner
+      confidence: medium
+
+- platform: polymarket
+  market_id: "0xfd1be18abbc39bdf1b16659499488e584e6c06c7b1959b425b5fb4b046d01a33"
+  slug: tariff-increase-on-canada-in-effect-by-june-30
+  asado_category: tariff
+  asado_subcategory: tariff_escalation_canada_increase
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: "Official tariff implementation announcements"
+  spillover_countries:
+    - country: Canada
+      elasticity: 0.55
+      channel: trade_partner
+      confidence: high
+    - country: U.S.
+      elasticity: 0.20
+      channel: usd_beta
+      confidence: medium
+    - country: Mexico
+      elasticity: 0.25
+      channel: trade_partner
+      confidence: medium
+
+- platform: polymarket
+  market_id: "0x1b3f1f2bec1c92ff851c9b02c3c8bbc320e5aac7bc371ad0f615c5521a4494e7"
+  slug: 100-tariff-on-canada-in-effect-by-june-30
+  asado_category: tariff
+  asado_subcategory: tariff_escalation_canada_100pct
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: "Official tariff implementation announcements"
+  spillover_countries:
+    - country: Canada
+      elasticity: 0.75
+      channel: trade_partner
+      confidence: high
+    - country: U.S.
+      elasticity: 0.25
+      channel: usd_beta
+      confidence: medium
+    - country: Mexico
+      elasticity: 0.30
       channel: trade_partner
       confidence: medium
 

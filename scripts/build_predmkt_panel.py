@@ -396,16 +396,57 @@ def _infer_stale(
     last_traded_price: Optional[float],
     last_traded_ts: Optional[datetime],
     volume_24h: Optional[float],
+    bid: Optional[float] = None,
+    ask: Optional[float] = None,
 ) -> bool:
+    """
+    Mark a row stale when market quality is poor.
+
+    A live two-sided book (tight quoted bid/ask) overrides low-flow and stale-trade
+    checks because long-dated macro contracts can have healthy quoting without
+    frequent prints.
+    """
     threshold = LIQUIDITY_THRESHOLD.get(platform, 500.0)
     no_flow = (volume_24h or 0.0) < threshold
+
     old_trade = True
     if last_traded_ts:
         old_trade = (datetime.now(timezone.utc) - last_traded_ts) > timedelta(hours=24)
+
+    has_live_book = (
+        bid is not None
+        and ask is not None
+        and bid > 0
+        and ask > 0
+        and ask > bid
+        and (ask - bid) <= 0.05
+    )
+    if has_live_book:
+        no_flow = False
+        old_trade = False
+
     large_gap = False
     if probability is not None and last_traded_price is not None:
         large_gap = abs(last_traded_price - probability) > 0.05
     return bool(no_flow or old_trade or large_gap)
+
+
+def _is_settled_effective(
+    probability: Optional[float],
+    bid: Optional[float],
+    ask: Optional[float],
+) -> bool:
+    """
+    Flag outcome rows that are effectively settled but may not be officially resolved.
+
+    These rows are retained in predmkt_daily for traceability but filtered from
+    composite signal construction.
+    """
+    if probability is None:
+        return False
+    at_rail = probability >= 0.99 or probability <= 0.01
+    one_sided = (ask is None) or (bid is None)
+    return bool(at_rail and one_sided)
 
 
 def _kalshi_market_payload(session: requests.Session, ticker: str) -> dict[str, Any]:
@@ -567,8 +608,26 @@ def _pull_kalshi_market(
     settlement_raw = _first_non_null(payload, ["settle_value", "result", "final_value"])
     resolution_value = _probability(settlement_raw)
 
-    stale_yes = _infer_stale("kalshi", prob_yes, last_yes, last_trade_ts, volume_24h)
-    stale_no = _infer_stale("kalshi", prob_no, last_no, last_trade_ts, volume_24h)
+    stale_yes = _infer_stale(
+        "kalshi",
+        prob_yes,
+        last_yes,
+        last_trade_ts,
+        volume_24h,
+        bid=bid_yes,
+        ask=ask_yes,
+    )
+    stale_no = _infer_stale(
+        "kalshi",
+        prob_no,
+        last_no,
+        last_trade_ts,
+        volume_24h,
+        bid=bid_no,
+        ask=ask_no,
+    )
+    settled_effective_yes = _is_settled_effective(prob_yes, bid_yes, ask_yes)
+    settled_effective_no = _is_settled_effective(prob_no, bid_no, ask_no)
 
     rows.extend(
         [
@@ -591,6 +650,7 @@ def _pull_kalshi_market(
                 "is_stale": stale_yes,
                 "is_resolved": is_resolved,
                 "resolution_value": resolution_value,
+                "is_settled_effective": settled_effective_yes,
             },
             {
                 "snapshot_ts": snapshot_ts,
@@ -611,6 +671,7 @@ def _pull_kalshi_market(
                 "is_stale": stale_no,
                 "is_resolved": is_resolved,
                 "resolution_value": (1.0 - resolution_value) if resolution_value is not None else None,
+                "is_settled_effective": settled_effective_no,
             },
         ]
     )
@@ -819,8 +880,18 @@ def _pull_polymarket_market(
         if probability is None:
             continue
 
-        last_price = _probability(_first_non_null(book, ["mid", "last_price"])) or probability
-        stale = _infer_stale("polymarket", probability, last_price, last_trade_ts, volume_24h)
+        last_price = _probability(_first_non_null(book, ["mid", "last_price"]))
+        if last_price is None:
+            last_price = probability
+        stale = _infer_stale(
+            "polymarket",
+            probability,
+            last_price,
+            last_trade_ts,
+            volume_24h,
+            bid=bid,
+            ask=ask,
+        )
         resolution_value = None
         if is_resolved:
             if winning_outcome:
@@ -852,6 +923,7 @@ def _pull_polymarket_market(
                 "is_stale": stale,
                 "is_resolved": is_resolved,
                 "resolution_value": resolution_value,
+                "is_settled_effective": _is_settled_effective(probability, bid, ask),
             }
         )
         outcome_rows.append(
@@ -965,10 +1037,17 @@ def _create_tables(con: duckdb.DuckDBPyConnection, rebuild: bool = False) -> Non
             is_stale BOOLEAN,
             is_resolved BOOLEAN,
             resolution_value DOUBLE,
+            is_settled_effective BOOLEAN,
             PRIMARY KEY (snapshot_date, platform, market_id, outcome_id)
         )
         """
     )
+    daily_cols = {
+        row[1]
+        for row in con.execute("PRAGMA table_info('predmkt_daily')").fetchall()
+    }
+    if "is_settled_effective" not in daily_cols:
+        con.execute("ALTER TABLE predmkt_daily ADD COLUMN is_settled_effective BOOLEAN DEFAULT FALSE")
     con.execute(
         """
         CREATE TABLE IF NOT EXISTS predmkt_market_meta (
@@ -1116,9 +1195,22 @@ def _category_confidence(con: duckdb.DuckDBPyConnection) -> Dict[str, float]:
 def _primary_outcome_rows(
     daily_df: pd.DataFrame,
     outcome_meta_df: pd.DataFrame,
+    exclude_settled_effective: bool = False,
 ) -> pd.DataFrame:
     if daily_df.empty:
-        return pd.DataFrame(columns=["platform", "market_id", "outcome_id", "label", "probability", "liquidity_usd", "volume_24h_usd", "is_stale"])
+        return pd.DataFrame(
+            columns=[
+                "platform",
+                "market_id",
+                "outcome_id",
+                "label",
+                "probability",
+                "liquidity_usd",
+                "volume_24h_usd",
+                "is_stale",
+                "is_settled_effective",
+            ]
+        )
 
     merged = daily_df.merge(
         outcome_meta_df[["platform", "market_id", "outcome_id", "label", "threshold_low", "threshold_high", "sort_order"]],
@@ -1128,6 +1220,9 @@ def _primary_outcome_rows(
     merged["label"] = merged["label"].fillna("")
     merged["is_yes"] = merged["label"].str.lower().eq("yes")
     merged["sort_order"] = merged["sort_order"].fillna(999)
+    if exclude_settled_effective and "is_settled_effective" in merged.columns:
+        settled_mask = merged["is_settled_effective"].astype("boolean").fillna(False)
+        merged = merged[~settled_mask]
     merged = merged.sort_values(
         ["platform", "market_id", "is_yes", "sort_order", "probability"],
         ascending=[True, True, False, True, False],
@@ -1212,6 +1307,14 @@ def _compute_signals(
     outcome_meta_df: pd.DataFrame,
     spillover_df: pd.DataFrame,
 ) -> pd.DataFrame:
+    """
+    Build daily composite signals from curated prediction-market outcomes.
+
+    Semantics:
+    - settled-effective rows are excluded from composite calculations
+    - predmkt_country_risk_composite: positive means implied downside risk
+    - predmkt_country_opportunity_composite: positive means implied upside
+    """
     if daily_df.empty or market_meta_df.empty:
         return pd.DataFrame(
             columns=[
@@ -1236,7 +1339,11 @@ def _compute_signals(
         how="left",
     )
 
-    primary = _primary_outcome_rows(daily_df, outcome_meta_df).merge(
+    primary = _primary_outcome_rows(
+        daily_df,
+        outcome_meta_df,
+        exclude_settled_effective=True,
+    ).merge(
         market_meta_df[["platform", "market_id", "asado_category", "asado_subcategory"]],
         on=["platform", "market_id"],
         how="left",
@@ -1278,10 +1385,16 @@ def _compute_signals(
 
     fed_cut_df = merged[merged["asado_subcategory"].fillna("").str.contains("fed_cut_count", case=False)]
     v, n, liq, mkts = _expectation_from_distribution(fed_cut_df)
+    if v is None:
+        fed_cut_primary = primary[primary["asado_subcategory"].fillna("").str.contains("fed_cut_count", case=False)]
+        v, n, liq, mkts = _weighted_probability(fed_cut_primary)
     append_signal("fed_cut_count_expectation", v, n, liq, mkts, ["fed_policy"])
 
     fed_dist_df = merged[merged["asado_subcategory"].fillna("").str.contains("fed_decision", case=False)]
     v, n, liq, mkts = _expectation_from_distribution(fed_dist_df)
+    if v is None:
+        fed_dist_primary = primary[primary["asado_subcategory"].fillna("").str.contains("fed_decision", case=False)]
+        v, n, liq, mkts = _weighted_probability(fed_dist_primary)
     append_signal("fed_decision_distribution_next", v, n, liq, mkts, ["fed_policy"])
 
     cpi_yoy_df = merged[
@@ -1289,6 +1402,12 @@ def _compute_signals(
         & (merged["asado_subcategory"].fillna("").str.contains("yoy", case=False))
     ]
     v, n, liq, mkts = _expectation_from_distribution(cpi_yoy_df)
+    if v is None:
+        cpi_yoy_primary = primary[
+            (primary["asado_category"] == "cpi")
+            & (primary["asado_subcategory"].fillna("").str.contains("yoy", case=False))
+        ]
+        v, n, liq, mkts = _weighted_probability(cpi_yoy_primary)
     append_signal("cpi_nowcast_yoy_next", v, n, liq, mkts, ["cpi"])
 
     cpi_core_df = merged[
@@ -1296,10 +1415,19 @@ def _compute_signals(
         & (merged["asado_subcategory"].fillna("").str.contains("core", case=False))
     ]
     v, n, liq, mkts = _expectation_from_distribution(cpi_core_df)
+    if v is None:
+        cpi_core_primary = primary[
+            (primary["asado_category"] == "cpi")
+            & (primary["asado_subcategory"].fillna("").str.contains("core", case=False))
+        ]
+        v, n, liq, mkts = _weighted_probability(cpi_core_primary)
     append_signal("cpi_nowcast_core_next", v, n, liq, mkts, ["cpi"])
 
     unemp_df = merged[merged["asado_category"] == "unemployment"]
     v, n, liq, mkts = _expectation_from_distribution(unemp_df)
+    if v is None:
+        unemp_primary = primary[primary["asado_category"] == "unemployment"]
+        v, n, liq, mkts = _weighted_probability(unemp_primary)
     append_signal("unemployment_nowcast_next", v, n, liq, mkts, ["unemployment"])
 
     recession_df = primary[
@@ -1340,6 +1468,7 @@ def _compute_signals(
                     "volume_24h_usd",
                     "is_stale",
                     "asado_category",
+                    "asado_subcategory",
                 ]
             ],
             on=["platform", "market_id"],
@@ -1354,19 +1483,36 @@ def _compute_signals(
                 country_join["volume_24h_usd"].fillna(0.0).clip(lower=0.0),
             )
             stale_mask = country_join["is_stale"].astype("boolean").fillna(True)
+            country_join["stale_penalty"] = stale_mask.map({True: 0.25, False: 1.0}).astype(float)
             country_join["effective_weight"] = country_join["liquidity_weight"] * country_join["confidence_mult"]
             country_join["effective_weight"] = country_join["effective_weight"].where(
                 ~stale_mask,
                 0.0,
             )
-            country_join = country_join[country_join["effective_weight"] > 0]
 
             tariff_join = country_join[country_join["asado_category"].isin(["tariff", "trade_war"])]
             if not tariff_join.empty:
+                tariff_join = tariff_join.copy()
+                tariff_join["tariff_weight"] = (
+                    tariff_join["liquidity_weight"]
+                    * tariff_join["confidence_mult"]
+                    * tariff_join["stale_penalty"]
+                )
+                tariff_join = tariff_join[tariff_join["tariff_weight"] > 0]
+                resolution_like = tariff_join["asado_subcategory"].fillna("").str.contains(
+                    "agreement|resolution",
+                    case=False,
+                    regex=True,
+                )
+                tariff_join["tariff_intensity_prob"] = tariff_join["probability"].astype(float)
+                tariff_join.loc[resolution_like, "tariff_intensity_prob"] = (
+                    1.0 - tariff_join.loc[resolution_like, "tariff_intensity_prob"]
+                )
+                tariff_join["tariff_intensity_prob"] = tariff_join["tariff_intensity_prob"].clip(0.0, 1.0)
                 grouped = tariff_join.groupby("country", as_index=False)
                 for _, grp in grouped:
-                    weight_sum = float(grp["effective_weight"].sum())
-                    value = float((grp["probability"] * grp["effective_weight"]).sum() / weight_sum)
+                    weight_sum = float(grp["tariff_weight"].sum())
+                    value = float((grp["tariff_intensity_prob"] * grp["tariff_weight"]).sum() / weight_sum)
                     append_signal(
                         "tariff_intensity_by_country",
                         value,
@@ -1377,6 +1523,7 @@ def _compute_signals(
                         country=str(grp["country"].iloc[0]),
                     )
 
+            country_join = country_join[country_join["effective_weight"] > 0]
             country_join["signed_effect"] = (
                 country_join["probability"]
                 * country_join["elasticity"].fillna(0.0)
@@ -1386,12 +1533,12 @@ def _compute_signals(
             for _, grp in grouped:
                 country_name = str(grp["country"].iloc[0])
                 liq_sum = float(grp["effective_weight"].sum())
-                risk_value = float(grp["signed_effect"].sum() / liq_sum) if liq_sum > 0 else None
-                if risk_value is None:
+                expected_effect = float(grp["signed_effect"].sum() / liq_sum) if liq_sum > 0 else None
+                if expected_effect is None:
                     continue
                 append_signal(
                     "predmkt_country_risk_composite",
-                    risk_value,
+                    -expected_effect,
                     int(grp["market_id"].nunique()),
                     liq_sum,
                     [f"{r.platform}:{r.market_id}" for r in grp.itertuples(index=False)],
@@ -1400,7 +1547,7 @@ def _compute_signals(
                 )
                 append_signal(
                     "predmkt_country_opportunity_composite",
-                    -risk_value,
+                    expected_effect,
                     int(grp["market_id"].nunique()),
                     liq_sum,
                     [f"{r.platform}:{r.market_id}" for r in grp.itertuples(index=False)],

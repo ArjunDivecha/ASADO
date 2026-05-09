@@ -583,7 +583,9 @@ def predmkt_snapshot(
 @mcp.tool(
     description=(
         "Return prediction-market-implied country signals and spillover channel decomposition "
-        "for one T2 country at a given date (defaults to latest)."
+        "for one T2 country at a given date (defaults to latest). "
+        "Sign convention: predmkt_country_risk_composite > 0 means implied downside risk, "
+        "while predmkt_country_opportunity_composite > 0 means implied upside opportunity."
     )
 )
 def country_signal_now(

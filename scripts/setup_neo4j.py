@@ -165,30 +165,7 @@ DATA_SOURCES = [
     {"name": "Bloomberg Ratings", "url": "bloomberg.com", "frequency": "snapshot", "api_type": "blpapi", "status": "active"},
 ]
 
-# ── Crisis events ─────────────────────────────────────────────────────────
-
-CRISIS_EVENTS = [
-    {"name": "Asian Financial Crisis", "start": "1997-07-01", "end": "1998-12-01", "type": "financial",
-     "countries": ["THA", "IDN", "KOR", "MYS", "PHL", "HKG", "SGP", "TWN"]},
-    {"name": "Russian/LTCM Crisis", "start": "1998-08-01", "end": "1999-03-01", "type": "financial",
-     "countries": ["BRA", "USA", "GBR", "DEU", "JPN"]},
-    {"name": "Dot-com Bust", "start": "2000-03-01", "end": "2002-10-01", "type": "equity",
-     "countries": ["USA", "GBR", "DEU", "JPN", "FRA", "SWE", "KOR", "TWN"]},
-    {"name": "Global Financial Crisis", "start": "2007-07-01", "end": "2009-03-01", "type": "financial",
-     "countries": ["USA", "GBR", "DEU", "FRA", "ESP", "ITA", "NLD", "CHE", "JPN", "KOR",
-                   "AUS", "CAN", "BRA", "MEX", "IND", "CHN", "IDN", "SGP", "HKG"]},
-    {"name": "European Debt Crisis", "start": "2010-04-01", "end": "2012-07-01", "type": "sovereign",
-     "countries": ["ESP", "ITA", "FRA", "DEU", "GBR", "NLD", "POL", "TUR"]},
-    {"name": "Taper Tantrum", "start": "2013-05-01", "end": "2013-09-01", "type": "rates",
-     "countries": ["BRA", "IND", "IDN", "TUR", "ZAF", "MEX", "THA", "MYS", "PHL"]},
-    {"name": "China Devaluation", "start": "2015-08-01", "end": "2016-02-01", "type": "fx",
-     "countries": ["CHN", "HKG", "KOR", "TWN", "BRA", "AUS", "SGP", "MYS", "THA", "IDN"]},
-    {"name": "COVID-19 Crash", "start": "2020-02-01", "end": "2020-04-01", "type": "pandemic",
-     "countries": list(COUNTRY_META.keys())},
-    {"name": "Ukraine/Inflation Shock", "start": "2022-02-01", "end": "2022-10-01", "type": "geopolitical",
-     "countries": ["POL", "DEU", "FRA", "ITA", "ESP", "GBR", "NLD", "SWE", "DNK", "CHE",
-                   "TUR", "IND", "BRA", "ZAF"]},
-]
+# ── Crisis events (derived from event_log table) ─────────────────────────
 
 # ── Commodity reference ───────────────────────────────────────────────────
 
@@ -682,6 +659,184 @@ def set_factor_return_properties(session):
     return count
 
 
+def set_daily_factor_stats(session):
+    """Push daily performance stats onto Factor nodes from factor_returns_daily.
+
+    Properties added to each Factor node:
+      - daily_return_latest: most recent daily return
+      - daily_return_date: date of most recent return
+      - daily_vol_30d: annualized vol from last 30 trading days
+      - daily_vol_252d: annualized vol from last 252 trading days
+      - daily_sharpe_252d: annualized Sharpe from last 252 trading days
+      - daily_max_drawdown_252d: max drawdown over last 252 trading days
+      - daily_cum_return_30d: cumulative return over last 30 trading days
+      - daily_cum_return_252d: cumulative return over last 252 trading days
+      - daily_return_source: 't2_optimizer_daily' or 'gdelt_optimizer_daily'
+      - is_optimizer_selected: whether this factor is in the live strategy
+    """
+    con = duckdb.connect(str(DB_PATH), read_only=True)
+    try:
+        # Check if factor_returns_daily exists
+        try:
+            present = con.execute(
+                "SELECT COUNT(*) FROM information_schema.tables "
+                "WHERE table_schema='main' AND table_name='factor_returns_daily'"
+            ).fetchone()[0]
+        except Exception:
+            present = 0
+        if not present:
+            con.close()
+            print("  Daily factor stats: skipped (factor_returns_daily table absent)")
+            return 0
+
+        # Check if variable_meta exists for optimizer flag
+        try:
+            has_meta = con.execute(
+                "SELECT COUNT(*) FROM information_schema.tables "
+                "WHERE table_schema='main' AND table_name='variable_meta'"
+            ).fetchone()[0]
+        except Exception:
+            has_meta = 0
+
+        optimizer_factors = set()
+        if has_meta:
+            opt_rows = con.execute(
+                "SELECT variable FROM variable_meta WHERE is_optimizer_selected"
+            ).fetchall()
+            optimizer_factors = {r[0] for r in opt_rows}
+
+        # Compute daily stats per factor
+        rows = con.execute(
+            """
+            WITH latest_dates AS (
+                SELECT factor, source, MAX(date) AS max_date
+                FROM factor_returns_daily
+                WHERE value IS NOT NULL
+                GROUP BY factor, source
+            ),
+            numbered AS (
+                SELECT
+                    f.factor,
+                    f.source,
+                    f.date,
+                    f.value,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY f.factor, f.source ORDER BY f.date DESC
+                    ) AS rn
+                FROM factor_returns_daily f
+                WHERE f.value IS NOT NULL
+            )
+            SELECT
+                factor,
+                source,
+                MAX(CASE WHEN rn = 1 THEN value END) AS latest_return,
+                MAX(CASE WHEN rn = 1 THEN date END)  AS latest_date,
+                -- 30-day stats
+                AVG(CASE WHEN rn <= 30 THEN value END) AS mean_30d,
+                STDDEV_SAMP(CASE WHEN rn <= 30 THEN value END) AS std_30d,
+                SUM(CASE WHEN rn <= 30 THEN value ELSE 0 END) AS cum_30d,
+                COUNT(CASE WHEN rn <= 30 THEN 1 END) AS n_30d,
+                -- 252-day stats
+                AVG(CASE WHEN rn <= 252 THEN value END) AS mean_252d,
+                STDDEV_SAMP(CASE WHEN rn <= 252 THEN value END) AS std_252d,
+                SUM(CASE WHEN rn <= 252 THEN value ELSE 0 END) AS cum_252d,
+                COUNT(CASE WHEN rn <= 252 THEN 1 END) AS n_252d
+            FROM numbered
+            GROUP BY factor, source
+            """
+        ).fetchall()
+
+        # Compute max drawdown separately (requires running cumulative sum)
+        dd_rows = con.execute(
+            """
+            WITH recent AS (
+                SELECT factor, source, date, value,
+                    ROW_NUMBER() OVER (PARTITION BY factor, source ORDER BY date DESC) AS rn
+                FROM factor_returns_daily
+                WHERE value IS NOT NULL
+            ),
+            last_year AS (
+                SELECT factor, source, date, value
+                FROM recent WHERE rn <= 252
+            ),
+            running AS (
+                SELECT factor, source, date,
+                    SUM(value) OVER (PARTITION BY factor, source ORDER BY date) AS cum_ret
+                FROM last_year
+            )
+            SELECT factor, source,
+                MAX(cum_ret) - MIN(cum_ret) AS max_dd_approx
+            FROM running
+            GROUP BY factor, source
+            """
+        ).fetchall()
+        dd_map = {(r[0], r[1]): r[2] for r in dd_rows}
+
+    finally:
+        con.close()
+
+    if not rows:
+        print("  Daily factor stats: skipped (no rows in factor_returns_daily)")
+        return 0
+
+    count = 0
+    for (factor, source, latest_return, latest_date,
+         mean_30d, std_30d, cum_30d, n_30d,
+         mean_252d, std_252d, cum_252d, n_252d) in rows:
+
+        # Annualized vol (daily std * sqrt(252))
+        vol_30d = float(std_30d) * (252 ** 0.5) if std_30d and n_30d >= 20 else None
+        vol_252d = float(std_252d) * (252 ** 0.5) if std_252d and n_252d >= 60 else None
+
+        # Annualized Sharpe
+        sharpe_252d = None
+        if mean_252d and std_252d and std_252d > 0 and n_252d >= 60:
+            sharpe_252d = (float(mean_252d) * 252) / (float(std_252d) * (252 ** 0.5))
+
+        # Max drawdown
+        max_dd = dd_map.get((factor, source))
+        max_dd = float(max_dd) if max_dd is not None else None
+
+        # Cumulative returns
+        cum_ret_30d = float(cum_30d) if n_30d and n_30d >= 20 else None
+        cum_ret_252d = float(cum_252d) if n_252d and n_252d >= 60 else None
+
+        last_iso = latest_date.isoformat() if latest_date is not None else None
+        is_opt = factor in optimizer_factors
+
+        session.run(
+            """
+            MERGE (f:Factor {name: $name})
+            SET f.daily_return_latest = $latest_return,
+                f.daily_return_date = CASE WHEN $last_iso IS NULL THEN NULL ELSE date($last_iso) END,
+                f.daily_vol_30d = $vol_30d,
+                f.daily_vol_252d = $vol_252d,
+                f.daily_sharpe_252d = $sharpe_252d,
+                f.daily_max_drawdown_252d = $max_dd,
+                f.daily_cum_return_30d = $cum_ret_30d,
+                f.daily_cum_return_252d = $cum_ret_252d,
+                f.daily_return_source = $source,
+                f.is_optimizer_selected = $is_opt
+            """,
+            name=factor,
+            latest_return=float(latest_return) if latest_return is not None else None,
+            last_iso=last_iso,
+            vol_30d=vol_30d,
+            vol_252d=vol_252d,
+            sharpe_252d=sharpe_252d,
+            max_dd=max_dd,
+            cum_ret_30d=cum_ret_30d,
+            cum_ret_252d=cum_ret_252d,
+            source=source,
+            is_opt=is_opt,
+        )
+        count += 1
+
+    print(f"  Daily factor stats applied: {count} factor x source pairs "
+          f"({len(optimizer_factors)} optimizer-selected)")
+    return count
+
+
 def create_commodity_nodes(session):
     """Create Commodity nodes."""
     for com in COMMODITIES:
@@ -770,16 +925,65 @@ def create_sanctions_nodes(session):
     print(f"  SanctionsProgram nodes: {len(programs)}")
 
 
+def _load_crisis_events_from_event_log():
+    """Load financial_crisis events from event_log table (required upstream)."""
+    if not DB_PATH.exists():
+        raise ValueError(
+            f"DuckDB not found at {DB_PATH}. "
+            "Run scripts/build_event_log.py before setup_neo4j.py. "
+            "If you intend to skip CrisisEvent nodes, pass --skip-crisis-events."
+        )
+    con = duckdb.connect(str(DB_PATH), read_only=True)
+    tables = [r[0] for r in con.execute("SHOW TABLES").fetchall()]
+    if "event_log" not in tables:
+        con.close()
+        raise ValueError(
+            "event_log table not found in DuckDB. "
+            "Run scripts/build_event_log.py before setup_neo4j.py. "
+            "If you intend to skip CrisisEvent nodes, pass --skip-crisis-events."
+        )
+    df = con.execute("""
+        SELECT event_id, event_date, end_date, label, category,
+               subcategory, severity, countries_affected, is_global
+        FROM event_log
+        WHERE category = 'financial_crisis'
+          AND severity IN ('high', 'medium')
+        ORDER BY event_date
+    """).fetchdf()
+    con.close()
+    if df.empty:
+        raise ValueError(
+            "event_log has no financial_crisis events. "
+            "Run scripts/build_event_log.py before setup_neo4j.py. "
+            "If you intend to skip CrisisEvent nodes, pass --skip-crisis-events."
+        )
+    return df
+
+
 def create_crisis_nodes(session):
-    """Create CrisisEvent nodes."""
-    for ce in CRISIS_EVENTS:
+    """Create CrisisEvent nodes from event_log (required upstream)."""
+    event_log_df = _load_crisis_events_from_event_log()
+    count = 0
+    for _, row in event_log_df.iterrows():
+        start_str = str(row["event_date"])
+        end_str = str(row["end_date"]) if pd.notna(row["end_date"]) else start_str
         session.run("""
             MERGE (c:CrisisEvent {name: $name})
             SET c.start_date = date($start),
                 c.end_date = date($end),
-                c.type = $type
-        """, name=ce["name"], start=ce["start"], end=ce["end"], type=ce["type"])
-    print(f"  CrisisEvent nodes: {len(CRISIS_EVENTS)}")
+                c.type = $type,
+                c.severity = $severity,
+                c.event_id = $event_id
+        """,
+            name=row["label"],
+            start=start_str[:10],
+            end=end_str[:10],
+            type=row.get("subcategory") or "financial",
+            severity=row["severity"],
+            event_id=row["event_id"],
+        )
+        count += 1
+    print(f"  CrisisEvent nodes: {count} (from event_log)")
 
 
 def create_central_bank_edges(session):
@@ -848,18 +1052,38 @@ def create_sanctions_edges(session):
 
 
 def create_crisis_edges(session):
-    """Link Country -> CrisisEvent (all T2 names per iso3)."""
+    """Link Country -> CrisisEvent from event_log (required upstream)."""
+    event_log_df = _load_crisis_events_from_event_log()
+
     count = 0
-    for ce in CRISIS_EVENTS:
-        for iso3 in ce["countries"]:
+    for _, row in event_log_df.iterrows():
+        label = row["label"]
+        is_global = row["is_global"]
+        countries_str = row["countries_affected"]
+
+        if is_global:
+            # Link all non-sleeve countries
             result = session.run("""
-                MATCH (c:Country WHERE c.iso3 = $iso3 AND c.graph_role <> 'market_sleeve')
+                MATCH (c:Country WHERE c.graph_role <> 'market_sleeve')
                 MATCH (ce:CrisisEvent {name: $name})
                 MERGE (c)-[:HAS_CRISIS_HISTORY]->(ce)
                 RETURN COUNT(*) AS cnt
-            """, iso3=iso3, name=ce["name"])
+            """, name=label)
             count += result.single()["cnt"]
-    print(f"  HAS_CRISIS_HISTORY edges: {count}")
+        elif countries_str:
+            # Link specific countries by T2 name
+            for t2_name in str(countries_str).split(","):
+                t2_name = t2_name.strip()
+                if t2_name:
+                    result = session.run("""
+                        MATCH (c:Country {t2_name: $t2_name})
+                        WHERE c.graph_role <> 'market_sleeve'
+                        MATCH (ce:CrisisEvent {name: $label})
+                        MERGE (c)-[:HAS_CRISIS_HISTORY]->(ce)
+                        RETURN COUNT(*) AS cnt
+                    """, t2_name=t2_name, label=label)
+                    count += result.single()["cnt"]
+    print(f"  HAS_CRISIS_HISTORY edges: {count} (from event_log)")
 
 
 def create_datasource_edges(session):
@@ -1137,6 +1361,8 @@ def check_graph():
 def main():
     parser = argparse.ArgumentParser(description="ASADO Neo4j Setup")
     parser.add_argument("--check", action="store_true", help="Check existing graph")
+    parser.add_argument("--skip-crisis-events", action="store_true",
+                        help="Skip CrisisEvent nodes/edges (if event_log not built yet)")
     args = parser.parse_args()
 
     if args.check:
@@ -1170,18 +1396,25 @@ def main():
         create_country_nodes(session)
         create_factor_nodes(session)
         set_factor_return_properties(session)
+        set_daily_factor_stats(session)
         create_commodity_nodes(session)
         create_central_bank_nodes(session)
         create_datasource_nodes(session)
         create_sanctions_nodes(session)
-        create_crisis_nodes(session)
+        if not args.skip_crisis_events:
+            create_crisis_nodes(session)
+        else:
+            print("  CrisisEvent nodes: SKIPPED (--skip-crisis-events)")
         print()
 
         print("Creating edges ...")
         create_central_bank_edges(session)
         create_commodity_edges(session)
         create_sanctions_edges(session)
-        create_crisis_edges(session)
+        if not args.skip_crisis_events:
+            create_crisis_edges(session)
+        else:
+            print("  HAS_CRISIS_HISTORY edges: SKIPPED (--skip-crisis-events)")
         create_datasource_edges(session)
         create_factor_exposure_edges(session)
         create_trade_edges(session)

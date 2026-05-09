@@ -24,6 +24,25 @@ OUTPUT FILES:
 - DuckDB gdelt_deep_factors                       (via load_gdelt_deep_to_duckdb.py)
 - DuckDB gdelt_deep_factors_cs                    (via build_gdelt_deep_cs.py)
 - Data/processed/pit_audit_gdelt_deep.csv         (via qa/pit_audit_gdelt_deep.py)
+- /A Complete/T2 Factor Timing Fuzzy/P2P_Country_Historical_Scores.xlsx (via build_t2_master.py)
+- /A Complete/T2 Factor Timing Fuzzy/T2 Master.xlsx (via build_t2_master.py)
+- /A Complete/T2 GDELT/T2 Master.xlsx             (via build_t2_master.py)
+- /A Complete/T2 Econ/T2 Master.xlsx              (via build_t2_master.py)
+- /A Complete/T2 Factor Timing Fuzzy/Normalized_T2_MasterCSV.csv (via T2 Fuzzy Step Two)
+- /A Complete/T2 GDELT/Normalized_T2_MasterCSV.csv (distributed copy)
+- /A Complete/T2 Econ/Normalized_T2_MasterCSV.csv  (distributed copy)
+- /A Complete/T2 GDELT/GDELT_Factors_MasterCSV.csv (via T2 GDELT Step Two)
+- /A Complete/T2 Econ/Econ_Factors_MasterCSV.csv   (via T2 Econ Step Two)
+- Data/processed/econ_workbook_panel.parquet      (via build_econ_panel.py)
+- /A Complete/T2 Econ/Econ.xlsx                   (via build_econ_panel.py)
+- Data/processed/gdelt_workbook_panel.parquet     (via build_gdelt_panel.py)
+- /A Complete/T2 GDELT/GDELT.xlsx                 (via build_gdelt_panel.py)
+- /A Complete/T2 Factor Timing Fuzzy/T2_Top_20_Exposure.csv (via T2 Fuzzy Step Three)
+- /A Complete/T2 Factor Timing Fuzzy/T2_Optimizer.xlsx      (via T2 Fuzzy Step Four)
+- /A Complete/T2 GDELT/GDELT_Top_20_Exposure.csv            (via T2 GDELT Step Three)
+- /A Complete/T2 GDELT/GDELT_Optimizer.xlsx                 (via T2 GDELT Step Four)
+- /A Complete/T2 Econ/Econ_Top_20_Exposure.csv              (via T2 Econ Step Three)
+- /A Complete/T2 Econ/Econ_Optimizer.xlsx                   (via T2 Econ Step Four)
 - Neo4j graph database                            (via setup_neo4j.py)
 - Neo4j vector index on Country nodes             (via build_embeddings.py)
 - Data/cache/query_assistant/*                    (via build_schema_registry.py)
@@ -31,7 +50,7 @@ OUTPUT FILES:
 - Data/logs/monthly_update_YYYY_MM_DD.log         (this run's log)
 
 VERSION: 1.2
-LAST UPDATED: 2026-04-28
+LAST UPDATED: 2026-04-29
 AUTHOR: Arjun Divecha
 
 DESCRIPTION:
@@ -46,15 +65,34 @@ Pipeline stages:
   3. collect_imf.py       --force   (7 datasets, ~26 variables)
   4. collect_bilateral.py           (IMF IMTS trade + BIS LBS banking + IMF PIP/TIC ownership)
   5. collect_macrostructure.py --force (IMF FSI + QPSD + sticky-capital + policy-backstop layer)
-  5b. collect_optimizer_returns.py     (Econ + T2 + GDELT optimizer factor returns + top-20 membership)
   6. collect_bloomberg.py --force   (Bloomberg bonds, CDS, breakevens, ratings, ETF passive layer)
+  6b. build_t2_master.py            (P2P via yfinance + T2 Master.xlsx → T2 Fuzzy/GDELT/Econ)
   7. collect_gdelt_deep.py          (GDELT Deep — incremental: themes + GCAM + events)
   8. setup_duckdb.py                (rebuild analytical DB)
   9. build_normalized_panel.py      (canonical normalized features + feature_panel)
  10. load_gdelt_deep_to_duckdb.py   (gdelt_deep_factors table)
  11. build_gdelt_deep_cs.py         (gdelt_deep_factors_cs cross-sectional variants)
  12. qa/pit_audit_gdelt_deep.py     (PIT audit on Deep tables)
- 13. setup_neo4j.py                 (rebuild knowledge graph + bilateral edges)
+ 8a. setup_duckdb.py pass 1         (DuckDB from parquet panels + prior-month CSVs)
+ 8b. build_normalized_panel.py pass 1
+ 9a. build_econ_panel.py            (Econ.xlsx → /A Complete/T2 Econ/, reads DuckDB)
+ 9b. build_gdelt_panel.py           (GDELT.xlsx → /A Complete/T2 GDELT/, reads parquet)
+ 10a. T2 Fuzzy Step Two             (Normalized_T2_MasterCSV.csv, reads T2 Master.xlsx)
+ 10b. T2 GDELT Step Two             (GDELT_Factors_MasterCSV.csv, reads GDELT.xlsx)
+ 10c. T2 Econ Step Two              (Econ_Factors_MasterCSV.csv, reads Econ.xlsx)
+ 10d. T2 Fuzzy Step Three           (T2_Top_20_Exposure.csv)
+ 10e. T2 Fuzzy Step Four            (T2_Optimizer.xlsx)
+ 10f. T2 GDELT Step Three           (GDELT_Top_20_Exposure.csv)
+ 10g. T2 GDELT Step Four            (GDELT_Optimizer.xlsx)
+ 10h. T2 Econ Step Three            (Econ_Top_20_Exposure.csv)
+ 10i. T2 Econ Step Four             (Econ_Optimizer.xlsx)
+ 10j. collect_optimizer_returns.py  (ingest Optimizer.xlsx + exposure CSVs → DuckDB)
+ 11a. setup_duckdb.py pass 2        (DuckDB reloaded with fresh T2 + GDELT CSVs)
+ 11b. build_normalized_panel.py pass 2
+ 12. load_gdelt_deep_to_duckdb.py   (gdelt_deep_factors table)
+ 13. build_gdelt_deep_cs.py         (gdelt_deep_factors_cs cross-sectional variants)
+ 14. qa/pit_audit_gdelt_deep.py     (PIT audit on Deep tables)
+ 15. setup_neo4j.py                 (rebuild knowledge graph + bilateral edges)
  14. build_embeddings.py            (country-state vectors + Neo4j vector index)
  15. build_schema_registry.py       (refresh query-assistant schema cache)
 
@@ -82,7 +120,9 @@ NOTES:
 """
 
 import argparse
+import importlib
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -98,6 +138,64 @@ PYTHON = sys.executable
 NEO4J_HOST = "localhost"
 NEO4J_BOLT_PORT = 7687
 
+# ── External T2 pipeline directories ────────────────────────────────────────
+T2_FUZZY_DIR  = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 Factor Timing Fuzzy")
+T2_GDELT_DIR  = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 GDELT")
+T2_ECON_DIR   = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 Econ")
+
+
+# Map pip package names to their Python import names where they differ
+_IMPORT_NAME = {
+    "scikit-learn": "sklearn",
+    "pyarrow": "pyarrow",
+    "openpyxl": "openpyxl",
+    "mcp": "mcp",
+    "sse-starlette": "sse_starlette",
+    "xlsxwriter": "xlsxwriter",
+}
+
+
+def ensure_dependencies():
+    """Check that every package in requirements.txt is importable.
+
+    Missing packages are installed automatically with
+    ``pip install --break-system-packages`` so the pipeline never fails
+    due to a missing module on a Homebrew-managed Python.
+    """
+    req_file = BASE_DIR / "requirements.txt"
+    if not req_file.exists():
+        print("  [WARN] requirements.txt not found — skipping dependency check")
+        return
+
+    missing: list[str] = []
+    for line in req_file.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        # strip extras, version specifiers  e.g. "mcp[cli]>=1.12" → "mcp"
+        pkg = re.split(r"[\[><=!;]", line)[0].strip()
+        import_name = _IMPORT_NAME.get(pkg, pkg.replace("-", "_"))
+        try:
+            importlib.import_module(import_name)
+        except ModuleNotFoundError:
+            missing.append(line)  # keep full spec for install
+
+    if not missing:
+        print("  All Python dependencies satisfied.")
+        return
+
+    print(f"  Missing packages: {', '.join(missing)}")
+    print("  Installing ...")
+    cmd = [
+        sys.executable, "-m", "pip", "install",
+        "--break-system-packages", "--quiet",
+    ] + missing
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f"  [ERROR] pip install failed:\n{result.stderr}")
+        sys.exit(1)
+    print(f"  Installed: {', '.join(missing)}")
+
 
 def setup_logging():
     """Create log directory and return log file path."""
@@ -106,16 +204,27 @@ def setup_logging():
     return LOG_DIR / f"monthly_update_{timestamp}.log"
 
 
-def run_step(name: str, script: str, args: list, log_file: Path) -> dict:
+def run_step(name: str, script: str, args: list, log_file: Path,
+             cwd: Path | None = None) -> dict:
     """
     Run a pipeline step as a subprocess.
 
+    script may be an absolute path (for external T2 pipeline scripts) or a
+    path relative to SCRIPTS_DIR (for ASADO scripts).
+    cwd defaults to BASE_DIR; pass a T2 directory for external scripts that
+    use relative file paths.
+
     Returns dict with keys: name, status, elapsed, returncode, output_tail
     """
-    cmd = [PYTHON, str(SCRIPTS_DIR / script)] + args
+    script_path = Path(script)
+    if not script_path.is_absolute():
+        script_path = SCRIPTS_DIR / script
+    cmd = [PYTHON, str(script_path)] + args
+    run_cwd = str(cwd or BASE_DIR)
     print(f"\n{'─' * 60}")
     print(f"STEP: {name}")
     print(f"CMD:  {' '.join(cmd)}")
+    print(f"CWD:  {run_cwd}")
     print(f"{'─' * 60}")
 
     start = time.time()
@@ -123,7 +232,7 @@ def run_step(name: str, script: str, args: list, log_file: Path) -> dict:
         cmd,
         capture_output=True,
         text=True,
-        cwd=str(BASE_DIR),
+        cwd=run_cwd,
         env={**os.environ, "PYTHONUNBUFFERED": "1"},
     )
     elapsed = time.time() - start
@@ -325,6 +434,10 @@ def main():
     print(f"  Log:     {log_file}")
     print("=" * 60)
 
+    # ── Step 0: Dependency check ────────────────────────────────────
+    print("\nChecking Python dependencies ...")
+    ensure_dependencies()
+
     with open(log_file, "w") as f:
         f.write(f"ASADO Monthly Update\n")
         f.write(f"Started: {datetime.now().isoformat()}\n")
@@ -379,13 +492,6 @@ def main():
             log_file
         ))
 
-        results.append(run_step(
-            "Program 5b: Optimizer Returns + Top-20 Membership",
-            "collect_optimizer_returns.py",
-            collector_flags,
-            log_file
-        ))
-
         if not args.skip_bloomberg:
             bbg_env = '/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg/.venv'
             bbg_script = str(SCRIPTS_DIR / "collect_bloomberg.py")
@@ -425,6 +531,17 @@ def main():
         else:
             print("\n  (Bloomberg collection skipped via --skip-bloomberg)")
 
+        # Program 6b: T2 Master — P2P scores (yfinance) + T2 Master.xlsx from Bloomberg
+        t2_flags = ["--dry-run"] if args.dry_run else []
+        if args.skip_bloomberg:
+            t2_flags.append("--skip-p2p")
+        results.append(run_step(
+            "Program 6b: T2 Master (P2P + Bloomberg → T2 Master.xlsx)",
+            "build_t2_master.py",
+            t2_flags,
+            log_file
+        ))
+
         # Program 7: GDELT Deep — incremental by default. Past months are
         # never re-read; the collector skips with status "no_change" if the
         # source has nothing newer than the existing parquet.
@@ -442,19 +559,200 @@ def main():
     # ── Stage 2: Database Rebuilds ────────────────────────────────────
     if not args.collectors_only:
         print("\n\n" + "=" * 60)
-        print("  STAGE 2: DATABASE REBUILDS")
+        print("  STAGE 2A: DUCKDB PASS 1 (existing CSVs)")
         print("=" * 60)
 
+        # Pass 1: rebuild DuckDB from the latest parquet panels + existing
+        # GDELT_Factors_MasterCSV.csv / Normalized_T2_MasterCSV.csv (prior
+        # month). The T2 Step Twos below will produce fresh CSVs; Pass 2 then
+        # reloads them so the final DuckDB is fully up to date.
         results.append(run_step(
-            "DuckDB Rebuild",
+            "DuckDB Rebuild (pass 1)",
             "setup_duckdb.py",
             [],
             log_file
         ))
 
         results.append(run_step(
-            "Normalization Layer",
+            "Normalization Layer (pass 1)",
             "build_normalized_panel.py",
+            [],
+            log_file
+        ))
+
+        print("\n\n" + "=" * 60)
+        print("  STAGE 2B: WORKBOOK EXPORTS")
+        print("=" * 60)
+
+        # Econ.xlsx — reads unified_panel (DuckDB pass 1 must be done first)
+        results.append(run_step(
+            "Econ Workbook Export (Econ.xlsx)",
+            "build_econ_panel.py",
+            [],
+            log_file
+        ))
+
+        # GDELT.xlsx — reads country_signal_monthly_deep.parquet (no DuckDB dep)
+        if not args.skip_deep:
+            results.append(run_step(
+                "GDELT Workbook Export (GDELT.xlsx)",
+                "build_gdelt_panel.py",
+                [],
+                log_file
+            ))
+        else:
+            print("\n  (GDELT workbook export skipped via --skip-deep)")
+
+        print("\n\n" + "=" * 60)
+        print("  STAGE 2C: T2 PIPELINE STEP TWOS")
+        print("=" * 60)
+
+        # T2 Factor Timing Fuzzy Step Two → Normalized_T2_MasterCSV.csv
+        # (reads T2 Master.xlsx produced by build_t2_master.py in Stage 1)
+        results.append(run_step(
+            "T2 Fuzzy Step Two (Normalized_T2_MasterCSV.csv)",
+            str(T2_FUZZY_DIR / "Step Two Create Normalized Tidy.py"),
+            [],
+            log_file,
+            cwd=T2_FUZZY_DIR,
+        ))
+
+        # Distribute Normalized_T2_MasterCSV.csv to T2 GDELT and T2 Econ so
+        # their Step Twos pick up the freshly rebuilt 1MRet series.
+        normalized_src = T2_FUZZY_DIR / "Normalized_T2_MasterCSV.csv"
+        if normalized_src.exists():
+            import shutil
+            for dest_dir in (T2_GDELT_DIR, T2_ECON_DIR):
+                shutil.copy2(normalized_src, dest_dir / "Normalized_T2_MasterCSV.csv")
+                print(f"  Copied Normalized_T2_MasterCSV.csv → {dest_dir.name}/")
+        else:
+            print("  WARNING: Normalized_T2_MasterCSV.csv not found — T2 Step Twos will fall back to T2 Master.xlsx")
+
+        # T2 GDELT Step Two → GDELT_Factors_MasterCSV.csv
+        if not args.skip_deep:
+            results.append(run_step(
+                "T2 GDELT Step Two (GDELT_Factors_MasterCSV.csv)",
+                str(T2_GDELT_DIR / "Step Two GDELT Create Tidy.py"),
+                [],
+                log_file,
+                cwd=T2_GDELT_DIR,
+            ))
+        else:
+            print("\n  (T2 GDELT Step Two skipped via --skip-deep)")
+
+        # T2 Econ Step Two → Econ_Factors_MasterCSV.csv
+        results.append(run_step(
+            "T2 Econ Step Two (Econ_Factors_MasterCSV.csv)",
+            str(T2_ECON_DIR / "Step Two Econ Create Tidy.py"),
+            [],
+            log_file,
+            cwd=T2_ECON_DIR,
+        ))
+
+        # ── Steps Three + Four for all three T2 pipelines ────────────────
+        # Step Three builds the Top-20 long/short portfolios and writes the
+        # country exposure CSV.  Step Four computes monthly returns from those
+        # portfolios and writes the Optimizer.xlsx.  These must run AFTER the
+        # Step Twos have produced fresh *_Factors_MasterCSV.csv files.
+
+        # T2 Factor Timing Fuzzy Step Three → T2_Top_20_Exposure.csv
+        results.append(run_step(
+            "T2 Fuzzy Step Three (T2_Top_20_Exposure.csv)",
+            str(T2_FUZZY_DIR / "Step Three Top20 Portfolios Fast.py"),
+            [],
+            log_file,
+            cwd=T2_FUZZY_DIR,
+        ))
+
+        # T2 Factor Timing Fuzzy Step Four → T2_Optimizer.xlsx
+        results.append(run_step(
+            "T2 Fuzzy Step Four (T2_Optimizer.xlsx)",
+            str(T2_FUZZY_DIR / "Step Four Create Monthly Top20 Returns FAST.py"),
+            [],
+            log_file,
+            cwd=T2_FUZZY_DIR,
+        ))
+
+        # T2 GDELT Step Three → GDELT_Top_20_Exposure.csv
+        if not args.skip_deep:
+            results.append(run_step(
+                "T2 GDELT Step Three (GDELT_Top_20_Exposure.csv)",
+                str(T2_GDELT_DIR / "Step Three GDELT Top20 Portfolios Fast.py"),
+                [],
+                log_file,
+                cwd=T2_GDELT_DIR,
+            ))
+
+            # T2 GDELT Step Four → GDELT_Optimizer.xlsx
+            results.append(run_step(
+                "T2 GDELT Step Four (GDELT_Optimizer.xlsx)",
+                str(T2_GDELT_DIR / "Step Four GDELT Create Monthly Top20 Returns FAST.py"),
+                [],
+                log_file,
+                cwd=T2_GDELT_DIR,
+            ))
+        else:
+            print("\n  (T2 GDELT Steps Three+Four skipped via --skip-deep)")
+
+        # T2 Econ Step Three → Econ_Top_20_Exposure.csv
+        results.append(run_step(
+            "T2 Econ Step Three (Econ_Top_20_Exposure.csv)",
+            str(T2_ECON_DIR / "Step Three Econ Top20 Portfolios Fast.py"),
+            [],
+            log_file,
+            cwd=T2_ECON_DIR,
+        ))
+
+        # T2 Econ Step Four → Econ_Optimizer.xlsx
+        results.append(run_step(
+            "T2 Econ Step Four (Econ_Optimizer.xlsx)",
+            str(T2_ECON_DIR / "Step Four Econ Create Monthly Top20 Returns FAST.py"),
+            [],
+            log_file,
+            cwd=T2_ECON_DIR,
+        ))
+
+        # Ingest freshly-produced Optimizer.xlsx + Top-20 exposure CSVs
+        # back into DuckDB (factor_returns + factor_top20_membership tables).
+        # Runs here — after all three Step Fours — so it always picks up the
+        # files produced in this same run, not last month's.
+        results.append(run_step(
+            "Optimizer Returns + Top-20 Membership (ingest)",
+            "collect_optimizer_returns.py",
+            collector_flags,
+            log_file,
+        ))
+
+        print("\n\n" + "=" * 60)
+        print("  STAGE 2D: DUCKDB PASS 2 (fresh CSVs)")
+        print("=" * 60)
+
+        # Pass 2: reload DuckDB now that GDELT_Factors_MasterCSV.csv and
+        # Normalized_T2_MasterCSV.csv are freshly produced by the Step Twos.
+        results.append(run_step(
+            "DuckDB Rebuild (pass 2 — fresh T2 + GDELT CSVs)",
+            "setup_duckdb.py",
+            [],
+            log_file
+        ))
+
+        results.append(run_step(
+            "Normalization Layer (pass 2)",
+            "build_normalized_panel.py",
+            [],
+            log_file
+        ))
+
+        results.append(run_step(
+            "Daily Panels (T2 + GDELT + optimizer returns)",
+            "build_daily_panels.py",
+            ["--rebuild", "--no-backup"],
+            log_file
+        ))
+
+        results.append(run_step(
+            "Event Log (curated event registry)",
+            "build_event_log.py",
             [],
             log_file
         ))
@@ -462,6 +760,10 @@ def main():
         # GDELT Deep DB stages — sibling tables to gdelt_panel; not unioned
         # into feature_panel until the normalization decision lands.
         if not args.skip_deep:
+            print("\n\n" + "=" * 60)
+            print("  STAGE 2E: GDELT DEEP DB STAGES")
+            print("=" * 60)
+
             results.append(run_step(
                 "GDELT Deep → DuckDB (gdelt_deep_factors)",
                 "load_gdelt_deep_to_duckdb.py",

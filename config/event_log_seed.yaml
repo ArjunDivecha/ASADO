@@ -1,0 +1,1780 @@
+# ============================================================================
+# ASADO Event Log Seed Data
+# ============================================================================
+# Hand-curated registry of ~200 dated events for the event_log table.
+# Each entry tagged with category, severity, and affected T2 countries.
+# Loaded into DuckDB by scripts/build_event_log.py (idempotent rebuild).
+#
+# Category vocabulary: central_bank, macro_release, oil_supply, geopolitical,
+#                      financial_crisis, trade_policy, election, regulatory
+# Severity: high, medium, low
+# countries_affected: comma-separated T2 names; null = see is_global
+# ============================================================================
+
+# ─── CENTRAL BANK (~55 events) ──────────────────────────────────────────────
+
+- event_id: fomc_2001_01_03_emergency_cut
+  event_date: "2001-01-03"
+  label: "FOMC emergency 50bp cut (inter-meeting)"
+  description: "Fed cuts 50bp between meetings as dot-com recession fears mount."
+  category: central_bank
+  subcategory: fomc_cut
+  severity: medium
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.federalreserve.gov/boarddocs/press/general/2001/20010103/default.htm"
+  tags: "fomc,emergency_cut,recession"
+
+- event_id: fomc_2007_09_18_first_cut
+  event_date: "2007-09-18"
+  label: "FOMC first cut of easing cycle — 50bp"
+  description: "Fed begins easing cycle with aggressive 50bp cut amid subprime stress."
+  category: central_bank
+  subcategory: fomc_pivot
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.federalreserve.gov/newsevents/pressreleases/monetary20070918a.htm"
+  tags: "fomc,pivot,easing_cycle,subprime"
+
+- event_id: fomc_2008_12_16_zero_bound
+  event_date: "2008-12-16"
+  label: "FOMC cuts to zero, launches QE1"
+  description: "Fed cuts target to 0-0.25% and announces large-scale asset purchases."
+  category: central_bank
+  subcategory: fomc_qe
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.federalreserve.gov/newsevents/pressreleases/monetary20081216b.htm"
+  tags: "fomc,zero_bound,qe,gfc"
+
+- event_id: fomc_2010_11_03_qe2
+  event_date: "2010-11-03"
+  label: "FOMC announces QE2 ($600B Treasuries)"
+  description: "Second round of quantitative easing to support recovery."
+  category: central_bank
+  subcategory: fomc_qe
+  severity: medium
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.federalreserve.gov/newsevents/pressreleases/monetary20101103a.htm"
+  tags: "fomc,qe2"
+
+- event_id: fomc_2012_09_13_qe3
+  event_date: "2012-09-13"
+  label: "FOMC announces QE3 (open-ended MBS purchases)"
+  description: "Fed launches open-ended $40B/month MBS purchase program."
+  category: central_bank
+  subcategory: fomc_qe
+  severity: medium
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.federalreserve.gov/newsevents/pressreleases/monetary20120913a.htm"
+  tags: "fomc,qe3,open_ended"
+
+- event_id: fomc_2013_05_22_taper_tantrum
+  event_date: "2013-05-22"
+  label: "Bernanke taper tantrum testimony"
+  description: "Bernanke suggests Fed could taper asset purchases; EM bonds sell off sharply."
+  category: central_bank
+  subcategory: fomc_pivot
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.federalreserve.gov/newsevents/testimony/bernanke20130522a.htm"
+  tags: "fomc,taper_tantrum,em_selloff"
+
+- event_id: fomc_2015_12_16_first_hike
+  event_date: "2015-12-16"
+  label: "FOMC first rate hike since 2006"
+  description: "Fed lifts off from zero bound, first hike in 9 years."
+  category: central_bank
+  subcategory: fomc_hike
+  severity: medium
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.federalreserve.gov/newsevents/pressreleases/monetary20151216a.htm"
+  tags: "fomc,liftoff,normalization"
+
+- event_id: fomc_2018_12_19_powell_pivot
+  event_date: "2018-12-19"
+  label: "Powell December 2018 hawkish hike + 'autopilot' QT comment"
+  description: "Fed hikes despite market stress; Powell's QT comments trigger equity selloff."
+  category: central_bank
+  subcategory: fomc_hike
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.federalreserve.gov/newsevents/pressreleases/monetary20181219a.htm"
+  tags: "fomc,hawkish,qt_autopilot,equity_selloff"
+
+- event_id: fomc_2019_01_30_powell_pivot_dovish
+  event_date: "2019-01-30"
+  label: "Powell January 2019 dovish pivot — 'patient'"
+  description: "Fed signals patience on further hikes, effectively ending tightening cycle."
+  category: central_bank
+  subcategory: fomc_pivot
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.federalreserve.gov/newsevents/pressreleases/monetary20190130a.htm"
+  tags: "fomc,pivot,dovish,patient"
+
+- event_id: fomc_2019_07_31_first_cut
+  event_date: "2019-07-31"
+  label: "FOMC first rate cut since 2008 — 'insurance cut'"
+  description: "Fed cuts 25bp as insurance against trade-war slowdown."
+  category: central_bank
+  subcategory: fomc_cut
+  severity: medium
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.federalreserve.gov/newsevents/pressreleases/monetary20190731a.htm"
+  tags: "fomc,insurance_cut,trade_war"
+
+- event_id: fomc_2020_03_03_emergency_cut
+  event_date: "2020-03-03"
+  label: "FOMC emergency 50bp cut (COVID)"
+  description: "Fed cuts 50bp in unscheduled meeting as COVID spreads globally."
+  category: central_bank
+  subcategory: fomc_cut
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.federalreserve.gov/newsevents/pressreleases/monetary20200303a.htm"
+  tags: "fomc,emergency_cut,covid"
+
+- event_id: fomc_2020_03_15_emergency_cut_zero
+  event_date: "2020-03-15"
+  label: "FOMC emergency cut to zero, Sunday announcement"
+  description: "Fed cuts target to 0-0.25% in unscheduled Sunday meeting; QE restart; coordinated with five global central banks."
+  category: central_bank
+  subcategory: fomc_pivot
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.federalreserve.gov/newsevents/pressreleases/monetary20200315a.htm"
+  tags: "covid,emergency_cut,qe,coordinated"
+
+- event_id: fomc_2022_03_16_first_hike_cycle
+  event_date: "2022-03-16"
+  label: "FOMC begins hiking cycle — 25bp"
+  description: "First rate hike post-COVID, beginning aggressive tightening campaign."
+  category: central_bank
+  subcategory: fomc_hike
+  severity: medium
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.federalreserve.gov/newsevents/pressreleases/monetary20220316a.htm"
+  tags: "fomc,hike_cycle_start,inflation"
+
+- event_id: fomc_2022_06_15_75bp
+  event_date: "2022-06-15"
+  label: "FOMC first 75bp hike since 1994"
+  description: "Fed hikes 75bp after hot CPI surprise; largest increase in 28 years."
+  category: central_bank
+  subcategory: fomc_hike
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.federalreserve.gov/newsevents/pressreleases/monetary20220615a.htm"
+  tags: "fomc,75bp,inflation,aggressive"
+
+- event_id: fomc_2023_07_26_last_hike
+  event_date: "2023-07-26"
+  label: "FOMC final hike of cycle (5.25-5.50%)"
+  description: "Fed hikes to 5.25-5.50%; proves to be the terminal rate of the cycle."
+  category: central_bank
+  subcategory: fomc_hike
+  severity: medium
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.federalreserve.gov/newsevents/pressreleases/monetary20230726a.htm"
+  tags: "fomc,terminal_rate"
+
+- event_id: fomc_2024_09_18_first_cut_50bp
+  event_date: "2024-09-18"
+  label: "FOMC first cut of easing cycle — 50bp"
+  description: "Fed begins rate-cutting cycle with larger-than-expected 50bp reduction."
+  category: central_bank
+  subcategory: fomc_pivot
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.federalreserve.gov/newsevents/pressreleases/monetary20240918a.htm"
+  tags: "fomc,pivot,easing_cycle,50bp"
+
+- event_id: fomc_2024_12_18_dovish_dot_plot
+  event_date: "2024-12-18"
+  label: "FOMC December 2024 dovish dot-plot pivot"
+  description: "FOMC dot plot signals more aggressive easing path; markets rally."
+  category: central_bank
+  subcategory: fomc_pivot
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.federalreserve.gov/newsevents/pressreleases/monetary20241218a.htm"
+  tags: "fomc,pivot,dovish,dot_plot"
+
+- event_id: ecb_2012_07_26_whatever_it_takes
+  event_date: "2012-07-26"
+  label: "Draghi 'whatever it takes' speech"
+  description: "ECB President Draghi pledges to do 'whatever it takes' to save the euro; sovereign spreads collapse."
+  category: central_bank
+  subcategory: ecb_pivot
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.ecb.europa.eu/press/key/date/2012/html/sp120726.en.html"
+  tags: "ecb,whatever_it_takes,sovereign_crisis,pivot"
+
+- event_id: ecb_2015_01_22_qe_launch
+  event_date: "2015-01-22"
+  label: "ECB announces sovereign QE (€60B/month)"
+  description: "ECB launches large-scale sovereign bond purchase program."
+  category: central_bank
+  subcategory: ecb_qe
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.ecb.europa.eu/press/pr/date/2015/html/pr150122_1.en.html"
+  tags: "ecb,qe,sovereign"
+
+- event_id: ecb_2022_07_21_first_hike
+  event_date: "2022-07-21"
+  label: "ECB first rate hike in 11 years — exits negative rates"
+  description: "ECB hikes 50bp, ending era of negative deposit rate; larger than signaled."
+  category: central_bank
+  subcategory: ecb_hike
+  severity: medium
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.ecb.europa.eu/press/pr/date/2022/html/ecb.mp220721~53e5bdd317.en.html"
+  tags: "ecb,first_hike,negative_rates_end"
+
+- event_id: ecb_2024_06_06_first_cut
+  event_date: "2024-06-06"
+  label: "ECB first rate cut of easing cycle"
+  description: "ECB cuts deposit rate 25bp, beginning easing ahead of the Fed."
+  category: central_bank
+  subcategory: ecb_cut
+  severity: medium
+  is_global: false
+  countries_affected: "France,Germany,Italy,Spain,Netherlands"
+  source_url: "https://www.ecb.europa.eu/press/pr/date/2024/html/ecb.mp240606~6401a50b9d.en.html"
+  tags: "ecb,easing,first_cut"
+
+- event_id: boj_2013_04_04_abenomics_qe
+  event_date: "2013-04-04"
+  label: "BoJ Kuroda QQE launch (Abenomics)"
+  description: "BoJ announces massive qualitative-quantitative easing; doubles monetary base target."
+  category: central_bank
+  subcategory: boj_qe
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.boj.or.jp/en/announcements/release_2013/k130404a.pdf"
+  tags: "boj,abenomics,qqe,yen"
+
+- event_id: boj_2016_01_29_nirp
+  event_date: "2016-01-29"
+  label: "BoJ surprise negative interest rate policy (NIRP)"
+  description: "BoJ introduces -0.1% rate on excess reserves in surprise decision."
+  category: central_bank
+  subcategory: boj_nirp
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.boj.or.jp/en/announcements/release_2016/k160129a.pdf"
+  tags: "boj,nirp,surprise,yen"
+
+- event_id: boj_2016_09_21_ycc
+  event_date: "2016-09-21"
+  label: "BoJ introduces Yield Curve Control"
+  description: "BoJ shifts framework to target 10Y JGB yield at ~0%; new policy paradigm."
+  category: central_bank
+  subcategory: boj_ycc
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.boj.or.jp/en/announcements/release_2016/k160921a.pdf"
+  tags: "boj,ycc,framework_shift"
+
+- event_id: boj_2022_12_20_ycc_adjustment
+  event_date: "2022-12-20"
+  label: "BoJ widens YCC band to ±0.50% (surprise)"
+  description: "BoJ unexpectedly widens 10Y yield target band; yen surges, JGB yields spike."
+  category: central_bank
+  subcategory: boj_ycc
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.boj.or.jp/en/announcements/release_2022/k221220a.pdf"
+  tags: "boj,ycc,surprise,yen_surge"
+
+- event_id: boj_2024_03_19_end_nirp
+  event_date: "2024-03-19"
+  label: "BoJ ends negative rates, first hike since 2007"
+  description: "BoJ exits NIRP, ends YCC, stops ETF purchases — historic policy normalization."
+  category: central_bank
+  subcategory: boj_hike
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.boj.or.jp/en/announcements/release_2024/k240319a.pdf"
+  tags: "boj,end_nirp,normalization,historic"
+
+- event_id: boj_2024_07_31_surprise_hike
+  event_date: "2024-07-31"
+  label: "BoJ surprise hike to 0.25% triggers carry-trade unwind"
+  description: "BoJ hikes 15bp and signals further tightening; triggers massive yen carry-trade unwind and global equity selloff Aug 5."
+  category: central_bank
+  subcategory: boj_hike
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.boj.or.jp/en/announcements/release_2024/k240731a.pdf"
+  tags: "boj,hike,carry_trade,unwind,volatility"
+
+- event_id: snb_2015_01_15_unpeg
+  event_date: "2015-01-15"
+  label: "SNB removes CHF/EUR floor — 'Frankenshock'"
+  description: "Swiss National Bank abandons 1.20 CHF/EUR floor; CHF surges 20% intraday; massive FX market dislocation."
+  category: central_bank
+  subcategory: snb_unpeg
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.snb.ch/en/mmr/reference/pre_20150115/source/pre_20150115.en.pdf"
+  tags: "snb,unpeg,fx_shock,chf"
+
+- event_id: boe_2022_09_28_gilt_intervention
+  event_date: "2022-09-28"
+  label: "BoE emergency gilt market intervention"
+  description: "BoE announces emergency long-dated gilt purchases to prevent pension fund collapse after Truss mini-budget."
+  category: central_bank
+  subcategory: boe_intervention
+  severity: high
+  is_global: false
+  countries_affected: "U.K."
+  source_url: "https://www.bankofengland.co.uk/news/2022/september/bank-of-england-announces-gilt-market-operation"
+  tags: "boe,gilt_crisis,intervention,pension,ldi"
+
+- event_id: pboc_2015_08_11_yuan_deval
+  event_date: "2015-08-11"
+  label: "PBoC yuan devaluation — new FX regime"
+  description: "PBoC devalues CNY fixing 1.9%; signals shift to market-determined rate; EM contagion."
+  category: central_bank
+  subcategory: pboc_fx
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.reuters.com/article/china-yuan-devaluation-idUSKCN0QG03820150811"
+  tags: "pboc,devaluation,yuan,em_contagion"
+
+- event_id: turkey_cb_2021_03_20_governor_fired
+  event_date: "2021-03-20"
+  label: "Turkey fires hawkish CB governor overnight"
+  description: "Erdogan fires CBRT Governor Agbal via overnight decree days after 200bp hike; lira crashes Monday."
+  category: central_bank
+  subcategory: cb_governance
+  severity: high
+  is_global: false
+  countries_affected: "Turkey"
+  source_url: "https://www.reuters.com/article/turkey-cenbank-idUSKBN2BC0HC"
+  tags: "turkey,cb_governor,erdogan,lira"
+
+- event_id: turkey_cb_2023_06_22_first_hike_post_election
+  event_date: "2023-06-22"
+  label: "Turkey CBRT hikes 650bp — new team post-election"
+  description: "New CBRT governor Erkan hikes from 8.5% to 15% in first meeting post Erdogan re-election."
+  category: central_bank
+  subcategory: em_cb_hike
+  severity: medium
+  is_global: false
+  countries_affected: "Turkey"
+  source_url: "https://www.tcmb.gov.tr/wps/wcm/connect/EN/TCMB+EN/Main+Menu/Announcements/Press+Releases/2023/ANO2023-24"
+  tags: "turkey,cbrt,massive_hike,orthodoxy"
+
+- event_id: brazil_cb_2021_03_17_first_hike
+  event_date: "2021-03-17"
+  label: "Brazil BCB first hike of aggressive cycle — 75bp"
+  description: "BCB begins EM-leading tightening cycle, hiking 75bp vs 50bp expected."
+  category: central_bank
+  subcategory: em_cb_hike
+  severity: medium
+  is_global: false
+  countries_affected: "Brazil"
+  source_url: "https://www.bcb.gov.br/en/pressdetail/2387/nota"
+  tags: "brazil,bcb,hike_cycle,em_leader"
+
+- event_id: rbi_2013_07_15_emergency_measures
+  event_date: "2013-07-15"
+  label: "RBI emergency INR defense measures"
+  description: "RBI restricts FX positions, hikes MSF rate 200bp to defend rupee during taper tantrum."
+  category: central_bank
+  subcategory: em_cb_defense
+  severity: medium
+  is_global: false
+  countries_affected: "India"
+  source_url: "https://rbi.org.in/Scripts/BS_PressReleaseDisplay.aspx?prid=29086"
+  tags: "rbi,inr_defense,taper_tantrum,emergency"
+
+# ─── GEOPOLITICAL (~40 events) ──────────────────────────────────────────────
+
+- event_id: sept_11_2001
+  event_date: "2001-09-11"
+  label: "September 11 terrorist attacks"
+  description: "Al-Qaeda attacks on World Trade Center and Pentagon; US markets closed for 4 days; S&P falls 12% on reopening week."
+  category: geopolitical
+  subcategory: terrorism
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/September_11_attacks"
+  tags: "terrorism,us,markets_closed"
+
+- event_id: iraq_war_2003_03_19
+  event_date: "2003-03-19"
+  label: "US invasion of Iraq begins"
+  description: "Operation Iraqi Freedom launches; oil spikes then reverses as swift campaign expected."
+  category: geopolitical
+  subcategory: war
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/2003_invasion_of_Iraq"
+  tags: "iraq,war,oil,us_military"
+
+- event_id: georgia_war_2008_08_08
+  event_date: "2008-08-08"
+  label: "Russia invades Georgia"
+  description: "Russia launches military operation in South Ossetia; first European land war since 1990s."
+  category: geopolitical
+  subcategory: war
+  severity: medium
+  is_global: false
+  countries_affected: "Turkey,Poland"
+  source_url: "https://en.wikipedia.org/wiki/Russo-Georgian_War"
+  tags: "russia,war,europe,georgia"
+
+- event_id: crimea_2014_03_18
+  event_date: "2014-03-18"
+  label: "Russia annexes Crimea"
+  description: "Russia formally annexes Crimea after referendum; Western sanctions imposed."
+  category: geopolitical
+  subcategory: annexation
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/Annexation_of_Crimea_by_the_Russian_Federation"
+  tags: "russia,ukraine,crimea,sanctions"
+
+- event_id: mh17_2014_07_17
+  event_date: "2014-07-17"
+  label: "MH17 shot down over eastern Ukraine"
+  description: "Malaysia Airlines Flight 17 shot down by Russian-backed separatists; escalates sanctions."
+  category: geopolitical
+  subcategory: escalation
+  severity: medium
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/Malaysia_Airlines_Flight_17"
+  tags: "russia,ukraine,aviation,sanctions_escalation"
+
+- event_id: brexit_referendum_2016_06_23
+  event_date: "2016-06-23"
+  label: "Brexit referendum — Leave wins"
+  description: "UK votes 52-48 to leave EU; GBP falls 8% overnight; S&P futures limit down."
+  category: geopolitical
+  subcategory: referendum
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/2016_United_Kingdom_European_Union_membership_referendum"
+  tags: "brexit,uk,eu,sterling_crash"
+
+- event_id: north_korea_2017_09_03_nuclear
+  event_date: "2017-09-03"
+  label: "North Korea hydrogen bomb test"
+  description: "DPRK conducts sixth and most powerful nuclear test; escalates US-NK tensions."
+  category: geopolitical
+  subcategory: nuclear
+  severity: medium
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/2017_North_Korean_nuclear_test"
+  tags: "north_korea,nuclear,us_tension,korea"
+
+- event_id: hong_kong_protests_2019_06_09
+  event_date: "2019-06-09"
+  label: "Hong Kong mass protests begin (extradition bill)"
+  description: "1 million+ march against extradition bill; escalates into months of protests."
+  category: geopolitical
+  subcategory: civil_unrest
+  severity: medium
+  is_global: false
+  countries_affected: "Hong Kong,ChinaA"
+  source_url: "https://en.wikipedia.org/wiki/2019%E2%80%932020_Hong_Kong_protests"
+  tags: "hong_kong,protests,china,extradition"
+
+- event_id: pulwama_2019_02_14
+  event_date: "2019-02-14"
+  label: "Pulwama terror attack (India-Pakistan)"
+  description: "Suicide bombing kills 40 Indian soldiers in Kashmir; India-Pakistan tensions spike."
+  category: geopolitical
+  subcategory: terrorism
+  severity: medium
+  is_global: false
+  countries_affected: "India"
+  source_url: "https://en.wikipedia.org/wiki/2019_Pulwama_attack"
+  tags: "india,pakistan,kashmir,terrorism"
+
+- event_id: balakot_2019_02_26
+  event_date: "2019-02-26"
+  label: "India Balakot airstrike on Pakistan"
+  description: "India strikes JeM camp in Pakistan in retaliation for Pulwama; first cross-border airstrike since 1971."
+  category: geopolitical
+  subcategory: military_strike
+  severity: medium
+  is_global: false
+  countries_affected: "India"
+  source_url: "https://en.wikipedia.org/wiki/2019_Balakot_airstrike"
+  tags: "india,pakistan,airstrike,kashmir"
+
+- event_id: soleimani_2020_01_03
+  event_date: "2020-01-03"
+  label: "US kills Qasem Soleimani in Baghdad airstrike"
+  description: "US drone strike kills Iranian General Soleimani; oil spikes; fears of Iran-US war."
+  category: geopolitical
+  subcategory: military_strike
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/Assassination_of_Qasem_Soleimani"
+  tags: "iran,us,military_strike,oil,middle_east"
+
+- event_id: covid_who_pandemic_2020_03_11
+  event_date: "2020-03-11"
+  label: "WHO declares COVID-19 a pandemic"
+  description: "WHO officially declares COVID-19 a pandemic; triggers global lockdowns, S&P enters bear market."
+  category: geopolitical
+  subcategory: pandemic
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.who.int/director-general/speeches/detail/who-director-general-s-opening-remarks-at-the-media-briefing-on-covid-19---11-march-2020"
+  tags: "covid,pandemic,lockdown,global"
+
+- event_id: us_capitol_2021_01_06
+  event_date: "2021-01-06"
+  label: "US Capitol attack / insurrection"
+  description: "Supporters storm US Capitol to disrupt election certification; limited market impact as certification completes overnight."
+  category: geopolitical
+  subcategory: civil_unrest
+  severity: medium
+  is_global: false
+  countries_affected: "U.S."
+  source_url: "https://en.wikipedia.org/wiki/January_6_United_States_Capitol_attack"
+  tags: "us,capitol,insurrection,election"
+
+- event_id: afghanistan_fall_2021_08_15
+  event_date: "2021-08-15"
+  label: "Taliban takes Kabul — US withdrawal"
+  description: "Taliban captures Kabul as US withdrawal collapses; geopolitical credibility event."
+  category: geopolitical
+  subcategory: regime_change
+  severity: medium
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/Fall_of_Kabul_(2021)"
+  tags: "afghanistan,us_withdrawal,taliban"
+
+- event_id: russia_ukraine_invasion_2022_02_24
+  event_date: "2022-02-24"
+  label: "Russia invades Ukraine — full-scale war"
+  description: "Russia launches full-scale invasion of Ukraine; commodity shock; unprecedented sanctions; European energy crisis."
+  category: geopolitical
+  subcategory: war
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/Russian_invasion_of_Ukraine"
+  tags: "russia,ukraine,war,sanctions,commodities,energy_crisis"
+
+- event_id: pelosi_taiwan_2022_08_02
+  event_date: "2022-08-02"
+  label: "Pelosi visits Taiwan — China military drills"
+  description: "US Speaker Pelosi visits Taiwan; China launches unprecedented military exercises around the island."
+  category: geopolitical
+  subcategory: escalation
+  severity: medium
+  is_global: false
+  countries_affected: "Taiwan,ChinaA"
+  source_url: "https://en.wikipedia.org/wiki/Pelosi_visit_to_Taiwan"
+  tags: "taiwan,china,us,military_drills,strait"
+
+- event_id: israel_oct7_2023_10_07
+  event_date: "2023-10-07"
+  label: "Hamas Oct 7 attack on Israel"
+  description: "Hamas launches surprise multi-front attack on Israel; largest loss of Israeli life in a single day; triggers Gaza war."
+  category: geopolitical
+  subcategory: war
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/2023_Hamas-led_attack_on_Israel"
+  tags: "israel,hamas,gaza,middle_east,oil_risk"
+
+- event_id: iran_israel_strike_2024_04_13
+  event_date: "2024-04-13"
+  label: "Iran direct missile/drone attack on Israel"
+  description: "Iran launches 300+ drones and missiles at Israel in first direct state-to-state attack; most intercepted."
+  category: geopolitical
+  subcategory: direct_strike
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/April_2024_Iran%E2%80%93Israel_conflict"
+  tags: "iran,israel,direct_strike,middle_east,drones"
+
+- event_id: iran_israel_oct_2024_10_01
+  event_date: "2024-10-01"
+  label: "Iran ballistic missile barrage on Israel"
+  description: "Iran fires ~180 ballistic missiles at Israel following Hezbollah leadership eliminations."
+  category: geopolitical
+  subcategory: direct_strike
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/October_2024_Iran%E2%80%93Israel_conflict"
+  tags: "iran,israel,ballistic_missiles,hezbollah,escalation"
+
+- event_id: india_pakistan_2025_05
+  event_date: "2025-05-07"
+  label: "India-Pakistan military confrontation (Pahalgam response)"
+  description: "India launches military strikes on Pakistan following Pahalgam terror attack; most serious India-Pakistan escalation in decades."
+  category: geopolitical
+  subcategory: military_strike
+  severity: high
+  is_global: false
+  countries_affected: "India"
+  source_url: "https://en.wikipedia.org/wiki/2025_India%E2%80%93Pakistan_standoff"
+  tags: "india,pakistan,military,kashmir,nuclear_risk"
+
+- event_id: iran_war_2026_05
+  event_date: "2026-05-01"
+  label: "US-Iran military conflict escalation"
+  description: "Major US-Iran military confrontation in Persian Gulf; oil spikes; regional destabilization."
+  category: geopolitical
+  subcategory: war
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/2026_Iran_conflict"
+  tags: "iran,us,war,oil,middle_east,persian_gulf"
+
+# ─── OIL SUPPLY (~30 events) ───────────────────────────────────────────────
+
+- event_id: opec_2008_12_17_record_cut
+  event_date: "2008-12-17"
+  label: "OPEC record 2.2mbpd production cut"
+  description: "OPEC announces largest-ever single cut amid GFC demand collapse; oil at $40."
+  category: oil_supply
+  subcategory: opec_cut
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/OPEC"
+  tags: "opec,cut,gfc,demand_collapse"
+
+- event_id: opec_2014_11_27_no_cut
+  event_date: "2014-11-27"
+  label: "OPEC refuses to cut — Saudi market-share strategy"
+  description: "OPEC maintains production despite glut; Saudi Arabia abandons swing-producer role; oil crashes from $80 to $45."
+  category: oil_supply
+  subcategory: opec_policy
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/2014%E2%80%932016_world_oil_market_chronology"
+  tags: "opec,no_cut,saudi,market_share,oil_crash"
+
+- event_id: opec_plus_formation_2016_11_30
+  event_date: "2016-11-30"
+  label: "OPEC+ formation — first deal with Russia"
+  description: "OPEC agrees production cut with Russia and other non-OPEC producers for first time; new cartel structure."
+  category: oil_supply
+  subcategory: opec_cut
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/OPEC%2B"
+  tags: "opec,opec_plus,russia,formation,cut"
+
+- event_id: abqaiq_2019_09_14
+  event_date: "2019-09-14"
+  label: "Saudi Aramco Abqaiq drone/missile attack"
+  description: "Houthi/Iranian attack knocks out 5.7mbpd of Saudi production (~5% global); oil jumps 15% Monday."
+  category: oil_supply
+  subcategory: supply_disruption
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/2019_Abqaiq%E2%80%93Khurais_attack"
+  tags: "saudi,aramco,attack,supply_disruption,iran,houthi"
+
+- event_id: saudi_russia_oil_war_2020_03_09
+  event_date: "2020-03-09"
+  label: "Saudi-Russia oil price war begins"
+  description: "Saudi Arabia floods market after OPEC+ talks collapse; oil falls 25% in a day; compounded by COVID demand shock."
+  category: oil_supply
+  subcategory: price_war
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/2020_Russia%E2%80%93Saudi_Arabia_oil_price_war"
+  tags: "saudi,russia,price_war,opec_collapse,covid"
+
+- event_id: negative_oil_2020_04_20
+  event_date: "2020-04-20"
+  label: "WTI crude futures go negative (-$37.63)"
+  description: "May WTI contract trades at -$37.63/bbl as storage fills; unprecedented in history."
+  category: oil_supply
+  subcategory: market_dislocation
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/2020_oil_futures_price_drop"
+  tags: "oil,negative_price,storage,unprecedented,covid"
+
+- event_id: opec_plus_2020_04_12_record_cut
+  event_date: "2020-04-12"
+  label: "OPEC+ record 9.7mbpd cut agreement"
+  description: "OPEC+ agrees to largest-ever production cut to stabilize collapsing demand."
+  category: oil_supply
+  subcategory: opec_cut
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/2020_Russia%E2%80%93Saudi_Arabia_oil_price_war"
+  tags: "opec,opec_plus,record_cut,covid"
+
+- event_id: biden_russian_oil_ban_2022_03_08
+  event_date: "2022-03-08"
+  label: "US bans Russian oil imports"
+  description: "Biden signs executive order banning Russian crude, natural gas, and coal imports."
+  category: oil_supply
+  subcategory: sanctions
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.whitehouse.gov/briefing-room/presidential-actions/2022/03/08/executive-order-on-prohibiting-certain-imports-and-new-investments-with-respect-to-continued-russian-federation-efforts-to-undermine-the-sovereignty-and-territorial-integrity-of-ukraine/"
+  tags: "russia,oil_ban,sanctions,biden"
+
+- event_id: g7_russia_oil_cap_2022_12_05
+  event_date: "2022-12-05"
+  label: "G7 Russia oil price cap takes effect ($60/bbl)"
+  description: "G7 coalition implements $60/bbl price cap on Russian seaborne crude."
+  category: oil_supply
+  subcategory: price_cap
+  severity: medium
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/Price_cap_on_Russian_oil"
+  tags: "russia,oil,price_cap,g7,sanctions"
+
+- event_id: opec_plus_2022_10_05_surprise_cut
+  event_date: "2022-10-05"
+  label: "OPEC+ surprise 2mbpd cut"
+  description: "OPEC+ announces surprise 2mbpd cut despite US lobbying against; US-Saudi rift."
+  category: oil_supply
+  subcategory: opec_cut
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.reuters.com/business/energy/opec-agrees-deep-oil-production-cuts-2022-10-05/"
+  tags: "opec,opec_plus,surprise_cut,us_saudi_rift"
+
+- event_id: opec_plus_2023_04_02_surprise_cut
+  event_date: "2023-04-02"
+  label: "OPEC+ voluntary 1.16mbpd cut (surprise)"
+  description: "Several OPEC+ members announce surprise voluntary cuts outside formal meeting."
+  category: oil_supply
+  subcategory: opec_cut
+  severity: medium
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.reuters.com/business/energy/saudi-arabia-other-opec-producers-announce-voluntary-oil-output-cuts-2023-04-02/"
+  tags: "opec,opec_plus,voluntary_cut,surprise"
+
+- event_id: houthi_red_sea_2023_12_18
+  event_date: "2023-12-18"
+  label: "Houthi Red Sea shipping attacks — major disruption"
+  description: "Houthi escalation forces major shipping lines to divert from Red Sea; freight rates spike; Suez transit drops 50%."
+  category: oil_supply
+  subcategory: supply_disruption
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/Houthi-led_attacks_on_Red_Sea_shipping"
+  tags: "houthi,red_sea,shipping,suez,freight"
+
+- event_id: opec_plus_2024_06_02_extend_cuts
+  event_date: "2024-06-02"
+  label: "OPEC+ extends voluntary cuts through 2024, gradual unwind from Oct"
+  description: "OPEC+ extends 2.2mbpd voluntary cuts and outlines gradual return schedule."
+  category: oil_supply
+  subcategory: opec_extend
+  severity: medium
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.reuters.com/business/energy/opec-agree-extend-voluntary-oil-output-cuts-into-2025-2024-06-02/"
+  tags: "opec,opec_plus,extend,gradual_unwind"
+
+- event_id: hormuz_2019_06_13_tanker
+  event_date: "2019-06-13"
+  label: "Tanker attacks in Gulf of Oman (Hormuz)"
+  description: "Two tankers attacked near Strait of Hormuz; US blames Iran; oil jumps 4%."
+  category: oil_supply
+  subcategory: supply_disruption
+  severity: medium
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/June_2019_Gulf_of_Oman_incident"
+  tags: "iran,hormuz,tanker,oil"
+
+# ─── FINANCIAL CRISES (~25 events) ─────────────────────────────────────────
+
+- event_id: asian_crisis_1997_07_02
+  event_date: "1997-07-02"
+  label: "Thai baht floated — Asian financial crisis trigger"
+  description: "Thailand abandons baht peg; contagion spreads to Indonesia, Korea, Malaysia, Philippines."
+  category: financial_crisis
+  subcategory: currency_crisis
+  severity: high
+  is_global: false
+  countries_affected: "Thailand,Indonesia,Korea,Malaysia,Philippines,Hong Kong,Singapore,Taiwan"
+  source_url: "https://en.wikipedia.org/wiki/1997_Asian_financial_crisis"
+  tags: "asia,currency_crisis,contagion,baht"
+
+- event_id: russia_default_1998_08_17
+  event_date: "1998-08-17"
+  label: "Russia sovereign default + LTCM collapse"
+  description: "Russia defaults on domestic debt, devalues ruble; triggers LTCM collapse and global EM contagion."
+  category: financial_crisis
+  subcategory: sovereign_default
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/1998_Russian_financial_crisis"
+  tags: "russia,default,ltcm,em_contagion"
+
+- event_id: lehman_2008_09_15
+  event_date: "2008-09-15"
+  label: "Lehman Brothers bankruptcy"
+  description: "Lehman Brothers files Chapter 11; global credit markets freeze; triggers systemic financial crisis."
+  category: financial_crisis
+  subcategory: bank_failure
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/Bankruptcy_of_Lehman_Brothers"
+  tags: "lehman,gfc,bank_failure,systemic"
+
+- event_id: aig_bailout_2008_09_16
+  event_date: "2008-09-16"
+  label: "AIG $85B Fed bailout"
+  description: "Fed provides $85B emergency loan to AIG to prevent CDS counterparty cascade."
+  category: financial_crisis
+  subcategory: bailout
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/American_International_Group"
+  tags: "aig,bailout,fed,cds,gfc"
+
+- event_id: tarp_2008_10_03
+  event_date: "2008-10-03"
+  label: "TARP signed into law ($700B)"
+  description: "Troubled Asset Relief Program enacted after initial House rejection; bank recapitalization."
+  category: financial_crisis
+  subcategory: bailout
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/Troubled_Asset_Relief_Program"
+  tags: "tarp,bailout,gfc,bank_recap"
+
+- event_id: greece_bailout_2010_05_09
+  event_date: "2010-05-09"
+  label: "EU-IMF Greece bailout + €750B European stabilization"
+  description: "EU and IMF agree €110B Greek bailout; create €750B European Financial Stability Facility."
+  category: financial_crisis
+  subcategory: sovereign_bailout
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/Greek_government-debt_crisis"
+  tags: "greece,bailout,eu,imf,sovereign_crisis"
+
+- event_id: us_downgrade_2011_08_05
+  event_date: "2011-08-05"
+  label: "S&P downgrades US to AA+ (first ever)"
+  description: "S&P downgrades US sovereign rating from AAA for the first time in history."
+  category: financial_crisis
+  subcategory: downgrade
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/United_States_federal_government_credit-rating_downgrades"
+  tags: "us,downgrade,aaa,sp,sovereign"
+
+- event_id: cyprus_bailin_2013_03_16
+  event_date: "2013-03-16"
+  label: "Cyprus deposit bail-in"
+  description: "Cyprus agrees to bail-in depositors (>€100K) as condition of EU bailout; precedent-setting."
+  category: financial_crisis
+  subcategory: bailin
+  severity: medium
+  is_global: false
+  countries_affected: "Italy,Spain,France,Germany"
+  source_url: "https://en.wikipedia.org/wiki/2012%E2%80%932013_Cypriot_financial_crisis"
+  tags: "cyprus,bailin,deposits,precedent,eu"
+
+- event_id: turkey_lira_2018_08_10
+  event_date: "2018-08-10"
+  label: "Turkey lira crisis — 'Black Friday'"
+  description: "TRY falls 14% in a single session as Trump tariffs on steel/aluminum compound currency stress; EM spillover."
+  category: financial_crisis
+  subcategory: currency_crisis
+  severity: high
+  is_global: false
+  countries_affected: "Turkey"
+  source_url: "https://en.wikipedia.org/wiki/Turkish_currency_and_debt_crisis,_2018"
+  tags: "turkey,lira,currency_crisis,em_contagion,trump_tariffs"
+
+- event_id: argentina_default_2019_08_12
+  event_date: "2019-08-12"
+  label: "Argentina primary shock — markets crash"
+  description: "Opposition Peronist Fernandez wins primary by 15pts; peso falls 25%, bonds collapse, S&P Merval -48%."
+  category: financial_crisis
+  subcategory: sovereign_crisis
+  severity: medium
+  is_global: false
+  countries_affected: "Brazil,Chile,Mexico"
+  source_url: "https://en.wikipedia.org/wiki/2019_Argentine_monetary_crisis"
+  tags: "argentina,peso,election_shock,em_contagion"
+
+- event_id: turkey_lira_2021_12_20
+  event_date: "2021-12-20"
+  label: "Turkey lira crisis phase 2 — Erdogan rate-cut doctrine"
+  description: "TRY collapses to 18/USD as Erdogan forces rate cuts despite 20%+ inflation; emergency FX-linked deposit scheme."
+  category: financial_crisis
+  subcategory: currency_crisis
+  severity: high
+  is_global: false
+  countries_affected: "Turkey"
+  source_url: "https://www.reuters.com/markets/currencies/turkish-lira-rebounds-govt-steps-seen-slowing-dollarization-2021-12-20/"
+  tags: "turkey,lira,erdogan,unorthodox_policy"
+
+- event_id: uk_truss_minibudget_2022_09_23
+  event_date: "2022-09-23"
+  label: "UK Truss mini-budget — gilt market crisis"
+  description: "Chancellor Kwarteng announces unfunded £45B tax cuts; gilt yields spike 100bp+; pension fund LDI crisis."
+  category: financial_crisis
+  subcategory: fiscal_crisis
+  severity: high
+  is_global: false
+  countries_affected: "U.K."
+  source_url: "https://en.wikipedia.org/wiki/September_2022_United_Kingdom_mini-budget"
+  tags: "uk,minibudget,truss,gilt_crisis,ldi,pension"
+
+- event_id: svb_collapse_2023_03_10
+  event_date: "2023-03-10"
+  label: "Silicon Valley Bank collapse"
+  description: "SVB fails after $42B deposit run in 24 hours; FDIC seizure; triggers regional bank contagion."
+  category: financial_crisis
+  subcategory: bank_failure
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/Collapse_of_Silicon_Valley_Bank"
+  tags: "svb,bank_failure,deposit_run,contagion"
+
+- event_id: credit_suisse_2023_03_19
+  event_date: "2023-03-19"
+  label: "Credit Suisse emergency rescue by UBS"
+  description: "Swiss authorities broker emergency UBS acquisition of Credit Suisse; AT1 bonds written to zero."
+  category: financial_crisis
+  subcategory: bank_failure
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/Acquisition_of_Credit_Suisse_by_UBS"
+  tags: "credit_suisse,ubs,bank_rescue,at1_wipeout,switzerland"
+
+- event_id: boj_carry_unwind_2024_08_05
+  event_date: "2024-08-05"
+  label: "Global carry-trade unwind — 'Black Monday'"
+  description: "Yen carry unwind triggered by BoJ hike; Nikkei -12.4% (worst since 1987); VIX spikes to 65."
+  category: financial_crisis
+  subcategory: market_dislocation
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/2024_stock_market_crash"
+  tags: "carry_trade,yen,nikkei,vix,global_selloff"
+
+# ─── TRADE POLICY (~25 events) ─────────────────────────────────────────────
+
+- event_id: tpp_withdrawal_2017_01_23
+  event_date: "2017-01-23"
+  label: "US withdraws from TPP"
+  description: "Trump signs executive order withdrawing from Trans-Pacific Partnership on first business day."
+  category: trade_policy
+  subcategory: trade_withdrawal
+  severity: medium
+  is_global: false
+  countries_affected: "Japan,Australia,Mexico,Chile,Singapore,Malaysia,Vietnam"
+  source_url: "https://en.wikipedia.org/wiki/Trans-Pacific_Partnership"
+  tags: "tpp,withdrawal,trump,asia_pacific"
+
+- event_id: trump_china_section301_2018_03_22
+  event_date: "2018-03-22"
+  label: "Trump signs Section 301 memo — trade war begins"
+  description: "Trump signs memorandum for tariffs on $50-60B of Chinese goods; formal start of US-China trade war."
+  category: trade_policy
+  subcategory: tariff_announcement
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/China%E2%80%93United_States_trade_war"
+  tags: "trump,china,section_301,trade_war,tariffs"
+
+- event_id: us_china_tariff_round1_2018_07_06
+  event_date: "2018-07-06"
+  label: "First US-China tariffs take effect ($34B)"
+  description: "US imposes 25% tariff on $34B of Chinese goods; China retaliates immediately."
+  category: trade_policy
+  subcategory: tariff_implementation
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/China%E2%80%93United_States_trade_war"
+  tags: "us,china,tariffs,trade_war,retaliation"
+
+- event_id: us_china_escalation_2019_05_10
+  event_date: "2019-05-10"
+  label: "US raises China tariffs to 25% on $200B"
+  description: "Trump escalates tariffs from 10% to 25% on $200B of Chinese goods after trade talks collapse."
+  category: trade_policy
+  subcategory: tariff_escalation
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/China%E2%80%93United_States_trade_war"
+  tags: "us,china,tariff_escalation,trade_war"
+
+- event_id: us_china_phase1_2020_01_15
+  event_date: "2020-01-15"
+  label: "US-China Phase 1 trade deal signed"
+  description: "US and China sign Phase 1 deal; China commits to $200B in purchases; some tariffs rolled back."
+  category: trade_policy
+  subcategory: trade_deal
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/Phase_One_trade_deal"
+  tags: "us,china,phase1,trade_deal,detente"
+
+- event_id: usmca_2020_07_01
+  event_date: "2020-07-01"
+  label: "USMCA enters force (replaces NAFTA)"
+  description: "United States-Mexico-Canada Agreement takes effect, replacing 26-year-old NAFTA."
+  category: trade_policy
+  subcategory: trade_deal
+  severity: medium
+  is_global: false
+  countries_affected: "U.S.,Mexico,Canada"
+  source_url: "https://en.wikipedia.org/wiki/United_States%E2%80%93Mexico%E2%80%93Canada_Agreement"
+  tags: "usmca,nafta,trade_deal,north_america"
+
+- event_id: chips_act_2022_08_09
+  event_date: "2022-08-09"
+  label: "CHIPS and Science Act signed"
+  description: "$280B legislation including $52B for semiconductor manufacturing in the US."
+  category: trade_policy
+  subcategory: industrial_policy
+  severity: medium
+  is_global: false
+  countries_affected: "U.S.,Taiwan,Korea"
+  source_url: "https://en.wikipedia.org/wiki/CHIPS_and_Science_Act"
+  tags: "chips,semiconductors,industrial_policy,us"
+
+- event_id: china_rare_earth_2023_07_03
+  event_date: "2023-07-03"
+  label: "China restricts gallium/germanium exports"
+  description: "China announces export controls on critical semiconductor materials gallium and germanium."
+  category: trade_policy
+  subcategory: export_controls
+  severity: medium
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.reuters.com/world/china/china-restrict-exports-metals-critical-chipmaking-2023-07-03/"
+  tags: "china,rare_earth,export_controls,semiconductors"
+
+- event_id: trump_tariff_2025_02_01_canada_mexico
+  event_date: "2025-02-01"
+  label: "Trump announces 25% tariffs on Canada/Mexico"
+  description: "Trump announces 25% tariffs on Canadian and Mexican imports citing fentanyl and immigration."
+  category: trade_policy
+  subcategory: tariff_announcement
+  severity: high
+  is_global: false
+  countries_affected: "Canada,Mexico,U.S."
+  source_url: "https://www.whitehouse.gov/presidential-actions/"
+  tags: "trump,tariffs,canada,mexico,fentanyl"
+
+- event_id: trump_tariff_2025_04_02_liberation_day
+  event_date: "2025-04-02"
+  label: "Trump 'Liberation Day' reciprocal tariffs announced"
+  description: "Trump announces sweeping reciprocal tariffs on all trading partners; effective rates highest since 1930s."
+  category: trade_policy
+  subcategory: tariff_announcement
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.whitehouse.gov/presidential-actions/"
+  tags: "trump,reciprocal_tariffs,liberation_day,global"
+
+- event_id: trump_tariff_2025_04_09_pause
+  event_date: "2025-04-09"
+  label: "Trump 90-day tariff pause (except China)"
+  description: "Trump pauses reciprocal tariffs for 90 days for all countries except China after market selloff."
+  category: trade_policy
+  subcategory: tariff_pause
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.whitehouse.gov/presidential-actions/"
+  tags: "trump,tariff_pause,market_selloff,china_exception"
+
+- event_id: ieepa_ruling_2026_02_20
+  event_date: "2026-02-20"
+  label: "Supreme Court rules IEEPA tariff authority unconstitutional"
+  description: "US Supreme Court rules Trump's use of IEEPA for tariffs exceeds executive authority; tariff framework in question."
+  category: trade_policy
+  subcategory: court_ruling
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.supremecourt.gov/opinions/"
+  tags: "ieepa,supreme_court,tariffs,unconstitutional"
+
+- event_id: huawei_ban_2019_05_15
+  event_date: "2019-05-15"
+  label: "US adds Huawei to Entity List"
+  description: "Commerce Department adds Huawei to Entity List, cutting off US technology supply."
+  category: trade_policy
+  subcategory: export_controls
+  severity: high
+  is_global: false
+  countries_affected: "ChinaA,Taiwan,Korea"
+  source_url: "https://en.wikipedia.org/wiki/Sanctions_against_Huawei"
+  tags: "huawei,entity_list,semiconductors,us_china"
+
+# ─── ELECTIONS (~20 events) ────────────────────────────────────────────────
+
+- event_id: us_election_2008_11_04
+  event_date: "2008-11-04"
+  label: "US presidential election — Obama wins"
+  description: "Barack Obama elected 44th president amid financial crisis."
+  category: election
+  subcategory: presidential
+  severity: medium
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/2008_United_States_presidential_election"
+  tags: "us,election,obama"
+
+- event_id: us_election_2016_11_08
+  event_date: "2016-11-08"
+  label: "US presidential election — Trump wins (upset)"
+  description: "Donald Trump defeats Hillary Clinton; surprise result; equity futures fall then rally ('Trump trade')."
+  category: election
+  subcategory: presidential
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/2016_United_States_presidential_election"
+  tags: "us,election,trump,upset,trump_trade"
+
+- event_id: france_2017_04_23_le_pen_round1
+  event_date: "2017-04-23"
+  label: "France election round 1 — Macron leads, Le Pen second"
+  description: "Macron and Le Pen advance; market relief as centrist leads — French/German spread tightens."
+  category: election
+  subcategory: presidential
+  severity: medium
+  is_global: false
+  countries_affected: "France,Germany,Italy,Spain"
+  source_url: "https://en.wikipedia.org/wiki/2017_French_presidential_election"
+  tags: "france,election,macron,le_pen,eu_risk"
+
+- event_id: brazil_2018_10_28
+  event_date: "2018-10-28"
+  label: "Brazil presidential election — Bolsonaro wins"
+  description: "Jair Bolsonaro elected president; markets rally on market-friendly economic team expectations."
+  category: election
+  subcategory: presidential
+  severity: medium
+  is_global: false
+  countries_affected: "Brazil"
+  source_url: "https://en.wikipedia.org/wiki/2018_Brazilian_general_election"
+  tags: "brazil,election,bolsonaro,market_friendly"
+
+- event_id: india_2019_05_23
+  event_date: "2019-05-23"
+  label: "India election — Modi landslide re-election"
+  description: "BJP wins larger-than-expected majority; Nifty hits all-time highs; reform continuity."
+  category: election
+  subcategory: parliamentary
+  severity: medium
+  is_global: false
+  countries_affected: "India"
+  source_url: "https://en.wikipedia.org/wiki/2019_Indian_general_election"
+  tags: "india,election,modi,landslide"
+
+- event_id: uk_election_2019_12_12
+  event_date: "2019-12-12"
+  label: "UK election — Johnson landslide (Brexit mandate)"
+  description: "Conservative landslide; GBP rallies; clear Brexit mandate removes hung-parliament uncertainty."
+  category: election
+  subcategory: parliamentary
+  severity: medium
+  is_global: false
+  countries_affected: "U.K."
+  source_url: "https://en.wikipedia.org/wiki/2019_United_Kingdom_general_election"
+  tags: "uk,election,johnson,brexit_mandate,gbp_rally"
+
+- event_id: us_election_2020_11_03
+  event_date: "2020-11-03"
+  label: "US presidential election — Biden wins"
+  description: "Joe Biden defeats Trump; contested results period but markets rally on split government expectations."
+  category: election
+  subcategory: presidential
+  severity: medium
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/2020_United_States_presidential_election"
+  tags: "us,election,biden"
+
+- event_id: brazil_2022_10_30
+  event_date: "2022-10-30"
+  label: "Brazil presidential election — Lula wins"
+  description: "Lula defeats Bolsonaro in tight runoff; fiscal concerns emerge but BRL stable initially."
+  category: election
+  subcategory: presidential
+  severity: medium
+  is_global: false
+  countries_affected: "Brazil"
+  source_url: "https://en.wikipedia.org/wiki/2022_Brazilian_general_election"
+  tags: "brazil,election,lula,fiscal_concerns"
+
+- event_id: italy_2022_09_25
+  event_date: "2022-09-25"
+  label: "Italy election — Meloni/right-wing coalition wins"
+  description: "Brothers of Italy leads right-wing coalition to victory; BTP-Bund spread initially widens."
+  category: election
+  subcategory: parliamentary
+  severity: medium
+  is_global: false
+  countries_affected: "Italy"
+  source_url: "https://en.wikipedia.org/wiki/2022_Italian_general_election"
+  tags: "italy,election,meloni,right_wing"
+
+- event_id: turkey_2023_05_28
+  event_date: "2023-05-28"
+  label: "Turkey election — Erdogan wins runoff"
+  description: "Erdogan wins presidential runoff; markets had partially priced opposition win; lira weakens."
+  category: election
+  subcategory: presidential
+  severity: medium
+  is_global: false
+  countries_affected: "Turkey"
+  source_url: "https://en.wikipedia.org/wiki/2023_Turkish_presidential_election"
+  tags: "turkey,election,erdogan,lira"
+
+- event_id: argentina_2023_11_19
+  event_date: "2023-11-19"
+  label: "Argentina election — Milei wins"
+  description: "Libertarian Javier Milei wins presidency; promises dollarization and dramatic reforms."
+  category: election
+  subcategory: presidential
+  severity: medium
+  is_global: false
+  countries_affected: "Brazil,Chile,Mexico"
+  source_url: "https://en.wikipedia.org/wiki/2023_Argentine_general_election"
+  tags: "argentina,election,milei,libertarian,dollarization"
+
+- event_id: taiwan_2024_01_13
+  event_date: "2024-01-13"
+  label: "Taiwan election — DPP's Lai wins"
+  description: "DPP wins third consecutive term; China-Taiwan tension narrative; limited market impact."
+  category: election
+  subcategory: presidential
+  severity: medium
+  is_global: false
+  countries_affected: "Taiwan,ChinaA"
+  source_url: "https://en.wikipedia.org/wiki/2024_Taiwanese_presidential_election"
+  tags: "taiwan,election,dpp,china_tension"
+
+- event_id: india_2024_06_04
+  event_date: "2024-06-04"
+  label: "India election results — Modi wins but loses majority"
+  description: "BJP wins fewer seats than expected; needs coalition; Nifty drops 6% intraday on result day."
+  category: election
+  subcategory: parliamentary
+  severity: medium
+  is_global: false
+  countries_affected: "India"
+  source_url: "https://en.wikipedia.org/wiki/2024_Indian_general_election"
+  tags: "india,election,modi,coalition,market_shock"
+
+- event_id: us_election_2024_11_05
+  event_date: "2024-11-05"
+  label: "US presidential election — Trump wins (second term)"
+  description: "Trump wins decisive victory; Republican trifecta; markets rally on tax/deregulation expectations."
+  category: election
+  subcategory: presidential
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/2024_United_States_presidential_election"
+  tags: "us,election,trump,second_term,trump_trade"
+
+- event_id: mexico_2024_06_02
+  event_date: "2024-06-02"
+  label: "Mexico election — Sheinbaum/Morena supermajority"
+  description: "Claudia Sheinbaum wins presidency; Morena achieves near-supermajority; MXN and equities sell off on judicial reform fears."
+  category: election
+  subcategory: presidential
+  severity: medium
+  is_global: false
+  countries_affected: "Mexico"
+  source_url: "https://en.wikipedia.org/wiki/2024_Mexican_general_election"
+  tags: "mexico,election,morena,supermajority,mxn_selloff"
+
+# ─── MACRO RELEASES (~20 events) ──────────────────────────────────────────
+
+- event_id: flash_crash_2010_05_06
+  event_date: "2010-05-06"
+  label: "Flash Crash — Dow drops 1000 points intraday"
+  description: "Dow plunges ~1000 points in minutes from algorithmic cascade; recovers same day."
+  category: macro_release
+  subcategory: market_event
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/2010_flash_crash"
+  tags: "flash_crash,algorithmic,volatility"
+
+- event_id: volmageddon_2018_02_05
+  event_date: "2018-02-05"
+  label: "Volmageddon — XIV/VIX complex blowup"
+  description: "VIX doubles from 17 to 37; inverse-VIX ETPs blow up; Dow falls 1175 points."
+  category: macro_release
+  subcategory: market_event
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://en.wikipedia.org/wiki/2018_cryptocurrency_crash"
+  tags: "vix,volatility,etp_blowup,volmageddon"
+
+- event_id: cpi_peak_2022_07_13
+  event_date: "2022-07-13"
+  label: "US CPI June 2022 — 9.1% YoY cycle peak"
+  description: "CPI prints 9.1% YoY, highest since November 1981; confirms Fed 75bp path; cycle inflation peak."
+  category: macro_release
+  subcategory: cpi_surprise
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.bls.gov/news.release/archives/cpi_07132022.pdf"
+  tags: "cpi,inflation,cycle_peak,40_year_high"
+
+- event_id: cpi_first_cool_2022_08_10
+  event_date: "2022-08-10"
+  label: "US CPI July 2022 — 8.5% downside surprise"
+  description: "CPI prints 8.5% vs 8.7% expected; first inflection from peak; S&P +2.1%."
+  category: macro_release
+  subcategory: cpi_surprise
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.bls.gov/news.release/archives/cpi_08102022.pdf"
+  tags: "cpi,inflation,downside_surprise,peak_inflection"
+
+- event_id: powell_jackson_hole_2022_08_26
+  event_date: "2022-08-26"
+  label: "Powell Jackson Hole 2022 — 'pain' speech"
+  description: "Powell warns of 'some pain' from restrictive policy; S&P falls 3.4% same day; kills pivot hopes."
+  category: macro_release
+  subcategory: fed_speech_jh
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.federalreserve.gov/newsevents/speech/powell20220826a.htm"
+  tags: "powell,jackson_hole,hawkish,pain,fed_speech"
+
+- event_id: cpi_surprise_2022_11_10
+  event_date: "2022-11-10"
+  label: "US CPI October 2022 — first downside surprise"
+  description: "CPI prints 7.7% vs 8.0% expected; S&P rallies 5.5% — largest CPI-day move since 2008."
+  category: macro_release
+  subcategory: cpi_surprise
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.bls.gov/news.release/archives/cpi_11102022.pdf"
+  tags: "cpi,inflation,downside_surprise,pivot_hopes"
+
+- event_id: nfp_2023_01_06
+  event_date: "2023-01-06"
+  label: "US NFP December 2022 — wage growth cools"
+  description: "NFP 223K with average hourly earnings cooling; soft-landing narrative gains traction."
+  category: macro_release
+  subcategory: jobs_report
+  severity: medium
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.bls.gov/news.release/archives/empsit_01062023.pdf"
+  tags: "nfp,wages,soft_landing"
+
+- event_id: nfp_blowout_2023_02_03
+  event_date: "2023-02-03"
+  label: "US NFP January 2023 — 517K vs 187K consensus"
+  description: "NFP prints nearly 3x consensus; rate-cut pricing reversed; 10Y +13bps; labor market far hotter than expected."
+  category: macro_release
+  subcategory: jobs_report
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.bls.gov/news.release/archives/empsit_02032023.pdf"
+  tags: "nfp,blowout,labor_market,rate_cut_repricing"
+
+- event_id: powell_jackson_hole_2023_08_25
+  event_date: "2023-08-25"
+  label: "Powell Jackson Hole 2023 — 'higher for longer'"
+  description: "Powell reinforces higher-for-longer stance; 10Y rises toward 5%; repricing of 2024 cut path."
+  category: macro_release
+  subcategory: fed_speech_jh
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.federalreserve.gov/newsevents/speech/powell20230825a.htm"
+  tags: "powell,jackson_hole,higher_for_longer,fed_speech"
+
+- event_id: gdp_q4_2023_advance
+  event_date: "2024-01-25"
+  label: "US Q4 2023 GDP — 3.3% advance estimate"
+  description: "GDP prints 3.3% vs 2.0% consensus; US economy running far hotter than expected; soft-landing confirmed."
+  category: macro_release
+  subcategory: gdp_print
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.bea.gov/news/2024/gross-domestic-product-fourth-quarter-and-year-2023-advance-estimate"
+  tags: "gdp,growth_surprise,soft_landing"
+
+- event_id: nfp_hot_2024_02_02
+  event_date: "2024-02-02"
+  label: "US NFP January 2024 — 353K blowout"
+  description: "NFP 353K vs 185K consensus; 10Y +14bps; rate-cut expectations pushed out."
+  category: macro_release
+  subcategory: jobs_report
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.bls.gov/news.release/archives/empsit_02022024.pdf"
+  tags: "nfp,blowout,labor_market,rate_cut_repricing"
+
+- event_id: cpi_upside_2024_02_13
+  event_date: "2024-02-13"
+  label: "US CPI January 2024 — 3.1% upside surprise"
+  description: "CPI prints 3.1% vs 2.9% expected; S&P −1.4%; biggest miss in months; March cut priced out."
+  category: macro_release
+  subcategory: cpi_surprise
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.bls.gov/news.release/archives/cpi_02132024.pdf"
+  tags: "cpi,inflation,upside_surprise,rate_cut_repricing"
+
+- event_id: cpi_upside_2024_04_10
+  event_date: "2024-04-10"
+  label: "US CPI March 2024 — 3.5% upside surprise"
+  description: "CPI prints 3.5% vs 3.4% expected; 10Y +20bps; June/July cuts pushed out to September."
+  category: macro_release
+  subcategory: cpi_surprise
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.bls.gov/news.release/archives/cpi_04102024.pdf"
+  tags: "cpi,inflation,upside_surprise,sticky_inflation"
+
+- event_id: nfp_sahm_2024_08_02
+  event_date: "2024-08-02"
+  label: "US NFP July 2024 — 114K + Sahm Rule triggers"
+  description: "NFP 114K vs 175K expected; unemployment rises to 4.3% triggering Sahm Rule recession indicator; S&P −1.8%; global risk-off."
+  category: macro_release
+  subcategory: jobs_report
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.bls.gov/news.release/archives/empsit_08022024.pdf"
+  tags: "nfp,sahm_rule,recession_signal,risk_off"
+
+- event_id: bls_qcew_revision_2024_08_21
+  event_date: "2024-08-21"
+  label: "BLS QCEW −818K benchmark revision"
+  description: "Preliminary QCEW benchmark revision shows 818K fewer jobs than reported; largest downward revision since 2009; retroactive labor market reassessment."
+  category: macro_release
+  subcategory: data_revision
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.bls.gov/web/empsit/cesprelbmk.htm"
+  tags: "bls,qcew,revision,labor_market,data_quality"
+
+- event_id: nfp_hurricane_rebound_2024_12_06
+  event_date: "2024-12-06"
+  label: "US NFP November 2024 — rebound from hurricanes/Boeing"
+  description: "NFP 227K; cleaner read after October's hurricane/Boeing-distorted 36K; sets up Dec FOMC cut."
+  category: macro_release
+  subcategory: jobs_report
+  severity: medium
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.bls.gov/news.release/archives/empsit_12062024.pdf"
+  tags: "nfp,rebound,hurricane,boeing"
+
+- event_id: nfp_hot_2025_01_10
+  event_date: "2025-01-10"
+  label: "US NFP December 2024 — 256K blowout"
+  description: "NFP 256K vs 164K consensus; unemployment drops to 4.1%; 10Y spikes above 4.75%; rate-cut pricing collapses."
+  category: macro_release
+  subcategory: jobs_report
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.bls.gov/news.release/archives/empsit_01102025.pdf"
+  tags: "nfp,blowout,labor_market,rate_cut_repricing"
+
+- event_id: cpi_acceleration_2022_06_10
+  event_date: "2022-06-10"
+  label: "US CPI May 2022 — 8.6% upside surprise"
+  description: "CPI prints 8.6% vs 8.3% expected; accelerating inflation; S&P −2.9%; forces emergency 75bp hike path."
+  category: macro_release
+  subcategory: cpi_surprise
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.bls.gov/news.release/archives/cpi_06102022.pdf"
+  tags: "cpi,inflation,upside_surprise,acceleration"
+
+# ─── REGULATORY (~20 events) ──────────────────────────────────────────────
+
+- event_id: china_ant_ipo_halt_2020_11_03
+  event_date: "2020-11-03"
+  label: "China halts Ant Group IPO"
+  description: "Chinese regulators suspend Ant Group's $37B IPO two days before listing; tech regulatory crackdown begins."
+  category: regulatory
+  subcategory: ipo_halt
+  severity: high
+  is_global: false
+  countries_affected: "ChinaA,Hong Kong"
+  source_url: "https://en.wikipedia.org/wiki/Ant_Group#Suspended_IPO"
+  tags: "china,ant,ipo,regulatory_crackdown,tech"
+
+- event_id: china_didi_2021_07_02
+  event_date: "2021-07-02"
+  label: "China orders Didi app removal (post-IPO crackdown)"
+  description: "CAC orders Didi removal from app stores days after US IPO; triggers broader China tech selloff."
+  category: regulatory
+  subcategory: tech_crackdown
+  severity: high
+  is_global: false
+  countries_affected: "ChinaA,Hong Kong"
+  source_url: "https://en.wikipedia.org/wiki/DiDi#Cybersecurity_review"
+  tags: "china,didi,regulatory_crackdown,tech,delisting_risk"
+
+- event_id: china_education_2021_07_24
+  event_date: "2021-07-24"
+  label: "China bans for-profit tutoring sector"
+  description: "China effectively destroys the for-profit education industry; sector stocks fall 70-90%."
+  category: regulatory
+  subcategory: sector_ban
+  severity: high
+  is_global: false
+  countries_affected: "ChinaA,Hong Kong"
+  source_url: "https://www.reuters.com/world/china/china-issues-new-rules-private-tutoring-sector-2021-07-24/"
+  tags: "china,education,regulatory_crackdown,sector_destruction"
+
+- event_id: eu_dma_2022_11_01
+  event_date: "2022-11-01"
+  label: "EU Digital Markets Act enters force"
+  description: "EU DMA takes effect; forces Big Tech platform interoperability and bans self-preferencing."
+  category: regulatory
+  subcategory: antitrust
+  severity: medium
+  is_global: false
+  countries_affected: "Netherlands,France,Germany"
+  source_url: "https://en.wikipedia.org/wiki/Digital_Markets_Act"
+  tags: "eu,dma,big_tech,antitrust,regulation"
+
+- event_id: sec_spot_btc_etf_2024_01_10
+  event_date: "2024-01-10"
+  label: "SEC approves spot Bitcoin ETFs"
+  description: "SEC approves 11 spot Bitcoin ETFs; marks institutional crypto legitimization."
+  category: regulatory
+  subcategory: crypto
+  severity: medium
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.sec.gov/news/statement/gensler-statement-spot-bitcoin-011023"
+  tags: "sec,bitcoin,etf,crypto,approval"
+
+- event_id: japan_stewardship_2014_02_26
+  event_date: "2014-02-26"
+  label: "Japan Stewardship Code launched"
+  description: "Japan introduces Stewardship Code requiring institutional investors to engage with companies; corporate governance reform begins."
+  category: regulatory
+  subcategory: governance_reform
+  severity: medium
+  is_global: false
+  countries_affected: "Japan"
+  source_url: "https://www.fsa.go.jp/en/refer/councils/stewardship/20140226.html"
+  tags: "japan,stewardship,governance,reform"
+
+- event_id: china_gaming_2021_08_03
+  event_date: "2021-08-03"
+  label: "China state media calls gaming 'spiritual opium'"
+  description: "Xinhua-affiliated article labels gaming 'spiritual opium'; Tencent/NetEase plunge; leads to minor gaming-hour restrictions."
+  category: regulatory
+  subcategory: china_crackdown
+  severity: high
+  is_global: false
+  countries_affected: "ChinaA,Hong Kong"
+  source_url: "https://www.reuters.com/technology/tencent-falls-after-china-media-calls-online-gaming-spiritual-opium-2021-08-03/"
+  tags: "china,gaming,tencent,spiritual_opium,regulatory_crackdown"
+
+- event_id: china_common_prosperity_2021_08_17
+  event_date: "2021-08-17"
+  label: "Xi 'Common Prosperity' doctrine formalized"
+  description: "Xi's common prosperity agenda formally adopted; signals sustained regulatory pressure on tech, real estate, education."
+  category: regulatory
+  subcategory: policy_doctrine
+  severity: high
+  is_global: false
+  countries_affected: "ChinaA,Hong Kong"
+  source_url: "https://en.wikipedia.org/wiki/Common_prosperity"
+  tags: "china,common_prosperity,xi,regulatory,redistribution"
+
+- event_id: sec_sues_binance_coinbase_2023_06_05
+  event_date: "2023-06-05"
+  label: "SEC sues Binance + Coinbase in same week"
+  description: "SEC files enforcement actions against Binance (Jun 5) and Coinbase (Jun 6); defines regulatory era for crypto; BTC −5%."
+  category: regulatory
+  subcategory: crypto_enforcement
+  severity: high
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.sec.gov/news/press-release/2023-101"
+  tags: "sec,binance,coinbase,crypto,enforcement,regulation"
+
+- event_id: doj_big_tech_antitrust_2023_08_23
+  event_date: "2023-08-23"
+  label: "DOJ escalates Big Tech antitrust actions"
+  description: "DOJ consolidates multiple antitrust cases against Google, Apple, Amazon; signals sustained regulatory pressure on Big Tech."
+  category: regulatory
+  subcategory: antitrust
+  severity: medium
+  is_global: false
+  countries_affected: "U.S."
+  source_url: "https://www.justice.gov/atr/case/us-and-plaintiff-states-v-google-llc-2023"
+  tags: "doj,antitrust,big_tech,google,apple,amazon"
+
+- event_id: tiktok_divestment_2024_04_24
+  event_date: "2024-04-24"
+  label: "TikTok divestment law signed"
+  description: "Biden signs bill requiring ByteDance to divest TikTok within 270 days or face US ban; China-tech tension escalation."
+  category: regulatory
+  subcategory: tech_crackdown
+  severity: high
+  is_global: false
+  countries_affected: "U.S.,ChinaA"
+  source_url: "https://en.wikipedia.org/wiki/Protecting_Americans_from_Foreign_Adversary_Controlled_Applications_Act"
+  tags: "tiktok,bytedance,divestment,china,tech_decoupling"
+
+- event_id: ether_spot_etf_2024_05_23
+  event_date: "2024-05-23"
+  label: "SEC approves spot Ether ETFs"
+  description: "SEC approves 19b-4 filings for 8 spot Ether ETFs; extends institutional crypto access beyond Bitcoin."
+  category: regulatory
+  subcategory: crypto_etf_approval
+  severity: medium
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.sec.gov/news/statement/gensler-statement-spot-ether-052324"
+  tags: "sec,ethereum,etf,crypto,approval"
+
+- event_id: eu_ai_act_2024_08_01
+  event_date: "2024-08-01"
+  label: "EU AI Act enters force"
+  description: "EU AI Act takes effect; establishes risk-based AI regulation framework; global compliance template for AI governance."
+  category: regulatory
+  subcategory: ai_regulation
+  severity: medium
+  is_global: false
+  countries_affected: "Netherlands,France,Germany"
+  source_url: "https://artificialintelligenceact.eu/"
+  tags: "eu,ai,regulation,compliance,governance"
+
+- event_id: google_antitrust_ruling_2024_08_05
+  event_date: "2024-08-05"
+  label: "DOJ Google search antitrust — illegal monopoly ruling"
+  description: "Federal judge rules Google illegally maintained search monopoly; first major Big Tech antitrust breakup ruling; potential structural remedies."
+  category: regulatory
+  subcategory: antitrust_ruling
+  severity: high
+  is_global: false
+  countries_affected: "U.S."
+  source_url: "https://www.justice.gov/atr/case/us-v-google-llc"
+  tags: "doj,google,antitrust,monopoly,ruling,big_tech"
+
+- event_id: india_crypto_tax_2022_04_01
+  event_date: "2022-04-01"
+  label: "India imposes 30% crypto tax + 1% TDS"
+  description: "India implements 30% flat tax on crypto gains plus 1% TDS on transactions; effectively discourages retail crypto trading."
+  category: regulatory
+  subcategory: crypto_enforcement
+  severity: medium
+  is_global: false
+  countries_affected: "India"
+  source_url: "https://en.wikipedia.org/wiki/Cryptocurrency_in_India"
+  tags: "india,crypto,tax,regulation"
+
+- event_id: korea_short_selling_ban_2023_11_06
+  event_date: "2023-11-06"
+  label: "South Korea bans short selling until June 2024"
+  description: "Korea FSC bans short selling on all listed stocks after Goldman Sachs naked-short scandal; ban later extended to March 2025."
+  category: regulatory
+  subcategory: market_structure
+  severity: medium
+  is_global: false
+  countries_affected: "Korea"
+  source_url: "https://en.wikipedia.org/wiki/Short_selling_bans_around_the_world"
+  tags: "korea,short_selling,ban,market_structure,goldman"

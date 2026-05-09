@@ -1,6 +1,6 @@
 # ASADO — Country Data Collection & Research Platform
 
-Collects macro/governance/risk/climate/trade data from **26 free external sources** (including 7 IMF datasets) **plus 28 Bloomberg Terminal variables** (sovereign bonds, CDS, breakevens, OIS, WIRP, ECFC, PMI, M2, ETF passive-flow, and related derived signals), aligns to the 34-country T2 Master universe, and stores everything in a **hybrid DuckDB + Neo4j database** with a **raw warehouse, canonical normalized feature layer, bilateral trade/banking/portfolio edges,** and **country-state vector embeddings** for similarity search.
+Collects macro/governance/risk/climate/trade data from **26 free external sources** (including 7 IMF datasets) **plus 28 Bloomberg Terminal variables** (sovereign bonds, CDS, breakevens, OIS, WIRP, ECFC, PMI, M2, ETF passive-flow, and related derived signals), aligns to the 34-country T2 Master universe, and stores everything in a **hybrid DuckDB + Neo4j database** with a **raw warehouse, canonical normalized feature layer, bilateral trade/banking/portfolio edges, daily-frequency factor panels (58M+ rows),** and **country-state vector embeddings** for similarity search.
 
 ## Project Structure
 
@@ -10,7 +10,7 @@ ASADO/
 │   ├── [T2 Master.xlsx]                  # Read from .../A Complete/T2 Factor Timing Fuzzy/
 │   ├── [Normalized_T2_MasterCSV.csv]     # Read from .../A Complete/T2 Factor Timing Fuzzy/
 │   ├── [GDELT_Factors_MasterCSV.csv]     # Preferred external source from .../A Complete/T2 GDELT/
-│   ├── asado.duckdb                      # DuckDB analytical database (~105 MB after current rebuild)
+│   ├── asado.duckdb                      # DuckDB analytical database (~4 GB with daily extension)
 │   ├── raw/                              # Cached downloads (24h expiry)
 │   ├── processed/                        # Output panels + catalogs + run history
 │   │   ├── external_factors_panel.parquet # Program 1 output (112K rows, 35 vars)
@@ -33,14 +33,19 @@ ASADO/
 │   ├── collect_bilateral.py              # Program 4 — bilateral trade + banking + portfolio ownership
 │   ├── collect_macrostructure.py         # Program 5 — macrostructure / fragility / central-bank footprint / backstop panel
 │   ├── collect_bloomberg.py              # Program 6 — Bloomberg Terminal (bonds, CDS, OIS, WIRP, ECFC, PMI, M2)
-│   ├── setup_duckdb.py                   # DuckDB raw warehouse loader
+│   ├── setup_duckdb.py                   # DuckDB raw warehouse loader (monthly)
+│   ├── build_daily_panels.py             # Daily extension: T2 + GDELT + optimizer returns (58M rows)
+│   ├── build_event_log.py                # Event registry: YAML → event_log table (124 curated events)
 │   ├── build_normalized_panel.py         # Canonical _CS/_TS feature layer + feature_panel view
 │   ├── setup_neo4j.py                    # Neo4j knowledge graph builder
 │   ├── build_embeddings.py               # Country-state PCA vectors + Neo4j vector index
 │   ├── build_schema_registry.py          # Query-assistant schema cache / access guide
 │   └── db_bridge.py                      # AsadoDB unified query interface
+├── docs/
+│   └── DAILY_EXTENSION_STATUS.md         # Daily extension implementation status + test guide
 ├── config/
-│   └── country_mapping.json              # 34-country Rosetta Stone (ISO codes, etc.)
+│   ├── country_mapping.json              # 34-country Rosetta Stone (ISO codes, etc.)
+│   └── event_log_seed.yaml              # Hand-curated event registry (124 dated events)
 ├── venv/                                 # Python virtual environment
 ├── requirements.txt
 ├── Bloomberg_Country_Data_Catalog.md      # Complete Bloomberg country data reference
@@ -74,11 +79,13 @@ This single command runs the entire pipeline:
 | 6 | `collect_bloomberg.py` | Bloomberg Terminal data (bonds, CDS, OIS, WIRP, ECFC, PMI, M2, ETF passive layer) | ~140s |
 | 7 | `setup_duckdb.py` | Rebuild the raw DuckDB analytical warehouse | ~3s |
 | 8 | `build_normalized_panel.py` | Build canonical `_CS` / `_TS` features and `feature_panel` | ~12s |
-| 9 | `setup_neo4j.py` | Rebuild Neo4j knowledge graph + trade/banking/portfolio edges | ~9s |
+| 8b | `build_daily_panels.py` | Load daily T2 + GDELT + optimizer returns (58M rows) | ~105s |
+| 8c | `build_event_log.py` | Load curated event registry (146 events, 8 categories) | <1s |
+| 9 | `setup_neo4j.py` | Rebuild Neo4j knowledge graph + trade/banking/portfolio edges (requires event_log) | ~9s |
 | 10 | `build_embeddings.py` | Country-state PCA vectors + Neo4j vector index | ~3s |
 | 11 | `build_schema_registry.py` | Refresh schema cache + access guide for the query assistant | ~1s |
 
-**Total runtime: ~6-8 minutes.** Log file saved to `Data/logs/monthly_update_YYYY_MM_DD.log`.
+**Total runtime: ~8-10 minutes** (including daily panels). Log file saved to `Data/logs/monthly_update_YYYY_MM_DD.log`.
 
 > **Bloomberg prerequisite:** Stage 6 requires Bloomberg Terminal running on the Parallels Windows 11 VM. If Bloomberg is not available, add `--skip-bloomberg` to skip it — all other stages run normally.
 
@@ -108,6 +115,12 @@ conda run -p ".../OpusBloomberg/.venv" python scripts/collect_bloomberg.py --for
 
 python scripts/setup_duckdb.py                # rebuild DuckDB
 python scripts/setup_duckdb.py --check        # verify existing database
+python scripts/build_daily_panels.py          # full daily extension rebuild (~105s)
+python scripts/build_daily_panels.py --skip-levels  # fast daily build (skip raw xlsx, ~45s)
+python scripts/build_daily_panels.py --check  # verify daily tables
+python scripts/build_event_log.py             # rebuild event_log table from YAML
+python scripts/build_event_log.py --check     # validate YAML without writing
+python scripts/build_event_log.py --stats     # show category/severity breakdown
 python scripts/build_normalized_panel.py      # rebuild normalized_panel + feature_panel
 python scripts/build_normalized_panel.py --check
 python scripts/setup_neo4j.py                 # rebuild Neo4j graph
@@ -369,9 +382,11 @@ blpapi pandas pyarrow numpy  # in OpusBloomberg/.venv
 
 ## Database Architecture (Phase 1B)
 
-### DuckDB — Analytical Store (`Data/asado.duckdb`, ~105 MB)
+### DuckDB — Analytical Store (`Data/asado.duckdb`, ~4 GB)
 
 Columnar database for fast time-series analytics. Core surfaces currently include:
+
+#### Monthly Tables
 
 | Table / View | Rows | Date Range | Primary Use |
 |-------|------|------------|------------|
@@ -389,7 +404,20 @@ Columnar database for fast time-series analytics. Core surfaces currently includ
 | `bilateral_portfolio_matrix` | 56,786 | 1997-12-01 → 2026-02-01 | Reporter-counterparty portfolio ownership matrix |
 | **`unified_panel`** (view) | **2,561,094** | **1975-12-01 → 2031-12-01** | **Raw cross-source analytical warehouse** |
 
-Factor tables and views (`t2_master`, source panels, `unified_panel`, `normalized_panel`, `feature_panel`) share the tidy schema `(date DATE, country VARCHAR, value DOUBLE, variable VARCHAR)`. `country_reference` and `bilateral_portfolio_matrix` are helper surfaces used for ISO mapping and ownership joins. Indexes cover factor tables plus `country_reference` and the main bilateral ownership keys.
+#### Daily Tables (added 2026-05-08 via `build_daily_panels.py`)
+
+| Table / View | Rows | Date Range | Primary Use |
+|-------|------|------------|------------|
+| `t2_factors_daily` | 32,340,392 | 2000-01-01 → 2026-05-07 | 109 normalized _CS/_TS daily factors, 34 countries |
+| `t2_levels_daily` | 13,698,294 | 2000-01-01 → 2026-04-21 | 47 raw factor levels (PX_LAST, MCAP, RSI14, REER, etc.) |
+| `gdelt_factors_daily` | 10,085,794 | 2015-06-24 → 2026-05-08 | 75 normalized GDELT daily factors, 34 countries |
+| `gdelt_raw_daily` | 955,473 | 2015-02-18 → 2026-04-19 | 249-country raw GDELT signals (off-universe bridge) |
+| `factor_returns_daily` | 1,085,412 | 2000-01-01 → 2026-05-07 | 157 optimizer factor returns (T2 + GDELT) |
+| `variable_meta` | 269 | n/a | Variable metadata: frequency, category, optimizer-selected |
+| `daily_calendar` | 327,216 | 2000-01-01 → 2026-05-07 | Per-country trading day calendar |
+| `t2_factors_monthly_from_daily` (view) | — | — | Last-trading-day-of-month snapshot for validation |
+
+Factor tables and views (`t2_master`, source panels, `unified_panel`, `normalized_panel`, `feature_panel`) share the tidy schema `(date DATE, country VARCHAR, value DOUBLE, variable VARCHAR)`. Daily tables follow the same schema. `country_reference` and `bilateral_portfolio_matrix` are helper surfaces used for ISO mapping and ownership joins. Indexes cover factor tables plus `country_reference` and the main bilateral ownership keys.
 
 ### Neo4j — Knowledge Graph (bolt://localhost:7687)
 
@@ -399,7 +427,7 @@ Graph database representing entity relationships with bilateral trade/banking ne
 | Label | Count | Key Properties |
 |-------|-------|----------------|
 | Country | 34 | t2_name, iso3, dm_em, region, currency_code, state_embedding (34d vector) |
-| Factor | 332 | name, category, source |
+| Factor | 1,651 | name, category, source, daily_sharpe_252d, daily_vol_252d, daily_cum_return_252d, is_optimizer_selected |
 | CentralBank | 31 | name, country_iso3 |
 | DataSource | 30 | name, url, frequency, api_type |
 | CrisisEvent | 9 | name, start_date, end_date, type |
@@ -530,6 +558,9 @@ That file is intended to be read end-to-end by an AI agent that needs to know wh
 | `run_duckdb_sql(sql, max_rows=100)` | Executes a read-only SQL query against `Data/asado.duckdb` and returns the result as a frame payload. The DuckDB connection is opened read-only — writes will fail. |
 | `run_neo4j_cypher(cypher, max_rows=100)` | Executes a Cypher query against the local Neo4j (bolt://localhost:7687). |
 | `get_country_profile(country)` | Bundled per-country snapshot: latest factor values + all graph relationships (trade, banking, central bank, sanctions, crises). Pass exact T2 country names, e.g., `"Brazil"`, `"ChinaA"`, `"U.S."`. |
+| `event_window(country, date, ...)` | Daily event-study: returns T2 optimizer factors, GDELT signals, factor returns, and trading calendar in a ±N day window around any date. Use for event studies like "show me Turkey around the 2018 lira crisis." |
+| `events_in_window(start_date, end_date, ...)` | Search the curated event registry (146 events) by date range, category, subcategory, country, severity, or tags. Supports `strict_country=True` for country-specific-only events. Chain with `event_window` for date-anchored studies. |
+| `daily_factor_series(country, variables, start_date, end_date, source)` | General daily time-series extraction. Sources: `t2`, `t2_levels`, `gdelt`, `gdelt_raw`. |
 
 ### Setup — register in Claude Desktop
 

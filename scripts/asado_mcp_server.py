@@ -116,6 +116,22 @@ def _schema_snapshot(refresh_schema: bool = False) -> dict[str, Any]:
         "neo4j_labels": neo4j_labels,
         "neo4j_relationships": neo4j_relationships,
         "notes": [
+            "Returns are the primary outcome layer. Use country_returns / factor_return_series / "
+            "country_factor_attribution / return_leaders tools for performance, event, and "
+            "explanation questions before writing ad hoc SQL.",
+            "Country returns have ONE canonical source: T2 (34 countries). Monthly: feature_panel "
+            "source='t2' with 1MRet/3MRet/6MRet/9MRet/12MRet. Daily: t2_factors_daily with "
+            "1DRet/5DRet/20DRet/60DRet/120DRet.",
+            "GDELT-labeled 1MRet/1DRet rows are bit-exact aliases of T2 country returns — do "
+            "NOT treat them as a second return source.",
+            "Factor portfolio returns: factor_returns (monthly: econ_optimizer, t2_optimizer, "
+            "gdelt_optimizer) and factor_returns_daily (t2_optimizer_daily, gdelt_optimizer_daily). "
+            "These are top-20%-bucket portfolio returns, NOT raw factor levels.",
+            "country_factor_attribution joins factor_top20_membership ⨝ factor_returns and "
+            "gives weight × factor_return contribution per country/factor.",
+            "Do NOT add factor_returns / factor_returns_daily / factor_top20_membership / "
+            "country_factor_attribution into feature_panel or unified_panel — those are "
+            "explanatory/input surfaces the optimizer consumes.",
             "unified_panel is the main monthly analytical view.",
             "Daily tables: t2_factors_daily, t2_levels_daily, gdelt_factors_daily, "
             "gdelt_raw_daily, factor_returns_daily, variable_meta, daily_calendar.",
@@ -123,7 +139,9 @@ def _schema_snapshot(refresh_schema: bool = False) -> dict[str, Any]:
             "predmkt_outcome_meta, predmkt_country_spillover, predmkt_resolutions, "
             "predmkt_signals_daily.",
             "Prediction-market tools: predmkt_snapshot, country_signal_now, event_market_set.",
-            "Use event_window tool for daily event studies instead of raw SQL.",
+            "Use event_window tool for daily event studies instead of raw SQL — it now "
+            "includes a return_summary block with pre/post/window country returns and "
+            "factor return leaders/laggards.",
             "variable_meta.is_optimizer_selected flags the 8 strategy-driving factors.",
             "Use graph_role to separate sovereign proxies from market sleeves in Neo4j.",
             "ChinaA is the sovereign proxy for China for graph-network questions.",
@@ -144,6 +162,86 @@ def _predmkt_date_expression(date_str: str, table: str = "predmkt_daily", date_c
     if date_str.strip().lower() in {"today", "latest", "now", ""}:
         return f"(SELECT MAX({date_col}) FROM {table})"
     return f"(SELECT MAX({date_col}) FROM {table} WHERE {date_col} <= DATE '{date_str}')"
+
+
+# --- Returns-first helpers -------------------------------------------------
+
+MONTHLY_RETURN_HORIZONS = {"1MRet", "3MRet", "6MRet", "9MRet", "12MRet"}
+DAILY_RETURN_HORIZONS = {"1DRet", "5DRet", "20DRet", "60DRet", "120DRet"}
+FACTOR_RETURN_MONTHLY_SOURCES = {"econ_optimizer", "t2_optimizer", "gdelt_optimizer"}
+FACTOR_RETURN_DAILY_SOURCES = {"t2_optimizer_daily", "gdelt_optimizer_daily"}
+
+RETURNS_CAVEATS = {
+    "country_return": (
+        "Country returns have one canonical source (T2, 34 countries). GDELT-labeled "
+        "1MRet/1DRet rows are bit-exact aliases of T2 returns; do not treat them as a "
+        "second source."
+    ),
+    "factor_return": (
+        "These are top-20%-of-countries portfolio returns from the ASADO optimizer "
+        "pipelines — factor portfolio returns, NOT raw factor levels."
+    ),
+    "attribution": (
+        "country_factor_attribution gives top-20% bucket contribution "
+        "(weight × factor_return), not a full country portfolio decomposition."
+    ),
+}
+
+
+def _duck_conn():
+    import duckdb as _duckdb
+    db_path = str(BASE_DIR / "Data" / "asado.duckdb")
+    return _duckdb.connect(db_path, read_only=True)
+
+
+def _resolve_horizon(frequency: str, horizon: Optional[str]) -> str:
+    freq = (frequency or "monthly").strip().lower()
+    if freq == "daily":
+        default, allowed = "1DRet", DAILY_RETURN_HORIZONS
+    else:
+        default, allowed = "1MRet", MONTHLY_RETURN_HORIZONS
+    h = (horizon or default).strip()
+    if h not in allowed:
+        raise ValueError(
+            f"Unsupported horizon '{h}' for frequency '{freq}'. "
+            f"Allowed: {sorted(allowed)}"
+        )
+    return h
+
+
+def _split_csv(value: Optional[str]) -> list[str]:
+    if not value or value.strip().lower() == "all":
+        return []
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
+def _country_in_clause(countries: list[str]) -> tuple[str, list[Any]]:
+    if not countries:
+        return "", []
+    placeholders = ", ".join("?" for _ in countries)
+    return f"AND country IN ({placeholders})", list(countries)
+
+
+def _factor_in_clause(factors: list[str]) -> tuple[str, list[Any]]:
+    if not factors:
+        return "", []
+    placeholders = ", ".join("?" for _ in factors)
+    return f"AND factor IN ({placeholders})", list(factors)
+
+
+def _resolve_window_start_sql(window: str, latest_date_expr: str) -> Optional[str]:
+    w = (window or "latest").strip().lower()
+    if w in {"latest", ""}:
+        return None
+    if w == "ytd":
+        return f"DATE_TRUNC('year', {latest_date_expr})"
+    if w.endswith("m"):
+        try:
+            months = int(w[:-1])
+        except ValueError:
+            return None
+        return f"({latest_date_expr} - INTERVAL {months} MONTH)"
+    return None
 
 
 @mcp.resource(
@@ -358,6 +456,64 @@ def event_window(
     result["calendar"] = {
         "total_days": len(cal_df),
         "trading_days": trading_days,
+    }
+
+    # --- Return summary (PRD §7.6) ---------------------------------------
+    # Pre / post / window cumulative country returns; factor return leaders/laggards.
+    country_ret_df = con.execute(f"""
+        SELECT date, value AS ret_1d
+        FROM t2_factors_daily
+        WHERE country = '{country}'
+          AND variable = '1DRet'
+          AND date BETWEEN {start_date} AND {end_date}
+        ORDER BY date
+    """).fetchdf()
+
+    pre_return = post_return = window_return = None
+    pivot_date = pd.Timestamp(date).date() if not isinstance(date, pd.Timestamp) else date.date()
+    if not country_ret_df.empty:
+        cr = country_ret_df.dropna(subset=["ret_1d"]).copy()
+        cr["d"] = pd.to_datetime(cr["date"]).dt.date
+        pre_mask = cr["d"] < pivot_date
+        post_mask = cr["d"] > pivot_date
+        pre_return = float(cr.loc[pre_mask, "ret_1d"].sum()) if pre_mask.any() else None
+        post_return = float(cr.loc[post_mask, "ret_1d"].sum()) if post_mask.any() else None
+        window_return = float(cr["ret_1d"].sum())
+
+    fr_leaders = con.execute(f"""
+        SELECT factor, SUM(value) AS cum_return, source
+        FROM factor_returns_daily
+        WHERE date BETWEEN {start_date} AND {end_date}
+          AND value IS NOT NULL
+        GROUP BY factor, source
+        ORDER BY cum_return DESC NULLS LAST
+        LIMIT 10
+    """).fetchdf()
+    fr_laggards = con.execute(f"""
+        SELECT factor, SUM(value) AS cum_return, source
+        FROM factor_returns_daily
+        WHERE date BETWEEN {start_date} AND {end_date}
+          AND value IS NOT NULL
+        GROUP BY factor, source
+        ORDER BY cum_return ASC NULLS LAST
+        LIMIT 10
+    """).fetchdf()
+
+    result["return_summary"] = {
+        "country": country,
+        "event_date": date,
+        "country_daily_returns": _frame_payload(country_ret_df, max_rows=max_rows),
+        "pre_event_return_simple_sum": pre_return,
+        "post_event_return_simple_sum": post_return,
+        "event_window_return_simple_sum": window_return,
+        "factor_return_leaders": _frame_payload(fr_leaders, max_rows=10),
+        "factor_return_laggards": _frame_payload(fr_laggards, max_rows=10),
+        "caveats": [
+            RETURNS_CAVEATS["country_return"],
+            RETURNS_CAVEATS["factor_return"],
+            "Cumulative window returns use simple sum of daily 1DRet values (not compounded).",
+            "Event-window evidence is descriptive — causality is not separately tested here.",
+        ],
     }
 
     con.close()
@@ -824,6 +980,9 @@ def daily_factor_series(
         "t2": "t2_factors_daily",
         "t2_levels": "t2_levels_daily",
         "gdelt": "gdelt_factors_daily",
+        # Country return tables — same underlying T2 returns; gdelt is an alias.
+        "t2_returns": "t2_factors_daily",
+        "gdelt_returns": "gdelt_factors_daily",
     }
 
     if variables == "optimizer":
@@ -846,6 +1005,22 @@ def daily_factor_series(
             ORDER BY date
             LIMIT {max_rows}
         """).fetchdf()
+    elif source == "factor_returns_daily":
+        # Country arg is ignored — these are factor portfolio returns, not country-keyed.
+        var_list = ", ".join(f"'{v.strip()}'" for v in variables.split(","))
+        factor_filter = (
+            "AND factor IN (SELECT variable FROM variable_meta WHERE is_optimizer_selected)"
+            if variables == "optimizer"
+            else f"AND factor IN ({var_list})"
+        )
+        df = con.execute(f"""
+            SELECT date, factor, value, source
+            FROM factor_returns_daily
+            WHERE date BETWEEN DATE '{start_date}' AND DATE '{end_date}'
+              {factor_filter}
+            ORDER BY factor, date
+            LIMIT {max_rows}
+        """).fetchdf()
     else:
         table = table_map.get(source, "t2_factors_daily")
         df = con.execute(f"""
@@ -865,6 +1040,378 @@ def daily_factor_series(
         "date_range": f"{start_date} → {end_date}",
         "result": _frame_payload(df, max_rows=max_rows),
     })
+
+
+# --- Returns-first deterministic tools -------------------------------------
+
+
+@mcp.tool(
+    description=(
+        "Country returns (monthly or daily) for the 34-country T2 universe. "
+        "There is exactly one canonical country return source (T2); the source arg "
+        "is not exposed because GDELT-labeled returns are bit-exact aliases. "
+        "Use for performance leaderboards, country return series, and event country reactions."
+    )
+)
+def country_returns(
+    countries: str = "all",
+    frequency: str = "monthly",
+    horizon: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    latest_only: bool = True,
+    rank: Optional[str] = None,
+    max_rows: int = 100,
+) -> dict[str, Any]:
+    """Return country return rows.
+
+    Args:
+        countries: Comma-separated T2 country names, or "all".
+        frequency: "monthly" (default) or "daily".
+        horizon: Monthly: 1MRet/3MRet/6MRet/9MRet/12MRet. Daily: 1DRet/5DRet/20DRet/60DRet/120DRet.
+        start_date: Optional inclusive start (YYYY-MM-DD).
+        end_date: Optional inclusive end (YYYY-MM-DD).
+        latest_only: If True, restrict to the latest available date on or before CURRENT_DATE.
+        rank: "best" or "worst" to sort by return; otherwise unsorted by value.
+        max_rows: Row cap.
+    """
+    horizon_v = _resolve_horizon(frequency, horizon)
+    country_list = _split_csv(countries)
+    is_daily = frequency.strip().lower() == "daily"
+
+    if is_daily:
+        table = "t2_factors_daily"
+        select_cols = "date, country, variable, value AS return_value"
+        var_clause = "WHERE variable = ?"
+        params: list[Any] = [horizon_v]
+    else:
+        table = "feature_panel"
+        select_cols = "date, country, variable, source, value AS return_value"
+        var_clause = "WHERE variable = ? AND source = 't2'"
+        params = [horizon_v]
+
+    cin, cargs = _country_in_clause(country_list)
+    base_params = list(params) + list(cargs)
+
+    date_clauses: list[str] = []
+    date_args: list[Any] = []
+    if start_date:
+        date_clauses.append("date >= CAST(? AS DATE)")
+        date_args.append(start_date)
+    if end_date:
+        date_clauses.append("date <= CAST(? AS DATE)")
+        date_args.append(end_date)
+    date_clause = ("AND " + " AND ".join(date_clauses)) if date_clauses else ""
+
+    con = _duck_conn()
+    try:
+        latest_sql = f"""
+            SELECT MAX(date) AS latest_date
+            FROM {table}
+            {var_clause}
+              {cin}
+              AND date <= CURRENT_DATE
+              AND value IS NOT NULL
+        """
+        latest_row = con.execute(latest_sql, base_params).fetchone()
+        latest_date = latest_row[0] if latest_row else None
+
+        if latest_only and not date_clauses:
+            main_clause = (
+                f"AND date = (SELECT MAX(date) FROM {table} {var_clause} {cin} "
+                f"AND date <= CURRENT_DATE AND value IS NOT NULL)"
+            )
+            main_params = list(base_params) + list(base_params)
+        else:
+            main_clause = date_clause
+            main_params = list(base_params) + list(date_args)
+
+        order_clause = "ORDER BY date DESC, country"
+        if rank == "best":
+            order_clause = "ORDER BY return_value DESC NULLS LAST"
+        elif rank == "worst":
+            order_clause = "ORDER BY return_value ASC NULLS LAST"
+
+        sql = f"""
+            SELECT {select_cols}
+            FROM {table}
+            {var_clause}
+              {cin}
+              AND value IS NOT NULL
+              {main_clause}
+            {order_clause}
+            LIMIT {int(max_rows)}
+        """
+        df = con.execute(sql, main_params).fetchdf()
+    finally:
+        con.close()
+
+    return _json_ready({
+        "table": table,
+        "source": "t2",
+        "frequency": "daily" if is_daily else "monthly",
+        "horizon": horizon_v,
+        "latest_date": latest_date,
+        "rank": rank,
+        "countries_requested": country_list or "all",
+        "caveat": RETURNS_CAVEATS["country_return"],
+        "result": _frame_payload(df, max_rows=max_rows),
+    })
+
+
+@mcp.tool(
+    description=(
+        "Factor portfolio return series from the ASADO optimizer pipelines "
+        "(top-20%-of-countries returns, NOT raw factor levels). "
+        "Monthly source values: econ_optimizer, t2_optimizer, gdelt_optimizer. "
+        "Daily source values: t2_optimizer_daily, gdelt_optimizer_daily."
+    )
+)
+def factor_return_series(
+    factors: str = "all",
+    frequency: str = "monthly",
+    source: str = "auto",
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    rank: Optional[str] = None,
+    window: str = "latest",
+    max_rows: int = 100,
+) -> dict[str, Any]:
+    """Return factor portfolio returns.
+
+    Args:
+        factors: Comma-separated factor names or "all".
+        frequency: "monthly" or "daily".
+        source: Optimizer source. "auto" picks t2_optimizer (monthly) or t2_optimizer_daily (daily).
+        start_date / end_date: Optional inclusive window (YYYY-MM-DD).
+        rank: "best" or "worst" — ranks by return at the latest date (or aggregate over window).
+        window: "latest" (default), "1m", "3m", "12m", "ytd", or "custom" (use start_date/end_date).
+        max_rows: Row cap.
+    """
+    is_daily = frequency.strip().lower() == "daily"
+    table = "factor_returns_daily" if is_daily else "factor_returns"
+    allowed = FACTOR_RETURN_DAILY_SOURCES if is_daily else FACTOR_RETURN_MONTHLY_SOURCES
+
+    if source == "auto":
+        source = "t2_optimizer_daily" if is_daily else "t2_optimizer"
+    if source not in allowed:
+        raise ValueError(f"Unsupported source '{source}' for frequency '{frequency}'. Allowed: {sorted(allowed)}")
+
+    factor_list = _split_csv(factors)
+    fin, fargs = _factor_in_clause(factor_list)
+    base_params: list[Any] = [source] + fargs
+
+    con = _duck_conn()
+    try:
+        latest_row = con.execute(
+            f"SELECT MAX(date) FROM {table} WHERE source = ? AND date <= CURRENT_DATE",
+            [source],
+        ).fetchone()
+        latest_date = latest_row[0] if latest_row else None
+
+        start_expr = None
+        if start_date or end_date:
+            window_used = "custom"
+        else:
+            window_used = window
+            start_expr = _resolve_window_start_sql(window, "CURRENT_DATE")
+
+        date_clauses: list[str] = []
+        sql_params: list[Any] = list(base_params)
+        if start_date:
+            date_clauses.append("date >= CAST(? AS DATE)")
+            sql_params.append(start_date)
+        elif start_expr:
+            date_clauses.append(f"date >= {start_expr}")
+        if end_date:
+            date_clauses.append("date <= CAST(? AS DATE)")
+            sql_params.append(end_date)
+        else:
+            date_clauses.append("date <= CURRENT_DATE")
+
+        # For rank without explicit window, default to latest snapshot ranking
+        if rank in {"best", "worst"} and not (start_date or end_date) and window == "latest":
+            order = "DESC" if rank == "best" else "ASC"
+            sql = f"""
+                SELECT date, factor, value AS factor_return, source
+                FROM {table}
+                WHERE source = ? {fin}
+                  AND date = (SELECT MAX(date) FROM {table} WHERE source = ? AND date <= CURRENT_DATE)
+                  AND value IS NOT NULL
+                ORDER BY factor_return {order} NULLS LAST
+                LIMIT {int(max_rows)}
+            """
+            df = con.execute(sql, [source] + fargs + [source]).fetchdf()
+        elif rank in {"best", "worst"}:
+            # Aggregate (cumulative simple sum) over window then rank
+            order = "DESC" if rank == "best" else "ASC"
+            where_dates = " AND ".join(date_clauses)
+            sql = f"""
+                SELECT factor, source, SUM(value) AS cum_return,
+                       COUNT(*) AS n_obs, MIN(date) AS first_date, MAX(date) AS last_date
+                FROM {table}
+                WHERE source = ? {fin}
+                  AND value IS NOT NULL
+                  AND {where_dates}
+                GROUP BY factor, source
+                ORDER BY cum_return {order} NULLS LAST
+                LIMIT {int(max_rows)}
+            """
+            df = con.execute(sql, sql_params).fetchdf()
+        else:
+            where_dates = " AND ".join(date_clauses)
+            sql = f"""
+                SELECT date, factor, value AS factor_return, source
+                FROM {table}
+                WHERE source = ? {fin}
+                  AND value IS NOT NULL
+                  AND {where_dates}
+                ORDER BY factor, date
+                LIMIT {int(max_rows)}
+            """
+            df = con.execute(sql, sql_params).fetchdf()
+    finally:
+        con.close()
+
+    return _json_ready({
+        "table": table,
+        "source": source,
+        "frequency": "daily" if is_daily else "monthly",
+        "window": window_used,
+        "latest_date": latest_date,
+        "rank": rank,
+        "factors_requested": factor_list or "all",
+        "caveat": RETURNS_CAVEATS["factor_return"],
+        "result": _frame_payload(df, max_rows=max_rows),
+    })
+
+
+@mcp.tool(
+    description=(
+        "Country-level factor bucket attribution: weight × factor_return for each factor "
+        "where the country was in the top-20%% bucket at that date. "
+        "Sources: econ_optimizer, t2_optimizer, gdelt_optimizer. Monthly only."
+    )
+)
+def country_factor_attribution(
+    country: str,
+    source: str = "auto",
+    date: str = "latest",
+    factors: str = "all",
+    rank: str = "largest_abs",
+    max_rows: int = 50,
+) -> dict[str, Any]:
+    """Return country-factor attribution rows.
+
+    Args:
+        country: T2 country name (e.g., "Brazil").
+        source: "econ_optimizer", "t2_optimizer", "gdelt_optimizer", or "auto" (=econ_optimizer).
+        date: "latest" or YYYY-MM-DD month start.
+        factors: Comma-separated factor names or "all".
+        rank: "positive" (top positive contributions), "negative" (top negative), or "largest_abs" (default).
+        max_rows: Row cap.
+    """
+    if source == "auto":
+        source = "econ_optimizer"
+    if source not in FACTOR_RETURN_MONTHLY_SOURCES:
+        raise ValueError(f"Unsupported source '{source}'. Allowed: {sorted(FACTOR_RETURN_MONTHLY_SOURCES)}")
+
+    factor_list = _split_csv(factors)
+    fin, fargs = _factor_in_clause(factor_list)
+
+    con = _duck_conn()
+    try:
+        # Resolve target date
+        if date.strip().lower() == "latest":
+            row = con.execute(
+                "SELECT MAX(date) FROM country_factor_attribution "
+                "WHERE source = ? AND country = ? AND date <= CURRENT_DATE",
+                [source, country],
+            ).fetchone()
+            target_date = row[0] if row else None
+            if target_date is None:
+                return _json_ready({"country": country, "source": source, "result": _frame_payload(__import__("pandas").DataFrame(), max_rows), "error": "No attribution rows for that country/source."})
+        else:
+            target_date = date
+
+        if rank == "positive":
+            order = "ORDER BY contribution DESC NULLS LAST"
+        elif rank == "negative":
+            order = "ORDER BY contribution ASC NULLS LAST"
+        else:
+            order = "ORDER BY ABS(contribution) DESC NULLS LAST"
+
+        sql = f"""
+            SELECT date, country, factor, weight, factor_return, contribution, source
+            FROM country_factor_attribution
+            WHERE country = ?
+              AND source = ?
+              AND date = CAST(? AS DATE)
+              {fin}
+            {order}
+            LIMIT {int(max_rows)}
+        """
+        df = con.execute(sql, [country, source, str(target_date)[:10]] + fargs).fetchdf()
+    finally:
+        con.close()
+
+    return _json_ready({
+        "country": country,
+        "source": source,
+        "date": str(target_date)[:10] if target_date else None,
+        "rank": rank,
+        "caveat": RETURNS_CAVEATS["attribution"],
+        "result": _frame_payload(df, max_rows=max_rows),
+    })
+
+
+@mcp.tool(
+    description=(
+        "Return leaderboard for countries or factors. Deterministic wrapper around "
+        "country_returns and factor_return_series for the most common 'who led / who lagged' questions."
+    )
+)
+def return_leaders(
+    scope: str,
+    frequency: str = "monthly",
+    source: str = "auto",
+    horizon: Optional[str] = None,
+    window: str = "latest",
+    date: str = "latest",
+    direction: str = "best",
+    max_rows: int = 25,
+) -> dict[str, Any]:
+    """Return leaders or laggards for countries or factor portfolios.
+
+    Args:
+        scope: "country" or "factor".
+        frequency: "monthly" or "daily".
+        source: Country: ignored (T2 canonical). Factor: optimizer source or "auto".
+        horizon: Country return horizon (e.g., "1MRet"). Required for scope="country".
+        window: Factor-return aggregation window ("latest", "1m", "3m", "12m", "ytd").
+        date: "latest" or YYYY-MM-DD.
+        direction: "best" or "worst".
+        max_rows: Row cap.
+    """
+    if scope == "country":
+        return country_returns(
+            countries="all",
+            frequency=frequency,
+            horizon=horizon,
+            latest_only=(date.strip().lower() == "latest"),
+            rank=direction,
+            max_rows=max_rows,
+        )
+    if scope == "factor":
+        return factor_return_series(
+            factors="all",
+            frequency=frequency,
+            source=source,
+            rank=direction,
+            window=window,
+            max_rows=max_rows,
+        )
+    raise ValueError(f"Unsupported scope '{scope}'. Use 'country' or 'factor'.")
 
 
 def main() -> None:

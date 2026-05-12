@@ -574,12 +574,50 @@ python scripts/build_daily_panels.py --check                 # health check
 
 Full implementation details: [`docs/DAILY_EXTENSION_STATUS.md`](/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/docs/DAILY_EXTENSION_STATUS.md)
 
+## Returns Source Of Truth
+
+Returns are ASADO's outcome layer. Performance, event, and explanation questions should anchor on the return surfaces below by default.
+
+### Country Returns (one canonical source — T2, 34 countries)
+
+| Frequency | Table | Filter | Horizons |
+|---|---|---|---|
+| Monthly | `feature_panel` / `unified_panel` | `source = 't2'` | `1MRet`, `3MRet`, `6MRet`, `9MRet`, `12MRet` |
+| Daily | `t2_factors_daily` | — | `1DRet`, `5DRet`, `20DRet`, `60DRet`, `120DRet` |
+
+The `1MRet` rows under `source = 'gdelt'` in `feature_panel` and the `1DRet` rows in `gdelt_factors_daily` are **bit-exact aliases** of the T2 country returns. They are copied into the GDELT panel as the dependent variable for the GDELT optimizer pipeline. **Do not treat them as a second country return source.** (Verified 2026-05-12: 135,014/135,014 daily rows identical to T2; monthly identical to 6 decimal places.)
+
+### Factor Portfolio Returns
+
+| Frequency | Table | Sources |
+|---|---|---|
+| Monthly | `factor_returns` | `econ_optimizer`, `t2_optimizer`, `gdelt_optimizer` |
+| Daily | `factor_returns_daily` | `t2_optimizer_daily`, `gdelt_optimizer_daily` |
+
+These are top-20%-of-countries portfolio returns from the ASADO optimizer pipelines — **factor portfolio returns, not raw factor levels.**
+
+### Country-Factor Attribution
+
+- `factor_top20_membership`: sparse country membership in each factor's top-20% bucket (`weight = 1/N`).
+- `country_factor_attribution`: `factor_top20_membership ⨝ factor_returns` on `(date, factor, source)` giving `contribution = weight × factor_return`. This is top-20% bucket attribution, not a full portfolio decomposition.
+
+### Cycle Guardrail
+
+`factor_returns`, `factor_returns_daily`, `factor_top20_membership`, and `country_factor_attribution` must **never** be unioned into `feature_panel` or `unified_panel`. Those views are the explanatory/input surfaces the optimizer pipelines consume; mixing optimizer outputs back in creates a modeling cycle.
+
+Regression: `scripts/qa/validate_returns_first.py` enforces this guardrail and checks every surface above.
+
+### MCP Tools
+
+Use the deterministic return tools before writing ad hoc SQL: `country_returns`, `factor_return_series`, `country_factor_attribution`, `return_leaders`; `event_window` returns a `return_summary` block.
+
 ## Guardrails
 
 - Prefer read-only access.
 - Use `unified_panel` by default for monthly questions unless a panel-specific table is clearly more appropriate.
 - Use daily tables (`t2_factors_daily`, `gdelt_factors_daily`) for intramonth or event-study questions.
+- For performance, event, winner/loser, attribution, or "what happened" questions, anchor on a return surface from "Returns Source Of Truth" above.
 - Use `gdelt_panel` for GDELT-specific latest/current questions if the date-label convention matters.
 - Do not assume `bilateral_portfolio_matrix` has `country`, `variable`, and `value`; it does not.
 - For human discovery, start with this file.
-- For agent discovery, start with [access_guide.json](/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/cache/query_assistant/access_guide.json).
+- For agent discovery, start with [access_guide.json](/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/cache/query_assistant/access_guide.json) and [returns_catalog.json](/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/cache/query_assistant/returns_catalog.json).

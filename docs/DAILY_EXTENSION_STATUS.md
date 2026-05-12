@@ -243,3 +243,16 @@ scripts/monthly_update.py        — Orchestrator (now includes daily panels ste
 Data/asado.duckdb                — Single database (monthly + daily tables coexist)
 Neo4j bolt://localhost:7687      — Factor nodes carry daily_* properties
 ```
+
+---
+
+## Returns Source Of Truth (added 2026-05-12)
+
+The daily extension's return surfaces are part of the canonical Returns Source Of Truth layer. See `DATA_DICTIONARY.md` and `README.md` for the full contract; the daily-specific points:
+
+- **Daily country returns (canonical):** `t2_factors_daily`, variables `1DRet`, `5DRet`, `20DRet`, `60DRet`, `120DRet`. 34 countries. One source.
+- **GDELT 1DRet is an alias.** The `1DRet` rows in `gdelt_factors_daily` are bit-exact duplicates of the T2 1DRet (135,014 / 135,014 rows identical, verified 2026-05-12). They exist only as the dependent variable for the GDELT daily optimizer. Never treat them as a second daily country return source.
+- **Daily factor portfolio returns:** `factor_returns_daily` with sources `t2_optimizer_daily` and `gdelt_optimizer_daily`. These are top-20%-bucket portfolio returns, not raw factor levels.
+- **`event_window` upgrade:** now includes a `return_summary` block with pre/post/window simple-sum country return plus factor return leaders/laggards.
+- **New MCP tools:** `country_returns`, `factor_return_series`, `country_factor_attribution`, `return_leaders`. See README.
+- **Regression:** `./venv/bin/python scripts/qa/validate_returns_first.py` (DB + MCP checks; 18 assertions including the cycle guardrail).

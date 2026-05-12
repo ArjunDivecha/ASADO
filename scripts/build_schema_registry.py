@@ -37,7 +37,18 @@ DUCKDB_SCHEMA_PATH = CACHE_DIR / "duckdb_schema.json"
 NEO4J_SCHEMA_PATH = CACHE_DIR / "neo4j_schema.json"
 VARIABLE_CATALOG_PATH = CACHE_DIR / "variable_catalog.json"
 ACCESS_GUIDE_PATH = CACHE_DIR / "access_guide.json"
+RETURNS_CATALOG_PATH = CACHE_DIR / "returns_catalog.json"
 MANIFEST_PATH = CACHE_DIR / "manifest.json"
+
+# Canonical country return variables (T2 is the single source of truth — 34 countries).
+# The `gdelt` source rows for 1MRet (monthly) and 1DRet (daily, in gdelt_factors_daily)
+# are bit-exact duplicates of T2 country returns copied into the GDELT panel as the
+# dependent variable for the GDELT optimizer pipeline. They are NOT a second return
+# measurement; treat them as aliases.
+COUNTRY_RETURN_VARIABLES_MONTHLY = ["1MRet", "3MRet", "6MRet", "9MRet", "12MRet"]
+COUNTRY_RETURN_VARIABLES_DAILY = ["1DRet", "5DRet", "20DRet", "60DRet", "120DRet"]
+FACTOR_RETURN_MONTHLY_SOURCES = ["econ_optimizer", "t2_optimizer", "gdelt_optimizer"]
+FACTOR_RETURN_DAILY_SOURCES = ["t2_optimizer_daily", "gdelt_optimizer_daily"]
 
 TABLE_DESCRIPTIONS = {
     "t2_master": "Original T2 monthly factor panel.",
@@ -697,6 +708,374 @@ def build_variable_catalog(db_path: Path = DB_PATH) -> Dict[str, Any]:
         con.close()
 
 
+def build_returns_catalog(db_path: Path = DB_PATH) -> Dict[str, Any]:
+    """Build the canonical returns catalog used by the returns-first MCP / planner.
+
+    Records:
+    - country return variables (T2-only canonical source, 34 countries) for monthly and daily
+    - explicit alias entries flagging GDELT-labeled 1MRet/1DRet as duplicates of T2 returns
+    - factor return surfaces (factor_returns, factor_returns_daily) by source
+    - top-20 membership and country-factor attribution metadata
+    - latest available return date per source
+    - safe SQL pattern examples
+    """
+    con = duckdb.connect(str(db_path), read_only=True)
+    try:
+        tables = {row[0] for row in con.execute("SHOW TABLES").fetchall()}
+
+        def _table_present(name: str) -> bool:
+            return name in tables
+
+        def _has_columns(table: str, required: Set[str]) -> bool:
+            if not _table_present(table):
+                return False
+            cols = {
+                row[0]
+                for row in con.execute(
+                    "SELECT column_name FROM information_schema.columns "
+                    "WHERE table_schema = 'main' AND table_name = ?",
+                    [table],
+                ).fetchall()
+            }
+            return required.issubset(cols)
+
+        catalog: Dict[str, Any] = {
+            "principle": (
+                "Country returns and factor portfolio returns are ASADO's outcome layer "
+                "(the source of truth for performance, event, and explanation questions). "
+                "Most analytical answers should anchor on these surfaces unless the user "
+                "explicitly asks for non-return data only."
+            ),
+            "country_returns": {
+                "canonical_source_note": (
+                    "There is exactly ONE canonical country return measurement (34 countries). "
+                    "T2 monthly/daily price returns are the single source of truth. "
+                    "The 1MRet rows under source='gdelt' in feature_panel and the 1DRet rows in "
+                    "gdelt_factors_daily are bit-exact duplicates copied into the GDELT panel as the "
+                    "dependent variable for the GDELT optimizer — they are aliases, NOT a second source."
+                ),
+                "monthly": {
+                    "table": "feature_panel",
+                    "source": "t2",
+                    "horizons": COUNTRY_RETURN_VARIABLES_MONTHLY,
+                    "variables": [],
+                },
+                "daily": {
+                    "table": "t2_factors_daily",
+                    "horizons": COUNTRY_RETURN_VARIABLES_DAILY,
+                    "variables": [],
+                },
+                "aliases": [],
+            },
+            "factor_returns": {
+                "monthly": {
+                    "table": "factor_returns",
+                    "sources": [],
+                    "available_sources": FACTOR_RETURN_MONTHLY_SOURCES,
+                },
+                "daily": {
+                    "table": "factor_returns_daily",
+                    "sources": [],
+                    "available_sources": FACTOR_RETURN_DAILY_SOURCES,
+                },
+            },
+            "attribution": {
+                "membership_table": "factor_top20_membership",
+                "attribution_table": "country_factor_attribution",
+                "available": False,
+                "note": (
+                    "factor_top20_membership ⨝ factor_returns on (date, factor, source) yields "
+                    "country-level contribution = weight × factor_return. "
+                    "This is top-20% bucket attribution, not a full country portfolio decomposition."
+                ),
+            },
+            "cycle_guardrail": (
+                "factor_returns, factor_returns_daily, factor_top20_membership, and "
+                "country_factor_attribution must NOT be unioned into feature_panel / "
+                "unified_panel. Those views are explanatory/input surfaces used to construct "
+                "optimizer outputs; adding optimizer outputs back creates a modeling cycle."
+            ),
+            "factor_to_return_sources": {},
+            "latest_dates": {},
+            "safe_sql_patterns": {
+                "latest_monthly_country_returns": (
+                    "WITH latest AS (\n"
+                    "  SELECT MAX(date) AS date FROM feature_panel\n"
+                    "  WHERE variable = '1MRet' AND source = 't2' AND date <= CURRENT_DATE\n"
+                    ")\n"
+                    "SELECT country, value AS return_value, date\n"
+                    "FROM feature_panel\n"
+                    "WHERE variable = '1MRet' AND source = 't2'\n"
+                    "  AND date = (SELECT date FROM latest)\n"
+                    "  AND value IS NOT NULL\n"
+                    "ORDER BY return_value DESC;"
+                ),
+                "latest_monthly_factor_returns": (
+                    "WITH latest AS (\n"
+                    "  SELECT MAX(date) AS date FROM factor_returns\n"
+                    "  WHERE source = 't2_optimizer' AND date <= CURRENT_DATE\n"
+                    ")\n"
+                    "SELECT factor, value AS factor_return, source, date\n"
+                    "FROM factor_returns\n"
+                    "WHERE source = 't2_optimizer'\n"
+                    "  AND date = (SELECT date FROM latest)\n"
+                    "ORDER BY factor_return DESC;"
+                ),
+                "country_factor_attribution_latest": (
+                    "WITH latest AS (\n"
+                    "  SELECT MAX(date) AS date FROM country_factor_attribution\n"
+                    "  WHERE source = 'econ_optimizer' AND date <= CURRENT_DATE\n"
+                    ")\n"
+                    "SELECT country, factor, weight, factor_return, contribution, source, date\n"
+                    "FROM country_factor_attribution\n"
+                    "WHERE country = 'Brazil' AND source = 'econ_optimizer'\n"
+                    "  AND date = (SELECT date FROM latest)\n"
+                    "ORDER BY ABS(contribution) DESC;"
+                ),
+            },
+        }
+
+        # --- Monthly country returns (T2 canonical) ---
+        if _has_columns("feature_panel", {"date", "country", "value", "variable", "source"}):
+            mvars = con.execute(
+                """
+                SELECT variable, source,
+                       COUNT(*) AS row_count,
+                       COUNT(DISTINCT country) AS country_count,
+                       MIN(date) AS first_date,
+                       MAX(date) AS last_date
+                FROM feature_panel
+                WHERE variable IN ('1MRet','3MRet','6MRet','9MRet','12MRet')
+                GROUP BY 1, 2
+                ORDER BY 1, 2
+                """
+            ).fetchdf()
+            for _, row in mvars.iterrows():
+                entry = {
+                    "variable": row["variable"],
+                    "source": row["source"],
+                    "table": "feature_panel",
+                    "row_count": int(row["row_count"]),
+                    "country_count": int(row["country_count"]),
+                    "first_date": row["first_date"],
+                    "last_date": row["last_date"],
+                    "frequency": "monthly",
+                    "return_role": "country_return",
+                    "horizon": row["variable"].replace("Ret", "").lower(),
+                }
+                if row["source"] == "t2":
+                    catalog["country_returns"]["monthly"]["variables"].append(entry)
+                elif row["source"] == "gdelt":
+                    entry["alias_of"] = {
+                        "table": "feature_panel",
+                        "source": "t2",
+                        "variable": row["variable"],
+                    }
+                    entry["alias_note"] = (
+                        "Bit-exact duplicate of T2 1MRet. Used as the dependent variable in the "
+                        "GDELT optimizer pipeline. Do NOT use as a second country return source."
+                    )
+                    catalog["country_returns"]["aliases"].append(entry)
+
+        # --- Daily country returns ---
+        if _has_columns("t2_factors_daily", {"date", "country", "variable", "value"}):
+            dvars = con.execute(
+                """
+                SELECT variable,
+                       COUNT(*) AS row_count,
+                       COUNT(DISTINCT country) AS country_count,
+                       MIN(date) AS first_date,
+                       MAX(date) AS last_date
+                FROM t2_factors_daily
+                WHERE variable IN ('1DRet','5DRet','20DRet','60DRet','120DRet')
+                GROUP BY 1
+                ORDER BY 1
+                """
+            ).fetchdf()
+            for _, row in dvars.iterrows():
+                catalog["country_returns"]["daily"]["variables"].append(
+                    {
+                        "variable": row["variable"],
+                        "table": "t2_factors_daily",
+                        "row_count": int(row["row_count"]),
+                        "country_count": int(row["country_count"]),
+                        "first_date": row["first_date"],
+                        "last_date": row["last_date"],
+                        "frequency": "daily",
+                        "return_role": "country_return",
+                        "horizon": row["variable"].replace("Ret", "").lower(),
+                    }
+                )
+
+        # Daily GDELT alias (1DRet in gdelt_factors_daily is identical to T2 1DRet)
+        if _has_columns("gdelt_factors_daily", {"date", "country", "variable", "value"}):
+            gdvars = con.execute(
+                """
+                SELECT variable,
+                       COUNT(*) AS row_count,
+                       COUNT(DISTINCT country) AS country_count,
+                       MIN(date) AS first_date,
+                       MAX(date) AS last_date
+                FROM gdelt_factors_daily
+                WHERE variable = '1DRet'
+                GROUP BY 1
+                """
+            ).fetchdf()
+            for _, row in gdvars.iterrows():
+                catalog["country_returns"]["aliases"].append(
+                    {
+                        "variable": row["variable"],
+                        "source": "gdelt",
+                        "table": "gdelt_factors_daily",
+                        "row_count": int(row["row_count"]),
+                        "country_count": int(row["country_count"]),
+                        "first_date": row["first_date"],
+                        "last_date": row["last_date"],
+                        "frequency": "daily",
+                        "return_role": "country_return_alias",
+                        "alias_of": {
+                            "table": "t2_factors_daily",
+                            "variable": "1DRet",
+                        },
+                        "alias_note": (
+                            "Bit-exact duplicate of T2 1DRet (verified 135,014/135,014 rows identical). "
+                            "Used as the dependent variable in the GDELT daily optimizer pipeline. "
+                            "Do NOT use as a second country return source."
+                        ),
+                    }
+                )
+
+        # --- Monthly factor returns ---
+        factor_return_source_map: Dict[str, Set[str]] = {}
+        if _has_columns("factor_returns", {"date", "factor", "value", "source"}):
+            frm = con.execute(
+                """
+                SELECT source,
+                       COUNT(*) AS row_count,
+                       COUNT(DISTINCT factor) AS factor_count,
+                       MIN(date) AS first_date,
+                       MAX(date) AS last_date
+                FROM factor_returns
+                GROUP BY 1
+                ORDER BY 1
+                """
+            ).fetchdf()
+            for _, row in frm.iterrows():
+                catalog["factor_returns"]["monthly"]["sources"].append(
+                    {
+                        "source": row["source"],
+                        "row_count": int(row["row_count"]),
+                        "factor_count": int(row["factor_count"]),
+                        "first_date": row["first_date"],
+                        "last_date": row["last_date"],
+                        "frequency": "monthly",
+                    }
+                )
+                catalog["latest_dates"][f"factor_returns/{row['source']}"] = row["last_date"]
+
+            # Build factor → available return source map (monthly)
+            factors_by_source = con.execute(
+                "SELECT DISTINCT factor, source FROM factor_returns"
+            ).fetchdf()
+            for _, row in factors_by_source.iterrows():
+                factor_return_source_map.setdefault(row["factor"], set()).add(
+                    f"factor_returns:{row['source']}"
+                )
+
+        # --- Daily factor returns ---
+        if _has_columns("factor_returns_daily", {"date", "factor", "value", "source"}):
+            frd = con.execute(
+                """
+                SELECT source,
+                       COUNT(*) AS row_count,
+                       COUNT(DISTINCT factor) AS factor_count,
+                       MIN(date) AS first_date,
+                       MAX(date) AS last_date
+                FROM factor_returns_daily
+                GROUP BY 1
+                ORDER BY 1
+                """
+            ).fetchdf()
+            for _, row in frd.iterrows():
+                catalog["factor_returns"]["daily"]["sources"].append(
+                    {
+                        "source": row["source"],
+                        "row_count": int(row["row_count"]),
+                        "factor_count": int(row["factor_count"]),
+                        "first_date": row["first_date"],
+                        "last_date": row["last_date"],
+                        "frequency": "daily",
+                    }
+                )
+                catalog["latest_dates"][f"factor_returns_daily/{row['source']}"] = row["last_date"]
+
+            factors_by_source_d = con.execute(
+                "SELECT DISTINCT factor, source FROM factor_returns_daily"
+            ).fetchdf()
+            for _, row in factors_by_source_d.iterrows():
+                factor_return_source_map.setdefault(row["factor"], set()).add(
+                    f"factor_returns_daily:{row['source']}"
+                )
+
+        catalog["factor_to_return_sources"] = {
+            factor: sorted(list(sources))
+            for factor, sources in sorted(factor_return_source_map.items())
+        }
+
+        # --- Attribution surface ---
+        if _has_columns(
+            "country_factor_attribution",
+            {"date", "country", "factor", "weight", "factor_return", "contribution", "source"},
+        ):
+            agg = con.execute(
+                """
+                SELECT source,
+                       COUNT(*) AS row_count,
+                       COUNT(DISTINCT country) AS country_count,
+                       COUNT(DISTINCT factor) AS factor_count,
+                       MIN(date) AS first_date,
+                       MAX(date) AS last_date
+                FROM country_factor_attribution
+                GROUP BY 1
+                ORDER BY 1
+                """
+            ).fetchdf()
+            catalog["attribution"]["available"] = True
+            catalog["attribution"]["sources"] = []
+            for _, row in agg.iterrows():
+                catalog["attribution"]["sources"].append(
+                    {
+                        "source": row["source"],
+                        "row_count": int(row["row_count"]),
+                        "country_count": int(row["country_count"]),
+                        "factor_count": int(row["factor_count"]),
+                        "first_date": row["first_date"],
+                        "last_date": row["last_date"],
+                    }
+                )
+                catalog["latest_dates"][f"country_factor_attribution/{row['source']}"] = row[
+                    "last_date"
+                ]
+
+        # Country return latest dates
+        if catalog["country_returns"]["monthly"]["variables"]:
+            mlast = max(
+                v["last_date"] for v in catalog["country_returns"]["monthly"]["variables"]
+            )
+            catalog["latest_dates"]["country_returns/monthly/t2"] = mlast
+        if catalog["country_returns"]["daily"]["variables"]:
+            dlast = max(
+                v["last_date"] for v in catalog["country_returns"]["daily"]["variables"]
+            )
+            catalog["latest_dates"]["country_returns/daily/t2"] = dlast
+
+        catalog["generated_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        catalog["db_path"] = str(db_path)
+        return _json_ready(catalog)
+    finally:
+        con.close()
+
+
 def build_neo4j_schema(
     neo4j_uri: str = NEO4J_URI,
     neo4j_user: str = NEO4J_USER,
@@ -814,6 +1193,7 @@ def build_access_guide(
     duckdb_schema: Dict[str, Any],
     neo4j_schema: Dict[str, Any],
     variable_catalog: Dict[str, Any],
+    returns_catalog: Dict[str, Any] | None = None,
 ) -> Dict[str, Any]:
     current_date = date.today()
     gdelt_partial_label_date = _next_month_start(current_date)
@@ -1005,7 +1385,45 @@ def build_access_guide(
                 f"Prefer {factor_surface} unless a panel-specific table is clearly better.",
                 "For joins from bilateral tables onto factor panels, join reporter_iso3/counterpart_iso3 to country_reference.iso3 and then join country_reference.country to the factor surface country column.",
                 "For latest/current questions, constrain to dates on or before CURRENT_DATE unless the query explicitly concerns forecasts or the GDELT partial-month convention.",
+                "Country returns have ONE canonical source (T2, 34 countries). GDELT-labeled 1MRet/1DRet rows are bit-exact aliases of T2 returns — never treat them as a second country return source.",
+                "Do NOT union factor_returns / factor_returns_daily / factor_top20_membership / country_factor_attribution into feature_panel or unified_panel — those are outputs of the optimizer pipelines that consume feature_panel.",
             ],
+            "return_surfaces": {
+                "principle": (
+                    "Returns are ASADO's outcome layer. Performance, event, and explanation "
+                    "questions should anchor on country and factor returns by default."
+                ),
+                "country_returns": {
+                    "canonical_source_note": (
+                        "There is exactly ONE canonical country return measurement (34 countries). "
+                        "Monthly: feature_panel rows where source = 't2' and variable in "
+                        "('1MRet','3MRet','6MRet','9MRet','12MRet'). "
+                        "Daily: t2_factors_daily rows where variable in "
+                        "('1DRet','5DRet','20DRet','60DRet','120DRet'). "
+                        "GDELT-labeled 1MRet/1DRet rows are bit-exact aliases — do not use as a second source."
+                    ),
+                },
+                "factor_returns": {
+                    "monthly_table": "factor_returns",
+                    "monthly_sources": FACTOR_RETURN_MONTHLY_SOURCES,
+                    "daily_table": "factor_returns_daily",
+                    "daily_sources": FACTOR_RETURN_DAILY_SOURCES,
+                    "membership_table": "factor_top20_membership",
+                    "attribution_table": "country_factor_attribution",
+                    "caveat": (
+                        "These are top-20%-of-countries portfolio returns built by the "
+                        "ASADO optimizer pipelines. They are factor portfolio returns, NOT raw factor levels."
+                    ),
+                },
+                "cycle_guardrail": (
+                    "Do not union optimizer return outputs (factor_returns, factor_returns_daily, "
+                    "factor_top20_membership, country_factor_attribution) into feature_panel / "
+                    "unified_panel. Those views are explanatory/input surfaces used to construct "
+                    "the optimizer outputs; mixing them creates a modeling cycle."
+                ),
+                "catalog_path": str(RETURNS_CATALOG_PATH),
+                "latest_dates": (returns_catalog or {}).get("latest_dates", {}),
+            },
         }
     )
 
@@ -1015,6 +1433,7 @@ def build_and_write_schema_cache(duck_only: bool = False) -> Dict[str, Any]:
 
     duckdb_schema = build_duckdb_schema()
     variable_catalog = build_variable_catalog()
+    returns_catalog = build_returns_catalog()
     neo4j_schema = build_neo4j_schema() if not duck_only else {
         "available": False,
         "uri": NEO4J_URI,
@@ -1023,7 +1442,7 @@ def build_and_write_schema_cache(duck_only: bool = False) -> Dict[str, Any]:
         "relationships": {},
         "indexes": [],
     }
-    access_guide = build_access_guide(duckdb_schema, neo4j_schema, variable_catalog)
+    access_guide = build_access_guide(duckdb_schema, neo4j_schema, variable_catalog, returns_catalog)
 
     manifest = {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -1034,12 +1453,14 @@ def build_and_write_schema_cache(duck_only: bool = False) -> Dict[str, Any]:
         "neo4j_schema_path": str(NEO4J_SCHEMA_PATH),
         "variable_catalog_path": str(VARIABLE_CATALOG_PATH),
         "access_guide_path": str(ACCESS_GUIDE_PATH),
+        "returns_catalog_path": str(RETURNS_CATALOG_PATH),
     }
 
     DUCKDB_SCHEMA_PATH.write_text(json.dumps(duckdb_schema, indent=2), encoding="utf-8")
     NEO4J_SCHEMA_PATH.write_text(json.dumps(neo4j_schema, indent=2), encoding="utf-8")
     VARIABLE_CATALOG_PATH.write_text(json.dumps(variable_catalog, indent=2), encoding="utf-8")
     ACCESS_GUIDE_PATH.write_text(json.dumps(access_guide, indent=2), encoding="utf-8")
+    RETURNS_CATALOG_PATH.write_text(json.dumps(returns_catalog, indent=2), encoding="utf-8")
     MANIFEST_PATH.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
 
     return {
@@ -1047,20 +1468,33 @@ def build_and_write_schema_cache(duck_only: bool = False) -> Dict[str, Any]:
         "duckdb": duckdb_schema,
         "neo4j": neo4j_schema,
         "variable_catalog": variable_catalog,
+        "returns_catalog": returns_catalog,
         "access_guide": access_guide,
     }
 
 
 def load_schema_cache(auto_build: bool = True) -> Dict[str, Any]:
-    paths = [DUCKDB_SCHEMA_PATH, NEO4J_SCHEMA_PATH, VARIABLE_CATALOG_PATH, ACCESS_GUIDE_PATH, MANIFEST_PATH]
+    paths = [
+        DUCKDB_SCHEMA_PATH,
+        NEO4J_SCHEMA_PATH,
+        VARIABLE_CATALOG_PATH,
+        ACCESS_GUIDE_PATH,
+        RETURNS_CATALOG_PATH,
+        MANIFEST_PATH,
+    ]
     if auto_build and not all(path.exists() for path in paths):
         return build_and_write_schema_cache()
+
+    returns_catalog: Dict[str, Any] = {}
+    if RETURNS_CATALOG_PATH.exists():
+        returns_catalog = json.loads(RETURNS_CATALOG_PATH.read_text(encoding="utf-8"))
 
     return {
         "manifest": json.loads(MANIFEST_PATH.read_text(encoding="utf-8")),
         "duckdb": json.loads(DUCKDB_SCHEMA_PATH.read_text(encoding="utf-8")),
         "neo4j": json.loads(NEO4J_SCHEMA_PATH.read_text(encoding="utf-8")),
         "variable_catalog": json.loads(VARIABLE_CATALOG_PATH.read_text(encoding="utf-8")),
+        "returns_catalog": returns_catalog,
         "access_guide": json.loads(ACCESS_GUIDE_PATH.read_text(encoding="utf-8")),
     }
 
@@ -1080,6 +1514,15 @@ def main() -> None:
     print(f"Schema cache written to {CACHE_DIR}")
     print(f"  DuckDB tables/views: {duck_tables}")
     print(f"  Variables: {payload['variable_catalog']['variable_count']}")
+    rc = payload.get("returns_catalog", {})
+    print(
+        "  Returns catalog: "
+        f"{len(rc.get('country_returns', {}).get('monthly', {}).get('variables', []))} monthly country-return vars, "
+        f"{len(rc.get('country_returns', {}).get('daily', {}).get('variables', []))} daily country-return vars, "
+        f"{len(rc.get('factor_returns', {}).get('monthly', {}).get('sources', []))} monthly factor sources, "
+        f"{len(rc.get('factor_returns', {}).get('daily', {}).get('sources', []))} daily factor sources, "
+        f"{len(rc.get('country_returns', {}).get('aliases', []))} alias rows."
+    )
     if payload["neo4j"].get("available"):
         print(f"  Neo4j labels: {neo_labels}")
     else:

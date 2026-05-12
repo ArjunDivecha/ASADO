@@ -57,6 +57,35 @@ PLAN_FORMAT = {
             "result_key": "optional result key such as country_list",
         }
     ],
+    "return_surface_used": (
+        "country_returns | factor_returns | factor_returns_daily | "
+        "country_factor_attribution | event_window | none"
+    ),
+    "return_surface_reason": "why this surface is or is not used for this question",
+}
+
+# Return-intent vocabulary — questions matching these phrases should route to a
+# return surface (country_returns / factor_returns / attribution / event_window)
+# by default unless the user explicitly wants non-return data only.
+RETURN_INTENT_PHRASES = (
+    "return", "returns", "performance", "perform",
+    "winner", "winners", "loser", "losers",
+    "leader", "leaders", "laggard", "laggards",
+    "best", "worst",
+    "worked", "did not work", "didn't work",
+    "helped", "hurt",
+    "beneficiar", "benefit", "benefited",
+    "happened", "happens", "event reaction", "crisis impact",
+    "analog outcome", "which signal matters", "signals worked",
+    "did this factor work", "payoff", "p&l", "pnl", "attribution",
+)
+
+# Return-surface table names we recognize in plans
+RETURN_TABLES = {
+    "factor_returns",
+    "factor_returns_daily",
+    "factor_top20_membership",
+    "country_factor_attribution",
 }
 
 SQL_BLOCKLIST = (
@@ -307,6 +336,7 @@ class ASADOQueryAssistant:
         duck = schema["duckdb"]
         neo = schema["neo4j"]
         variable_catalog = schema["variable_catalog"]
+        returns_catalog = schema.get("returns_catalog", {}) or {}
 
         duck_summary = []
         for name, table in duck["tables"].items():
@@ -377,6 +407,27 @@ class ASADOQueryAssistant:
             },
             "neo4j": neo_summary,
             "variables": variable_catalog.get("variable_names", []),
+            "return_surfaces": {
+                "principle": returns_catalog.get("principle"),
+                "country_returns": {
+                    "canonical_source_note": returns_catalog.get("country_returns", {}).get(
+                        "canonical_source_note"
+                    ),
+                    "monthly_table": "feature_panel",
+                    "monthly_filter": "source = 't2' AND variable IN ('1MRet','3MRet','6MRet','9MRet','12MRet')",
+                    "daily_table": "t2_factors_daily",
+                    "daily_variables": ["1DRet", "5DRet", "20DRet", "60DRet", "120DRet"],
+                },
+                "factor_returns": {
+                    "monthly_table": "factor_returns",
+                    "monthly_sources": ["econ_optimizer", "t2_optimizer", "gdelt_optimizer"],
+                    "daily_table": "factor_returns_daily",
+                    "daily_sources": ["t2_optimizer_daily", "gdelt_optimizer_daily"],
+                },
+                "attribution_table": "country_factor_attribution",
+                "latest_dates": returns_catalog.get("latest_dates", {}),
+                "cycle_guardrail": returns_catalog.get("cycle_guardrail"),
+            },
             "planning_rules": [
                 "Never invent table, column, label, relationship, or variable names.",
                 "DuckDB queries must be SELECT/CTE only.",
@@ -392,6 +443,29 @@ class ASADOQueryAssistant:
                 "For off-universe entities (for example Iran/Russia/Israel), use predmkt_country_spillover + predmkt_daily to map into T2 countries when possible.",
                 "If a question asks which countries are under sanctions, clarify unless the user explicitly wants OFAC/SDN-linked exposure or association data.",
                 "Recognize common region/group terms such as ASEAN, G7, BRICS, LatAm, EMEA, EM, and DM when they appear in the question.",
+                # --- Returns-first routing rules (PRD §8.1) ---
+                "Returns are the outcome layer. For performance, winner/loser, leader/laggard, "
+                "best/worst, worked/did not work, helped/hurt, beneficiary, what happened, "
+                "event reaction, crisis impact, analog outcome, payoff, P&L, or attribution "
+                "questions, ANCHOR the plan on a return surface unless the user explicitly "
+                "asks for non-return data only.",
+                "Country performance: use feature_panel (source='t2') with 1MRet/3MRet/6MRet/9MRet/12MRet "
+                "for monthly, or t2_factors_daily with 1DRet/5DRet/20DRet/60DRet/120DRet for daily. "
+                "There is ONE canonical country return source (T2). GDELT-labeled 1MRet/1DRet rows are "
+                "bit-exact aliases — never treat them as a second country return source.",
+                "Factor portfolio performance: use factor_returns (monthly) or factor_returns_daily (daily). "
+                "These are top-20%-bucket portfolio returns, NOT raw factor levels.",
+                "Country-factor contribution: use country_factor_attribution (weight × factor_return). "
+                "State explicitly that this is top-20% bucket attribution, not a full portfolio decomposition.",
+                "Event-window questions ('what happened around X', 'reaction to Y'): prefer daily return "
+                "surfaces (t2_factors_daily 1DRet plus factor_returns_daily) over monthly feature_panel snapshots.",
+                "Set the plan field 'return_surface_used' to one of country_returns | factor_returns | "
+                "factor_returns_daily | country_factor_attribution | event_window | none, and provide "
+                "return_surface_reason. If you set it to 'none' for a performance/event/explanation "
+                "question, include a warning explaining why.",
+                "Do NOT union factor_returns, factor_returns_daily, factor_top20_membership, or "
+                "country_factor_attribution into feature_panel or unified_panel — those views are "
+                "explanatory/input surfaces; mixing in optimizer outputs would create a modeling cycle.",
             ],
         }
         return json.dumps(context, indent=2)
@@ -456,12 +530,41 @@ class ASADOQueryAssistant:
                 "ratio",
             )
         )
+        return_intent = any(phrase in lowered for phrase in RETURN_INTENT_PHRASES)
+        non_return_only = any(
+            phrase in lowered
+            for phrase in (
+                "no returns",
+                "without returns",
+                "exclude returns",
+                "non-return",
+                "ignore performance",
+                "no performance",
+                "ignore returns",
+            )
+        )
+        event_intent = any(
+            phrase in lowered
+            for phrase in (
+                "what happened",
+                "around the",
+                "during the",
+                "reaction to",
+                "after the",
+                "before the",
+                "event-window",
+                "event window",
+            )
+        )
         return {
             "current_latest": current_latest,
             "forecast_intent": forecast_intent,
             "explicit_normalized": explicit_normalized,
             "comparative_signal": comparative_signal,
             "exact_level": exact_level,
+            "return_intent": return_intent and not non_return_only,
+            "non_return_only": non_return_only,
+            "event_intent": event_intent,
         }
 
     @staticmethod
@@ -644,7 +747,57 @@ class ASADOQueryAssistant:
         plan.setdefault("warnings", [])
         plan.setdefault("hybrid_steps", [])
         plan.setdefault("tables_or_labels", [])
-        return self._apply_domain_guardrails(question, plan)
+        plan = self._apply_domain_guardrails(question, plan)
+        return self._apply_returns_first_guardrail(question, plan)
+
+    @staticmethod
+    def _apply_returns_first_guardrail(question: str, plan: Dict[str, Any]) -> Dict[str, Any]:
+        """Set return_surface_used / return_surface_reason and warn on return-intent mismatch."""
+        traits = ASADOQueryAssistant._question_traits(question)
+        tables = [str(t) for t in (plan.get("tables_or_labels") or [])]
+        all_text = " ".join(tables).lower() + " " + (
+            (plan.get("duckdb_sql") or "") + " " + (plan.get("neo4j_cypher") or "")
+        ).lower()
+        for step in plan.get("hybrid_steps", []) or []:
+            all_text += " " + str(step.get("query") or "").lower()
+
+        def _has(token: str) -> bool:
+            return token in all_text
+
+        surface = "none"
+        if _has("country_factor_attribution"):
+            surface = "country_factor_attribution"
+        elif _has("factor_returns_daily"):
+            surface = "factor_returns_daily"
+        elif _has("factor_returns"):
+            surface = "factor_returns"
+        elif _has("1dret") or _has("5dret") or _has("20dret") or _has("60dret") or _has("120dret"):
+            surface = "country_returns"
+        elif (_has("1mret") or _has("3mret") or _has("6mret") or _has("9mret") or _has("12mret")):
+            surface = "country_returns"
+        elif _has("event_window") or _has("events_in_window"):
+            surface = "event_window"
+
+        plan["return_surface_used"] = plan.get("return_surface_used") or surface
+        if not plan.get("return_surface_reason"):
+            plan["return_surface_reason"] = (
+                f"Inferred from plan tables/SQL: {plan['return_surface_used']}"
+                if plan["return_surface_used"] != "none"
+                else "No return surface referenced in tables_or_labels or query text."
+            )
+
+        if traits.get("return_intent") and plan["return_surface_used"] == "none":
+            warn = (
+                "Question expresses a returns/performance/event intent but no return surface "
+                "was selected. Prefer feature_panel 1MRet/source='t2' (or t2_factors_daily) for "
+                "country performance, factor_returns / factor_returns_daily for factor performance, "
+                "and country_factor_attribution for country-level contribution. GDELT 1MRet/1DRet "
+                "are bit-exact aliases of T2 — do not treat them as a second source."
+            )
+            warnings = list(dict.fromkeys((plan.get("warnings") or []) + [warn]))
+            plan["warnings"] = warnings
+
+        return plan
 
     @staticmethod
     def _apply_domain_guardrails(question: str, plan: Dict[str, Any]) -> Dict[str, Any]:

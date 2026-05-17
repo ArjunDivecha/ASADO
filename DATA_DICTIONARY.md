@@ -13,16 +13,18 @@ ASADO combines:
 - IMF datasets
 - GDELT country news signals (monthly + daily)
 - macrostructure / sticky-capital / central-bank-footprint / policy-backstop signals
+- World Bank Pink Sheet commodity prices, indices, and derived features
 - Bloomberg sovereign and ETF passive-flow data
 - bilateral portfolio ownership
 - daily optimizer factor returns (T2 + GDELT)
+- prediction-market snapshots and curated event log
 - a Neo4j knowledge graph for network relationships
 
 The three most important access surfaces are:
 
 1. DuckDB for time-series and factor analytics (monthly + daily)
 2. Neo4j for relationship and network questions
-3. MCP tools (`event_window`, `daily_factor_series`) for daily event studies
+3. MCP tools (`event_window`, `daily_factor_series`, return tools, commodity tools) for event studies and interactive analysis
 
 ## Canonical Access Points
 
@@ -94,6 +96,8 @@ Panel-specific catalogs:
 - [macrostructure_variable_catalog.csv](/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/macrostructure_variable_catalog.csv)
 - [macrostructure_formula_catalog.json](/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/macrostructure_formula_catalog.json)
 - [bloomberg_variable_catalog.csv](/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/bloomberg_variable_catalog.csv)
+- [wb_commodity_variable_catalog.csv](/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/wb_commodity_variable_catalog.csv)
+- [wb_commodity_manifest.json](/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/wb_commodity_manifest.json)
 
 Refresh the schema cache with:
 
@@ -123,6 +127,7 @@ This is the shape used by:
 - `imf_factors`
 - `macrostructure_factors`
 - `bloomberg_factors`
+- `wb_commodity_factor_panel`
 - `unified_panel`
 - `normalized_panel`
 - `feature_panel`
@@ -138,19 +143,33 @@ Note: `factor_returns_daily` uses `(date, factor, value, source)` — same shape
 
 | Table / View | Rows | Date Range | Primary Use |
 | --- | ---: | --- | --- |
-| `t2_master` | 1,188,810 | 2000-02-01 → 2026-04-01 | Canonical normalized T2 panel |
-| `t2_raw` | 474,636 | 2000-02-01 → 2026-04-01 | Raw T2 factor levels from the workbook |
+| `t2_master` | 1,192,584 | 2000-02-01 → 2026-05-01 | Canonical normalized T2 panel |
+| `t2_raw` | 485,582 | 2000-02-01 → 2026-05-01 | Raw T2 factor levels from the workbook |
 | `country_reference` | generated monthly | n/a | Canonical ISO3 -> ASADO country mapping surface for bilateral joins |
-| `external_factors` | 112,633 | 1985-01-01 → 2026-03-01 | Program 1 free-source macro / risk / structural panel |
-| `extended_factors` | 96,604 | 1990-12-01 → 2026-04-01 | Program 2 extended free-source panel |
-| `gdelt_panel` | 407,864 | 2015-09-01 → 2026-05-01 | Country-level media / tone / risk signals from GDELT |
-| `imf_factors` | 107,298 | 1980-12-01 → 2031-12-01 | IMF CPI, WEO, BOP, FX, labor, trade, and FSI-derived series |
-| `macrostructure_factors` | 75,120 | 1995-03-01 → 2026-04-01 | Bank fragility, debt structure, ownership, sticky-capital, central-bank footprint, policy-backstop |
-| `bloomberg_factors` | 98,129 | 1975-12-01 → 2026-04-01 | Bloomberg sovereign rates/credit/macro plus ETF passive-flow layer |
-| `normalized_panel` | 778,984 | 1990-12-01 → 2026-04-01 | Canonical `_CS` and `_TS` normalized feature layer |
-| `feature_panel` | 3,340,078 | 1975-12-01 → 2031-12-01 | Query-facing union of raw + normalized factor rows |
+| `external_factors` | 112,677 | 1985-01-01 → 2026-03-01 | Program 1 free-source macro / risk / structural panel |
+| `extended_factors` | 96,658 | 1990-12-01 → 2026-05-01 | Program 2 extended free-source panel |
+| `gdelt_panel` | 5,622,818 | 2015-09-01 → 2026-03-01 | Country-level media / tone / risk signals from GDELT |
+| `imf_factors` | 107,538 | 1980-12-01 → 2031-12-01 | IMF CPI, WEO, BOP, FX, labor, trade, and FSI-derived series |
+| `macrostructure_factors` | 75,407 | 1995-03-01 → 2026-05-01 | Bank fragility, debt structure, ownership, sticky-capital, central-bank footprint, policy-backstop |
+| `bloomberg_factors` | 98,541 | 1975-12-01 → 2026-05-01 | Bloomberg sovereign rates/credit/macro plus ETF passive-flow layer |
+| `wb_commodity_factor_panel` | 9,600,274 | 1960-01-01 → 2026-04-01 | Selected World Bank commodity variables broadcast to ASADO countries |
+| `normalized_panel` | 14,192,623 | 1960-01-01 → 2031-12-01 | Canonical `_CS` and `_TS` normalized feature layer |
+| `feature_panel` | 31,584,702 | 1960-01-01 → 2031-12-01 | Query-facing union of raw + normalized factor rows |
 | `bilateral_portfolio_matrix` | 56,786 | 1997-12-01 → 2026-02-01 | Reporter-counterparty portfolio ownership matrix |
-| `unified_panel` | 2,561,094 | 1975-12-01 → 2031-12-01 | Primary cross-source analytical view |
+| `factor_returns` | 277,116 | 2000-02-01 → 2026-04-01 | Monthly optimizer factor portfolio returns |
+| `factor_top20_membership` | 2,104,980 | 2000-02-01 → 2026-05-01 | Sparse country membership in each factor's top-20 bucket |
+| `unified_panel` | 17,392,079 | 1960-01-01 → 2031-12-01 | Primary raw cross-source analytical view |
+
+#### World Bank Commodity Tables (added 2026-05-16)
+
+| Table | Rows | Date Range | Primary Use |
+| --- | ---: | --- | --- |
+| `wb_commodity_prices` | 50,099 | 1960-01-01 → 2026-04-01 | Canonical World Bank Pink Sheet monthly nominal USD commodity prices |
+| `wb_commodity_indices` | 12,736 | 1960-01-01 → 2026-04-01 | World Bank commodity price indices, 2010=100 |
+| `wb_commodity_features` | 435,618 | 1960-01-01 → 2026-04-01 | Commodity-axis trailing features: `level`, `mom_pct`, `yoy_pct`, `ret_3m_pct`, `ret_12m_pct`, `vol_12m`, `z_36m` |
+| `wb_commodity_meta` | 87 | n/a | Price/index metadata, category, unit, and projection flag |
+
+The commodity-axis tables are not country-keyed. `wb_commodity_factor_panel` is the controlled country-panel projection. These variables have `source='wb_commodity'` and are global explanatory context; do not use them as returns or optimizer outputs.
 
 #### Daily Tables (added 2026-05-08)
 
@@ -159,11 +178,23 @@ Note: `factor_returns_daily` uses `(date, factor, value, source)` — same shape
 | `t2_factors_daily` | 32,340,392 | 2000-01-01 → 2026-05-07 | 109 normalized _CS/_TS daily factors, 34 countries |
 | `t2_levels_daily` | 13,698,294 | 2000-01-01 → 2026-04-21 | 47 raw factor levels (PX_LAST, MCAP, RSI14, REER, etc.) |
 | `gdelt_factors_daily` | 10,085,794 | 2015-06-24 → 2026-05-08 | 75 normalized GDELT daily factors, 34 countries |
-| `gdelt_raw_daily` | 955,473 | 2015-02-18 → 2026-04-19 | 249-country raw GDELT (off-universe entity bridge) |
-| `factor_returns_daily` | 1,085,412 | 2000-01-01 → 2026-05-07 | 157 optimizer factor returns (T2 + GDELT) |
-| `variable_meta` | 269 | n/a | Variable metadata: frequency, category, optimizer-selected flag |
+| `gdelt_raw_daily` | 943,652 | 2015-02-18 → 2026-05-07 | 249-country raw GDELT (off-universe entity bridge) |
+| `factor_returns_daily` | 1,293,492 | 2000-01-01 → 2026-05-07 | 178 optimizer factor returns (T2 + GDELT) |
+| `variable_meta` | 654 | n/a | Variable metadata: frequency, category, optimizer-selected flag, commodity freshness |
 | `daily_calendar` | 327,216 | 2000-01-01 → 2026-05-07 | Per-country trading day calendar |
 | `t2_factors_monthly_from_daily` (view) | — | — | Last-trading-day-of-month snapshot for validation |
+
+#### Prediction-Market And Event Tables
+
+| Table | Rows | Date Range | Primary Use |
+| --- | ---: | --- | --- |
+| `predmkt_daily` | 30 | 2026-05-17 | Daily implied probabilities, book fields, liquidity, stale/resolution flags |
+| `predmkt_market_meta` | 15 | n/a | Curated market metadata and ASADO category mapping |
+| `predmkt_outcome_meta` | 30 | n/a | Outcome labels and scalar thresholds |
+| `predmkt_country_spillover` | 49 | n/a | Curated spillover bridge to 18 T2 countries |
+| `predmkt_resolutions` | 0 | n/a | Resolution archive, empty until tracked markets resolve |
+| `predmkt_signals_daily` | 42 | 2026-05-17 | 14 derived country/global prediction-market signals |
+| `event_log` | 146 | 1997-07-02 → 2026-05-01 | Curated dated event registry for event-window workflows |
 
 ### Which Surface Should I Use?
 
@@ -173,6 +204,8 @@ Note: `factor_returns_daily` uses `(date, factor, value, source)` — same shape
 - Use `country_reference` whenever you need to map `reporter_iso3` or `counterpart_iso3` from bilateral tables onto ASADO country names.
 - Use `gdelt_panel` when the question is specifically about GDELT-only features or partial-month GDELT labels.
 - Use `bloomberg_factors` when you want only Bloomberg-native or Bloomberg-derived fields.
+- Use `wb_commodity_features` when you want commodity-axis history without a country broadcast.
+- Use `wb_commodity_factor_panel` or `source='wb_commodity'` in `feature_panel` when you want selected commodity context aligned to ASADO countries.
 - Use `macrostructure_factors` when you want the ownership / fragility / central-bank-footprint / policy-backstop layer in isolation.
 - Use `bilateral_portfolio_matrix` for reporter-counterparty portfolio ownership, not `unified_panel`.
 - Use `t2_factors_daily` / `gdelt_factors_daily` for daily-frequency analysis, event windows, or intramonth behavior.
@@ -180,6 +213,8 @@ Note: `factor_returns_daily` uses `(date, factor, value, source)` — same shape
 - Use `factor_returns_daily` for daily optimizer portfolio returns (strategy P&L analysis).
 - Use `variable_meta` to discover which variables are optimizer-selected, their category, and monthly equivalents.
 - Use `daily_calendar` to identify trading vs. non-trading days per country (handles Saudi Sun-Thu, China holidays, etc.)
+- Use `predmkt_*` for market-implied probabilities and curated off-universe spillovers.
+- Use `event_log` / `events_in_window` for dated event lookup before running `event_window`.
 - Use the MCP `event_window` tool for quick daily event studies instead of writing SQL from scratch.
 
 ## Special Table: `bilateral_portfolio_matrix`
@@ -290,6 +325,7 @@ Common patterns:
 - `BBG_*` = Bloomberg variables
 - `IMF_*` = IMF variables
 - `WB_*` = World Bank variables
+- `WB_CMDTY_*` = World Bank Pink Sheet commodity variables projected into ASADO's factor-panel shape
 - `MS_*` = macrostructure or market-structure variables
 - `_CS` = cross-sectional normalized form
 - `_TS` = time-series normalized form
@@ -332,14 +368,9 @@ If you only updated the external GDELT file, the right command is:
 
 ASADO currently supports the convention where the current partial month can be labeled with the first day of the next month.
 
-Current live example:
-
-- `CURRENT_DATE`: `2026-04-19`
-- current partial-month GDELT label: `2026-05-01`
-
 Interpretation:
 
-- for GDELT, `2026-05-01` is treated as the current partial-month observed label
+- a GDELT row labeled with the first day of the next month may be the current partial-month observed label
 - it should not be treated as a forecast just because it is later than `CURRENT_DATE`
 - this rule applies to GDELT-specific latest/current questions, not to all future-dated rows in the warehouse
 
@@ -361,6 +392,43 @@ The Bloomberg panel now includes a market-structure / ETF-passive family:
 
 These live in `bloomberg_factors` and also appear in `unified_panel`.
 
+## World Bank Commodity Intelligence
+
+ASADO's commodity layer uses the official World Bank Commodity Markets Pink Sheet workbook as the canonical source. The Kaggle mirror is not used as an upstream dependency.
+
+Collector:
+
+```bash
+./venv/bin/python scripts/collect_wb_commodity_prices.py --force
+./venv/bin/python scripts/collect_wb_commodity_prices.py --check
+```
+
+Monthly updater:
+
+```bash
+./venv/bin/python scripts/monthly_update.py --commodity-only
+./venv/bin/python scripts/monthly_update.py --skip-wb-commodity
+```
+
+Current source label: `Updated on May 04, 2026`. Latest observation in the live DB: `2026-04-01`.
+
+Canonical table grain:
+
+- `wb_commodity_prices`: `(date, commodity_code)` with nominal USD price and unit.
+- `wb_commodity_indices`: `(date, index_code)` with 2010=100 nominal index level.
+- `wb_commodity_features`: `(date, series_code, feature)` for derived trailing features.
+- `wb_commodity_factor_panel`: `(date, country, variable)` after selected global commodity series are broadcast to the 34 ASADO countries.
+
+Selected broadcast variable examples:
+
+- `WB_CMDTY_CRUDE_BRENT_LEVEL`
+- `WB_CMDTY_CRUDE_BRENT_RET_12M`
+- `WB_CMDTY_COPPER_YOY`
+- `WB_CMDTY_IENERGY_LEVEL`
+- `WB_CMDTY_IFERTILIZERS_Z_36M`
+
+Commodity variables are explanatory context. For questions like "who benefited from higher oil?" or "did copper help Chile?", first inspect the commodity series, then anchor the answer on country/factor returns.
+
 ## Macrostructure Central-Bank Footprint Layer
 
 The macrostructure panel now includes a transparent Phase 3 central-bank footprint block:
@@ -372,11 +440,7 @@ The macrostructure panel now includes a transparent Phase 3 central-bank footpri
 - `MS_CentralBank_SovDebt_Share`
   Transparent proxy for the central-bank share of sovereign debt. Numerator is `MS_CentralBank_Claims_on_Government_Pct_GDP`; denominator prefers `MS_Public_Debt_Total_Pct_GDP` from QPSD and falls back to annual WEO debt/GDP when QPSD is missing.
 
-Current live coverage from the 2026-04-19 rebuild:
-
-- `MS_CentralBank_BalanceSheet_GDP`: 5,754 rows, 21 countries, 1997-12-01 through 2026-03-01
-- `MS_CentralBank_Claims_on_Government_Pct_GDP`: 7,157 rows, 26 countries, 1997-12-01 through 2026-03-01
-- `MS_CentralBank_SovDebt_Share`: 7,091 rows, 26 countries, 1997-12-01 through 2026-03-01
+Current live macrostructure table: 75,407 rows, 26 variables, 34 countries, 1995-03-01 through 2026-05-01.
 
 ## Neo4j Graph Model
 
@@ -408,7 +472,7 @@ Current relationship types:
 
 ### Factor Node Daily Properties (added 2026-05-08)
 
-157 Factor nodes (those with daily optimizer returns) carry daily performance stats:
+178 optimizer factors have daily returns in DuckDB. The Neo4j graph stores daily performance properties on the Factor nodes that are created from the current graph build:
 
 - `daily_return_latest`, `daily_return_date`
 - `daily_vol_30d`, `daily_vol_252d` (annualized)
@@ -520,7 +584,7 @@ The daily extension adds ~58M rows of daily-frequency data to the same `asado.du
 
 - **Normalized vs raw**: `t2_factors_daily` contains cross-sectional (`_CS`) and time-series (`_TS`) z-scored factors. `t2_levels_daily` contains the raw underlying values (prices, RSI14 level, REER level, etc.)
 - **Optimizer-selected factors**: 8 key factors that drive the strategy portfolio — queryable via `variable_meta.is_optimizer_selected`
-- **Factor returns**: `factor_returns_daily` contains daily portfolio returns for 157 factors, sourced from the T2 and GDELT optimizers. `source` is `t2_optimizer_daily` or `gdelt_optimizer_daily`.
+- **Factor returns**: `factor_returns_daily` contains daily portfolio returns for 178 factors, sourced from the T2 and GDELT optimizers. `source` is `t2_optimizer_daily` or `gdelt_optimizer_daily`.
 - **Trading calendar**: Not all countries trade on the same days (Saudi Arabia is Sun-Thu, China has Golden Week, etc.). `daily_calendar` provides per-country trading-day flags.
 - **Off-universe GDELT**: `gdelt_raw_daily` covers 249 countries (including Iran, North Korea, etc.) — useful as an entity bridge beyond the 34-country T2 universe.
 
@@ -562,8 +626,14 @@ LIMIT 20;
 
 | Tool | Use Case |
 |------|----------|
-| `event_window(country, date, days_before, days_after)` | Quick event studies — returns T2 factors, GDELT, factor returns, and calendar in one call |
+| `event_window(country, date, days_before, days_after)` | Quick event studies — returns T2 factors, GDELT, factor returns, calendar, and return summary |
 | `daily_factor_series(country, variables, start_date, end_date, source)` | General daily time-series extraction from any daily table |
+| `country_returns(...)` | Deterministic T2 country returns, monthly or daily |
+| `factor_return_series(...)` | Monthly/daily optimizer factor portfolio returns |
+| `country_factor_attribution(...)` | Monthly top-20 bucket contribution by country/factor |
+| `return_leaders(...)` | Country or factor return leaderboards |
+| `commodity_price_series(commodity, feature, ...)` | World Bank Pink Sheet commodity/index series and derived features |
+| `predmkt_snapshot(...)`, `country_signal_now(...)`, `event_market_set(...)` | Prediction-market snapshot, spillover, and search tools |
 
 ### Rebuild
 

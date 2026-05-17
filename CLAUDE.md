@@ -7,12 +7,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **ASADO** is a hybrid data collection and research platform for a 34-country macro universe. It:
 
 - Collects **data from 26 free external sources** (EPU, GPR, BIS, OECD, World Bank, IMF, ECB, FRED, EIA, FAOSTAT, UNDP, ILOSTAT, ND-GAIN, OFAC, etc.)
-- Integrates **17 Bloomberg Terminal variables** (sovereign bonds, CDS, OIS, breakevens, WIRP, ECFC, PMI, M2, ETF passive flows)
+- Integrates **World Bank Pink Sheet commodity intelligence** (71 price series, 16 indices, derived features, selected global-broadcast explanatory variables)
+- Integrates **28 Bloomberg Terminal variables** (sovereign bonds, CDS, OIS, breakevens, WIRP, ECFC, PMI, M2, ETF passive flows)
 - Stores everything in **hybrid DuckDB + Neo4j** (analytical warehouse + knowledge graph)
 - Builds **bilateral trade/banking/portfolio networks** from IMF IMTS, BIS LBS, IMF PIP/TIC
 - Produces a **canonical normalized feature layer** (_CS / _TS variations + factor_panel view)
-- Outputs **1.9M+ rows, 332 variables** across monthly panels
-- Maintains a **daily-frequency extension** with **58M+ rows** (T2, GDELT, optimizer returns) for event studies
+- Outputs a live DuckDB with `unified_panel` at **17.4M raw rows / 2,022 variables** and `feature_panel` at **31.6M rows / 3,048 variables**
+- Maintains a **daily-frequency extension** with T2, GDELT, raw GDELT, optimizer returns, event log, prediction-market surfaces, and commodity context for event studies
+- Treats **country and factor returns as the outcome source of truth**. Explanatory layers such as commodities, prediction markets, GDELT, Bloomberg, macrostructure, and graph edges should usually be joined back to return surfaces before making performance claims.
 
 Core reference docs: `README.md`, `CLAUDE_CODE_BRIEF.md`, `Phase1_Data_Collection_Plan.md`
 
@@ -23,7 +25,7 @@ Core reference docs: `README.md`, `CLAUDE_CODE_BRIEF.md`, `Phase1_Data_Collectio
 ### Four-Layer Data Model
 
 1. **Raw Collectors** (scripts/collect_*.py) — Download from each data source, cache 24h, source-level merge
-2. **Panel Assembly** (Data/processed/) — Tidy-format parquet panels per collector (external, extended, IMF, bilateral, macrostructure, bloomberg)
+2. **Panel Assembly** (Data/processed/) — Tidy-format parquet panels per collector (external, extended, IMF, bilateral, macrostructure, World Bank commodity, Bloomberg)
 3. **Analytical Store** (DuckDB, Data/asado.duckdb) — Columns: date, country, value, variable, source; includes t2_master, unified_panel, feature_panel views
 4. **Knowledge Graph** (Neo4j, bolt://localhost:7687) — Entity relationships: countries, factors, central banks, data sources, crises, sanctions; bilateral edges for trade/banking/portfolio; vector embeddings
 
@@ -97,6 +99,9 @@ This ensures **no data loss** even if multiple sources are temporarily unavailab
 | `get_country_profile(country)` | Bundled snapshot | Pass exact T2 names (`Brazil`, `ChinaA`, `U.S.`). |
 | `event_window(country, date, ...)` | Daily event study | Returns T2 factors, GDELT, factor returns, calendar in ±N day window. |
 | `daily_factor_series(country, variables, start_date, end_date, source)` | Daily extraction | General time-series from any daily table (`t2`, `t2_levels`, `gdelt`, `gdelt_raw`). |
+| `country_returns(...)` | Returns source of truth | Deterministic T2 country returns, monthly or daily. |
+| `factor_return_series(...)` | Returns source of truth | Monthly/daily optimizer factor portfolio returns. |
+| `commodity_price_series(commodity, feature, ...)` | Commodity context | World Bank Pink Sheet prices/indices/features; explanatory only unless joined to returns. |
 
 **Setup is documented in `README.md` → "MCP Server — Query ASADO from Claude Desktop"** (config file location, JSON shape, example prompts, troubleshooting). Do not duplicate that here.
 
@@ -122,6 +127,8 @@ python scripts/monthly_update.py
 # With options:
 python scripts/monthly_update.py --skip-neo4j       # skip graph rebuild
 python scripts/monthly_update.py --skip-bloomberg   # skip Bloomberg collection
+python scripts/monthly_update.py --skip-wb-commodity # preserve prior World Bank commodity files
+python scripts/monthly_update.py --commodity-only    # commodity collector + DuckDB/daily/schema refresh
 python scripts/monthly_update.py --collectors-only  # data collection only, no DB rebuild
 python scripts/monthly_update.py --db-only          # rebuild DBs from existing panels
 python scripts/monthly_update.py --dry-run          # preview, no writes
@@ -150,6 +157,10 @@ python scripts/collect_bilateral.py --bank-only     # banking only
 
 # Program 5: Macrostructure layer (fragility, debt-structure, ownership, backstop)
 python scripts/collect_macrostructure.py --force
+
+# Program 5b: World Bank Commodity Markets Pink Sheet
+python scripts/collect_wb_commodity_prices.py --force
+python scripts/collect_wb_commodity_prices.py --check
 
 # Program 6: Bloomberg Terminal (requires OpusBloomberg env + Parallels)
 conda run -p ".../OpusBloomberg/.venv" python scripts/collect_bloomberg.py
@@ -408,12 +419,13 @@ Core surfaces all use tidy schema: `(date DATE, country VARCHAR, value DOUBLE, v
 | `external_factors` | 112K | Monthly | Program 1 output (EPU, GPR, BIS, OECD, WB, REER) |
 | `extended_factors` | 96K | Monthly | Program 2 output (rates, BCI/CCI, FX, ND-GAIN, etc.) |
 | `imf_factors` | 107K | Monthly | Program 3 output (CPI, WEO, BOP, trade, etc.) |
-| `gdelt_panel` | 407K | Monthly | GDELT news/tone/risk signals |
-| `macrostructure_factors` | 55K | Monthly | Program 5 (fragility, debt, ownership, backstop) |
+| `gdelt_panel` | 5.6M | Monthly | GDELT news/tone/risk signals |
+| `macrostructure_factors` | 75K | Monthly | Program 5 (fragility, debt, ownership, backstop) |
 | `bloomberg_factors` | 98K | Monthly | Program 6 (bonds, CDS, OIS, PMI, etc.) |
+| `wb_commodity_factor_panel` | 9.6M | Monthly | World Bank commodity features broadcast to ASADO countries |
 | `normalized_panel` | Generated | Monthly | Canonical _CS / _TS normalized features |
 | `feature_panel` | Generated | Monthly | Query-facing union (most commonly queried) |
-| `unified_panel` | 2.5M | Generated | Raw cross-source analytical warehouse |
+| `unified_panel` | 17.4M | Generated | Raw cross-source analytical warehouse |
 | `bilateral_portfolio_matrix` | 56K | Quarterly | Portfolio ownership (reporter-counterparty) |
 | `t2_master` | 1.1M | On request | T2 Master canonical panel |
 | `country_reference` | 34 | Monthly | ISO3 → ASADO country mapping |
@@ -421,9 +433,11 @@ Core surfaces all use tidy schema: `(date DATE, country VARCHAR, value DOUBLE, v
 | `t2_levels_daily` | 13.7M | Monthly | 47 raw factor levels (daily) |
 | `gdelt_factors_daily` | 10.1M | Monthly | 75 normalized GDELT daily factors |
 | `gdelt_raw_daily` | 955K | Monthly | 249-country raw GDELT signals |
-| `factor_returns_daily` | 1.1M | Monthly | 157 optimizer factor returns (T2 + GDELT) |
-| `variable_meta` | 269 | Monthly | Variable metadata: frequency, category, optimizer flag |
+| `factor_returns_daily` | 1.3M | Monthly | 178 optimizer factor returns (T2 + GDELT) |
+| `variable_meta` | 654 | Monthly | Variable metadata: frequency, category, optimizer flag, commodity freshness |
 | `daily_calendar` | 327K | Monthly | Per-country trading day calendar |
+| `predmkt_daily` / `predmkt_*` | small daily tables | Daily | Curated prediction-market probabilities, metadata, spillovers, and composites |
+| `event_log` | 146 | Monthly/ad hoc | Curated dated event registry for event-window studies |
 
 **Vector index:**
 - `countryStateIndex` (Neo4j) — 34-dimensional cosine similarity on Country.state_embedding
@@ -432,10 +446,10 @@ Core surfaces all use tidy schema: `(date DATE, country VARCHAR, value DOUBLE, v
 
 **Nodes:**
 - **Country** (34) — t2_name, iso3, dm_em, region, currency_code, state_embedding (34d)
-- **Factor** (1,651) — name, category, source, daily_sharpe_252d, daily_vol_252d, daily_cum_return_252d, daily_max_drawdown_252d, is_optimizer_selected
+- **Factor** (current graph build) — name, category, source, daily_sharpe_252d, daily_vol_252d, daily_cum_return_252d, daily_max_drawdown_252d, is_optimizer_selected
 - **CentralBank** (31), **DataSource** (37), **CrisisEvent** (9), **SanctionsProgram** (6), **Commodity** (4)
 
-**Daily stats on Factor nodes:** 157 factors (those with daily optimizer returns) carry `daily_*` properties computed from `factor_returns_daily`. Refreshed on each `setup_neo4j.py` rebuild. Use `f.is_optimizer_selected = true` to filter to the 8 live strategy factors.
+**Daily stats on Factor nodes:** `factor_returns_daily` currently contains 178 optimizer factors. Neo4j Factor nodes created during `setup_neo4j.py` carry `daily_*` properties when they map to those return series. Use `f.is_optimizer_selected = true` to filter to the 8 live strategy factors.
 
 **Edges:**
 - **HAS_FACTOR_EXPOSURE** (3.7K) — Country → Factor (latest values)
@@ -574,6 +588,7 @@ python scripts/monthly_update.py --skip-bloomberg
 | File | Purpose |
 |------|---------|
 | `scripts/monthly_update.py` | Single-command orchestrator — run this for monthly updates |
+| `scripts/collect_wb_commodity_prices.py` | World Bank Pink Sheet commodity collector |
 | `scripts/build_daily_panels.py` | Daily extension builder (58M rows: T2 + GDELT + optimizer returns) |
 | `scripts/asado_mcp_server.py` | MCP server (event_window, daily_factor_series, ask_asado, etc.) |
 | `scripts/db_bridge.py` | AsadoDB class — unified query interface for DuckDB + Neo4j |
@@ -587,7 +602,7 @@ python scripts/monthly_update.py --skip-bloomberg
 
 ---
 
-**Last Updated:** 2026-05-08  
-**Architecture:** 34-country macro universe, 26 free sources + 28 Bloomberg variables, hybrid DuckDB + Neo4j  
-**Total Data:** Monthly: 2.5M+ rows, 385 variables | Daily: 58M+ rows, 269 variables | DB size: ~4 GB  
-**Monthly update cycle:** ~8-10 minutes
+**Last Updated:** 2026-05-16  
+**Architecture:** 34-country macro universe, 26 free sources + World Bank commodities + 28 Bloomberg variables, hybrid DuckDB + Neo4j  
+**Total Data:** `unified_panel` 17.4M rows / 2,022 variables; `feature_panel` 31.6M rows / 3,048 variables; daily tables restored; DB size ~3.6 GB  
+**Monthly update cycle:** ~8-12 minutes

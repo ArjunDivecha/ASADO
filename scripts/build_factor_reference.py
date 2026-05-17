@@ -352,6 +352,7 @@ def render_indexes(duckdb_schema: dict) -> List[str]:
 def render_overview(duckdb_schema: dict, catalog: dict, neo4j_schema: dict) -> List[str]:
     out = ["## At a glance", ""]
     n_tables = len(duckdb_schema.get("tables", {}))
+    factor_surface = catalog.get("factor_surface") or duckdb_schema.get("factor_surface") or "feature_panel"
     n_vars_total = catalog.get("variable_count", 0)
     n_vars_raw = sum(
         1 for m in catalog.get("variable_metadata", {}).values()
@@ -368,7 +369,7 @@ def render_overview(duckdb_schema: dict, catalog: dict, neo4j_schema: dict) -> L
     n_labels = len(neo4j_schema.get("labels", {}) or {})
     n_rels = len(neo4j_schema.get("relationships", {}) or {})
     out.append(f"- **DuckDB tables / views:** {n_tables}")
-    out.append(f"- **Distinct variables in `unified_panel`:** {n_vars_total:,}")
+    out.append(f"- **Distinct variables in `{factor_surface}` catalog:** {n_vars_total:,}")
     out.append(f"  - Raw: {n_vars_raw:,} · `_CS` cross-sectional: {n_vars_cs:,} · `_TS` time-series: {n_vars_ts:,}")
     out.append(f"- **Neo4j node labels:** {n_labels}")
     out.append(f"- **Neo4j relationship types:** {n_rels}")

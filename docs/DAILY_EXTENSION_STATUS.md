@@ -1,7 +1,7 @@
 # ASADO Daily Extension — Implementation Status
 
-**Date:** 2026-05-08  
-**Status:** Stage A + B + C complete. All tables loaded, MCP tools live, orchestrator wired, Neo4j enriched with daily factor stats.
+**Date:** 2026-05-16  
+**Status:** Stage A + B + C complete. Daily tables loaded, MCP tools live, orchestrator wired, Neo4j enrichment supported, prediction/event/commodity context restored in DuckDB.
 
 ---
 
@@ -14,9 +14,9 @@
 | `t2_factors_daily` | 32,340,392 | `(date, country, value, variable)` | 109 normalized _CS/_TS vars, 34 countries, 2000-01-01 → 2026-05-07 |
 | `t2_levels_daily` | 13,698,294 | `(date, country, value, variable)` | 47 raw factor levels (PX_LAST, MCAP, RSI14 raw, REER raw, etc.), 34 countries, 2000-01-01 → 2026-04-21 |
 | `gdelt_factors_daily` | 10,085,794 | `(date, country, value, variable)` | 75 normalized GDELT factors, 34 countries, 2015-06-24 → 2026-05-08 |
-| `gdelt_raw_daily` | 955,473 | Wide (45 columns) | 249 ISO3 countries, 2015-02-18 → 2026-04-19. Off-universe entity bridge (Iran, Russia, etc.) |
-| `factor_returns_daily` | 1,085,412 | `(date, factor, value, source)` | 157 factors from T2 + GDELT optimizers, 2 sources, 2000-01-01 → 2026-05-07 |
-| `variable_meta` | 269 | See below | One row per variable across all daily tables |
+| `gdelt_raw_daily` | 943,652 | Wide (45 columns) | 249 ISO3 countries, 2015-02-18 → 2026-05-07. Off-universe entity bridge (Iran, Russia, etc.) |
+| `factor_returns_daily` | 1,293,492 | `(date, factor, value, source)` | 178 factors from T2 + GDELT optimizers, 2 sources, 2000-01-01 → 2026-05-07 |
+| `variable_meta` | 654 | See below | One row per daily/prediction/commodity variable metadata item |
 | `daily_calendar` | 327,216 | `(date, country, is_trading_day)` | Derived from non-null `1DRet` observations. Handles Saudi Sun-Thu, China holidays, etc. |
 | `t2_factors_monthly_from_daily` | VIEW | Same as t2_factors_daily | Last-trading-day-of-month snapshot for validation against `t2_master` |
 
@@ -24,12 +24,14 @@
 
 ```
 variable, source_table, source_file, native_frequency, monthly_equivalent,
-is_normalized (BOOLEAN), category, is_optimizer_selected (BOOLEAN)
+is_normalized (BOOLEAN), category, is_optimizer_selected (BOOLEAN),
+freshness_expectation
 ```
 
 - `monthly_equivalent`: maps daily names to monthly (e.g., `20DTR_CS` → `1MTR_CS`)
 - `is_optimizer_selected`: 8 factors flagged: `120DTR_TS`, `120MA Signal_CS/TS`, `20DTR_CS/TS`, `REER_CS`, `RSI14_CS/TS`
 - `category`: return, technical, volatility, valuation_fund, macro, commodity, fx, rates, size, risk, gdelt_signal, gdelt_raw, other
+- World Bank commodity broadcast variables are present with `source_table='wb_commodity_factor_panel'`, `category='commodity'`, and `freshness_expectation='monthly'`.
 
 ### MCP Tools Added (`asado_mcp_server.py`)
 
@@ -95,7 +97,7 @@ ORDER BY f.daily_sharpe_252d DESC
 | `T2 Factor Timing Fuzzy Daily/T2_Optimizer_Top.xlsx` | 1.1 MB | 2026-02-22 |
 | `GDELT Factor Timing Fuzzy Daily/T2-Factor-Timing-Daily/GDELT_Factors_MasterCSV.csv` | 556 MB | 2026-05-08 |
 | `GDELT Factor Timing Fuzzy Daily/T2-Factor-Timing-Daily/GDELT_Optimizer.xlsx` | — | 2026-05-08 |
-| `GDELT/data/panels/country_signal_daily.parquet` | 170 MB | 2026-04-19 |
+| `GDELT/data/panels/country_signal_daily.parquet` | 170 MB | 2026-04-19 upstream snapshot; live `gdelt_raw_daily` loaded through 2026-05-07 |
 
 ---
 
@@ -221,13 +223,11 @@ python scripts/build_daily_panels.py --validate
 
 1. **`aggregation_rule` in variable_meta** — The plan mentioned tagging each variable with its monthly aggregation rule (last/mean/sum/first). Currently implicit in the `t2_factors_monthly_from_daily` view (uses last-trading-day).
 
-2. **`freshness_expectation` in variable_meta** — How often each variable is expected to update. Nice-to-have metadata.
-
-3. **`event_log` table** — Explicit timestamped geopolitical/macro events (FOMC, ECB, OPEC dates) for named-event lookups. Would pair with `event_window` to support queries like "show me Saudi around the last OPEC cut."
+2. **`event_log` table** — Built and present in the live DB with 146 curated events. It is no longer missing; keep `config/event_log_seed.yaml` and `scripts/build_event_log.py` in sync when adding events.
 
 4. **`unified_panel_daily` view** — The monthly `unified_panel` is untouched. No daily equivalent created yet. Decision: should daily tables be unioned, or accessed individually via `event_window` / `daily_factor_series`?
 
-5. **GDELT raw parquet stale** — `country_signal_daily.parquet` ends 2026-04-19 (needs upstream GDELT pipeline re-run to refresh).
+5. **GDELT raw parquet** — currently loaded through 2026-05-07 in DuckDB.
 
 6. **Daily country embeddings** — Country `state_embedding` still uses monthly z-scores. Could be recomputed from daily optimizer factors for intramonth similarity, but 8 factors may be too few dimensions.
 
@@ -238,8 +238,9 @@ python scripts/build_daily_panels.py --validate
 ```
 scripts/build_daily_panels.py    — Main build script (all daily table logic)
 scripts/setup_neo4j.py           — Graph rebuild (now includes set_daily_factor_stats)
-scripts/asado_mcp_server.py      — MCP server (event_window + daily_factor_series tools)
+scripts/asado_mcp_server.py      — MCP server (event_window + daily_factor_series + returns + commodity tools)
 scripts/monthly_update.py        — Orchestrator (now includes daily panels step)
+scripts/collect_wb_commodity_prices.py — Monthly commodity context collector
 Data/asado.duckdb                — Single database (monthly + daily tables coexist)
 Neo4j bolt://localhost:7687      — Factor nodes carry daily_* properties
 ```

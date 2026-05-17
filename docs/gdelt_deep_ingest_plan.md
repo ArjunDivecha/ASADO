@@ -10,7 +10,7 @@ Source: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Deep.md`.
 Land the 1,130 new GDELT Deep features (themes / GCAM / events) in the ASADO
 warehouse as **first-class but separately-tagged** data, then run them
 through the existing PIT and normalization machinery so any future strategy
-can consume them on equal footing with the existing 332 variables.
+can consume them on equal footing with ASADO's existing GDELT variables.
 
 ## What this plan does NOT do
 

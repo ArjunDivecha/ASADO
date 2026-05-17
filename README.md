@@ -1,6 +1,8 @@
 # ASADO — Country Data Collection & Research Platform
 
-Collects macro/governance/risk/climate/trade data from **26 free external sources** (including 7 IMF datasets) **plus 28 Bloomberg Terminal variables** (sovereign bonds, CDS, breakevens, OIS, WIRP, ECFC, PMI, M2, ETF passive-flow, and related derived signals), aligns to the 34-country T2 Master universe, and stores everything in a **hybrid DuckDB + Neo4j database** with a **raw warehouse, canonical normalized feature layer, bilateral trade/banking/portfolio edges, daily-frequency factor panels (58M+ rows),** and **country-state vector embeddings** for similarity search.
+Collects macro/governance/risk/climate/trade data from **26 free external sources** (including 7 IMF datasets), **World Bank Pink Sheet commodity intelligence**, and **28 Bloomberg Terminal variables** (sovereign bonds, CDS, breakevens, OIS, WIRP, ECFC, PMI, M2, ETF passive-flow, and related derived signals). ASADO aligns everything to the 34-country T2 Master universe and stores it in a **hybrid DuckDB + Neo4j database** with a **raw warehouse, canonical normalized feature layer, bilateral trade/banking/portfolio edges, daily-frequency factor panels, prediction-market/event surfaces,** and **country-state vector embeddings** for similarity search.
+
+**Returns are the outcome source of truth.** Country returns and factor portfolio returns live in dedicated T2/GDELT/Econ return surfaces. Macro, commodity, prediction-market, GDELT, Bloomberg, and graph layers are explanatory context unless they are explicitly joined back to returns.
 
 ## Project Structure
 
@@ -18,6 +20,7 @@ ASADO/
 │   │   ├── imf_factors_panel.parquet     # Program 3 output (107K rows, 26 vars)
 │   │   ├── gdelt_panel_snapshot.parquet  # Repo-local fallback when external GDELT CSV is absent
 │   │   ├── macrostructure_panel.parquet  # Program 5 output (75K rows, fragility/sticky-capital/central-bank/backstop layer)
+│   │   ├── wb_commodity_*.parquet        # World Bank Pink Sheet prices, indices, features, factor projection
 │   │   ├── bilateral_trade_matrix.parquet  # Program 4 output (899 trade pairs)
 │   │   ├── bilateral_banking_matrix.parquet # Program 4 output (582 banking pairs)
 │   │   ├── bilateral_portfolio_matrix.parquet # Program 4 output (historical portfolio ownership matrix)
@@ -32,6 +35,7 @@ ASADO/
 │   ├── collect_imf.py                    # Program 3 — 7 IMF datasets
 │   ├── collect_bilateral.py              # Program 4 — bilateral trade + banking + portfolio ownership
 │   ├── collect_macrostructure.py         # Program 5 — macrostructure / fragility / central-bank footprint / backstop panel
+│   ├── collect_wb_commodity_prices.py    # Program 5b — World Bank Pink Sheet commodity prices and features
 │   ├── collect_bloomberg.py              # Program 6 — Bloomberg Terminal (bonds, CDS, OIS, WIRP, ECFC, PMI, M2)
 │   ├── setup_duckdb.py                   # DuckDB raw warehouse loader (monthly)
 │   ├── build_daily_panels.py             # Daily extension: T2 + GDELT + optimizer returns (58M rows)
@@ -42,7 +46,9 @@ ASADO/
 │   ├── build_schema_registry.py          # Query-assistant schema cache / access guide
 │   └── db_bridge.py                      # AsadoDB unified query interface
 ├── docs/
-│   └── DAILY_EXTENSION_STATUS.md         # Daily extension implementation status + test guide
+│   ├── DAILY_EXTENSION_STATUS.md         # Daily extension implementation status + test guide
+│   ├── PREDMKT_EXTENSION_STATUS.md       # Prediction-market layer status
+│   └── factor_reference.md               # Auto-generated table/source/variable reference
 ├── config/
 │   ├── country_mapping.json              # 34-country Rosetta Stone (ISO codes, etc.)
 │   └── event_log_seed.yaml              # Hand-curated event registry (124 dated events)
@@ -73,12 +79,13 @@ This single command runs the entire pipeline:
 |-------|--------|-------------|---------|
 | 1 | `collect_external.py --force` | 7 core sources (EPU, GPR, BIS, OECD, World Bank) | ~25s |
 | 2 | `collect_extended.py --force` | 12 extended sources (BIS rates, OECD BCI/CCI, ECB, ILOSTAT, FRED, EIA) | ~45s |
+| 2b | `collect_wb_commodity_prices.py --force` | World Bank Pink Sheet commodity prices, indices, and derived features | ~5s |
 | 3 | `collect_imf.py --force` | 7 IMF datasets (CPI, WEO, BOP, rates, FX, labor, trade) | ~70s |
 | 4 | `collect_bilateral.py` | Bilateral trade + banking + portfolio ownership matrices | ~120s |
 | 5 | `collect_macrostructure.py --force` | Macrostructure fragility, debt-structure, sticky-capital, central-bank footprint, and backstop layer | ~60s |
 | 6 | `collect_bloomberg.py` | Bloomberg Terminal data (bonds, CDS, OIS, WIRP, ECFC, PMI, M2, ETF passive layer) | ~140s |
-| 7 | `setup_duckdb.py` | Rebuild the raw DuckDB analytical warehouse | ~3s |
-| 8 | `build_normalized_panel.py` | Build canonical `_CS` / `_TS` features and `feature_panel` | ~12s |
+| 7 | `setup_duckdb.py` | Rebuild the raw DuckDB analytical warehouse, including commodity tables | ~10s |
+| 8 | `build_normalized_panel.py` | Build canonical `_CS` / `_TS` features and `feature_panel` | ~60s |
 | 8b | `build_daily_panels.py` | Load daily T2 + GDELT + optimizer returns (58M rows) | ~105s |
 | 8c | `build_predmkt_panel.py` | Build Stage 2 prediction-market layer (Kalshi + Polymarket snapshots + composites) | ~5-30s |
 | 8d | `build_event_log.py` | Load curated event registry (146 events, 8 categories) | <1s |
@@ -86,7 +93,7 @@ This single command runs the entire pipeline:
 | 10 | `build_embeddings.py` | Country-state PCA vectors + Neo4j vector index | ~3s |
 | 11 | `build_schema_registry.py` | Refresh schema cache + access guide for the query assistant | ~1s |
 
-**Total runtime: ~8-10 minutes** (including daily panels). Log file saved to `Data/logs/monthly_update_YYYY_MM_DD.log`.
+**Total runtime: ~8-12 minutes** depending on Bloomberg/API response times. Log file saved to `Data/logs/monthly_update_YYYY_MM_DD.log`.
 
 > **Bloomberg prerequisite:** Stage 6 requires Bloomberg Terminal running on the Parallels Windows 11 VM. If Bloomberg is not available, add `--skip-bloomberg` to skip it — all other stages run normally.
 
@@ -95,6 +102,8 @@ This single command runs the entire pipeline:
 ```bash
 python scripts/monthly_update.py --skip-neo4j      # skip Neo4j + embeddings if not running
 python scripts/monthly_update.py --skip-bloomberg   # skip Bloomberg (no terminal access)
+python scripts/monthly_update.py --skip-wb-commodity # preserve prior World Bank commodity files
+python scripts/monthly_update.py --commodity-only    # commodity collector + DuckDB/daily/schema refresh
 python scripts/monthly_update.py --collectors-only  # data collection only, no DB rebuild
 python scripts/monthly_update.py --db-only          # rebuild DBs from existing panels
 python scripts/monthly_update.py --dry-run          # preview, no writes
@@ -109,6 +118,8 @@ python scripts/collect_imf.py --force         # Program 3 only
 python scripts/collect_bilateral.py           # Program 4 (trade + banking + portfolio ownership)
 python scripts/collect_bilateral.py --trade-only   # trade matrix only
 python scripts/collect_bilateral.py --bank-only    # banking matrix only
+python scripts/collect_wb_commodity_prices.py --force # World Bank Pink Sheet commodity layer
+python scripts/collect_wb_commodity_prices.py --check # commodity freshness/coverage check
 
 # Program 6 — Bloomberg (requires Bloomberg Terminal on Parallels VM)
 conda run -p ".../OpusBloomberg/.venv" python scripts/collect_bloomberg.py
@@ -145,7 +156,32 @@ All collectors are designed for safe monthly re-runs:
 5. **Records run metadata** in run history JSON (keeps last 24 runs)
 6. **Prints a delta report** showing row count changes and date range extensions
 
-## Latest Run Results (2026-04-13)
+## Latest Verified Warehouse Snapshot (2026-05-16)
+
+The live local DuckDB after the latest commodity/prediction/event refresh:
+
+- `unified_panel`: 17,392,079 raw factor rows, 2,022 variables
+- `normalized_panel`: 14,192,623 generated rows, 1,026 variables
+- `feature_panel`: 31,584,702 query-facing rows, 3,048 variables
+- `wb_commodity_factor_panel`: 9,600,274 rows, 371 broadcast commodity variables
+- `factor_returns`: 277,116 monthly factor-return rows, 1,678 factors
+- `factor_returns_daily`: 1,293,492 daily factor-return rows, 178 factors
+- daily T2/GDELT/raw/event tables are present in the same DB; current file size is about 3.6 GB.
+
+### Program 5b: World Bank Commodity Price Intelligence
+
+Canonical source: official World Bank Commodity Markets Pink Sheet workbook, not a Kaggle mirror.
+
+| Table | Rows | Coverage |
+|---|---:|---|
+| `wb_commodity_prices` | 50,099 | 71 monthly price series, 1960-01-01 -> 2026-04-01 |
+| `wb_commodity_indices` | 12,736 | 16 monthly index series, 1960-01-01 -> 2026-04-01 |
+| `wb_commodity_features` | 435,618 | level, MOM, YOY, 3M/12M returns, 12M vol, 36M z-score |
+| `wb_commodity_factor_panel` | 9,600,274 | selected global commodity variables broadcast to 34 ASADO countries |
+
+Commodity features are explanatory/global context. Do not claim country or factor impact without joining back to country/factor returns.
+
+## Latest Source Run Results
 
 ### Program 1: Core Sources (collect_external.py)
 
@@ -231,12 +267,20 @@ The 28 Bloomberg variables include the ETF passive-flow / creation-redemption fa
 
 Bloomberg connection: macOS Python → TCP:8194 → Parallels Windows 11 VM → bbcomm.exe → Bloomberg Terminal. Uses the OpusBloomberg library at `/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg`.
 
-### Warehouse Snapshot (2026-04-19 rebuild)
+### Current Core Table Counts
 
-- `macrostructure_panel`: 75,120 rows, 26 variables
-- `unified_panel`: 2,561,094 raw factor rows across 421 variables
-- `normalized_panel`: 778,984 normalized rows across 285 generated variables
-- `feature_panel`: 3,340,078 total rows across 706 raw + normalized variables
+| Table / View | Rows | Variables / Factors | Date Range |
+|---|---:|---:|---|
+| `t2_master` | 1,192,584 | 111 variables | 2000-02-01 -> 2026-05-01 |
+| `gdelt_panel` | 5,622,818 | 1,323 variables | 2015-09-01 -> 2026-03-01 |
+| `macrostructure_factors` | 75,407 | 26 variables | 1995-03-01 -> 2026-05-01 |
+| `bloomberg_factors` | 98,541 | 28 variables | 1975-12-01 -> 2026-05-01 |
+| `factor_returns` | 277,116 | 1,678 factors | 2000-02-01 -> 2026-04-01 |
+| `factor_top20_membership` | 2,104,980 | 1,681 factors | 2000-02-01 -> 2026-05-01 |
+| `t2_factors_daily` | 32,340,392 | 109 variables | 2000-01-01 -> 2026-05-07 |
+| `gdelt_factors_daily` | 10,085,794 | 75 variables | 2015-06-24 -> 2026-05-08 |
+| `predmkt_daily` | 30 | 15 curated markets | 2026-05-17 |
+| `event_log` | 146 | 8 categories | 1997-07-02 -> 2026-05-01 |
 
 ## Output Files
 
@@ -257,6 +301,11 @@ Bloomberg connection: macOS Python → TCP:8194 → Parallels Windows 11 VM → 
 | `Data/processed/bloomberg_factors_panel.parquet` | Program 6 — 98K rows, 28 Bloomberg variables |
 | `Data/processed/bloomberg_factors_panel.csv` | Program 6 CSV copy |
 | `Data/processed/bloomberg_variable_catalog.csv` | Program 6 variable metadata |
+| `Data/processed/wb_commodity_prices.parquet` | World Bank Pink Sheet canonical commodity prices |
+| `Data/processed/wb_commodity_indices.parquet` | World Bank Pink Sheet canonical commodity indices |
+| `Data/processed/wb_commodity_features.parquet` | Derived commodity-axis features |
+| `Data/processed/wb_commodity_factor_panel.parquet` | Selected commodity variables projected into ASADO's factor-panel shape |
+| `Data/processed/wb_commodity_manifest.json` | Commodity source URL, workbook hash, update label, counts |
 | `Data/processed/external_variable_catalog.csv` | Program 1 variable metadata |
 | `Data/processed/extended_variable_catalog.csv` | Program 2 variable metadata |
 | `Data/processed/imf_variable_catalog.csv` | Program 3 variable metadata |
@@ -321,6 +370,17 @@ Includes IMF FSI bank-fragility indicators, World Bank QPSD debt-structure mix, 
 **Sovereign Risk (1):** `BBG_MIPD_5Y` (derived: market-implied default probability from CDS)
 **Yield Curve (1):** `BBG_Yield_Curve_10Y2Y` (derived: 10Y-2Y slope)
 
+### Program 5b: World Bank Commodity Intelligence
+
+Canonical commodity-axis tables:
+
+- `wb_commodity_prices`: 71 nominal USD monthly commodity price series.
+- `wb_commodity_indices`: 16 World Bank commodity indices, 2010=100.
+- `wb_commodity_features`: derived trailing features (`level`, `mom_pct`, `yoy_pct`, `ret_3m_pct`, `ret_12m_pct`, `vol_12m`, `z_36m`).
+- `wb_commodity_factor_panel`: 371 selected commodity variables broadcast across the 34-country ASADO universe with `source='wb_commodity'`.
+
+Examples: `WB_CMDTY_CRUDE_BRENT_LEVEL`, `WB_CMDTY_COPPER_YOY`, `WB_CMDTY_IENERGY_RET_12M`, `WB_CMDTY_IFERTILIZERS_Z_36M`.
+
 ## Country Coverage Notes
 
 - **Taiwan** — missing from World Bank (not a WB member), ND-GAIN
@@ -379,7 +439,7 @@ blpapi pandas pyarrow numpy  # in OpusBloomberg/.venv
 - IMF WEO includes forward-looking forecasts through 2030
 - IMF IMTS (formerly DOTS) provides bilateral merchandise trade via SDMX 3.0 — 30/31 reporters covered
 - BIS Locational Banking Statistics (LBS) provides cross-border banking claims via CSV API at stats.bis.org — 21/31 reporting countries
-- Country-state embeddings use PCA-compressed z-scored factor values (34d vectors from 332 variables) stored on Neo4j Country nodes with a cosine similarity vector index
+- Country-state embeddings use PCA-compressed z-scored factor values stored on Neo4j Country nodes with a cosine similarity vector index
 - Bloomberg data uses the OpusBloomberg library for BLPAPI access via macOS → Parallels → Windows VM → Bloomberg Terminal. Runs in a dedicated conda environment (`OpusBloomberg/.venv`) with `blpapi`. Connection auto-detects VM IP, starts bbcomm, configures port forwarding and firewall rules.
 - Bloomberg collector outputs both pulled data (bond yields, CDS, OIS, breakevens, WIRP, ECFC, PMI, M2) and derived signals (MIPD from CDS via hazard rate model, Z-spread = bond yield minus OIS rate, yield curve slope = 10Y minus 2Y). ECFC GDP uses a fallback strategy: tries consensus forecast tickers first (`ECGD[CC]`), falls back to actual GDP YoY (`EHGD[CC]Y`) if consensus ticker fails.
 - Macrostructure Program 5 now includes an IMF MFS_CBS-based central-bank footprint layer: total assets / GDP, claims on government / GDP, and a transparent sovereign-debt-share proxy that prefers QPSD debt coverage and falls back to WEO debt / GDP when needed.
@@ -394,19 +454,22 @@ Columnar database for fast time-series analytics. Core surfaces currently includ
 
 | Table / View | Rows | Date Range | Primary Use |
 |-------|------|------------|------------|
-| `t2_master` | 1,188,810 | 2000-02-01 → 2026-04-01 | Canonical normalized T2 panel |
-| `t2_raw` | 474,636 | 2000-02-01 → 2026-04-01 | Raw T2 factor levels from the workbook |
+| `t2_master` | 1,192,584 | 2000-02-01 → 2026-05-01 | Canonical normalized T2 panel |
+| `t2_raw` | 485,582 | 2000-02-01 → 2026-05-01 | Raw T2 factor levels from the workbook |
 | `country_reference` | generated monthly | n/a | Canonical ISO3 -> ASADO country mapping surface for bilateral joins |
-| `external_factors` | 112,633 | 1985-01-01 → 2026-03-01 | Program 1 free-source macro / risk / structural panel |
-| `extended_factors` | 96,604 | 1990-12-01 → 2026-04-01 | Program 2 extended free-source panel |
-| `gdelt_panel` | 407,864 | 2015-09-01 → 2026-05-01 | Country-level media / tone / risk panel, including partial current month labels |
-| `imf_factors` | 107,298 | 1980-12-01 → 2031-12-01 | IMF CPI, WEO, BOP, FX, labor, trade, and FSI-derived series |
-| `macrostructure_factors` | 75,120 | 1995-03-01 → 2026-04-01 | Fragility, debt-structure, ownership, sticky-capital, central-bank footprint, and policy-backstop layer |
-| `bloomberg_factors` | 98,129 | 1975-12-01 → 2026-04-01 | Bloomberg sovereign rates/credit/macro plus ETF passive-flow layer |
-| `normalized_panel` | 778,984 | 1990-12-01 → 2026-04-01 | Canonical `_CS` / `_TS` normalized feature layer |
-| `feature_panel` (view) | 3,340,078 | 1975-12-01 → 2031-12-01 | Primary query-facing union of raw + normalized factor rows |
+| `external_factors` | 112,677 | 1985-01-01 → 2026-03-01 | Program 1 free-source macro / risk / structural panel |
+| `extended_factors` | 96,658 | 1990-12-01 → 2026-05-01 | Program 2 extended free-source panel |
+| `gdelt_panel` | 5,622,818 | 2015-09-01 → 2026-03-01 | Country-level media / tone / risk panel |
+| `imf_factors` | 107,538 | 1980-12-01 → 2031-12-01 | IMF CPI, WEO, BOP, FX, labor, trade, and FSI-derived series |
+| `macrostructure_factors` | 75,407 | 1995-03-01 → 2026-05-01 | Fragility, debt-structure, ownership, sticky-capital, central-bank footprint, and policy-backstop layer |
+| `bloomberg_factors` | 98,541 | 1975-12-01 → 2026-05-01 | Bloomberg sovereign rates/credit/macro plus ETF passive-flow layer |
+| `wb_commodity_factor_panel` | 9,600,274 | 1960-01-01 → 2026-04-01 | Selected global commodity features broadcast to ASADO countries |
+| `normalized_panel` | 14,192,623 | 1960-01-01 → 2031-12-01 | Canonical `_CS` / `_TS` normalized feature layer |
+| `feature_panel` (view) | 31,584,702 | 1960-01-01 → 2031-12-01 | Primary query-facing union of raw + normalized factor rows |
 | `bilateral_portfolio_matrix` | 56,786 | 1997-12-01 → 2026-02-01 | Reporter-counterparty portfolio ownership matrix |
-| **`unified_panel`** (view) | **2,561,094** | **1975-12-01 → 2031-12-01** | **Raw cross-source analytical warehouse** |
+| `factor_returns` | 277,116 | 2000-02-01 → 2026-04-01 | Monthly optimizer factor portfolio returns |
+| `factor_top20_membership` | 2,104,980 | 2000-02-01 → 2026-05-01 | Sparse country membership in each factor's top-20 bucket |
+| **`unified_panel`** (view) | **17,392,079** | **1960-01-01 → 2031-12-01** | **Raw cross-source analytical warehouse** |
 
 #### Daily Tables (added 2026-05-08 via `build_daily_panels.py`)
 
@@ -415,9 +478,9 @@ Columnar database for fast time-series analytics. Core surfaces currently includ
 | `t2_factors_daily` | 32,340,392 | 2000-01-01 → 2026-05-07 | 109 normalized _CS/_TS daily factors, 34 countries |
 | `t2_levels_daily` | 13,698,294 | 2000-01-01 → 2026-04-21 | 47 raw factor levels (PX_LAST, MCAP, RSI14, REER, etc.) |
 | `gdelt_factors_daily` | 10,085,794 | 2015-06-24 → 2026-05-08 | 75 normalized GDELT daily factors, 34 countries |
-| `gdelt_raw_daily` | 955,473 | 2015-02-18 → 2026-04-19 | 249-country raw GDELT signals (off-universe bridge) |
-| `factor_returns_daily` | 1,085,412 | 2000-01-01 → 2026-05-07 | 157 optimizer factor returns (T2 + GDELT) |
-| `variable_meta` | 269 | n/a | Variable metadata: frequency, category, optimizer-selected |
+| `gdelt_raw_daily` | 943,652 | 2015-02-18 → 2026-05-07 | 249-country raw GDELT signals (off-universe bridge) |
+| `factor_returns_daily` | 1,293,492 | 2000-01-01 → 2026-05-07 | 178 optimizer factor returns (T2 + GDELT) |
+| `variable_meta` | 654 | n/a | Variable metadata: frequency, category, optimizer-selected, commodity freshness |
 | `daily_calendar` | 327,216 | 2000-01-01 → 2026-05-07 | Per-country trading day calendar |
 | `t2_factors_monthly_from_daily` (view) | — | — | Last-trading-day-of-month snapshot for validation |
 
@@ -432,6 +495,8 @@ Columnar database for fast time-series analytics. Core surfaces currently includ
 | `predmkt_resolutions` | `(platform, market_id)` | Resolution archive for calibration tracking |
 | `predmkt_signals_daily` | `(snapshot_date, signal_name, country)` | Derived daily composites (macro + geopolitical + country spillovers) |
 
+Current local prediction-market snapshot: `predmkt_daily` has 30 rows, 15 markets, and 14 derived signal names dated 2026-05-17. `predmkt_resolutions` is currently empty until tracked markets resolve.
+
 Factor tables and views (`t2_master`, source panels, `unified_panel`, `normalized_panel`, `feature_panel`) share the tidy schema `(date DATE, country VARCHAR, value DOUBLE, variable VARCHAR)`. Daily tables follow the same schema. `country_reference` and `bilateral_portfolio_matrix` are helper surfaces used for ISO mapping and ownership joins. Indexes cover factor tables plus `country_reference` and the main bilateral ownership keys.
 
 ### Neo4j — Knowledge Graph (bolt://localhost:7687)
@@ -442,7 +507,7 @@ Graph database representing entity relationships with bilateral trade/banking ne
 | Label | Count | Key Properties |
 |-------|-------|----------------|
 | Country | 34 | t2_name, iso3, dm_em, region, currency_code, state_embedding (34d vector) |
-| Factor | 1,651 | name, category, source, daily_sharpe_252d, daily_vol_252d, daily_cum_return_252d, is_optimizer_selected |
+| Factor | current graph build | name, category, source, daily_sharpe_252d, daily_vol_252d, daily_cum_return_252d, is_optimizer_selected |
 | CentralBank | 31 | name, country_iso3 |
 | DataSource | 30 | name, url, frequency, api_type |
 | CrisisEvent | 9 | name, start_date, end_date, type |
@@ -533,10 +598,10 @@ That file is intended to be read end-to-end by an AI agent that needs to know wh
 
 ### Snapshot
 
-- **DuckDB tables / views:** 14 (8 raw factor panels + 6 derived views/aux tables)
-- **Distinct variables in `unified_panel`:** 2,641 (raw 223 · `_CS` 1,209 · `_TS` 1,209)
+- **DuckDB tables / views:** 36
+- **Distinct variables in `feature_panel` catalog:** 3,062 (raw 608 · `_CS` 1,216 · `_TS` 1,238); `unified_panel` raw warehouse currently has 2,022 distinct variables.
 - **Country universe:** 34 (T2 names — see [`config/country_mapping.json`](config/country_mapping.json))
-- **Neo4j:** 7 node labels (`Country` 34, `Factor` 2929, `CentralBank` 31, `DataSource` 37, `Commodity` 4, `CrisisEvent` 9, `SanctionsProgram` 6) · 9 relationship types (`HAS_FACTOR_EXPOSURE`, `TRADES_WITH`, `HAS_BANKING_EXPOSURE_TO`, `HAS_CRISIS_HISTORY`, `SUBJECT_TO`, `HAS_CENTRAL_BANK`, `EXPORT_EXPOSED_TO`, `DATA_AVAILABLE_FROM`, `HOLDS_PORTFOLIO_OF`)
+- **Neo4j:** rebuilt separately by `scripts/setup_neo4j.py`; DuckDB is the current source of truth for live table/variable counts.
 
 ### Data families covered
 
@@ -548,9 +613,10 @@ That file is intended to be read end-to-end by an AI agent that needs to know wh
 | **IMF** | `imf_factors` | CPI, WEO macro projections, balance of payments, exchange rates, trade flows, money market and discount rates, employment |
 | **Macrostructure** | `macrostructure_factors` | Bank capital adequacy / liquidity / NPLs, public-debt structure (creditor / currency / maturity buckets), sticky-capital pension/insurance/household, central-bank balance-sheet metrics, swap-line access |
 | **Bloomberg market** | `bloomberg_factors` | Sovereign bonds, CDS, OIS, breakevens, WIRP implied policy rates, ECFC consensus, PMI, M2, ETF passive layer (`MS_*`) |
-| **GDELT news / sentiment** | `gdelt_panel` (2,313 vars) | Theme attention (~516), GCAM emotional dimensions (~450), event aggregates (~120), core tone signals (metronome / risk / sentiment / attention), all monthly |
+| **GDELT news / sentiment** | `gdelt_panel` (1,323 vars) | Theme attention, GCAM emotional dimensions, event aggregates, core tone signals (metronome / risk / sentiment / attention), all monthly |
 | **Optimizer outputs** (added 2026-04-29) | `factor_returns`, `factor_top20_membership`, `country_factor_attribution` | Top-20% portfolio monthly returns per factor (Econ, T2 Style, GDELT optimizers) + country-level membership + joinable attribution view |
 | **Bilateral networks** | `bilateral_portfolio_matrix` | Reporter-counterparty portfolio holdings (IMF PIP + U.S. TIC). Trade and banking edges live in Neo4j as `[:TRADES_WITH]` / `[:HAS_BANKING_EXPOSURE_TO]`. |
+| **World Bank commodities** | `wb_commodity_prices`, `wb_commodity_indices`, `wb_commodity_features`, `wb_commodity_factor_panel` | 71 prices, 16 indices, trailing features, and selected global-broadcast explanatory variables. |
 
 ### How to use the catalog
 
@@ -609,6 +675,7 @@ The `1MRet` rows under `source = 'gdelt'` in `feature_panel`, and the `1DRet` ro
 | `predmkt_snapshot(category, date=today)` | Prediction-market snapshot for one category with probabilities, liquidity, and rules metadata. |
 | `country_signal_now(country, channels=None, date=today)` | Country-level prediction-market risk/opportunity decomposition through spillover channels. |
 | `event_market_set(keyword)` | Keyword search over curated prediction markets ranked by recent liquidity. |
+| `commodity_price_series(commodity, feature, ...)` | World Bank Pink Sheet commodity/index time series and derived features; use with return tools before claiming impact. |
 
 ### Setup — register in Claude Desktop
 

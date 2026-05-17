@@ -1,7 +1,7 @@
 # ASADO Prediction-Market Extension — Implementation Status
 
-**Date:** 2026-05-08  
-**Status:** Stage 2 V1 implementation wired end-to-end (ingestion script, DuckDB tables, orchestrator integration, schema/query/MCP surfaces, docs).
+**Date:** 2026-05-16  
+**Status:** Stage 2 V1 implementation wired end-to-end and restored in the live DuckDB after the commodity rebuild (ingestion script, DuckDB tables, orchestrator integration, schema/query/MCP surfaces, docs).
 
 ---
 
@@ -65,21 +65,23 @@
 
 Latest local run of `python scripts/build_predmkt_panel.py --stats` produced:
 
-- `predmkt_daily`: 22 rows
-- `predmkt_market_meta`: 11 rows
-- `predmkt_outcome_meta`: 22 rows
-- `predmkt_country_spillover`: 41 rows
+- `predmkt_daily`: 30 rows
+- `predmkt_market_meta`: 15 rows
+- `predmkt_outcome_meta`: 30 rows
+- `predmkt_country_spillover`: 49 rows
 - `predmkt_resolutions`: 0 rows
-- `predmkt_signals_daily`: 45 rows
+- `predmkt_signals_daily`: 42 rows
 - distinct `signal_name`: 14
+- snapshot date: 2026-05-17
 
 ---
 
 ## Known Caveats
 
-1. Kalshi requests currently return HTTP 401 from this environment, so Kalshi rows are not loading in current local runs.
-2. Polymarket ingestion is active; resulting composites currently reflect available Polymarket coverage.
-3. `predmkt_resolutions` populates as markets resolve over time; zero rows is expected at first build if no curated market resolves that day.
+1. Kalshi signed requests are enabled in the current environment.
+2. Some Polymarket condition IDs did not resolve to exact matches in the latest run; those markets are skipped without aborting the build.
+3. `predmkt_resolutions` populates as markets resolve over time; zero rows is expected until a curated market resolves.
+4. `setup_duckdb.py` is a clean rebuild. If you run a narrow DB refresh path, restore additive prediction-market tables with `python scripts/build_predmkt_panel.py --stats` before regenerating schema docs.
 
 ---
 
@@ -93,4 +95,3 @@ Latest local run of `python scripts/build_predmkt_panel.py --stats` produced:
    - `python scripts/build_schema_registry.py --duck-only`
 4. Run full monthly orchestration when scheduled:
    - `python scripts/monthly_update.py`
-

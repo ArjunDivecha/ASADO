@@ -1,11 +1,31 @@
-# Mythos Phase 1 — Implementation Brief for Claude Code
+# ASADO Historical Phase 1 — Implementation Brief For Claude Code
 
-**What this is:** A self-contained spec for building the data collection pipeline. Read this file, then build. The full plan and all reference docs are in this same directory.
+**What this is:** A historical implementation brief for the original external-data build. The live ASADO warehouse is now broader than this Phase 1 scope. For current operational truth, start with `README.md`, `DATA_DICTIONARY.md`, `CLAUDE.md`, and `docs/factor_reference.md`.
 
-**Project directory:** `/Users/arjundivecha/Dropbox/AAA Backup/A Working/Country-Autoresearch/`
-**Config:** `/Users/arjundivecha/Dropbox/AAA Backup/A Working/Country-Autoresearch/config/country_mapping.json`
+**Project directory:** `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/`
+**Config:** `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/config/country_mapping.json`
 **T2 Master CSV:** `/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 Factor Timing Fuzzy/Normalized_T2_MasterCSV.csv`
-**GDELT pipeline:** `/Users/arjundivecha/Dropbox/AAA Backup/A Working/GDELT/`
+**GDELT monthly source:** `/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 GDELT/GDELT_Factors_MasterCSV.csv`
+**World Bank commodity source:** Official World Bank Pink Sheet workbook, collected by `scripts/collect_wb_commodity_prices.py`.
+
+## Current Reality Snapshot
+
+ASADO now has one analytical warehouse in `Data/asado.duckdb` with monthly panels, daily T2/GDELT panels, optimizer return surfaces, prediction-market snapshots, an event log, bilateral portfolio holdings, macrostructure signals, Bloomberg signals, and World Bank commodity intelligence.
+
+The return surfaces are the ultimate source of truth for performance questions:
+
+- monthly returns: `factor_returns`
+- daily returns: `factor_returns_daily`
+- country/factor memberships: `factor_top20_membership`
+- MCP access: `country_returns`, `factor_return_series`, `daily_factor_series`, `event_window`, `commodity_price_series`
+
+Commodity updates are part of the monthly updater:
+
+```bash
+./venv/bin/python scripts/monthly_update.py
+./venv/bin/python scripts/monthly_update.py --commodity-only
+./venv/bin/python scripts/monthly_update.py --skip-wb-commodity
+```
 
 ---
 

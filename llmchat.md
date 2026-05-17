@@ -88,3 +88,86 @@ Read this file first, then read `AGENTS.md`, `README.md`, `docs/DAILY_EXTENSION_
 ---
 SESSION END: 2026-05-14 11:54 PDT | Agent: Codex
 ---
+
+---
+SESSION START: 2026-05-16 23:56 PDT | Agent: Codex
+---
+
+### Session Summary
+Implemented the World Bank Commodity Price Intelligence layer, wired it into the ASADO update/query surfaces, restored additive daily/prediction/event tables after a commodity-only rebuild, updated the operational docs and data dictionary to match the live warehouse, and pushed the changes to `main`.
+
+### Decisions Made
+- The official World Bank Commodity Markets Pink Sheet workbook is the canonical commodity source. Kaggle remains only a research lead, not an upstream dependency.
+- Commodity variables are explanatory context, not outcomes. For questions such as oil/copper impact by country, use commodity context together with the returns source-of-truth surfaces before making performance claims.
+- The daily/monthly updater now includes World Bank commodity collection by default, with explicit controls to skip or run commodity-only refreshes.
+- `feature_panel`/schema catalog counts should be labeled as the query-facing catalog, not as raw `unified_panel` variable counts.
+
+### Architecture / Design
+New commodity collector and processed outputs:
+- `scripts/collect_wb_commodity_prices.py`
+- `Data/processed/wb_commodity_prices.parquet`
+- `Data/processed/wb_commodity_indices.parquet`
+- `Data/processed/wb_commodity_features.parquet`
+- `Data/processed/wb_commodity_factor_panel.parquet`
+- `Data/processed/wb_commodity_variable_catalog.csv`
+- `Data/processed/wb_commodity_manifest.json`
+
+DuckDB commodity tables:
+- `wb_commodity_prices`: 50,099 rows, 71 price series, 1960-01-01 to 2026-04-01
+- `wb_commodity_indices`: 12,736 rows, 16 index series, 1960-01-01 to 2026-04-01
+- `wb_commodity_features`: 435,618 rows, trailing features (`level`, `mom_pct`, `yoy_pct`, `ret_3m_pct`, `ret_12m_pct`, `vol_12m`, `z_36m`)
+- `wb_commodity_meta`: 87 metadata rows
+- `wb_commodity_factor_panel`: 9,600,274 rows, 371 selected global-broadcast variables aligned to the 34-country ASADO factor-panel shape with `source='wb_commodity'`
+
+Updater/query integration:
+- `scripts/monthly_update.py` supports `--skip-wb-commodity` and `--commodity-only`.
+- `scripts/setup_duckdb.py`, `scripts/build_normalized_panel.py`, `scripts/build_schema_registry.py`, and `scripts/build_factor_reference.py` now account for commodity surfaces.
+- MCP/query layer includes `commodity_price_series` and return-oriented tools (`country_returns`, `factor_return_series`, `return_leaders`, etc.) so MCP answers can bring explanatory commodity data back to country/factor returns.
+- `scripts/build_factor_reference.py` now labels the generated count as distinct variables in the `feature_panel` catalog rather than “unified_panel.”
+
+Restored live DB after commodity rebuild:
+- `build_predmkt_panel.py --stats`
+- `build_event_log.py --stats`
+- `build_schema_registry.py --duck-only`
+- `build_factor_reference.py`
+
+Live DuckDB verification after restore:
+- 36 DuckDB tables/views
+- `unified_panel`: 17,392,079 rows, 2,022 distinct variables
+- `feature_panel`: 31,584,702 rows
+- `normalized_panel`: 14,192,623 rows
+- `t2_master`: 1,192,584 rows
+- `gdelt_panel`: 5,622,818 rows
+- `factor_returns_daily`: 1,293,492 rows
+- `variable_meta`: 654 rows
+- `predmkt_daily`: 30 rows, snapshot date 2026-05-17
+- `predmkt_signals_daily`: 42 rows, 14 signal names
+- `event_log`: 146 rows, 1997-07-02 to 2026-05-01
+
+Docs updated:
+- `README.md`
+- `DATA_DICTIONARY.md`
+- `CLAUDE.md`
+- `CLAUDE_CODE_BRIEF.md`
+- `docs/DAILY_EXTENSION_STATUS.md`
+- `docs/PREDMKT_EXTENSION_STATUS.md`
+- `docs/LOCAL_CLAUDE_MCP_SETUP.md`
+- `docs/factor_reference.md`
+- `docs/gdelt_deep_ingest_plan.md`
+- `docs/WB_COMMODITY_EXTENSION_STATUS.md`
+
+### Context for Next Session
+Recent commits on `main`:
+- `d47933e Add World Bank commodity intelligence pipeline`
+- `330aea0 Add social events PRD and ASADO context log`
+- `37a131c Update ASADO warehouse docs`
+
+Current uncommitted files after the final push are pre-existing/local-state items and were intentionally left out of the docs commit:
+- `.cursor/hooks/state/continual-learning-index.json`
+- `AGENTS.md`
+
+Important gotcha: `setup_duckdb.py` recreates `Data/asado.duckdb`. Any narrow updater path that calls it, including commodity/db-only work, must restore additive daily/event/prediction tables afterward or run the full daily/prediction/event rebuild chain before reporting a complete live warehouse.
+
+---
+SESSION END: 2026-05-16 23:56 PDT | Agent: Codex
+---

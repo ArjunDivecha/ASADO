@@ -399,6 +399,8 @@ class ASADOQueryAssistant:
                     GDELT_PARTIAL_LABEL_NOTE,
                 "Prediction-market tables (if present): predmkt_daily, predmkt_market_meta, predmkt_outcome_meta, predmkt_country_spillover, predmkt_resolutions, predmkt_signals_daily.",
                 "Use prediction-market tables for forward-looking probabilities, event odds, off-universe entity spillovers, and market-implied macro expectations.",
+                    "World Bank commodity tables (if present): wb_commodity_prices, wb_commodity_indices, wb_commodity_features, wb_commodity_factor_panel.",
+                    "Use wb_commodity_features for commodity-axis questions; use source='wb_commodity' rows in feature_panel/unified_panel for broadcast explanatory context.",
                     "Country graph nodes include both sovereign states and market sleeves; use graph_role to distinguish them.",
                     "For sovereign graph questions, exclude graph_role = 'market_sleeve'.",
                     "ChinaA is the sovereign proxy for China in graph network relationships; ChinaH, NASDAQ, and US SmallCap are market sleeves.",
@@ -441,6 +443,8 @@ class ASADOQueryAssistant:
                 "For latest/current GDELT questions, prefer source = 'gdelt' or gdelt_panel so the next-month partial label convention is handled correctly.",
                 "For questions about probabilities of future events or policy outcomes, prefer predmkt_signals_daily and predmkt_daily over lagged observed macro tables when prediction-market tables are available.",
                 "For off-universe entities (for example Iran/Russia/Israel), use predmkt_country_spillover + predmkt_daily to map into T2 countries when possible.",
+                "For commodity questions, use World Bank Pink Sheet variables as explanatory global context only. If the question asks who benefited, who was hurt, or whether a commodity shock mattered, join back to country_returns or factor_returns before making the analytical claim.",
+                "When using monthly commodity context in a daily/event workflow, join to the most recent commodity observation on or before the daily/event date.",
                 "If a question asks which countries are under sanctions, clarify unless the user explicitly wants OFAC/SDN-linked exposure or association data.",
                 "Recognize common region/group terms such as ASEAN, G7, BRICS, LatAm, EMEA, EM, and DM when they appear in the question.",
                 # --- Returns-first routing rules (PRD §8.1) ---

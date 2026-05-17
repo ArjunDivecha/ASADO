@@ -67,6 +67,10 @@ TABLE_DESCRIPTIONS = {
         "Common instrument_type values include equity_fund_shares, debt_long, debt_short, equity, debt_long_govt, and debt_long_corp."
     ),
     "bloomberg_factors": "Bloomberg market-implied, macro, and ETF passive-flow data collected via OpusBloomberg.",
+    "wb_commodity_prices": "Canonical World Bank Pink Sheet monthly nominal U.S. dollar commodity prices, keyed by commodity_code.",
+    "wb_commodity_indices": "Canonical World Bank Pink Sheet monthly commodity price indices, 2010=100, keyed by index_code.",
+    "wb_commodity_features": "Derived trailing commodity features such as level, MOM, YOY, 3M/12M return, volatility, and z-score, keyed by series_code and feature.",
+    "wb_commodity_factor_panel": "Selected global commodity features broadcast to the ASADO 34-country factor panel as explanatory inputs.",
     "normalized_panel": (
         "Canonical ASADO-generated normalized factors. Contains _CS same-date cross-sectional z-scores "
         "and _TS rolling time-series z-scores for eligible raw source variables."
@@ -166,6 +170,7 @@ SOURCE_TOKEN_MAP = {
     "PREDMKT": ["prediction market", "kalshi", "polymarket", "event contracts", "market-implied"],
     "UNDP": ["undp", "united nations development programme", "united nations development program"],
     "WB": ["world bank", "wb"],
+    "WB_CMDTY": ["world bank commodity", "pink sheet", "commodity price", "commodity index"],
 }
 
 TOKEN_SYNONYMS = {
@@ -230,6 +235,10 @@ TOKEN_SYNONYMS = {
     "vol": ["volatility"],
     "ret": ["return", "performance"],
     "tr": ["total return"],
+    "commodity": ["commodities", "commodity price", "pink sheet"],
+    "brent": ["crude brent", "oil brent"],
+    "wti": ["crude wti", "oil wti"],
+    "fertilizer": ["fertilizers", "dap", "urea", "potash", "phosphate"],
 }
 
 SOURCE_FREQUENCIES = {
@@ -275,6 +284,7 @@ SOURCE_FREQUENCIES = {
     "gdelt_optimizer": "monthly",
     "undp_hdi": "annual",
     "worldbank": "annual",
+    "wb_commodity": "monthly",
 }
 
 FRESHNESS_THRESHOLDS = {
@@ -340,6 +350,11 @@ def _variable_aliases(variable: str, source: str) -> List[str]:
         base = variable.removeprefix("WB_")
         aliases.add(f"world bank {_clean_display_name(base)}")
         aliases.add(_clean_display_name(base))
+    if variable.startswith("WB_CMDTY_"):
+        base = variable.removeprefix("WB_CMDTY_")
+        aliases.add(f"world bank commodity {_clean_display_name(base)}")
+        aliases.add(f"pink sheet {_clean_display_name(base)}")
+        aliases.add(f"commodity {_clean_display_name(base)}")
 
     if "cds" in lower_tokens:
         aliases.update({"current cds", "sovereign cds", "5y cds", "5 year cds", "credit spread"})
@@ -1263,6 +1278,7 @@ def build_access_guide(
                         f"Use {factor_surface} for most cross-source factor questions.",
                         "Use unified_panel when you explicitly want the raw warehouse without generated normalized variants.",
                         "Use country_reference to map ISO3 codes in bilateral tables onto canonical ASADO country names.",
+                        "Use wb_commodity_prices / wb_commodity_indices / wb_commodity_features when you need the commodity axis rather than broadcast country-panel context.",
                         "Use table-specific panels when you need source-specific behavior or panel-specific columns.",
                     ],
                 },
@@ -1312,6 +1328,14 @@ def build_access_guide(
                 {
                     "surface": "gdelt_panel",
                     "use_for": "Raw GDELT-only questions, especially latest/current questions using the GDELT partial-month label convention.",
+                },
+                {
+                    "surface": "wb_commodity_features",
+                    "use_for": "World Bank Pink Sheet commodity-axis time series and derived monthly commodity features.",
+                },
+                {
+                    "surface": "wb_commodity_factor_panel",
+                    "use_for": "Selected global commodity features broadcast to ASADO countries as explanatory inputs.",
                 },
                 {
                     "surface": "bilateral_portfolio_matrix",
@@ -1387,6 +1411,7 @@ def build_access_guide(
                 "For latest/current questions, constrain to dates on or before CURRENT_DATE unless the query explicitly concerns forecasts or the GDELT partial-month convention.",
                 "Country returns have ONE canonical source (T2, 34 countries). GDELT-labeled 1MRet/1DRet rows are bit-exact aliases of T2 returns — never treat them as a second country return source.",
                 "Do NOT union factor_returns / factor_returns_daily / factor_top20_membership / country_factor_attribution into feature_panel or unified_panel — those are outputs of the optimizer pipelines that consume feature_panel.",
+                "World Bank commodity variables are explanatory global-broadcast context. Do not claim country or factor return impact without also using the country/factor return surfaces.",
             ],
             "return_surfaces": {
                 "principle": (

@@ -17,6 +17,7 @@ OUTPUT FILES:
 - Data/processed/macrostructure_panel.parquet     (via collect_macrostructure.py)
 - Data/processed/factor_returns_panel.parquet     (via collect_optimizer_returns.py)
 - Data/processed/factor_top20_membership_panel.parquet (via collect_optimizer_returns.py)
+- Data/processed/wb_commodity_*.parquet          (via collect_wb_commodity_prices.py)
 - Data/processed/bloomberg_factors_panel.parquet  (via collect_bloomberg.py)
 - Data/processed/gdelt_deep_panel.parquet         (via collect_gdelt_deep.py)
 - Data/asado.duckdb                               (via setup_duckdb.py)
@@ -65,6 +66,7 @@ Pipeline stages:
   3. collect_imf.py       --force   (7 datasets, ~26 variables)
   4. collect_bilateral.py           (IMF IMTS trade + BIS LBS banking + IMF PIP/TIC ownership)
   5. collect_macrostructure.py --force (IMF FSI + QPSD + sticky-capital + policy-backstop layer)
+  5b. collect_wb_commodity_prices.py --force (World Bank Pink Sheet monthly commodity context)
   6. collect_bloomberg.py --force   (Bloomberg bonds, CDS, breakevens, ratings, ETF passive layer)
   6b. build_t2_master.py            (P2P via yfinance + T2 Master.xlsx → T2 Fuzzy/GDELT/Econ)
   7. collect_gdelt_deep.py          (GDELT Deep — incremental: themes + GCAM + events)
@@ -108,6 +110,8 @@ USAGE:
   python scripts/monthly_update.py --skip-neo4j    # skip Neo4j rebuild
   python scripts/monthly_update.py --skip-bloomberg # skip Bloomberg (no Terminal)
   python scripts/monthly_update.py --skip-deep    # skip GDELT Deep ingest
+  python scripts/monthly_update.py --skip-wb-commodity # preserve prior World Bank commodity files
+  python scripts/monthly_update.py --commodity-only # commodity collector + DuckDB/schema refresh only
   python scripts/monthly_update.py --collectors-only  # data collection only
   python scripts/monthly_update.py --db-only       # rebuild DBs only (no collection)
   python scripts/monthly_update.py --dry-run       # collectors in dry-run mode
@@ -151,6 +155,7 @@ _IMPORT_NAME = {
     "openpyxl": "openpyxl",
     "mcp": "mcp",
     "sse-starlette": "sse_starlette",
+    "sdmx1": "sdmx",
     "xlsxwriter": "xlsxwriter",
 }
 
@@ -360,7 +365,8 @@ def verify_duckdb():
         con = duckdb.connect(str(db_path), read_only=True)
         tables = ["t2_master", "t2_raw", "country_reference", "external_factors", "extended_factors",
                    "gdelt_panel", "imf_factors", "macrostructure_factors", "bloomberg_factors",
-                   "factor_returns", "factor_top20_membership", "normalized_panel"]
+                   "wb_commodity_factor_panel", "factor_returns", "factor_top20_membership",
+                   "normalized_panel"]
 
         print("\n  DuckDB Verification:")
         total = 0
@@ -397,6 +403,20 @@ def verify_duckdb():
             pass
 
         try:
+            prices = con.execute("SELECT COUNT(DISTINCT commodity_code) FROM wb_commodity_prices").fetchone()[0]
+            indices = con.execute("SELECT COUNT(DISTINCT index_code) FROM wb_commodity_indices").fetchone()[0]
+            latest = con.execute("""
+                SELECT MAX(date) FROM (
+                    SELECT MAX(date) AS date FROM wb_commodity_prices
+                    UNION ALL
+                    SELECT MAX(date) AS date FROM wb_commodity_indices
+                )
+            """).fetchone()[0]
+            print(f"    {'wb_commodity_canonical':20s}: {prices:>10} prices, {indices:>3} indices, latest {latest}")
+        except Exception:
+            pass
+
+        try:
             pcount = con.execute("SELECT COUNT(*) FROM bilateral_portfolio_matrix").fetchone()[0]
             print(f"    {'bilateral_portfolio_matrix':20s}: {pcount:>10,} rows")
         except Exception:
@@ -417,6 +437,10 @@ def main():
                         help="Skip Bloomberg collection (requires Terminal + Parallels)")
     parser.add_argument("--skip-deep", action="store_true",
                         help="Skip GDELT Deep ingest (themes, GCAM, events)")
+    parser.add_argument("--skip-wb-commodity", action="store_true",
+                        help="Skip World Bank commodity collection and preserve prior processed files")
+    parser.add_argument("--commodity-only", action="store_true",
+                        help="Run World Bank commodity collector plus DuckDB/schema refresh only")
     parser.add_argument("--collectors-only", action="store_true",
                         help="Run data collectors only, skip database rebuilds")
     parser.add_argument("--db-only", action="store_true",
@@ -451,6 +475,63 @@ def main():
     if args.dry_run:
         collector_flags.append("--dry-run")
 
+    if args.commodity_only:
+        print("\n\n" + "=" * 60)
+        print("  COMMODITY-ONLY UPDATE")
+        print("=" * 60)
+
+        if not args.skip_wb_commodity:
+            results.append(run_step(
+                "World Bank Commodity Price Intelligence",
+                "collect_wb_commodity_prices.py",
+                collector_flags,
+                log_file,
+            ))
+        else:
+            print("\n  (World Bank commodity collection skipped via --skip-wb-commodity)")
+
+        if not args.collectors_only:
+            results.append(run_step(
+                "DuckDB Rebuild (commodity-aware)",
+                "setup_duckdb.py",
+                [],
+                log_file,
+            ))
+
+            results.append(run_step(
+                "Normalization Layer (commodity-aware)",
+                "build_normalized_panel.py",
+                [],
+                log_file,
+            ))
+
+            results.append(run_step(
+                "Daily Panels (restore + commodity metadata)",
+                "build_daily_panels.py",
+                ["--rebuild", "--no-backup"],
+                log_file,
+            ))
+
+            results.append(run_step(
+                "Schema Cache Refresh",
+                "build_schema_registry.py",
+                ["--duck-only"],
+                log_file,
+            ))
+
+            results.append(run_step(
+                "Factor Reference (docs/factor_reference.md)",
+                "build_factor_reference.py",
+                [],
+                log_file,
+            ))
+
+        total_elapsed = time.time() - total_start
+        if not args.collectors_only and not args.dry_run:
+            verify_duckdb()
+        print_summary(results, total_elapsed, log_file)
+        return
+
     # ── Stage 1: Data Collection ──────────────────────────────────────
     if not args.db_only:
         print("\n\n" + "=" * 60)
@@ -470,6 +551,16 @@ def main():
             collector_flags,
             log_file
         ))
+
+        if not args.skip_wb_commodity:
+            results.append(run_step(
+                "World Bank Commodity Price Intelligence",
+                "collect_wb_commodity_prices.py",
+                collector_flags,
+                log_file,
+            ))
+        else:
+            print("\n  (World Bank commodity collection skipped via --skip-wb-commodity)")
 
         results.append(run_step(
             "Program 3: IMF Datasets (7)",

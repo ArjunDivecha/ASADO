@@ -550,6 +550,36 @@ def build_variable_meta(con: duckdb.DuckDBPyConnection) -> int:
                 "is_optimizer_selected": False,
             })
 
+    # Monthly World Bank Pink Sheet commodity context. These are global
+    # explanatory features broadcast to the ASADO country panel; they are not
+    # daily data and are not optimizer return outputs.
+    if "wb_commodity_factor_panel" in tables:
+        c_vars = [
+            r[0]
+            for r in con.execute(
+                "SELECT DISTINCT variable FROM wb_commodity_factor_panel ORDER BY variable"
+            ).fetchall()
+            if r[0]
+        ]
+        for v in c_vars:
+            rows.append({
+                "variable": v,
+                "source_table": "wb_commodity_factor_panel",
+                "source_file": "wb_commodity_factor_panel.parquet",
+                "native_frequency": "monthly",
+                "monthly_equivalent": v,
+                "is_normalized": False,
+                "category": "commodity",
+                "is_optimizer_selected": False,
+                "freshness_expectation": "monthly",
+            })
+
+    for row in rows:
+        row.setdefault(
+            "freshness_expectation",
+            "daily" if row.get("native_frequency") == "D" else row.get("native_frequency"),
+        )
+
     meta_df = pd.DataFrame(rows)
     con.execute("DROP TABLE IF EXISTS variable_meta")
     con.register("meta_stage", meta_df)
@@ -563,7 +593,8 @@ def build_variable_meta(con: duckdb.DuckDBPyConnection) -> int:
             monthly_equivalent,
             CAST(is_normalized AS BOOLEAN) AS is_normalized,
             category,
-            CAST(is_optimizer_selected AS BOOLEAN) AS is_optimizer_selected
+            CAST(is_optimizer_selected AS BOOLEAN) AS is_optimizer_selected,
+            freshness_expectation
         FROM meta_stage
     """)
     con.unregister("meta_stage")
@@ -728,6 +759,35 @@ def validate_against_monthly(con: duckdb.DuckDBPyConnection) -> None:
 # Check / report
 # ═══════════════════════════════════════════════════════════════════════════════
 
+def check_commodity_context(con: duckdb.DuckDBPyConnection, existing: set[str]) -> None:
+    """Report monthly commodity context availability for daily/event workflows."""
+    if "wb_commodity_prices" not in existing:
+        log.info("  %-25s missing", "wb_commodity_prices")
+        return
+
+    try:
+        series_count, latest = con.execute("""
+            SELECT COUNT(DISTINCT commodity_code), MAX(date)
+            FROM wb_commodity_prices
+        """).fetchone()
+        if latest is None:
+            log.info("  %-25s %12s", "wb_commodity_prices", "empty")
+            return
+        latest_date = pd.to_datetime(latest).date()
+        age_days = (datetime.now().date() - latest_date).days
+        status = "stale" if age_days > 95 else "ok"
+        log.info(
+            "  %-25s %12s series | latest=%s | age_days=%d | status=%s",
+            "wb_commodity_prices",
+            f"{series_count:,}",
+            latest_date,
+            age_days,
+            status,
+        )
+    except Exception as exc:
+        log.error("  %-25s ERROR: %s", "wb_commodity_prices", exc)
+
+
 def check_existing_tables() -> None:
     """Report on the daily tables in the existing DB."""
     if not DB_PATH.exists():
@@ -766,6 +826,7 @@ def check_existing_tables() -> None:
                 log.error("  %-25s ERROR: %s", tbl, e)
         else:
             log.info("  %-25s NOT BUILT", tbl)
+    check_commodity_context(con, existing)
     con.close()
 
 

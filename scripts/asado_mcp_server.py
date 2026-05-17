@@ -50,6 +50,8 @@ Daily tables (parallel to monthly, same DB):
 - daily_calendar: per-country trading day calendar
 - event_log: ~200 hand-curated dated events with category, severity, country tags
 - predmkt_daily/predmkt_*: Stage 2 prediction-market snapshots, metadata, and composites
+- wb_commodity_*: World Bank Pink Sheet monthly commodity prices, indices, features,
+  and selected global-broadcast explanatory variables
 
 Event-anchored query pattern (two-step):
   1. events_in_window(start, end, category, country, tag) → find relevant events
@@ -139,6 +141,7 @@ def _schema_snapshot(refresh_schema: bool = False) -> dict[str, Any]:
             "predmkt_outcome_meta, predmkt_country_spillover, predmkt_resolutions, "
             "predmkt_signals_daily.",
             "Prediction-market tools: predmkt_snapshot, country_signal_now, event_market_set.",
+            "Commodity tool: commodity_price_series. World Bank commodity variables are explanatory context; use return tools before claiming country/factor impact.",
             "Use event_window tool for daily event studies instead of raw SQL — it now "
             "includes a return_summary block with pre/post/window country returns and "
             "factor return leaders/laggards.",
@@ -946,6 +949,135 @@ def event_market_set(keyword: str, max_rows: int = 100) -> dict[str, Any]:
             "result": _frame_payload(df, max_rows=max_rows),
         }
     )
+
+
+@mcp.tool(
+    description=(
+        "World Bank Pink Sheet commodity price/index series and derived monthly features. "
+        "Use for commodity-axis context; for country impact questions, pair this with "
+        "country_returns or factor_return_series."
+    )
+)
+def commodity_price_series(
+    commodity: str,
+    feature: str = "level",
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    max_rows: int = 500,
+) -> dict[str, Any]:
+    """Return a World Bank commodity or commodity-index feature time series.
+
+    Args:
+        commodity: Code or fuzzy display name, such as CRUDE_BRENT, brent, copper, iENERGY.
+        feature: level, mom_pct, yoy_pct, ret_3m_pct, ret_12m_pct, vol_12m, or z_36m.
+        start_date: Optional inclusive start date.
+        end_date: Optional inclusive end date.
+        max_rows: Row cap.
+    """
+    aliases = {
+        "mom": "mom_pct",
+        "yoy": "yoy_pct",
+        "ret_3m": "ret_3m_pct",
+        "return_3m": "ret_3m_pct",
+        "ret_12m": "ret_12m_pct",
+        "return_12m": "ret_12m_pct",
+    }
+    allowed = {"level", "mom_pct", "yoy_pct", "ret_3m_pct", "ret_12m_pct", "vol_12m", "z_36m"}
+    feature = aliases.get(feature.strip().lower(), feature.strip())
+    if feature not in allowed:
+        raise ValueError(f"Unsupported feature '{feature}'. Allowed: {sorted(allowed)}")
+
+    con = _duck_conn()
+    try:
+        tables = {row[0] for row in con.execute("SHOW TABLES").fetchall()}
+        if "wb_commodity_features" not in tables or "wb_commodity_meta" not in tables:
+            return _json_ready({
+                "commodity": commodity,
+                "feature": feature,
+                "error": "World Bank commodity tables are not loaded in DuckDB.",
+                "result": _frame_payload(pd.DataFrame(), max_rows=max_rows),
+            })
+
+        term = commodity.strip().lower()
+        like = f"%{term}%"
+        matches = con.execute(
+            """
+            SELECT
+                series_code,
+                series_type,
+                display_name,
+                category,
+                unit,
+                is_projected_to_factor_panel,
+                CASE
+                    WHEN lower(series_code) = ? THEN 0
+                    WHEN lower(display_name) = ? THEN 1
+                    WHEN lower(series_code) LIKE ? THEN 2
+                    ELSE 3
+                END AS match_rank
+            FROM wb_commodity_meta
+            WHERE lower(series_code) = ?
+               OR lower(display_name) = ?
+               OR lower(series_code) LIKE ?
+               OR lower(display_name) LIKE ?
+            ORDER BY match_rank, is_projected_to_factor_panel DESC, series_code
+            LIMIT 5
+            """,
+            [term, term, like, term, term, like, like],
+        ).fetchdf()
+
+        if matches.empty:
+            return _json_ready({
+                "commodity": commodity,
+                "feature": feature,
+                "error": "No matching World Bank commodity series.",
+                "result": _frame_payload(pd.DataFrame(), max_rows=max_rows),
+            })
+
+        series_code = str(matches.iloc[0]["series_code"])
+        clauses = ["series_code = ?", "feature = ?"]
+        params: list[Any] = [series_code, feature]
+        if start_date:
+            clauses.append("date >= CAST(? AS DATE)")
+            params.append(start_date)
+        if end_date:
+            clauses.append("date <= CAST(? AS DATE)")
+            params.append(end_date)
+
+        df = con.execute(
+            f"""
+            SELECT date, series_code, series_type, display_name, category, unit, feature, value, source
+            FROM wb_commodity_features
+            WHERE {' AND '.join(clauses)}
+            ORDER BY date
+            LIMIT {int(max_rows)}
+            """,
+            params,
+        ).fetchdf()
+        latest = con.execute(
+            """
+            SELECT date, value
+            FROM wb_commodity_features
+            WHERE series_code = ? AND feature = ? AND date <= CURRENT_DATE
+            ORDER BY date DESC
+            LIMIT 1
+            """,
+            [series_code, feature],
+        ).fetchdf()
+    finally:
+        con.close()
+
+    return _json_ready({
+        "commodity_requested": commodity,
+        "matched_series": matches.head(5).drop(columns=["match_rank"]).to_dict("records"),
+        "feature": feature,
+        "latest": latest.to_dict("records"),
+        "caveat": (
+            "World Bank commodity data is monthly explanatory context. "
+            "Use country_returns / factor_return_series before claiming country or factor performance impact."
+        ),
+        "result": _frame_payload(df, max_rows=max_rows),
+    })
 
 
 @mcp.tool(

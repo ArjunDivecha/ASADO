@@ -1,6 +1,6 @@
 # ASADO Factor Reference
 
-_Generated: 2026-05-07 17:58:07_
+_Generated: 2026-05-16 23:18:36_
 _Source of truth: `Data/cache/query_assistant/` — refreshed by `scripts/build_schema_registry.py` on every monthly update._
 
 This document is intended to be read end-to-end by an AI agent (or human) who needs to understand exactly what the ASADO warehouse contains, what each surface means, and how to compose queries against it. Keep prose minimal; lean on tables.
@@ -12,11 +12,11 @@ Authoritative companion docs:
 
 ## At a glance
 
-- **DuckDB tables / views:** 18
-- **Distinct variables in `unified_panel`:** 1,938
-  - Raw: 224 · `_CS` cross-sectional: 846 · `_TS` time-series: 868
-- **Neo4j node labels:** 7
-- **Neo4j relationship types:** 9
+- **DuckDB tables / views:** 29
+- **Distinct variables in `unified_panel`:** 3,048
+  - Raw: 594 · `_CS` cross-sectional: 1,216 · `_TS` time-series: 1,238
+- **Neo4j node labels:** 0
+- **Neo4j relationship types:** 0
 - **Country universe:** 34 (T2 names)
 
 ## DuckDB Tables
@@ -26,23 +26,34 @@ Every analytical surface in `Data/asado.duckdb`. The `t2_master`/`t2_raw` tables
 | Table | Type | Rows | Date range | Description |
 | --- | --- | --- | --- | --- |
 | `bilateral_portfolio_matrix` | BASE TABLE | 56,786 | 1997-12-01 → 2026-02-01 | Historical portfolio ownership matrix combining IMF PIP annual benchmarks and the U.S. TIC supplement. Common instrument_type values include equity_fund_shares, debt_long, debt_short, equity, debt_long_govt, and debt_… |
-| `bloomberg_factors` | BASE TABLE | 98,132 | 1975-12-01 → 2026-04-01 | Bloomberg market-implied, macro, and ETF passive-flow data collected via OpusBloomberg. |
-| `country_factor_attribution` | VIEW | 2,094,636 | 2000-02-01 → 2026-03-01 | View joining factor_top20_membership ⨝ factor_returns on (date, factor, source). Columns: (date, country, factor, weight, factor_return, contribution, source). contribution = weight × factor_return is the country's mo… |
+| `bloomberg_factors` | BASE TABLE | 98,541 | 1975-12-01 → 2026-05-01 | Bloomberg market-implied, macro, and ETF passive-flow data collected via OpusBloomberg. |
+| `country_factor_attribution` | VIEW | 2,087,921 | 2000-02-01 → 2026-04-01 | View joining factor_top20_membership ⨝ factor_returns on (date, factor, source). Columns: (date, country, factor, weight, factor_return, contribution, source). contribution = weight × factor_return is the country's mo… |
 | `country_reference` | BASE TABLE | 31 | — | Canonical ISO-to-ASADO country mapping surface. Use this to join bilateral tables that store reporter_iso3/counterpart_iso3 onto ASADO factor surfaces that use country names. |
-| `extended_factors` | BASE TABLE | 97,458 | 1990-12-01 → 2026-04-01 | Extended country dataset built from additional free sources. |
-| `external_factors` | BASE TABLE | 112,666 | 1985-01-01 → 2026-03-01 | Free-source external macro, risk, and structural data. |
-| `factor_returns` | BASE TABLE | 278,290 | 2000-02-01 → 2026-03-01 | Monthly net returns of top-20%-of-countries portfolios per factor, sourced from the Econ / T2 Style / GDELT optimizer pipelines. Tidy long format with columns (date, factor, value, source). Factor names retain their _… |
-| `factor_top20_membership` | BASE TABLE | 2,111,141 | 2000-02-01 → 2026-04-01 | Sparse country-level membership in each factor's top-20% bucket per month. Columns: (date, country, factor, weight, source). weight = 1/N within the bucket (equal-weight); rows are present only when the country is in … |
-| `feature_panel` | VIEW | 8,557,821 | 1975-12-01 → 2031-12-01 | Query-facing union of unified_panel (raw warehouse) plus normalized_panel for analytics, assistants, and feature discovery. |
-| `gdelt_deep_factors` | BASE TABLE | 4,816,027 | 2015-03-01 → 2026-05-01 |  |
-| `gdelt_deep_factors_cs` | BASE TABLE | 4,586,459 | 2015-03-01 → 2026-05-01 |  |
+| `daily_calendar` | BASE TABLE | 327,216 | 2000-01-01 → 2026-05-07 |  |
+| `extended_factors` | BASE TABLE | 96,658 | 1990-12-01 → 2026-05-01 | Extended country dataset built from additional free sources. |
+| `external_factors` | BASE TABLE | 112,677 | 1985-01-01 → 2026-03-01 | Free-source external macro, risk, and structural data. |
+| `factor_returns` | BASE TABLE | 277,116 | 2000-02-01 → 2026-04-01 | Monthly net returns of top-20%-of-countries portfolios per factor, sourced from the Econ / T2 Style / GDELT optimizer pipelines. Tidy long format with columns (date, factor, value, source). Factor names retain their _… |
+| `factor_returns_daily` | BASE TABLE | 1,293,492 | 2000-01-01 → 2026-05-07 |  |
+| `factor_top20_membership` | BASE TABLE | 2,104,980 | 2000-02-01 → 2026-05-01 | Sparse country-level membership in each factor's top-20% bucket per month. Columns: (date, country, factor, weight, source). weight = 1/N within the bucket (equal-weight); rows are present only when the country is in … |
+| `feature_panel` | VIEW | 31,584,702 | 1960-01-01 → 2031-12-01 | Query-facing union of unified_panel (raw warehouse) plus normalized_panel for analytics, assistants, and feature discovery. |
+| `gdelt_factors_daily` | BASE TABLE | 10,085,794 | 2015-06-24 → 2026-05-08 |  |
 | `gdelt_panel` | BASE TABLE | 5,622,818 | 2015-09-01 → 2026-03-01 | Country-level GDELT-derived media, tone, and risk signals. |
-| `imf_factors` | BASE TABLE | 107,417 | 1980-12-01 → 2031-12-01 | IMF datasets normalized into the ASADO tidy panel shape. |
-| `macrostructure_factors` | BASE TABLE | 75,323 | 1995-03-01 → 2026-04-01 | Macrostructure panel spanning bank fragility, debt structure, institutional depth, sticky-capital proxies, and transparent derived signals. |
-| `normalized_panel` | BASE TABLE | 780,561 | 1975-12-01 → 2031-12-01 | Canonical ASADO-generated normalized factors. Contains _CS same-date cross-sectional z-scores and _TS rolling time-series z-scores for eligible raw source variables. |
-| `t2_master` | BASE TABLE | 1,188,810 | 2000-02-01 → 2026-04-01 | Original T2 monthly factor panel. |
-| `t2_raw` | BASE TABLE | 474,636 | 2000-02-01 → 2026-04-01 | Raw T2 factor levels from the authoritative T2 Master workbook. |
-| `unified_panel` | VIEW | 7,777,260 | 1975-12-01 → 2031-12-01 | Unified analytic view across all ASADO factor tables. |
+| `gdelt_raw_daily` | BASE TABLE | 943,652 | 2015-02-18T00:00:00 → 2026-05-07T00:00:00 |  |
+| `imf_factors` | BASE TABLE | 107,538 | 1980-12-01 → 2031-12-01 | IMF datasets normalized into the ASADO tidy panel shape. |
+| `macrostructure_factors` | BASE TABLE | 75,407 | 1995-03-01 → 2026-05-01 | Macrostructure panel spanning bank fragility, debt structure, institutional depth, sticky-capital proxies, and transparent derived signals. |
+| `normalized_panel` | BASE TABLE | 14,192,623 | 1960-01-01 → 2031-12-01 | Canonical ASADO-generated normalized factors. Contains _CS same-date cross-sectional z-scores and _TS rolling time-series z-scores for eligible raw source variables. |
+| `t2_factors_daily` | BASE TABLE | 32,340,392 | 2000-01-01 → 2026-05-07 |  |
+| `t2_factors_monthly_from_daily` | VIEW | 1,039,973 | 2000-01-01T00:00:00 → 2026-05-01T00:00:00 |  |
+| `t2_levels_daily` | BASE TABLE | 13,698,294 | 2000-01-01 → 2026-04-21 |  |
+| `t2_master` | BASE TABLE | 1,192,584 | 2000-02-01 → 2026-05-01 | Original T2 monthly factor panel. |
+| `t2_raw` | BASE TABLE | 485,582 | 2000-02-01 → 2026-05-01 | Raw T2 factor levels from the authoritative T2 Master workbook. |
+| `unified_panel` | VIEW | 17,392,079 | 1960-01-01 → 2031-12-01 | Unified analytic view across all ASADO factor tables. |
+| `variable_meta` | BASE TABLE | 640 | — |  |
+| `wb_commodity_factor_panel` | BASE TABLE | 9,600,274 | 1960-01-01 → 2026-04-01 | Selected global commodity features broadcast to the ASADO 34-country factor panel as explanatory inputs. |
+| `wb_commodity_features` | BASE TABLE | 435,618 | 1960-01-01 → 2026-04-01 | Derived trailing commodity features such as level, MOM, YOY, 3M/12M return, volatility, and z-score, keyed by series_code and feature. |
+| `wb_commodity_indices` | BASE TABLE | 12,736 | 1960-01-01 → 2026-04-01 | Canonical World Bank Pink Sheet monthly commodity price indices, 2010=100, keyed by index_code. |
+| `wb_commodity_meta` | BASE TABLE | 87 | — |  |
+| `wb_commodity_prices` | BASE TABLE | 50,099 | 1960-01-01 → 2026-04-01 | Canonical World Bank Pink Sheet monthly nominal U.S. dollar commodity prices, keyed by commodity_code. |
 
 ## A note on `_CS` / `_TS` variants
 
@@ -63,10 +74,10 @@ Variables in this section are listed at the *raw* level (no `_CS`/`_TS` suffix).
 
 | Variable | Source | Frequency | Countries | Date range | Norm | Sparse | Forecast |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `12MRet` | t2 | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `3MRet` | t2 | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `6MRet` | t2 | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `9MRet` | t2 | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `12MRet` | t2 | monthly | 34 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `3MRet` | t2 | monthly | 34 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `6MRet` | t2 | monthly | 34 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `9MRet` | t2 | monthly | 34 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
 
 ### `t2_raw`
 
@@ -74,59 +85,59 @@ Variables in this section are listed at the *raw* level (no `_CS`/`_TS` suffix).
 
 | Variable | Source | Frequency | Countries | Date range | Norm | Sparse | Forecast |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `10Yr Bond` | t2_raw | monthly | 33 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `10Yr Bond 12` | t2_raw | monthly | 33 | 2001-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `12-1MTR` | t2_raw | monthly | 34 | 2001-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `120MA` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `120MA Signal` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `12MTR` | t2_raw | monthly | 34 | 2001-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `1MTR` | t2_raw | monthly | 34 | 2000-03-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `20 Day Vol` | t2_raw | monthly | 18 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `360 Day Vol` | t2_raw | monthly | 18 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `3MTR` | t2_raw | monthly | 34 | 2000-05-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Advance Decline` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Agriculture` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Agriculture 12` | t2_raw | monthly | 34 | 2001-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `BEST EPS` | t2_raw | monthly | 24 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Best Cash Flow` | t2_raw | monthly | 34 | 2005-04-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Best Div Yield` | t2_raw | monthly | 29 | 2005-06-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Best PBK` | t2_raw | monthly | 34 | 2005-03-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Best PE` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Best Price Sales` | t2_raw | monthly | 33 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Best ROE` | t2_raw | monthly | 34 | 2005-08-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Bloom Country Risk` | t2_raw | monthly | 34 | 2009-04-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Budget Def` | t2_raw | monthly | 32 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Copper` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Copper 12` | t2_raw | monthly | 34 | 2001-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Currency` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Currency 12` | t2_raw | monthly | 34 | 2001-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Currency Vol` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Current Account` | t2_raw | monthly | 33 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Debt to EV` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Debt to GDP` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `EV to EBITDA` | t2_raw | monthly | 34 | 2005-06-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Earnings Yield` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `GDP` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Gold` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Gold 12` | t2_raw | monthly | 34 | 2001-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Inflation` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `LT Growth` | t2_raw | monthly | 34 | 2005-08-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `MCAP` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `MCAP Adj` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Mcap Weights` | t2_raw | monthly | 34 | 2007-05-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Oil` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Oil 12` | t2_raw | monthly | 34 | 2001-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Operating Margin` | t2_raw | monthly | 18 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `P2P` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `PX_LAST` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Positive PE` | t2_raw | monthly | 34 | 2005-04-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `REER` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `RSI14` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Shiller PE` | t2_raw | monthly | 15 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Tot Return Index` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Trailing EPS` | t2_raw | monthly | 8 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Trailing EPS 36` | t2_raw | monthly | 8 | 2003-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `Trailing PE` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `10Yr Bond` | t2_raw | monthly | 33 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `10Yr Bond 12` | t2_raw | monthly | 33 | 2001-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `12-1MTR` | t2_raw | monthly | 34 | 2001-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `120MA` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `120MA Signal` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `12MTR` | t2_raw | monthly | 34 | 2001-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `1MTR` | t2_raw | monthly | 34 | 2000-03-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `20 Day Vol` | t2_raw | monthly | 29 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `360 Day Vol` | t2_raw | monthly | 29 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `3MTR` | t2_raw | monthly | 34 | 2000-05-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Advance Decline` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Agriculture` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Agriculture 12` | t2_raw | monthly | 34 | 2001-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `BEST EPS` | t2_raw | monthly | 29 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Best Cash Flow` | t2_raw | monthly | 27 | 2005-04-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Best Div Yield` | t2_raw | monthly | 29 | 2005-04-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Best PBK` | t2_raw | monthly | 27 | 2005-03-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Best PE` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Best Price Sales` | t2_raw | monthly | 29 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Best ROE` | t2_raw | monthly | 27 | 2005-08-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Bloom Country Risk` | t2_raw | monthly | 34 | 2009-04-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Budget Def` | t2_raw | monthly | 32 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Copper` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Copper 12` | t2_raw | monthly | 34 | 2001-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Currency` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Currency 12` | t2_raw | monthly | 34 | 2001-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Currency Vol` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Current Account` | t2_raw | monthly | 33 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Debt to EV` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Debt to GDP` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `EV to EBITDA` | t2_raw | monthly | 34 | 2005-06-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Earnings Yield` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `GDP` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Gold` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Gold 12` | t2_raw | monthly | 34 | 2001-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Inflation` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `LT Growth` | t2_raw | monthly | 34 | 2005-08-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `MCAP` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `MCAP Adj` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Mcap Weights` | t2_raw | monthly | 34 | 2007-05-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Oil` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Oil 12` | t2_raw | monthly | 34 | 2001-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Operating Margin` | t2_raw | monthly | 29 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `P2P` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `PX_LAST` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Positive PE` | t2_raw | monthly | 29 | 2005-04-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `REER` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `RSI14` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Shiller PE` | t2_raw | monthly | 22 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Tot Return Index` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Trailing EPS` | t2_raw | monthly | 14 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Trailing EPS 36` | t2_raw | monthly | 14 | 2003-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `Trailing PE` | t2_raw | monthly | 34 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
 
 ### `epu`
 
@@ -234,30 +245,30 @@ Variables in this section are listed at the *raw* level (no `_CS`/`_TS` suffix).
 
 | Variable | Source | Frequency | Countries | Date range | Norm | Sparse | Forecast |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `ECB_FX_AUD_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw | ✓ |  |
-| `ECB_FX_BRL_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw | ✓ |  |
-| `ECB_FX_CAD_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw | ✓ |  |
-| `ECB_FX_CHF_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw | ✓ |  |
-| `ECB_FX_CNY_EUR` | ecb_fx | monthly | 2 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw | ✓ |  |
-| `ECB_FX_DKK_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw | ✓ |  |
-| `ECB_FX_EUR_EUR` | ecb_fx | monthly | 5 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
-| `ECB_FX_GBP_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw | ✓ |  |
-| `ECB_FX_HKD_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw | ✓ |  |
-| `ECB_FX_IDR_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw | ✓ |  |
-| `ECB_FX_INR_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw | ✓ |  |
-| `ECB_FX_JPY_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw | ✓ |  |
-| `ECB_FX_KRW_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw | ✓ |  |
-| `ECB_FX_MXN_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw | ✓ |  |
-| `ECB_FX_MYR_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw | ✓ |  |
-| `ECB_FX_PHP_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw | ✓ |  |
-| `ECB_FX_PLN_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw | ✓ |  |
-| `ECB_FX_SEK_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw | ✓ |  |
-| `ECB_FX_SGD_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw | ✓ |  |
-| `ECB_FX_THB_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw | ✓ |  |
-| `ECB_FX_TRY_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw | ✓ |  |
+| `ECB_FX_AUD_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw | ✓ |  |
+| `ECB_FX_BRL_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw | ✓ |  |
+| `ECB_FX_CAD_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw | ✓ |  |
+| `ECB_FX_CHF_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw | ✓ |  |
+| `ECB_FX_CNY_EUR` | ecb_fx | monthly | 2 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw | ✓ |  |
+| `ECB_FX_DKK_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw | ✓ |  |
+| `ECB_FX_EUR_EUR` | ecb_fx | monthly | 5 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `ECB_FX_GBP_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw | ✓ |  |
+| `ECB_FX_HKD_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw | ✓ |  |
+| `ECB_FX_IDR_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw | ✓ |  |
+| `ECB_FX_INR_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw | ✓ |  |
+| `ECB_FX_JPY_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw | ✓ |  |
+| `ECB_FX_KRW_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw | ✓ |  |
+| `ECB_FX_MXN_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw | ✓ |  |
+| `ECB_FX_MYR_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw | ✓ |  |
+| `ECB_FX_PHP_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw | ✓ |  |
+| `ECB_FX_PLN_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw | ✓ |  |
+| `ECB_FX_SEK_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw | ✓ |  |
+| `ECB_FX_SGD_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw | ✓ |  |
+| `ECB_FX_THB_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw | ✓ |  |
+| `ECB_FX_TRY_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw | ✓ |  |
 | `ECB_FX_TWD_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2020-10-01T00:00:00 | raw | ✓ |  |
-| `ECB_FX_USD_EUR` | ecb_fx | monthly | 3 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
-| `ECB_FX_ZAR_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw | ✓ |  |
+| `ECB_FX_USD_EUR` | ecb_fx | monthly | 3 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `ECB_FX_ZAR_EUR` | ecb_fx | monthly | 1 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw | ✓ |  |
 
 ### `fred`
 
@@ -288,8 +299,8 @@ Variables in this section are listed at the *raw* level (no `_CS`/`_TS` suffix).
 
 | Variable | Source | Frequency | Countries | Date range | Norm | Sparse | Forecast |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `OFAC_Sanctioned` | ofac | event-driven | 34 | 2026-04-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `OFAC_Sanctions_Count` | ofac | event-driven | 34 | 2026-04-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `OFAC_Sanctioned` | ofac | event-driven | 34 | 2026-05-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `OFAC_Sanctions_Count` | ofac | event-driven | 34 | 2026-05-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
 
 ### `undp_hdi`
 
@@ -304,12 +315,11 @@ Variables in this section are listed at the *raw* level (no `_CS`/`_TS` suffix).
 
 ### `ilostat`
 
-**Total variables:** 2
+**Total variables:** 1
 
 | Variable | Source | Frequency | Countries | Date range | Norm | Sparse | Forecast |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `ILO_LFP_Rate` | ilostat | annual | 34 | 2000-12-01T00:00:00 → 2025-12-01T00:00:00 | raw |  |  |
-| `ILO_Unemployment_Rate` | ilostat | annual | 34 | 2000-12-01T00:00:00 → 2025-12-01T00:00:00 | raw |  |  |
+| `ILO_LFP_Rate` | ilostat | annual | 32 | 2000-12-01T00:00:00 → 2025-12-01T00:00:00 | raw |  |  |
 
 ### `eia`
 
@@ -337,7 +347,7 @@ Variables in this section are listed at the *raw* level (no `_CS`/`_TS` suffix).
 
 | Variable | Source | Frequency | Countries | Date range | Norm | Sparse | Forecast |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `OECD_BCI` | oecd_bci | monthly | 20 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
+| `OECD_BCI` | oecd_bci | monthly | 20 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
 
 ### `oecd_cci`
 
@@ -345,7 +355,7 @@ Variables in this section are listed at the *raw* level (no `_CS`/`_TS` suffix).
 
 | Variable | Source | Frequency | Countries | Date range | Norm | Sparse | Forecast |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `OECD_CCI` | oecd_cci | monthly | 22 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
+| `OECD_CCI` | oecd_cci | monthly | 22 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
 
 ### `oecd_household_dashboard`
 
@@ -403,7 +413,7 @@ Variables in this section are listed at the *raw* level (no `_CS`/`_TS` suffix).
 
 | Variable | Source | Frequency | Countries | Date range | Norm | Sparse | Forecast |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `IMF_XRate_LCU_per_USD` | imf_er | monthly | 29 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
+| `IMF_XRate_LCU_per_USD` | imf_er | monthly | 29 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
 
 ### `imf_itg`
 
@@ -412,13 +422,13 @@ Variables in this section are listed at the *raw* level (no `_CS`/`_TS` suffix).
 | Variable | Source | Frequency | Countries | Date range | Norm | Sparse | Forecast |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `IMF_Export_Price_Index` | imf_itg | monthly | 18 | 2000-01-01T00:00:00 → 2025-12-01T00:00:00 | raw |  |  |
-| `IMF_Exports_USD` | imf_itg | monthly | 34 | 2000-01-01T00:00:00 → 2026-02-01T00:00:00 | raw |  |  |
+| `IMF_Exports_USD` | imf_itg | monthly | 34 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
 | `IMF_Exports_YoY` | imf_itg | monthly | 23 | 2000-01-01T00:00:00 → 2026-01-01T00:00:00 | raw |  |  |
-| `IMF_Import_Price_Index` | imf_itg | monthly | 23 | 2000-01-01T00:00:00 → 2026-02-01T00:00:00 | raw |  |  |
-| `IMF_Imports_USD` | imf_itg | monthly | 33 | 2000-01-01T00:00:00 → 2026-02-01T00:00:00 | raw |  |  |
+| `IMF_Import_Price_Index` | imf_itg | monthly | 23 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
+| `IMF_Imports_USD` | imf_itg | monthly | 33 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
 | `IMF_Imports_YoY` | imf_itg | monthly | 22 | 2000-01-01T00:00:00 → 2026-01-01T00:00:00 | raw |  |  |
-| `IMF_Trade_Balance_USD` | imf_itg | monthly | 33 | 2000-01-01T00:00:00 → 2026-02-01T00:00:00 | raw |  |  |
-| `IMF_Trade_Openness_USD` | imf_itg | monthly | 33 | 2000-01-01T00:00:00 → 2026-02-01T00:00:00 | raw |  |  |
+| `IMF_Trade_Balance_USD` | imf_itg | monthly | 33 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
+| `IMF_Trade_Openness_USD` | imf_itg | monthly | 33 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
 
 ### `imf_ls`
 
@@ -435,8 +445,8 @@ Variables in this section are listed at the *raw* level (no `_CS`/`_TS` suffix).
 | Variable | Source | Frequency | Countries | Date range | Norm | Sparse | Forecast |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `IMF_Discount_Rate` | imf_mfs_ir | monthly | 10 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
-| `IMF_Govt_Bond_Yield` | imf_mfs_ir | monthly | 20 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
-| `IMF_Money_Market_Rate` | imf_mfs_ir | monthly | 21 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
+| `IMF_Govt_Bond_Yield` | imf_mfs_ir | monthly | 20 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `IMF_Money_Market_Rate` | imf_mfs_ir | monthly | 21 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
 | `IMF_TBill_Rate` | imf_mfs_ir | monthly | 17 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
 
 ### `imf_fsi`
@@ -460,9 +470,9 @@ Variables in this section are listed at the *raw* level (no `_CS`/`_TS` suffix).
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `MS_CentralBank_SovDebt_Share` | macrostructure_derived | quarterly | 26 | 1997-12-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
 | `MS_Investor_Base_Fragility` | macrostructure_derived | quarterly | 32 | 2001-03-01T00:00:00 → 2025-12-01T00:00:00 | raw |  |  |
-| `MS_Policy_Backstop` | macrostructure_derived | quarterly | 34 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `MS_Policy_Backstop` | macrostructure_derived | quarterly | 34 | 2000-01-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
 | `MS_Reserve_Adequacy` | macrostructure_derived | quarterly | 33 | 2000-12-01T00:00:00 → 2024-12-01T00:00:00 | raw |  |  |
-| `MS_Swap_Line_Access` | macrostructure_derived | quarterly | 34 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `MS_Swap_Line_Access` | macrostructure_derived | quarterly | 34 | 2000-01-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
 
 ### `qpsd`
 
@@ -494,34 +504,34 @@ Variables in this section are listed at the *raw* level (no `_CS`/`_TS` suffix).
 
 | Variable | Source | Frequency | Countries | Date range | Norm | Sparse | Forecast |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `BBG_Breakeven_10Y` | bloomberg | monthly | 6 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
-| `BBG_CDS_5Y` | bloomberg | monthly | 15 | 2000-10-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
+| `BBG_Breakeven_10Y` | bloomberg | monthly | 6 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `BBG_CDS_5Y` | bloomberg | monthly | 15 | 2000-10-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
 | `BBG_Debt_GDP_Ratio` | bloomberg | monthly | 1 | 2011-03-01T00:00:00 → 2025-12-01T00:00:00 | raw | ✓ |  |
-| `BBG_ECFC_CPI` | bloomberg | monthly | 21 | 2010-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  | ✓ |
+| `BBG_ECFC_CPI` | bloomberg | monthly | 21 | 2010-01-01T00:00:00 → 2026-04-01T00:00:00 | raw |  | ✓ |
 | `BBG_ECFC_GDP` | bloomberg | monthly | 29 | 2010-12-01T00:00:00 → 2025-12-01T00:00:00 | raw |  | ✓ |
-| `BBG_Govt_Bond_10Y` | bloomberg | monthly | 25 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
-| `BBG_Govt_Bond_2Y` | bloomberg | monthly | 24 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
-| `BBG_Govt_Bond_30Y` | bloomberg | monthly | 17 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
-| `BBG_Govt_Bond_5Y` | bloomberg | monthly | 25 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
+| `BBG_Govt_Bond_10Y` | bloomberg | monthly | 25 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `BBG_Govt_Bond_2Y` | bloomberg | monthly | 24 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `BBG_Govt_Bond_30Y` | bloomberg | monthly | 17 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `BBG_Govt_Bond_5Y` | bloomberg | monthly | 25 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
 | `BBG_M2_YoY` | bloomberg | monthly | 13 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
-| `BBG_MIPD_5Y` | bloomberg | monthly | 15 | 2000-10-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
-| `BBG_OIS_10Y` | bloomberg | monthly | 17 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
-| `BBG_PMI_Manufacturing` | bloomberg | monthly | 23 | 2023-04-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
-| `BBG_PMI_Services` | bloomberg | monthly | 13 | 2020-10-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
-| `BBG_WIRP_ImpliedRate` | bloomberg | monthly | 25 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
-| `BBG_Yield_Curve_10Y2Y` | bloomberg | monthly | 23 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
-| `BBG_ZSpread_OIS_10Y` | bloomberg | monthly | 16 | 2000-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
-| `MS_Country_ETF_AUM_USD` | bloomberg | monthly | 34 | 2015-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
-| `MS_Country_ETF_NetFlow_USD` | bloomberg | monthly | 34 | 2015-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
-| `MS_ETF_Creation_Fee_USD` | bloomberg | monthly | 34 | 2026-04-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `MS_ETF_Creation_Unit_Size_Shares` | bloomberg | monthly | 34 | 2026-04-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `MS_ETF_NetCreation_Shares` | bloomberg | monthly | 34 | 2015-02-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
-| `MS_ETF_NetFlow_to_MarketCap` | bloomberg | monthly | 33 | 2015-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
-| `MS_ETF_Redemption_Fee_USD` | bloomberg | monthly | 33 | 2026-04-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `BBG_MIPD_5Y` | bloomberg | monthly | 15 | 2000-10-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `BBG_OIS_10Y` | bloomberg | monthly | 17 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `BBG_PMI_Manufacturing` | bloomberg | monthly | 23 | 2023-05-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `BBG_PMI_Services` | bloomberg | monthly | 13 | 2020-10-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `BBG_WIRP_ImpliedRate` | bloomberg | monthly | 25 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `BBG_Yield_Curve_10Y2Y` | bloomberg | monthly | 23 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `BBG_ZSpread_OIS_10Y` | bloomberg | monthly | 16 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `MS_Country_ETF_AUM_USD` | bloomberg | monthly | 34 | 2015-01-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `MS_Country_ETF_NetFlow_USD` | bloomberg | monthly | 34 | 2015-01-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `MS_ETF_Creation_Fee_USD` | bloomberg | monthly | 34 | 2026-05-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `MS_ETF_Creation_Unit_Size_Shares` | bloomberg | monthly | 34 | 2026-05-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `MS_ETF_NetCreation_Shares` | bloomberg | monthly | 34 | 2015-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `MS_ETF_NetFlow_to_MarketCap` | bloomberg | monthly | 33 | 2015-01-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `MS_ETF_Redemption_Fee_USD` | bloomberg | monthly | 33 | 2026-05-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
 | `MS_Index_Weight` | bloomberg | monthly | 33 | 1975-12-01T00:00:00 → 2025-12-01T00:00:00 | raw |  |  |
 | `MS_Index_Weight_Change` | bloomberg | monthly | 33 | 1976-12-01T00:00:00 → 2025-12-01T00:00:00 | raw |  |  |
-| `MS_Passive_AUM_to_MarketCap` | bloomberg | monthly | 33 | 2015-01-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
-| `MS_Passive_Flow_Distortion` | bloomberg | monthly | 33 | 1976-12-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
+| `MS_Passive_AUM_to_MarketCap` | bloomberg | monthly | 33 | 2015-01-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `MS_Passive_Flow_Distortion` | bloomberg | monthly | 33 | 1976-12-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
 
 ### `gdelt`
 
@@ -529,7 +539,7 @@ Variables in this section are listed at the *raw* level (no `_CS`/`_TS` suffix).
 
 | Variable | Source | Frequency | Countries | Date range | Norm | Sparse | Forecast |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `1MRet` | gdelt | monthly | 34 | 2000-02-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
+| `1MRet` | gdelt | monthly | 34 | 2000-02-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
 
 ### `imf_mfs_cbs`
 
@@ -540,124 +550,17 @@ Variables in this section are listed at the *raw* level (no `_CS`/`_TS` suffix).
 | `MS_CentralBank_BalanceSheet_GDP` | imf_mfs_cbs | monthly | 21 | 1997-12-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
 | `MS_CentralBank_Claims_on_Government_Pct_GDP` | imf_mfs_cbs | monthly | 26 | 1997-12-01T00:00:00 → 2026-03-01T00:00:00 | raw |  |  |
 
+### `wb_commodity`
+
+**Total variables:** 371
+
+**Other** — 371 variables
+- Samples: `WB_CMDTY_ALUMINUM_LEVEL`, `WB_CMDTY_ALUMINUM_MOM`, `WB_CMDTY_ALUMINUM_RET_12M`, `WB_CMDTY_ALUMINUM_RET_3M`, `WB_CMDTY_ALUMINUM_VOL_12M`, `WB_CMDTY_ALUMINUM_YOY`, `WB_CMDTY_ALUMINUM_Z_36M`, `WB_CMDTY_BARLEY_LEVEL`, `WB_CMDTY_BARLEY_MOM`, `WB_CMDTY_BARLEY_RET_12M`, +361 more
+- Frequency: monthly · Country coverage: up to 34 countries
+
 ## Neo4j Knowledge Graph
 
-**URI:** `bolt://localhost:7687`
-
-### Node labels (7)
-
-#### `:CentralBank` — 31 nodes
-
-Central bank entity linked to a country.
-
-Properties:
-- `country_iso3`
-- `name`
-
-#### `:Commodity` — 4 nodes
-
-Commodity node used for export exposure edges.
-
-Properties:
-- `category`
-- `name`
-
-#### `:Country` — 34 nodes
-
-Tracked T2 universe member with metadata. The graph_role property distinguishes sovereign nodes, sovereign proxies, and market-sleeve nodes.
-
-Properties:
-- `currency_code`
-- `dm_em`
-- `embedding_date`
-- `embedding_dims`
-- `graph_role`
-- `iso2`
-- `iso3`
-- `name`
-- `region`
-- `state_embedding`
-- `t2_name`
-
-#### `:CrisisEvent` — 9 nodes
-
-Historical crisis event linked to affected countries.
-
-Properties:
-- `end_date`
-- `name`
-- `start_date`
-- `type`
-
-#### `:DataSource` — 37 nodes
-
-Upstream source system or dataset.
-
-Properties:
-- `api_type`
-- `country_count`
-- `display_name`
-- `first_date`
-- `frequency`
-- `freshness_days`
-- `last_date`
-- `name`
-- `row_count`
-- `source_key`
-- `status`
-- `url`
-- `variable_count`
-
-#### `:Factor` — 1,930 nodes
-
-ASADO factor/variable node aligned to the unified panel variable catalog.
-
-Properties:
-- `name`
-- `latest_return_12m`
-- `latest_return_1m`
-- `latest_return_date`
-- `return_source`
-- `sharpe_60m`
-- `category`
-- `source`
-
-#### `:SanctionsProgram` — 6 nodes
-
-Sanctions-related node used for OFAC/SDN association queries.
-
-Properties:
-- `active`
-- `name`
-
-### Relationship types (9)
-
-| Relationship | Count | From → To | Description |
-| --- | --- | --- | --- |
-| `[:DATA_AVAILABLE_FROM]` | 992 | Country → DataSource | Country coverage edge to an upstream source. |
-| `[:EXPORT_EXPOSED_TO]` | 28 | Country → Commodity | Country linked to major commodity exposure. |
-| `[:HAS_BANKING_EXPOSURE_TO]` | 582 | Country → Country | Directed bilateral banking claims relationship. |
-| `[:HAS_CENTRAL_BANK]` | 31 | Country → CentralBank | Country linked to its central bank node. |
-| `[:HAS_CRISIS_HISTORY]` | 112 | Country → CrisisEvent | Country linked to historical crisis events. |
-| `[:HAS_FACTOR_EXPOSURE]` | 54,181 | Country → Factor | Latest non-null factor exposure edge per country and variable, built from DuckDB. |
-| `[:HOLDS_PORTFOLIO]` | 1,960 | Country → Country |  |
-| `[:SUBJECT_TO]` | 31 | Country → SanctionsProgram | Country linked to OFAC/SDN-associated sanctions exposure. This is not a clean sovereign sanctions-target registry. |
-| `[:TRADES_WITH]` | 928 | Country → Country | Directed bilateral trade relationship. |
-
-### Indexes (10)
-
-| Name | Type | Label | Properties |
-| --- | --- | --- | --- |
-| `constraint_121f6647` | RANGE |  | name |
-| `constraint_138e31a6` | RANGE |  | name |
-| `constraint_40e612f4` | RANGE |  | name |
-| `constraint_67f88619` | RANGE |  | name |
-| `constraint_90b51235` | RANGE |  | name |
-| `constraint_bdf7e5b4` | RANGE |  | t2_name |
-| `constraint_e10e73b` | RANGE |  | name |
-| `countryStateIndex` | VECTOR |  | state_embedding |
-| `index_1b9dcc97` | LOOKUP |  |  |
-| `index_460996c0` | LOOKUP |  |  |
+*Neo4j was unreachable when the schema cache was built — run `scripts/build_schema_registry.py` with Neo4j up to populate this section.*
 
 ## DuckDB Indexes
 
@@ -668,20 +571,22 @@ Properties:
 | `idx_bloomberg_factors_var` | `bloomberg_factors` | ['"variable"'] |
 | `idx_country_reference_country` | `country_reference` | [country] |
 | `idx_country_reference_iso3` | `country_reference` | [iso3] |
+| `idx_daily_cal_ctry_date` | `daily_calendar` | [country, date] |
 | `idx_extended_factors_ctry_date` | `extended_factors` | [country, date] |
 | `idx_extended_factors_var` | `extended_factors` | ['"variable"'] |
 | `idx_external_factors_ctry_date` | `external_factors` | [country, date] |
 | `idx_external_factors_var` | `external_factors` | ['"variable"'] |
 | `idx_factor_returns_date_factor` | `factor_returns` | [date, factor] |
 | `idx_factor_returns_source` | `factor_returns` | ['"source"'] |
+| `idx_factor_ret_daily_date_factor` | `factor_returns_daily` | [date, factor] |
+| `idx_factor_ret_daily_source` | `factor_returns_daily` | ['"source"'] |
 | `idx_factor_top20_membership_date_country` | `factor_top20_membership` | [date, country] |
 | `idx_factor_top20_membership_factor` | `factor_top20_membership` | [factor, date] |
-| `idx_gdelt_deep_factors_ctry_date` | `gdelt_deep_factors` | [country, date] |
-| `idx_gdelt_deep_factors_var` | `gdelt_deep_factors` | ['"variable"'] |
-| `idx_gdelt_deep_factors_cs_ctry_date` | `gdelt_deep_factors_cs` | [country, date] |
-| `idx_gdelt_deep_factors_cs_var` | `gdelt_deep_factors_cs` | ['"variable"'] |
+| `idx_gdelt_factors_daily_ctry_date` | `gdelt_factors_daily` | [country, date] |
+| `idx_gdelt_factors_daily_var` | `gdelt_factors_daily` | ['"variable"'] |
 | `idx_gdelt_panel_ctry_date` | `gdelt_panel` | [country, date] |
 | `idx_gdelt_panel_var` | `gdelt_panel` | ['"variable"'] |
+| `idx_gdelt_raw_iso3_date` | `gdelt_raw_daily` | [country_iso3, date] |
 | `idx_imf_factors_ctry_date` | `imf_factors` | [country, date] |
 | `idx_imf_factors_var` | `imf_factors` | ['"variable"'] |
 | `idx_macrostructure_factors_ctry_date` | `macrostructure_factors` | [country, date] |
@@ -689,7 +594,17 @@ Properties:
 | `idx_normalized_panel_base_norm` | `normalized_panel` | [base_variable, normalization, date] |
 | `idx_normalized_panel_ctry_date` | `normalized_panel` | [country, date] |
 | `idx_normalized_panel_var` | `normalized_panel` | ['"variable"'] |
+| `idx_t2_factors_daily_ctry_date` | `t2_factors_daily` | [country, date] |
+| `idx_t2_factors_daily_var` | `t2_factors_daily` | ['"variable"'] |
+| `idx_t2_levels_daily_ctry_date` | `t2_levels_daily` | [country, date] |
+| `idx_t2_levels_daily_var` | `t2_levels_daily` | ['"variable"'] |
 | `idx_t2_master_ctry_date` | `t2_master` | [country, date] |
 | `idx_t2_master_var` | `t2_master` | ['"variable"'] |
 | `idx_t2_raw_ctry_date` | `t2_raw` | [country, date] |
 | `idx_t2_raw_var` | `t2_raw` | ['"variable"'] |
+| `idx_var_meta_var` | `variable_meta` | ['"variable"'] |
+| `idx_wb_commodity_factor_panel_ctry_date` | `wb_commodity_factor_panel` | [country, date] |
+| `idx_wb_commodity_factor_panel_var` | `wb_commodity_factor_panel` | ['"variable"'] |
+| `idx_wb_commodity_features_code_feature_date` | `wb_commodity_features` | [series_code, feature, date] |
+| `idx_wb_commodity_indices_code_date` | `wb_commodity_indices` | [index_code, date] |
+| `idx_wb_commodity_prices_code_date` | `wb_commodity_prices` | [commodity_code, date] |

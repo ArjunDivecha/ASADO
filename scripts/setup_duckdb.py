@@ -17,6 +17,7 @@ INPUT FILES:
 - Data/processed/macrostructure_panel.parquet    (macrostructure fragility / ownership panel)
 - Data/processed/bilateral_portfolio_matrix.parquet (historical portfolio ownership matrix)
 - Data/processed/bloomberg_factors_panel.parquet (Bloomberg sovereign data, 34 countries)
+- Data/processed/wb_commodity_factor_panel.parquet (World Bank Pink Sheet global commodity context)
 
 OUTPUT FILES:
 - Data/asado.duckdb                             (unified analytical database)
@@ -42,6 +43,10 @@ Tables created:
   - macrostructure_factors: Macrostructure panel (IMF FSI, QPSD debt structure, derived scores)
   - bilateral_portfolio_matrix: Historical portfolio ownership matrix
   - bloomberg_factors:  Bloomberg sovereign data (bonds, CDS, ratings, 34 countries)
+  - wb_commodity_prices / wb_commodity_indices / wb_commodity_features:
+                        World Bank Pink Sheet canonical monthly commodity tables
+  - wb_commodity_factor_panel: Selected global commodity features broadcast to
+                        the 34-country ASADO panel as explanatory inputs
   - factor_returns:     Monthly net returns of top-20% portfolios per factor variant
                         (Econ / T2 Style / GDELT optimizer outputs; no country axis)
   - factor_top20_membership: Sparse country-level membership in each factor's top-20%
@@ -91,6 +96,11 @@ BILATERAL_PORTFOLIO_PQ = DATA_DIR / "processed" / "bilateral_portfolio_matrix.pa
 BLOOMBERG_PQ = DATA_DIR / "processed" / "bloomberg_factors_panel.parquet"
 FACTOR_RETURNS_PQ = DATA_DIR / "processed" / "factor_returns_panel.parquet"
 FACTOR_TOP20_MEMBERSHIP_PQ = DATA_DIR / "processed" / "factor_top20_membership_panel.parquet"
+WB_COMMODITY_PRICES_PQ = DATA_DIR / "processed" / "wb_commodity_prices.parquet"
+WB_COMMODITY_INDICES_PQ = DATA_DIR / "processed" / "wb_commodity_indices.parquet"
+WB_COMMODITY_META_PQ = DATA_DIR / "processed" / "wb_commodity_meta.parquet"
+WB_COMMODITY_FEATURES_PQ = DATA_DIR / "processed" / "wb_commodity_features.parquet"
+WB_COMMODITY_FACTOR_PANEL_PQ = DATA_DIR / "processed" / "wb_commodity_factor_panel.parquet"
 
 T2_RETURN_SHEETS = {"1MRet", "3MRet", "6MRet", "9MRet", "12MRet"}
 GLOBAL_BROADCAST_VARIABLES = {
@@ -354,6 +364,198 @@ def create_empty_factor_table(con: duckdb.DuckDBPyConnection, table_name: str) -
     return 0
 
 
+def load_wb_commodity_tables(con: duckdb.DuckDBPyConnection) -> int:
+    """Load World Bank Pink Sheet commodity tables and factor-panel projection."""
+    print("Loading World Bank Commodity Price Intelligence ...")
+    total = 0
+
+    if WB_COMMODITY_PRICES_PQ.exists():
+        con.execute("DROP TABLE IF EXISTS wb_commodity_prices")
+        con.execute(f"""
+            CREATE TABLE wb_commodity_prices AS
+            SELECT
+                CAST(date AS DATE) AS date,
+                commodity_code,
+                commodity_name,
+                unit,
+                CAST(nominal_price_usd AS DOUBLE) AS nominal_price_usd,
+                category,
+                source_sheet,
+                TRY_CAST(source_file_date AS DATE) AS source_file_date,
+                source_url,
+                last_loaded_at
+            FROM read_parquet('{WB_COMMODITY_PRICES_PQ}')
+        """)
+    else:
+        con.execute("DROP TABLE IF EXISTS wb_commodity_prices")
+        con.execute("""
+            CREATE TABLE wb_commodity_prices (
+                date DATE,
+                commodity_code VARCHAR,
+                commodity_name VARCHAR,
+                unit VARCHAR,
+                nominal_price_usd DOUBLE,
+                category VARCHAR,
+                source_sheet VARCHAR,
+                source_file_date DATE,
+                source_url VARCHAR,
+                last_loaded_at VARCHAR
+            )
+        """)
+
+    if WB_COMMODITY_INDICES_PQ.exists():
+        con.execute("DROP TABLE IF EXISTS wb_commodity_indices")
+        con.execute(f"""
+            CREATE TABLE wb_commodity_indices AS
+            SELECT
+                CAST(date AS DATE) AS date,
+                index_code,
+                index_name,
+                CAST(nominal_index_2010_100 AS DOUBLE) AS nominal_index_2010_100,
+                category,
+                source_sheet,
+                TRY_CAST(source_file_date AS DATE) AS source_file_date,
+                source_url,
+                last_loaded_at
+            FROM read_parquet('{WB_COMMODITY_INDICES_PQ}')
+        """)
+    else:
+        con.execute("DROP TABLE IF EXISTS wb_commodity_indices")
+        con.execute("""
+            CREATE TABLE wb_commodity_indices (
+                date DATE,
+                index_code VARCHAR,
+                index_name VARCHAR,
+                nominal_index_2010_100 DOUBLE,
+                category VARCHAR,
+                source_sheet VARCHAR,
+                source_file_date DATE,
+                source_url VARCHAR,
+                last_loaded_at VARCHAR
+            )
+        """)
+
+    if WB_COMMODITY_META_PQ.exists():
+        con.execute("DROP TABLE IF EXISTS wb_commodity_meta")
+        con.execute(f"""
+            CREATE TABLE wb_commodity_meta AS
+            SELECT
+                series_code,
+                series_type,
+                display_name,
+                category,
+                unit,
+                source_description,
+                canonical_source,
+                import_status,
+                CAST(is_projected_to_factor_panel AS BOOLEAN) AS is_projected_to_factor_panel
+            FROM read_parquet('{WB_COMMODITY_META_PQ}')
+        """)
+    else:
+        con.execute("DROP TABLE IF EXISTS wb_commodity_meta")
+        con.execute("""
+            CREATE TABLE wb_commodity_meta (
+                series_code VARCHAR,
+                series_type VARCHAR,
+                display_name VARCHAR,
+                category VARCHAR,
+                unit VARCHAR,
+                source_description VARCHAR,
+                canonical_source VARCHAR,
+                import_status VARCHAR,
+                is_projected_to_factor_panel BOOLEAN
+            )
+        """)
+
+    if WB_COMMODITY_FEATURES_PQ.exists():
+        con.execute("DROP TABLE IF EXISTS wb_commodity_features")
+        con.execute(f"""
+            CREATE TABLE wb_commodity_features AS
+            SELECT
+                CAST(date AS DATE) AS date,
+                series_code,
+                series_type,
+                display_name,
+                category,
+                unit,
+                feature,
+                CAST(value AS DOUBLE) AS value,
+                source,
+                source_frequency,
+                last_loaded_at
+            FROM read_parquet('{WB_COMMODITY_FEATURES_PQ}')
+        """)
+    else:
+        con.execute("DROP TABLE IF EXISTS wb_commodity_features")
+        con.execute("""
+            CREATE TABLE wb_commodity_features (
+                date DATE,
+                series_code VARCHAR,
+                series_type VARCHAR,
+                display_name VARCHAR,
+                category VARCHAR,
+                unit VARCHAR,
+                feature VARCHAR,
+                value DOUBLE,
+                source VARCHAR,
+                source_frequency VARCHAR,
+                last_loaded_at VARCHAR
+            )
+        """)
+
+    if WB_COMMODITY_FACTOR_PANEL_PQ.exists():
+        con.execute("DROP TABLE IF EXISTS wb_commodity_factor_panel")
+        con.execute(f"""
+            CREATE TABLE wb_commodity_factor_panel AS
+            SELECT
+                CAST(date AS DATE) AS date,
+                country,
+                CAST(value AS DOUBLE) AS value,
+                variable,
+                source,
+                series_code,
+                feature,
+                CAST(is_global_broadcast AS BOOLEAN) AS is_global_broadcast
+            FROM read_parquet('{WB_COMMODITY_FACTOR_PANEL_PQ}')
+        """)
+    else:
+        con.execute("DROP TABLE IF EXISTS wb_commodity_factor_panel")
+        con.execute("""
+            CREATE TABLE wb_commodity_factor_panel (
+                date DATE,
+                country VARCHAR,
+                value DOUBLE,
+                variable VARCHAR,
+                source VARCHAR,
+                series_code VARCHAR,
+                feature VARCHAR,
+                is_global_broadcast BOOLEAN
+            )
+        """)
+
+    price_series = con.execute("SELECT COUNT(DISTINCT commodity_code) FROM wb_commodity_prices").fetchone()[0]
+    index_series = con.execute("SELECT COUNT(DISTINCT index_code) FROM wb_commodity_indices").fetchone()[0]
+    projected_rows = con.execute("SELECT COUNT(*) FROM wb_commodity_factor_panel").fetchone()[0]
+    projected_vars = con.execute("SELECT COUNT(DISTINCT variable) FROM wb_commodity_factor_panel").fetchone()[0]
+    latest = con.execute("""
+        SELECT MAX(date) FROM (
+            SELECT MAX(date) AS date FROM wb_commodity_prices
+            UNION ALL
+            SELECT MAX(date) AS date FROM wb_commodity_indices
+        )
+    """).fetchone()[0]
+    total += con.execute("SELECT COUNT(*) FROM wb_commodity_prices").fetchone()[0]
+    total += con.execute("SELECT COUNT(*) FROM wb_commodity_indices").fetchone()[0]
+    total += con.execute("SELECT COUNT(*) FROM wb_commodity_features").fetchone()[0]
+    total += projected_rows
+    print(
+        "  wb_commodity: "
+        f"{price_series} prices, {index_series} indices, "
+        f"{projected_vars} projected variables, {projected_rows:,} factor rows, latest={latest}"
+    )
+    return total
+
+
 def load_bilateral_portfolio_table(con: duckdb.DuckDBPyConnection) -> int:
     """Load the historical portfolio ownership matrix into DuckDB."""
     print("Loading bilateral portfolio matrix ...")
@@ -564,6 +766,8 @@ def create_unified_view(con: duckdb.DuckDBPyConnection):
         UNION ALL
         SELECT date, country, value, variable, source FROM macrostructure_factors
         UNION ALL
+        SELECT date, country, value, variable, source FROM wb_commodity_factor_panel
+        UNION ALL
         SELECT date, country, CAST(value AS DOUBLE) AS value, variable, source
         FROM bloomberg_factors
         WHERE TRY_CAST(value AS DOUBLE) IS NOT NULL
@@ -577,9 +781,22 @@ def create_indexes(con: duckdb.DuckDBPyConnection):
     """Create indexes for fast analytical queries."""
     print("Creating indexes ...")
     for table in ["t2_master", "t2_raw", "external_factors", "extended_factors", "gdelt_panel",
-                   "imf_factors", "macrostructure_factors", "bloomberg_factors"]:
+                   "imf_factors", "macrostructure_factors", "bloomberg_factors",
+                   "wb_commodity_factor_panel"]:
         con.execute(f"CREATE INDEX IF NOT EXISTS idx_{table}_ctry_date ON {table}(country, date)")
         con.execute(f"CREATE INDEX IF NOT EXISTS idx_{table}_var ON {table}(variable)")
+    con.execute("""
+        CREATE INDEX IF NOT EXISTS idx_wb_commodity_prices_code_date
+        ON wb_commodity_prices(commodity_code, date)
+    """)
+    con.execute("""
+        CREATE INDEX IF NOT EXISTS idx_wb_commodity_indices_code_date
+        ON wb_commodity_indices(index_code, date)
+    """)
+    con.execute("""
+        CREATE INDEX IF NOT EXISTS idx_wb_commodity_features_code_feature_date
+        ON wb_commodity_features(series_code, feature, date)
+    """)
     con.execute("CREATE INDEX IF NOT EXISTS idx_country_reference_country ON country_reference(country)")
     con.execute("CREATE INDEX IF NOT EXISTS idx_country_reference_iso3 ON country_reference(iso3)")
     con.execute("""
@@ -596,7 +813,7 @@ def create_indexes(con: duckdb.DuckDBPyConnection):
         CREATE INDEX IF NOT EXISTS idx_factor_top20_membership_factor
         ON factor_top20_membership(factor, date)
     """)
-    print("  Indexes created on factor tables, country_reference, bilateral ownership, and optimizer panels")
+    print("  Indexes created on factor tables, country_reference, commodity, bilateral ownership, and optimizer panels")
 
 
 def check_database():
@@ -616,7 +833,7 @@ def check_database():
 
     for table in ["t2_master", "t2_raw", "country_reference", "external_factors", "extended_factors", "gdelt_panel",
                    "imf_factors", "macrostructure_factors", "bloomberg_factors",
-                   "factor_returns", "factor_top20_membership"]:
+                   "wb_commodity_factor_panel", "factor_returns", "factor_top20_membership"]:
         try:
             if table == "factor_returns":
                 count = con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
@@ -647,6 +864,25 @@ def check_database():
                 print(f"  {table:20s}: {count:>10,} rows | {vars_c:>3} vars | {ctry_c:>2} countries | {date_min} → {date_max}")
         except Exception as e:
             print(f"  {table}: ERROR — {e}")
+
+    try:
+        price_series = con.execute("SELECT COUNT(DISTINCT commodity_code) FROM wb_commodity_prices").fetchone()[0]
+        index_series = con.execute("SELECT COUNT(DISTINCT index_code) FROM wb_commodity_indices").fetchone()[0]
+        feature_rows = con.execute("SELECT COUNT(*) FROM wb_commodity_features").fetchone()[0]
+        latest = con.execute("""
+            SELECT MAX(date) FROM (
+                SELECT MAX(date) AS date FROM wb_commodity_prices
+                UNION ALL
+                SELECT MAX(date) AS date FROM wb_commodity_indices
+            )
+        """).fetchone()[0]
+        print(
+            "  wb_commodity_canonical: "
+            f"{price_series:>3} prices | {index_series:>2} indices | "
+            f"{feature_rows:>10,} feature rows | latest {latest}"
+        )
+    except Exception as e:
+        print(f"  wb_commodity_canonical: ERROR — {e}")
 
     try:
         count = con.execute("SELECT COUNT(*) FROM bilateral_portfolio_matrix").fetchone()[0]
@@ -685,6 +921,7 @@ def main():
     optional = [
         MACROSTRUCTURE_PQ, BILATERAL_PORTFOLIO_PQ, BLOOMBERG_PQ,
         FACTOR_RETURNS_PQ, FACTOR_TOP20_MEMBERSHIP_PQ,
+        WB_COMMODITY_FACTOR_PANEL_PQ,
     ]
     for f in required:
         if not f.exists():
@@ -732,6 +969,8 @@ def main():
     else:
         print("Macrostructure panel not found — creating empty table")
         create_empty_factor_table(con, "macrostructure_factors")
+    print()
+    total += load_wb_commodity_tables(con)
     print()
     if BILATERAL_PORTFOLIO_PQ.exists():
         total += load_bilateral_portfolio_table(con)

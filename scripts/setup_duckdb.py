@@ -648,6 +648,66 @@ def load_gdelt(con: duckdb.DuckDBPyConnection) -> int:
     return count
 
 
+def load_demographics_dip(con: duckdb.DuckDBPyConnection) -> int:
+    """Load demographic inflation factors from Demographics_Inflation_Factor/dip_panel_long.csv."""
+    print("Loading Demographic Inflation Factors (DIP) ...")
+    csv_path = BASE_DIR / "Demographics_Inflation_Factor" / "dip_panel_long.csv"
+    if not csv_path.exists():
+        print("  DIP csv not found — skipping load")
+        return 0
+
+    df = pd.read_csv(csv_path)
+    
+    # Fetch country reference to map ISO3 to ASADO country names
+    iso_to_countries = {}
+    res = con.execute("SELECT iso3, country FROM country_reference").fetchall()
+    for iso3, country in res:
+        iso_to_countries.setdefault(iso3, []).append(country)
+        
+    rows = []
+    for _, row in df.iterrows():
+        iso3 = row["ISO3"]
+        location = row["Location"]
+        year = int(row["Year"])
+        date_str = f"{year}-12-01"
+        
+        # Get matching countries in ASADO
+        countries = iso_to_countries.get(iso3, [location])
+        
+        for country in countries:
+            for col in ["DIP_abs", "DIP_rel", "DIP_rel_chg_5y", "DIP_rel_chg_10y"]:
+                val = row[col]
+                if pd.notna(val):
+                    rows.append({
+                        "date": date_str,
+                        "country": country,
+                        "value": float(val),
+                        "variable": col,
+                        "source": "demographics_dip"
+                    })
+                    
+    dip_df = pd.DataFrame(rows)
+    con.execute("DROP TABLE IF EXISTS demographics_dip")
+    con.register("dip_stage", dip_df)
+    con.execute("""
+        CREATE TABLE demographics_dip AS
+        SELECT
+            CAST(date AS DATE) AS date,
+            country,
+            CAST(value AS DOUBLE) AS value,
+            variable,
+            source
+        FROM dip_stage
+    """)
+    con.unregister("dip_stage")
+    
+    count = con.execute("SELECT COUNT(*) FROM demographics_dip").fetchone()[0]
+    vars_count = con.execute("SELECT COUNT(DISTINCT variable) FROM demographics_dip").fetchone()[0]
+    countries_count = con.execute("SELECT COUNT(DISTINCT country) FROM demographics_dip").fetchone()[0]
+    print(f"  demographics_dip: {count:,} rows, {vars_count} variables, {countries_count} countries")
+    return count
+
+
 def load_factor_returns(con: duckdb.DuckDBPyConnection) -> int:
     """Load factor_returns_panel.parquet into the factor_returns table."""
     print("Loading Factor Returns Panel ...")
@@ -771,6 +831,8 @@ def create_unified_view(con: duckdb.DuckDBPyConnection):
         SELECT date, country, CAST(value AS DOUBLE) AS value, variable, source
         FROM bloomberg_factors
         WHERE TRY_CAST(value AS DOUBLE) IS NOT NULL
+        UNION ALL
+        SELECT date, country, value, variable, source FROM demographics_dip
     """)
     count = con.execute("SELECT COUNT(*) FROM unified_panel").fetchone()[0]
     vars_count = con.execute("SELECT COUNT(DISTINCT variable) FROM unified_panel").fetchone()[0]
@@ -782,7 +844,7 @@ def create_indexes(con: duckdb.DuckDBPyConnection):
     print("Creating indexes ...")
     for table in ["t2_master", "t2_raw", "external_factors", "extended_factors", "gdelt_panel",
                    "imf_factors", "macrostructure_factors", "bloomberg_factors",
-                   "wb_commodity_factor_panel"]:
+                   "wb_commodity_factor_panel", "demographics_dip"]:
         con.execute(f"CREATE INDEX IF NOT EXISTS idx_{table}_ctry_date ON {table}(country, date)")
         con.execute(f"CREATE INDEX IF NOT EXISTS idx_{table}_var ON {table}(variable)")
     con.execute("""
@@ -833,7 +895,7 @@ def check_database():
 
     for table in ["t2_master", "t2_raw", "country_reference", "external_factors", "extended_factors", "gdelt_panel",
                    "imf_factors", "macrostructure_factors", "bloomberg_factors",
-                   "wb_commodity_factor_panel", "factor_returns", "factor_top20_membership"]:
+                   "wb_commodity_factor_panel", "demographics_dip", "factor_returns", "factor_top20_membership"]:
         try:
             if table == "factor_returns":
                 count = con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
@@ -1002,6 +1064,8 @@ def main():
     else:
         print("Factor top-20 membership panel not found — creating empty table")
         create_empty_factor_top20_membership_table(con)
+    print()
+    total += load_demographics_dip(con)
     print()
     create_country_factor_attribution_view(con)
     print()

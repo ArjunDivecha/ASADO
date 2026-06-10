@@ -1546,6 +1546,192 @@ def return_leaders(
     raise ValueError(f"Unsupported scope '{scope}'. Use 'country' or 'factor'.")
 
 
+@mcp.tool(
+    description=(
+        "Actual news headlines behind a T2 country's GDELT attention numbers "
+        "(GDELT DOC 2.0 API, live, ~3-month window). Use when an attention/tone "
+        "aggregate spikes and you need to know WHAT the news is saying. "
+        "Headlines are deduped (wire repeats dropped). Evidence for reasoning "
+        "only - never a mechanical trading signal."
+    )
+)
+def country_news(
+    country: str,
+    days: int = 1,
+    max_records: int = 50,
+    extra_query: Optional[str] = None,
+    english_only: bool = True,
+) -> dict[str, Any]:
+    """Fetch deduped article headlines for one T2 country.
+
+    Args:
+        country: Exact T2 country name (e.g., "Indonesia", "Korea", "U.S.").
+            Market sleeves map to their economy (NASDAQ -> United States).
+        days: Lookback window in days (default 1, max useful ~90).
+        max_records: Max deduped articles returned (default 50).
+        extra_query: Optional extra GDELT query terms, e.g. "lira OR central bank".
+        english_only: Restrict to English-language sources (default True).
+    """
+    from scripts.loop.country_news import GdeltRateLimited, fetch_country_news
+
+    try:
+        return _json_ready(fetch_country_news(
+            country,
+            days=days,
+            max_records=max_records,
+            extra_query=extra_query,
+            english_only=english_only,
+            retries=2,
+        ))
+    except GdeltRateLimited as exc:
+        return _json_ready({
+            "country": country,
+            "error": "rate_limited",
+            "detail": str(exc),
+            "advice": "GDELT throttles by IP. Wait 2-5 minutes and retry.",
+        })
+
+
+@mcp.tool(
+    description=(
+        "Pre-register a research hypothesis in the Alpha-Hunting Loop ledger. "
+        "MUST be called before evaluate_signal - mechanism written BEFORE results. "
+        "Every registration counts as a trial against its family for the deflated Sharpe."
+    )
+)
+def register_hypothesis(
+    archetype: str,
+    family_key: str,
+    mechanism_text: str,
+    signal_table: str,
+    signal_variable: str,
+    signal_source: Optional[str] = None,
+    author: str = "mcp",
+) -> dict[str, Any]:
+    """Pre-register a hypothesis.
+
+    Args:
+        archetype: A1..A7 or "other" (PRD trade archetypes).
+        family_key: Groups related trials (all variants of one idea share a family).
+        mechanism_text: WHY this should predict returns - one paragraph, written
+            before any results are seen (>= 15 words enforced).
+        signal_table: Table holding the signal (e.g. "feature_panel").
+        signal_variable: Variable name (e.g. "EPU_CS").
+        signal_source: Optional source filter (e.g. "epu").
+        author: Attribution string.
+    """
+    from scripts.loop.ledgers import register_hypothesis as _register
+
+    spec: dict[str, Any] = {"table": signal_table, "variable": signal_variable}
+    if signal_source:
+        spec["source"] = signal_source
+    hid = _register(archetype, family_key, mechanism_text, spec, author=author)
+    return {"hypothesis_id": hid, "signal_spec": spec, "status": "registered"}
+
+
+@mcp.tool(
+    description=(
+        "Run the Alpha-Hunting Loop evaluation harness on a PRE-REGISTERED hypothesis. "
+        "The only path from idea to evidence: PIT embargo, rank IC + Newey-West t-stats, "
+        "top-7 portfolios vs equal-weight with costs, sub-periods, deflated Sharpe vs the "
+        "family trial count. Verdict (WATCH/WEAK/DEAD/INSUFFICIENT_*) is written back to "
+        "the ledger automatically. Forward-return variables (1MRet etc.) are refused."
+    )
+)
+def evaluate_signal(
+    hypothesis_id: str,
+    signal_table: str,
+    signal_variable: str,
+    direction: str,
+    signal_source: Optional[str] = None,
+    frequency: str = "monthly",
+    start_date: str = "2008-01-01",
+    publication_lag_months: Optional[int] = None,
+) -> dict[str, Any]:
+    """Evaluate a pre-registered signal hypothesis.
+
+    Args:
+        hypothesis_id: From register_hypothesis (required - no anonymous backtests).
+        signal_table: Table holding the signal.
+        signal_variable: Variable name.
+        direction: "higher_is_better" or "lower_is_better".
+        signal_source: Optional source filter.
+        frequency: "monthly" (full harness) or "daily" (IC-only v1).
+        start_date: Backtest start (default 2008-01-01).
+        publication_lag_months: Override the conservative embargo default (logged).
+    """
+    from scripts.harness.evaluate_signal import evaluate_signal as _evaluate
+
+    spec: dict[str, Any] = {"table": signal_table, "variable": signal_variable}
+    if signal_source:
+        spec["source"] = signal_source
+    if publication_lag_months is not None:
+        spec["publication_lag_months"] = int(publication_lag_months)
+    result = _evaluate(
+        hypothesis_id=hypothesis_id,
+        signal_spec=spec,
+        direction=direction,
+        frequency=frequency,
+        start_date=start_date,
+    )
+    # Trim yearly tables for chat consumption; full detail is in result_file.
+    slim = dict(result)
+    slim["ic"] = {
+        h: {k: v for k, v in blk.items() if k != "yearly_ic"}
+        for h, blk in result["ic"].items()
+    }
+    return _json_ready(slim)
+
+
+@mcp.tool(
+    description=(
+        "Open a trade thesis in the Alpha-Hunting Loop thesis ledger with a FROZEN "
+        "entry (mechanism + invalidation), stated probability (feeds Brier calibration), "
+        "and auto-marking from T2 daily returns. Paper by default."
+    )
+)
+def open_thesis(
+    entity: str,
+    direction: str,
+    horizon_days: int,
+    entry_thesis_text: str,
+    probability: float,
+    invalidation_level: float,
+    catalyst: str = "",
+    source_dislocation_id: str = "",
+    author: str = "mcp",
+) -> dict[str, Any]:
+    """Open a paper trade thesis.
+
+    Args:
+        entity: Exact T2 country name.
+        direction: "long" or "short".
+        horizon_days: Calendar days until mechanical expiry.
+        entry_thesis_text: Mechanism + what would make it wrong (frozen at open).
+        probability: Stated P(thesis right) in (0,1).
+        invalidation_level: ADVERSE cumulative return that closes the thesis,
+            negative decimal (e.g. -0.07 = stop at -7%%).
+        catalyst: Optional event/catalyst reference.
+        source_dislocation_id: Provenance dislocation row, if any.
+        author: Attribution string.
+    """
+    from scripts.loop.ledgers import open_thesis as _open
+
+    tid = _open(
+        entity=entity,
+        direction=direction,
+        horizon_days=horizon_days,
+        entry_thesis_text=entry_thesis_text,
+        probability=probability,
+        invalidation_level=invalidation_level,
+        catalyst=catalyst,
+        source_dislocation_id=source_dislocation_id,
+        author=author,
+        paper=True,
+    )
+    return {"thesis_id": tid, "status": "open", "paper": True}
+
+
 def main() -> None:
     try:
         mcp.run(transport="stdio")

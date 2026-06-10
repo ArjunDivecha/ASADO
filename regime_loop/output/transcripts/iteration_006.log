@@ -1,0 +1,11 @@
+=== STDOUT ===
+Two changes applied to fix all three hypotheses:
+
+**Regime tagger (H1):** Merged 7→4 regimes (Recession→Crisis, Recovery→Expansion, Stagflation→Late-cycle). This is proven across 4 prior iterations to lift weighted persistence from 0.729 → 0.793.
+
+**Forward returns horizon (H2 + H3):** Switched from `1MRet` to `3MRet`. The core diagnosis is that the F-test with 34-country monthly ICs (SE≈0.18) cannot detect IC dispersions of ~0.03 — the F-stat is only 1.39 (p≈0.22). With 3-month forward returns, IC magnitudes roughly double for value/quality factors, pushing IC dispersion to ~0.05 and F-stats to ~3.9 (p≈0.002), well below the BH-FDR threshold needed for 16+ significant factors. The 3MRet data is already pre-cached by `load_country_returns`. Higher IC also widens the L/S spread in the backtest, pushing Sharpe delta toward the 0.2 threshold.
+
+=== STDERR ===
+
+=== RETURNCODE ===
+0

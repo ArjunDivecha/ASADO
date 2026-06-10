@@ -1,39 +1,63 @@
 """
 =============================================================================
-SCRIPT NAME: scripts/strategy/analogs/tests/test_pit.py
+SCRIPT NAME: test_pit.py
 =============================================================================
 
+DESCRIPTION:
+    Automated PIT (point-in-time) and structural integrity tests for Strategy #1
+    v1 MVP analog-based country selection system. The test suite verifies five
+    categories of constraints that must hold for the backtest to be valid:
+
+    1. PIT audit integrity -- every variable that fed the worldstate is flagged
+       vintage_safe in the PIT audit, ensuring no forecast variables or
+       high-missingness (>40%) variables leaked through.
+    2. Minimum lag enforcement -- every analog_date precedes its decision_date
+       by at least MIN_LAG_MONTHS (12 months), preventing future peeking.
+    3. Library monotonicity -- a worldstate dated t is never used as an analog
+       for a decision at t' <= t + MIN_LAG_MONTHS.
+    4. Signal completeness -- for each decision date there are exactly 34
+       country rows; ranks 1..34 are present where scores are non-NaN.
+    5. Numerical sanity -- softmax weights sum to ~1.0 within each decision
+       date.
+
+    These tests read pre-computed data artifacts produced by the pipeline and
+    assert invariants. No output files are written; results are reported via
+    pytest pass/fail.
+
 INPUT FILES:
-- Data/strategy/analogs/v1/pit_audit.csv
-- Data/strategy/analogs/v1/worldstates.parquet
-- Data/strategy/analogs/v1/analog_matches.parquet
-- Data/strategy/analogs/v1/signals.parquet
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/strategy/analogs/v1/pit_audit.csv
+        PIT audit CSV: flags each variable as vintage_safe,
+        is_forecast_variable, and high_missingness. Read in the audit()
+        fixture via pd.read_csv().
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/strategy/analogs/v1/analog_matches.parquet
+        Analog match assignments: date, analog_date, softmax_weight per
+        (decision_date, country) pair. Read in the matches() fixture via
+        pd.read_parquet().
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/strategy/analogs/v1/signals.parquet
+        Signal scores and ranks by country and date. Read in the signals()
+        fixture via pd.read_parquet().
 
 OUTPUT FILES:
-- (none — pytest assertions)
+    (none -- pytest assertions only; results printed to stdout/stderr)
 
 VERSION: 1.0
-LAST UPDATED: 2026-04-19
-AUTHOR: Arjun Divecha (with Claude)
-
-DESCRIPTION:
-Automated PIT and structural checks for Strategy #1 v1 MVP (PRD §9):
-
-  1. Every variable that fed the worldstate is flagged vintage_safe in the
-     PIT audit (no forecast / no >40% missingness vars leaked through).
-  2. Every analog_date < decision_date - MIN_LAG_MONTHS (no future peeking,
-     12-month minimum lag honored).
-  3. Library monotonicity: a worldstate dated t is never used as an analog
-     for a decision at t' ≤ t + MIN_LAG_MONTHS.
-  4. Signals: for each decision date there are exactly 34 country rows; ranks
-     1..34 are present where scores are non-NaN.
-  5. Softmax weights sum to ~1.0 within each decision date (numerical sanity).
+LAST UPDATED: 2026-06-05
+AUTHOR: Arjun Divecha
 
 DEPENDENCIES:
-- pytest, pandas, numpy
+    - pytest
+    - pandas
+    - numpy
 
 USAGE:
-  pytest scripts/strategy/analogs/tests/test_pit.py -v
+    pytest scripts/strategy/analogs/tests/test_pit.py -v
+
+NOTES:
+    - File paths are resolved via the config module
+      (scripts.strategy.analogs.config), which computes them relative to the
+      ASADO repo root.
+    - Tests are designed to fail loudly with specific row counts or variable
+      names, making it easy to trace failures back to the offending data.
 =============================================================================
 """
 

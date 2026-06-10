@@ -1,50 +1,69 @@
 #!/usr/bin/env python3
 """
 =============================================================================
-SCRIPT NAME: scripts/build_gdelt_panel.py
+SCRIPT NAME: build_gdelt_panel.py
 =============================================================================
 
+DESCRIPTION:
+    Reads the GDELT Deep monthly country-level feature panel parquet, validates
+    it (deduplicates, drops incomplete current month), backs up any existing
+    local parquet snapshot, and writes a fresh local parquet copy. Then builds
+    an Excel workbook (GDELT.xlsx) containing:
+      - A README sheet documenting the architecture and variable families
+      - A variable dictionary sheet with family/stage/definition for every column
+      - One wide-format data sheet per variable (dates as rows, countries as
+        columns), covering core tone signals plus a curated subset of deep
+        features (theme shares/deltas, event aggregates) pruned by the GDELT
+        keep-list rule (gdelt_keep_list.py).
+    Supports --dry-run (preview, no writes), --check (report on existing output),
+    and --force (rebuild even if output is up-to-date).
+
 INPUT FILES:
-- /Users/arjundivecha/Dropbox/AAA Backup/A Working/GDELT/Deep/data/features/
-  country_signal_monthly_deep.parquet — monthly GDELT Deep panel produced by
-  the upstream GDELT pipeline (build_monthly_metronome.py).
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/GDELT/Deep/data/features/country_signal_monthly_deep.parquet
+        Upstream monthly country-level GDELT Deep panel produced by
+        build_monthly_metronome.py. The primary data source for the workbook.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/gdelt_workbook_panel.parquet
+        Existing local parquet snapshot read during --check mode for status
+        reporting. Backed up before overwrite in normal mode.
 
 OUTPUT FILES:
-- Data/processed/gdelt_workbook_panel.parquet — local parquet snapshot of the
-  validated deep panel (backed up before overwrite).
-- /Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 GDELT/GDELT.xlsx —
-  wide-format Excel workbook, one sheet per variable, used by the T2 GDELT
-  downstream pipeline.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/gdelt_workbook_panel.parquet
+        Local parquet snapshot of the validated panel. Backed up before
+        overwrite (see backup path below).
+    /Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 GDELT/GDELT.xlsx
+        Wide-format Excel workbook with two README documentation sheets
+        followed by one wide-format data sheet per variable (dates x countries).
+        Country order in column headers matches the T2 layout. Used by the
+        T2 GDELT downstream pipeline.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/backups/{timestamp}/gdelt_workbook_panel.parquet
+        Backup copy of the previous local parquet, created before overwriting
+        the current one.
 
 VERSION: 1.0
-LAST UPDATED: 2026-04-29
-AUTHOR: Arjun Divecha (with Claude)
-
-DESCRIPTION:
-Reads the upstream country_signal_monthly_deep.parquet, validates it, writes
-a local parquet snapshot, then produces GDELT.xlsx in the T2 GDELT directory.
-Replaces the manual copy + export_deep_workbook.py invocation previously
-required after each monthly GDELT Deep run.
-
-The workbook format is unchanged from export_deep_workbook.py: two README
-documentation sheets followed by one wide-format data sheet per variable
-(dates × countries). Country order in column headers matches the original
-T2 layout.
+LAST UPDATED: 2026-06-05
+AUTHOR: Arjun Divecha
 
 DEPENDENCIES:
-- pandas, openpyxl, pyarrow
+    - pandas
+    - openpyxl
+    - pyarrow
 
 USAGE:
-  python scripts/build_gdelt_panel.py              # normal run
-  python scripts/build_gdelt_panel.py --dry-run    # preview, no writes
-  python scripts/build_gdelt_panel.py --check      # report on existing output
+    python build_gdelt_panel.py                # normal run
+    python build_gdelt_panel.py --dry-run      # preview, no writes
+    python build_gdelt_panel.py --check        # report on existing output
+    python build_gdelt_panel.py --force        # rebuild regardless of mtime
 
 NOTES:
-- Upstream parquet path is hard-coded to the canonical GDELT Deep location.
-  If the file is missing the script fails loudly (no fallback).
-- Output GDELT.xlsx path is hard-coded to the T2 GDELT directory.
-- Only fully-completed months are exported (partial current month excluded).
-- Backed up before overwrite: Data/backups/{timestamp}/gdelt_workbook_panel.parquet
+    - Upstream parquet path is hard-coded to the canonical GDELT Deep location.
+      If the file is missing, the script fails loudly (no fallback).
+    - Output GDELT.xlsx path is hard-coded to the T2 GDELT directory.
+    - Only fully-completed months are exported (partial current month excluded).
+    - Deep features (theme_*, gcam_*, event_*) are pruned by
+      gdelt_keep_list.py's keep_deep_feature() rule before writing to the
+      workbook.
+    - An mtime guard compares GDELT.xlsx mtime against the upstream parquet
+      mtime to skip runs when no upstream change has landed.
 =============================================================================
 """
 
@@ -59,6 +78,12 @@ from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
+
+# Canonical GDELT Deep keep-list (single source of truth for the prune rule).
+# Resolves whether build_gdelt_panel runs as a script (sys.path[0]=scripts/) or
+# is imported with the repo root on the path.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from gdelt_keep_list import canonical_name, keep_deep_feature  # noqa: E402
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "Data"
@@ -348,13 +373,18 @@ def write_variable_dictionary(wb, frame: pd.DataFrame, definitions: dict) -> Non
 
     fam_order = {"CORE TONE SIGNALS": 0, "THEME ATTENTION": 1,
                  "GCAM EMOTIONAL DIMENSIONS": 2, "EVENT AGGREGATES": 3}
+    # Only document the columns actually written as data sheets: core indicators
+    # plus the kept deep features (post-prune). Keeps the dictionary honest.
+    core_set = set(CORE_INDICATORS)
+    written = [c for c in frame.columns if c in core_set or keep_deep_feature(c)]
     ordered = sorted(
-        [(fam_order.get(classify_family(c), 99), c) for c in frame.columns]
+        [(fam_order.get(classify_family(c), 99), c) for c in written]
     )
 
     row = 2
     for _, col in ordered:
-        ws.cell(row=row, column=1, value=col[:31])
+        sheet = col[:31] if col in core_set else canonical_name(col)
+        ws.cell(row=row, column=1, value=sheet)
         ws.cell(row=row, column=2, value=col)
         ws.cell(row=row, column=3, value=classify_family(col))
         ws.cell(row=row, column=4, value=classify_stage(col))
@@ -520,7 +550,20 @@ def main() -> int:
     ]
     core_set = set(CORE_INDICATORS)
     available_core = [c for c in CORE_INDICATORS if c in var_cols]
-    deep_cols = [c for c in var_cols if c not in core_set]
+    # GDELT prune: of the deep (theme_/gcam_/event_) feature columns, keep only
+    # the curated keep-list — ~24 interpretable themes ({_share,_share_delta})
+    # and ~16 CAMEO/Goldstein event aggregates. All gcam_* and the long theme
+    # tail are dropped. See scripts/gdelt_keep_list.py for the rule + rationale.
+    all_deep = [c for c in var_cols if c not in core_set]
+    deep_cols = [c for c in all_deep if keep_deep_feature(c)]
+    logger.info(
+        "GDELT prune: %d deep feature cols -> %d kept (%d themes, %d events); "
+        "%d dropped (gcam + theme tail).",
+        len(all_deep), len(deep_cols),
+        sum(c.startswith("theme_") for c in deep_cols),
+        sum(c.startswith("event_") for c in deep_cols),
+        len(all_deep) - len(deep_cols),
+    )
 
     logger.info(
         "Building workbook: %d core + %d deep = %d data sheets",
@@ -537,8 +580,12 @@ def main() -> int:
     for col in available_core:
         write_data_sheet(wb, col[:31], frame, col)
 
+    # Deep features use canonical_name(): clean, unique, <=31-char sheet names.
+    # The sheet name becomes the downstream variable base (<sheet>_CS/_TS), so
+    # this also repairs the legacy 31-char truncation collisions (e.g. the old
+    # theme_TAX_MILITARY_TITLE_OFFICE1/2/3 garbage).
     for col in sorted(deep_cols):
-        write_data_sheet(wb, col[:31], frame, col)
+        write_data_sheet(wb, canonical_name(col), frame, col)
 
     OUTPUT_XLSX.parent.mkdir(parents=True, exist_ok=True)
     wb.save(OUTPUT_XLSX)

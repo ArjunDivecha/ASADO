@@ -6,6 +6,7 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+node_modules/
 
 # Data files (too large for GitHub)
 Data/asado.duckdb
@@ -18,6 +19,15 @@ Data/logs/
 Data/research/
 Data/reports/
 Data/strategy/
+Data/gdelt/
+Data/loop/
+Data/vintages/
+T2 Daily Update/
+
+# Backups / scratch logs at repo root
+*.bak
+regime2_fresh_run.log
+regime2_output.log
 
 # OS
 .DS_Store
@@ -39,3 +49,4 @@ Thumbs.db
 # Editor / tool local state
 .cursor/hooks/state/
 .playwright-cli/
+Data/work/

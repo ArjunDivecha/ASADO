@@ -1,34 +1,87 @@
 """
 =============================================================================
-SCRIPT NAME: scripts/qa/step_validators.py
+SCRIPT NAME: step_validators.py
 =============================================================================
 
+DESCRIPTION:
+    Post-step output validators for the ASADO monthly update pipeline. Each
+    validator function checks that expected pipeline outputs exist, are
+    non-empty, have the correct schema, and contain plausible data (row counts,
+    country coverage, date recency). Called from run.py as inline I() steps
+    after each script step completes.
+
+    Validators are lightweight and read-only — no side effects, no writes.
+    All failures raise ValidationError with a clear message.
+
 INPUT FILES:
-- All pipeline output files (read-only validation, no writes)
+    Parquet panels in /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/
+        Multiple tidy-panel parquet files (external_factors_panel.parquet,
+        extended_factors_panel.parquet, imf_factors_panel.parquet,
+        macrostructure_panel.parquet, bloomberg_factors_panel.parquet,
+        gdelt_deep_panel.parquet) and optional bilateral matrix parquet files
+        — read via pd.read_parquet for row count, column schema, country
+        coverage, and date-recency validation.
+
+    GDELT Deep parquet files under /Users/arjundivecha/Dropbox/AAA Backup/A Working/GDELT/
+        country_day/*.parquet — file-count and recency check via glob + stat.
+        Deep/ data/features/ country_themes_daily.parquet,
+        country_gcam_daily.parquet, country_events_daily.parquet — feature
+        column count and recency validation.
+        Deep/ data/features/ article_themes_daily/*.parquet and
+        article_gcam_daily/*.parquet — file-count and recency via glob.
+        data/panels/country_signal_daily_deep.parquet — column schema and
+        recency check.
+        Deep/ data/features/ country_signal_monthly_deep.parquet and
+        *_treated.parquet — row and column counts.
+
+    CSV files under /Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 Factor Timing Fuzzy/
+        Normalized_T2_MasterCSV.csv — opened for header line to count columns.
+
+    CSV files under /Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 GDELT/
+        GDELT_Factors_MasterCSV.csv — opened for header line to count columns.
+
+    CSV files under /Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 Econ/
+        Econ_Factors_MasterCSV.csv — opened for header line to count columns.
+
+    T2 Master.xlsx (in all three T2 directories), Econ.xlsx, GDELT.xlsx,
+    T2_Optimizer.xlsx, and Top_20_Exposure.csv files — existence and
+    minimum-size check via stat() only (no content read).
+
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/docs/factor_reference.md
+        Read via Path.read_text() to count markdown table rows.
+
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/asado.duckdb
+        DuckDB database opened read-only for row-count checks on tables
+        (external_factors, extended_factors, imf_factors, normalized_panel,
+        feature_panel, unified_panel, gdelt_deep_factors, factor_returns,
+        factor_top20_membership).
+
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/cache/query_assistant/*.json
+        Schema cache JSON files — existence and count check via glob.
 
 OUTPUT FILES:
-- None (raises ValidationError on failure, prints stats on success)
+    (none — this script performs read-only validation. On failure it raises
+    ValidationError; on success it prints per-file stats to stdout.)
 
 VERSION: 1.0
-LAST UPDATED: 2026-04-29
-AUTHOR: Arjun Divecha (with Claude)
-
-DESCRIPTION:
-Post-step output validators for the ASADO monthly update pipeline.
-Each validator function checks that the expected outputs exist, are non-empty,
-have correct schema, and contain plausible data (row counts, country coverage,
-date recency). Called from run.py as inline I() steps after each script step.
-
-Validators are lightweight and read-only — no side effects, no writes.
-All failures raise ValidationError with a clear message.
+LAST UPDATED: 2026-06-05
+AUTHOR: Arjun Divecha
 
 DEPENDENCIES:
-- pandas, pyarrow (for parquet checks)
-- duckdb (for database checks)
-- neo4j (optional, for graph checks)
+    - pandas (parquet reading)
+    - pyarrow (parquet engine)
+    - duckdb (database queries)
+    - neo4j (optional, for graph node/edge validation)
 
 USAGE:
-  Imported by run.py; not run standalone.
+    Imported by run.py, not run standalone.
+    All validator functions are called by the pipeline orchestrator.
+
+NOTES:
+    - The Neo4j graph validator connects to bolt://localhost:7687 with hardcoded
+      credentials (neo4j / mythos2026).
+    - country_events_daily.parquet and bilateral matrix files are optional
+      (skipped with a warning if absent).
 =============================================================================
 """
 from __future__ import annotations

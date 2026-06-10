@@ -4,68 +4,116 @@
 SCRIPT NAME: setup_duckdb.py
 =============================================================================
 
+DESCRIPTION:
+    Creates a DuckDB analytical database that unifies all ASADO data sources
+    under a single schema. The script reads T2 Master factor data (both
+    normalized CSV and raw workbook), external/extended factor panels, GDELT
+    sentiment data, IMF macro-financial indicators, World Bank Pink Sheet
+    commodity prices, Bloomberg sovereign data, demographic inflation factors,
+    and factor-optimizer output panels. Each source is loaded into its own
+    DuckDB table. The script then creates cross-source views
+    (unified_panel, country_factor_attribution) and indexes for fast
+    analytical queries. The database is overwritten on each run for
+    idempotent rebuilds.
+
 INPUT FILES:
-- /Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 Factor Timing Fuzzy/Normalized_T2_MasterCSV.csv
-                                                   (1.19M rows, 111 variables, 34 countries)
-- /Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 Factor Timing Fuzzy/T2 Master.xlsx
-                                                   (58 sheets, raw factor levels)
-- Data/processed/external_factors_panel.parquet  (112K rows, 35 variables)
-- Data/processed/extended_factors_panel.parquet  (77K rows, 51 variables)
-- /Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 GDELT/GDELT_Factors_MasterCSV.csv
-                                                   (405K rows, 93 variables, 34 countries)
-- Data/processed/imf_factors_panel.parquet       (61K rows, 18 variables, 34 countries)
-- Data/processed/macrostructure_panel.parquet    (macrostructure fragility / ownership panel)
-- Data/processed/bilateral_portfolio_matrix.parquet (historical portfolio ownership matrix)
-- Data/processed/bloomberg_factors_panel.parquet (Bloomberg sovereign data, 34 countries)
-- Data/processed/wb_commodity_factor_panel.parquet (World Bank Pink Sheet global commodity context)
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/t2/Normalized_T2_MasterCSV.csv
+        Canonical normalized T2 factor data: 1.19M rows, 111 variables,
+        34 countries, monthly from 2000-2026. Loaded into t2_master table.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/t2/T2 Master.xlsx
+        Raw T2 factor levels workbook: 58 sheets (one per variable). Each
+        sheet is melted from wide (date columns) into long format and loaded
+        into the t2_raw table. Return-horizon sheets (1M/3M/6M/9M/12M Ret)
+        are excluded.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/external_factors_panel.parquet
+        Program 1 external factors panel: 112K rows, 35 variables from
+        7 sources. Loaded into external_factors table.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/extended_factors_panel.parquet
+        Program 2 extended factors panel: 77K rows, 51 variables from
+        12 sources. Loaded into extended_factors table.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/gdelt/GDELT_Factors_MasterCSV.csv
+        Normalized GDELT sentiment panel: 405K rows, 93 variables,
+        34 countries, 2015-2026. Loaded into gdelt_panel table.
+        Falls back to snapshot parquet if CSV is absent.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/gdelt_panel_snapshot.parquet
+        Fallback GDELT snapshot parquet used when the canonical CSV is
+        unavailable.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/imf_factors_panel.parquet
+        IMF macro-financial factors: 61K rows, 18 variables, 34 countries.
+        Loaded into imf_factors table.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/macrostructure_panel.parquet
+        Macrostructure fragility/ownership panel (IMF FSI, QPSD debt
+        structure, derived scores). Loaded into macrostructure_factors table.
+        Optional: creates empty table if absent.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/bilateral_portfolio_matrix.parquet
+        Historical bilateral portfolio ownership matrix by ISO3 reporter
+        and counterpart. Loaded into bilateral_portfolio_matrix table.
+        Optional: creates empty table if absent.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/bloomberg_factors_panel.parquet
+        Bloomberg sovereign data panel (bonds, CDS, ratings) for 34
+        countries. Loaded into bloomberg_factors table. Optional: creates
+        empty table if absent.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/wb_commodity_prices.parquet
+        World Bank Pink Sheet monthly commodity prices. Loaded into
+        wb_commodity_prices table. Optional: creates empty table if absent.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/wb_commodity_indices.parquet
+        World Bank Pink Sheet monthly commodity price indices (2010=100).
+        Loaded into wb_commodity_indices table. Optional.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/wb_commodity_meta.parquet
+        World Bank commodity metadata (series codes, descriptions,
+        categories). Loaded into wb_commodity_meta table. Optional.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/wb_commodity_features.parquet
+        Derived commodity features (returns, volatility, etc.) from
+        Pink Sheet data. Loaded into wb_commodity_features table. Optional.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/wb_commodity_factor_panel.parquet
+        Selected global commodity features broadcast to the 34-country
+        ASADO panel as explanatory inputs. Loaded into
+        wb_commodity_factor_panel table. Optional.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/factor_returns_panel.parquet
+        Monthly net returns of top-20% portfolios per factor variant
+        (Econ / T2 Style / GDELT optimizer outputs; no country axis).
+        Loaded into factor_returns table. Optional.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/factor_top20_membership_panel.parquet
+        Sparse country-level membership in each factor's top-20% bucket
+        per month (date, country, factor, weight, source). Loaded into
+        factor_top20_membership table. Optional.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/config/country_mapping.json
+        Canonical ISO3-to-ASADO country mapping used to build the
+        country_reference table. Contains iso2/iso3/imf/oecd/wb code
+        cross-references per country.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Demographics_Inflation_Factor/dip_panel_long.csv
+        Demographic inflation factors (DIP_abs, DIP_rel, DIP_rel_chg_5y,
+        DIP_rel_chg_10y) by ISO3. Joined to country_reference and loaded
+        into demographics_dip table. Optional.
 
 OUTPUT FILES:
-- Data/asado.duckdb                             (unified analytical database)
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/asado.duckdb
+        Unified DuckDB analytical database containing all tables, views,
+        and indexes described above. Overwritten on each run.
 
 VERSION: 1.0
-LAST UPDATED: 2026-04-12
+LAST UPDATED: 2026-06-05
 AUTHOR: Arjun Divecha
 
-DESCRIPTION:
-Creates a DuckDB analytical database containing all ASADO data sources in a
-unified schema. Loads T2 Master factors, external/extended panels, and GDELT
-sentiment data into separate tables, then creates a unified view for
-cross-source queries.
-
-Tables created:
-  - t2_master:          T2 normalized factor data (111 vars, 34 countries, 2000-2026)
-  - t2_raw:             Raw T2 factor levels from the authoritative workbook
-  - country_reference:  Canonical ISO/ASADO country mapping surface for joins
-  - external_factors:   Program 1 panel (35 vars from 7 sources)
-  - extended_factors:   Program 2 panel (51 vars from 12 sources)
-  - gdelt_panel:        GDELT normalized factors (93 vars, 34 countries, 2015-2026)
-  - imf_factors:        Program 3 panel (18 vars from 6 IMF datasets)
-  - macrostructure_factors: Macrostructure panel (IMF FSI, QPSD debt structure, derived scores)
-  - bilateral_portfolio_matrix: Historical portfolio ownership matrix
-  - bloomberg_factors:  Bloomberg sovereign data (bonds, CDS, ratings, 34 countries)
-  - wb_commodity_prices / wb_commodity_indices / wb_commodity_features:
-                        World Bank Pink Sheet canonical monthly commodity tables
-  - wb_commodity_factor_panel: Selected global commodity features broadcast to
-                        the 34-country ASADO panel as explanatory inputs
-  - factor_returns:     Monthly net returns of top-20% portfolios per factor variant
-                        (Econ / T2 Style / GDELT optimizer outputs; no country axis)
-  - factor_top20_membership: Sparse country-level membership in each factor's top-20%
-                        bucket per month (date, country, factor, weight, source)
-  - country_factor_attribution: VIEW = membership ⨝ factor_returns; contribution per
-                        (date, country, factor) computed as weight × factor_return
-  - unified_panel:      VIEW union of all factor-panel tables
-
 DEPENDENCIES:
-- duckdb, pandas
+    duckdb
+    pandas
+    openpyxl
 
 USAGE:
-  python scripts/setup_duckdb.py          # create/rebuild database
-  python scripts/setup_duckdb.py --check  # verify existing database
+    python setup_duckdb.py              create/rebuild the analytical database
+    python setup_duckdb.py --check      verify an existing database
 
 NOTES:
-- Overwrites existing asado.duckdb on each run (idempotent rebuild)
-- GDELT loaded from normalized tidy CSV (same schema as T2 Master)
-- Indexes on (country, date) and (variable) for fast analytical queries
+    - Overwrites asado.duckdb on each run (idempotent rebuild).
+    - GDELT loaded from normalized tidy CSV; falls back to a parquet snapshot.
+    - Many factor panels are optional: if a parquet file is absent, an empty
+      table is created instead and the script continues.
+    - U.S. Treasury reference series (FRED_UST_2Y, FRED_UST_10Y,
+      FRED_Yield_Curve_10Y2Y) are broadcast from a single row to all 34
+      tracked countries for the external_factors and extended_factors tables.
+    - Indexes on (country, date) and (variable) are created for fast
+      analytical queries.
 =============================================================================
 """
 
@@ -83,12 +131,12 @@ DATA_DIR = BASE_DIR / "Data"
 DB_PATH = DATA_DIR / "asado.duckdb"
 CONFIG_PATH = BASE_DIR / "config" / "country_mapping.json"
 
-T2_DIR = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 Factor Timing Fuzzy")
+T2_DIR = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/t2")
 T2_CSV = T2_DIR / "Normalized_T2_MasterCSV.csv"
 T2_WORKBOOK = T2_DIR / "T2 Master.xlsx"
 EXTERNAL_PQ = DATA_DIR / "processed" / "external_factors_panel.parquet"
 EXTENDED_PQ = DATA_DIR / "processed" / "extended_factors_panel.parquet"
-GDELT_CSV = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 GDELT/GDELT_Factors_MasterCSV.csv")
+GDELT_CSV = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/gdelt/GDELT_Factors_MasterCSV.csv")
 GDELT_FALLBACK_PQ = DATA_DIR / "processed" / "gdelt_panel_snapshot.parquet"
 IMF_PQ = DATA_DIR / "processed" / "imf_factors_panel.parquet"
 MACROSTRUCTURE_PQ = DATA_DIR / "processed" / "macrostructure_panel.parquet"
@@ -503,40 +551,16 @@ def load_wb_commodity_tables(con: duckdb.DuckDBPyConnection) -> int:
             )
         """)
 
-    if WB_COMMODITY_FACTOR_PANEL_PQ.exists():
-        con.execute("DROP TABLE IF EXISTS wb_commodity_factor_panel")
-        con.execute(f"""
-            CREATE TABLE wb_commodity_factor_panel AS
-            SELECT
-                CAST(date AS DATE) AS date,
-                country,
-                CAST(value AS DOUBLE) AS value,
-                variable,
-                source,
-                series_code,
-                feature,
-                CAST(is_global_broadcast AS BOOLEAN) AS is_global_broadcast
-            FROM read_parquet('{WB_COMMODITY_FACTOR_PANEL_PQ}')
-        """)
-    else:
-        con.execute("DROP TABLE IF EXISTS wb_commodity_factor_panel")
-        con.execute("""
-            CREATE TABLE wb_commodity_factor_panel (
-                date DATE,
-                country VARCHAR,
-                value DOUBLE,
-                variable VARCHAR,
-                source VARCHAR,
-                series_code VARCHAR,
-                feature VARCHAR,
-                is_global_broadcast BOOLEAN
-            )
-        """)
+    # Commodities are GLOBAL series — no longer broadcast/tiled across the 34
+    # countries. The deprecated wb_commodity_factor_panel (date x country tiling)
+    # is dropped; the global data lives in wb_commodity_features + the
+    # commodity_panel view (one value per date per series).
+    con.execute("DROP TABLE IF EXISTS wb_commodity_factor_panel")
 
     price_series = con.execute("SELECT COUNT(DISTINCT commodity_code) FROM wb_commodity_prices").fetchone()[0]
     index_series = con.execute("SELECT COUNT(DISTINCT index_code) FROM wb_commodity_indices").fetchone()[0]
-    projected_rows = con.execute("SELECT COUNT(*) FROM wb_commodity_factor_panel").fetchone()[0]
-    projected_vars = con.execute("SELECT COUNT(DISTINCT variable) FROM wb_commodity_factor_panel").fetchone()[0]
+    projected_rows = con.execute("SELECT COUNT(*) FROM wb_commodity_features").fetchone()[0]
+    projected_vars = con.execute("SELECT COUNT(DISTINCT series_code) FROM wb_commodity_features").fetchone()[0]
     latest = con.execute("""
         SELECT MAX(date) FROM (
             SELECT MAX(date) AS date FROM wb_commodity_prices
@@ -826,17 +850,33 @@ def create_unified_view(con: duckdb.DuckDBPyConnection):
         UNION ALL
         SELECT date, country, value, variable, source FROM macrostructure_factors
         UNION ALL
-        SELECT date, country, value, variable, source FROM wb_commodity_factor_panel
-        UNION ALL
         SELECT date, country, CAST(value AS DOUBLE) AS value, variable, source
         FROM bloomberg_factors
         WHERE TRY_CAST(value AS DOUBLE) IS NOT NULL
         UNION ALL
         SELECT date, country, value, variable, source FROM demographics_dip
     """)
+    # NOTE: World Bank commodities are GLOBAL series, NOT country variables. They
+    # are intentionally NOT broadcast into unified_panel/feature_panel anymore (that
+    # tiled one price identically across 34 countries, inflating the variable count
+    # and producing degenerate _CS variants). They live in the global `commodity_panel`
+    # view (one value per date per series); join to returns on `date` when needed.
     count = con.execute("SELECT COUNT(*) FROM unified_panel").fetchone()[0]
     vars_count = con.execute("SELECT COUNT(DISTINCT variable) FROM unified_panel").fetchone()[0]
-    print(f"  unified_panel: {count:,} rows, {vars_count} variables")
+    print(f"  unified_panel: {count:,} rows, {vars_count} variables (commodities excluded — see commodity_panel)")
+
+    # ── Global commodity surface (NOT country-keyed) ──────────────────────────
+    print("Creating commodity_panel view (global series) ...")
+    con.execute("DROP VIEW IF EXISTS commodity_panel")
+    con.execute("""
+        CREATE VIEW commodity_panel AS
+        SELECT date,
+               'WB_CMDTY_' || UPPER(series_code) || '_' || UPPER(feature) AS variable,
+               series_code, feature, category, unit, value, 'wb_commodity' AS source
+        FROM wb_commodity_features
+    """)
+    cp = con.execute("SELECT COUNT(*) AS n, COUNT(DISTINCT variable) AS v, COUNT(DISTINCT series_code) AS s FROM commodity_panel").fetchone()
+    print(f"  commodity_panel: {cp[0]:,} rows, {cp[1]} variables, {cp[2]} global series (date-keyed, no country)")
 
 
 def create_indexes(con: duckdb.DuckDBPyConnection):
@@ -844,7 +884,7 @@ def create_indexes(con: duckdb.DuckDBPyConnection):
     print("Creating indexes ...")
     for table in ["t2_master", "t2_raw", "external_factors", "extended_factors", "gdelt_panel",
                    "imf_factors", "macrostructure_factors", "bloomberg_factors",
-                   "wb_commodity_factor_panel", "demographics_dip"]:
+                   "demographics_dip"]:
         con.execute(f"CREATE INDEX IF NOT EXISTS idx_{table}_ctry_date ON {table}(country, date)")
         con.execute(f"CREATE INDEX IF NOT EXISTS idx_{table}_var ON {table}(variable)")
     con.execute("""
@@ -895,7 +935,7 @@ def check_database():
 
     for table in ["t2_master", "t2_raw", "country_reference", "external_factors", "extended_factors", "gdelt_panel",
                    "imf_factors", "macrostructure_factors", "bloomberg_factors",
-                   "wb_commodity_factor_panel", "demographics_dip", "factor_returns", "factor_top20_membership"]:
+                   "demographics_dip", "factor_returns", "factor_top20_membership"]:
         try:
             if table == "factor_returns":
                 count = con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]

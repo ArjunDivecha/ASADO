@@ -1,0 +1,43 @@
+{
+  "best_metrics": {
+    "all_pass": 0.0,
+    "h1_pass": 1.0,
+    "n_sig_factors": 21.0,
+    "sharpe_delta": 0.4510145996163716,
+    "weighted_persist_1m": 0.7929840948233948
+  },
+  "best_primary_metric": 0.0,
+  "consecutive_identical_holds": 0,
+  "consecutive_retires": 0,
+  "current_direction": "",
+  "current_metrics": {
+    "all_pass": 0.0,
+    "h1_pass": 1.0,
+    "n_sig_factors": 21.0,
+    "sharpe_delta": 0.4510145996163716,
+    "weighted_persist_1m": 0.7929840948233948
+  },
+  "current_primary_metric": 0.0,
+  "directions_explored": [],
+  "errors": 0,
+  "hold_stack": [],
+  "holds": 0,
+  "human_guidance": "",
+  "initial_primary_metric": 0.0,
+  "iterations_since_checkpoint": 0,
+  "iterations_since_promotion": 0,
+  "last_checkpoint_at": null,
+  "last_milestone_pct_reported": 0.0,
+  "last_promote_snapshot": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/regime_loop/output/snapshots/baseline",
+  "last_promotion_at": null,
+  "loop_status": "error",
+  "paused": false,
+  "pending_decision": null,
+  "promotions": 0,
+  "restart_requested": false,
+  "retires": 0,
+  "runtime_overrides": {},
+  "started_at": "2026-05-25T07:59:57Z",
+  "telegram_offset": 0,
+  "total_iterations": 0
+}

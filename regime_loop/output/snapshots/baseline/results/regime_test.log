@@ -1,0 +1,236 @@
+2026-05-23 17:58:58,673 - INFO - Starting regime conditioning value test
+2026-05-23 17:59:18,909 - INFO - Starting regime conditioning value test
+2026-05-23 17:59:23,844 - INFO - Starting regime conditioning value test
+2026-05-23 17:59:29,841 - INFO - Starting regime conditioning value test
+2026-05-23 17:59:29,937 - INFO - Macro panel: 376 rows, 1995-01-01 00:00:00 to 2026-04-01 00:00:00
+2026-05-23 17:59:29,948 - INFO - Regime distribution:
+regime
+Transition     0.632979
+Recession      0.109043
+Crisis         0.085106
+Expansion      0.069149
+Stagflation    0.063830
+Late-cycle     0.039894
+2026-05-23 17:59:29,948 - WARNING - Dominant regime >50%: Transition
+2026-05-23 17:59:30,141 - INFO - Factor panel: 558688 rows, 52 factors
+2026-05-23 17:59:32,401 - INFO - H2: 0 / 52 factors significant at FDR 10%
+2026-05-23 17:59:40,192 - INFO - Complete. H1=True H2=False H3=False
+2026-05-23 18:00:11,340 - INFO - Starting regime conditioning value test
+2026-05-23 18:00:20,949 - INFO - Starting regime conditioning value test
+2026-05-23 18:00:21,046 - INFO - Macro panel: 376 rows, 1995-01-01 00:00:00 to 2026-04-01 00:00:00
+2026-05-23 18:00:21,055 - INFO - Regime distribution:
+regime
+Transition     0.470745
+Late-cycle     0.215426
+Recession      0.109043
+Crisis         0.093085
+Expansion      0.069149
+Stagflation    0.037234
+Recovery       0.005319
+2026-05-23 18:00:21,056 - WARNING - Rare regime <2%: Recovery
+2026-05-23 18:00:21,243 - INFO - Factor panel: 558688 rows, 52 factors
+2026-05-23 18:00:23,490 - INFO - H2: 0 / 52 factors significant at FDR 10%
+2026-05-23 18:00:30,800 - INFO - Complete. H1=True H2=False H3=False
+2026-05-23 18:05:39,802 - INFO - Starting regime conditioning value test
+2026-05-23 18:05:39,876 - INFO - Regime distribution:
+regime
+Transition     0.470745
+Late-cycle     0.215426
+Recession      0.109043
+Crisis         0.093085
+Expansion      0.069149
+Stagflation    0.037234
+Recovery       0.005319
+2026-05-23 18:05:39,877 - WARNING - Rare regime <2%: Recovery
+2026-05-23 18:05:40,069 - INFO - Factor panel: 558688 rows, 52 factors
+2026-05-23 18:05:42,233 - INFO - H2: 0 / 52 factors significant at FDR 10%
+2026-05-23 18:05:48,753 - INFO - Complete. H1=True H2=False H3=False
+2026-05-23 18:06:18,699 - INFO - Starting regime conditioning value test
+2026-05-23 18:06:19,058 - INFO - Macro panel: 376 rows, 1995-01-01 00:00:00 to 2026-04-01 00:00:00
+2026-05-23 18:06:19,068 - INFO - Regime distribution:
+regime
+Transition     0.454787
+Late-cycle     0.244681
+Recession      0.109043
+Crisis         0.085106
+Expansion      0.069149
+Stagflation    0.034574
+Recovery       0.002660
+2026-05-23 18:06:19,068 - WARNING - Rare regime <2%: Recovery
+2026-05-23 18:06:19,256 - INFO - Factor panel: 558688 rows, 52 factors
+2026-05-23 18:06:21,455 - INFO - H2: 0 / 52 factors significant at FDR 10%
+2026-05-23 18:06:27,957 - INFO - Complete. H1=True H2=False H3=False
+2026-05-23 18:12:55,137 - INFO - Starting regime conditioning value test
+2026-05-23 18:12:55,215 - INFO - Regime distribution:
+regime
+Transition    0.805851
+Recession     0.109043
+Crisis        0.085106
+2026-05-23 18:12:55,216 - WARNING - Dominant regime >50%: Transition
+2026-05-23 18:12:55,413 - INFO - Factor panel: 558688 rows, 52 factors
+2026-05-23 18:12:57,619 - INFO - H2: 0 / 52 factors significant at FDR 10%
+2026-05-23 18:13:04,144 - INFO - Complete. H1=True H2=False H3=False
+2026-05-23 18:14:51,095 - INFO - Starting regime conditioning value test
+2026-05-23 18:14:53,798 - INFO - Macro panel: 376 rows, 1995-01-01 00:00:00 to 2026-04-01 00:00:00
+2026-05-23 18:14:53,807 - INFO - Regime distribution:
+regime
+Late-cycle     0.234043
+Transition     0.228723
+Recovery       0.191489
+Crisis         0.154255
+Expansion      0.090426
+Recession      0.079787
+Stagflation    0.021277
+2026-05-23 18:14:53,996 - INFO - Factor panel: 558688 rows, 52 factors
+2026-05-23 18:14:56,276 - INFO - H2: 0 / 52 factors significant at FDR 10%
+2026-05-23 18:15:02,811 - INFO - Complete. H1=False H2=False H3=False
+2026-05-23 18:27:54,394 - INFO - Starting regime conditioning value test
+2026-05-23 18:27:54,457 - INFO - Regime distribution:
+regime
+Late-cycle     0.234043
+Transition     0.228723
+Recovery       0.191489
+Crisis         0.154255
+Expansion      0.090426
+Recession      0.079787
+Stagflation    0.021277
+2026-05-23 18:27:54,632 - INFO - Factor panel: 558688 rows, 52 factors
+2026-05-23 18:27:56,651 - INFO - H2: 0 / 52 factors significant at FDR 10%
+2026-05-23 18:28:03,107 - INFO - Complete. H1=False H2=False H3=False
+2026-05-23 18:28:28,706 - INFO - Starting regime conditioning value test
+2026-05-23 18:28:28,767 - INFO - Regime distribution:
+regime
+Late-cycle     0.234043
+Transition     0.228723
+Recovery       0.191489
+Crisis         0.154255
+Expansion      0.090426
+Recession      0.079787
+Stagflation    0.021277
+2026-05-23 18:28:28,938 - INFO - Factor panel: 558688 rows, 52 factors
+2026-05-23 18:28:30,934 - INFO - H2: 0 / 52 factors significant at FDR 10%
+2026-05-23 18:28:37,447 - INFO - Complete. H1=False H2=False H3=False
+2026-05-23 18:28:50,038 - INFO - Starting regime conditioning value test
+2026-05-23 18:28:50,099 - INFO - Regime distribution:
+regime
+Late-cycle     0.234043
+Transition     0.228723
+Recovery       0.191489
+Crisis         0.154255
+Expansion      0.090426
+Recession      0.079787
+Stagflation    0.021277
+2026-05-23 18:28:50,276 - INFO - Factor panel: 558688 rows, 52 factors
+2026-05-23 18:28:52,282 - INFO - H2: 0 / 52 factors significant at FDR 10%
+2026-05-23 18:28:58,838 - INFO - Complete. H1=False H2=False H3=False
+2026-05-23 18:29:32,763 - INFO - Starting regime conditioning value test
+2026-05-23 18:29:32,835 - INFO - Regime distribution:
+regime
+Late-cycle     0.234043
+Transition     0.228723
+Recovery       0.191489
+Crisis         0.154255
+Expansion      0.090426
+Recession      0.079787
+Stagflation    0.021277
+2026-05-23 18:29:33,023 - INFO - Factor panel: 558688 rows, 52 factors
+2026-05-23 18:29:35,312 - INFO - H2: 0 / 52 factors significant at FDR 10%
+2026-05-23 18:29:42,725 - INFO - Complete. H1=False H2=False H3=False
+2026-05-24 12:01:16,167 - INFO - Starting regime conditioning value test
+2026-05-24 12:01:16,235 - INFO - Regime distribution:
+regime
+Late-cycle     0.234043
+Transition     0.228723
+Recovery       0.191489
+Crisis         0.154255
+Expansion      0.090426
+Recession      0.079787
+Stagflation    0.021277
+2026-05-24 12:01:16,429 - INFO - Factor panel: 558688 rows, 52 factors
+2026-05-24 12:01:18,569 - INFO - H2: 0 / 52 factors significant at FDR 10%
+2026-05-24 12:01:24,979 - INFO - Complete. H1=False H2=False H3=False
+2026-05-24 12:02:20,633 - INFO - Starting regime conditioning value test
+2026-05-24 12:02:20,700 - INFO - Regime distribution:
+regime
+Late-cycle     0.234043
+Transition     0.228723
+Recovery       0.191489
+Crisis         0.154255
+Expansion      0.090426
+Recession      0.079787
+Stagflation    0.021277
+2026-05-24 12:02:20,898 - INFO - Factor panel: 558688 rows, 52 factors
+2026-05-24 12:02:23,097 - INFO - H2: 0 / 52 factors significant at FDR 10%
+2026-05-24 12:02:30,072 - INFO - Complete. H1=False H2=False H3=False
+2026-05-24 12:03:21,499 - INFO - Starting regime conditioning value test
+2026-05-24 12:03:21,649 - INFO - Regime distribution:
+regime
+Late-cycle     0.234043
+Transition     0.228723
+Recovery       0.191489
+Crisis         0.154255
+Expansion      0.090426
+Recession      0.079787
+Stagflation    0.021277
+2026-05-24 12:03:21,846 - INFO - Factor panel: 558688 rows, 52 factors
+2026-05-24 12:03:24,065 - INFO - H2: 0 / 52 factors significant at FDR 10%
+2026-05-24 12:03:31,108 - INFO - Complete. H1=False H2=False H3=False
+2026-05-24 12:04:59,352 - INFO - Starting regime conditioning value test
+2026-05-24 12:04:59,416 - INFO - Regime distribution:
+regime
+Late-cycle     0.234043
+Transition     0.228723
+Recovery       0.191489
+Crisis         0.154255
+Expansion      0.090426
+Recession      0.079787
+Stagflation    0.021277
+2026-05-24 12:04:59,595 - INFO - Factor panel: 558688 rows, 52 factors
+2026-05-24 12:05:01,591 - INFO - H2: 0 / 52 factors significant at FDR 10%
+2026-05-24 12:05:08,152 - INFO - Complete. H1=False H2=False H3=False
+2026-05-24 20:06:01,772 - INFO - Starting regime conditioning value test
+2026-05-24 20:06:01,866 - INFO - Regime distribution:
+regime
+Late-cycle     0.234043
+Transition     0.228723
+Recovery       0.191489
+Crisis         0.154255
+Expansion      0.090426
+Recession      0.079787
+Stagflation    0.021277
+2026-05-24 20:06:02,062 - INFO - Factor panel: 558688 rows, 52 factors
+2026-05-24 20:06:04,181 - INFO - H2: 0 / 52 factors significant at FDR 10%
+2026-05-24 20:06:10,848 - INFO - Complete. H1=False H2=False H3=False
+2026-05-24 20:06:19,501 - INFO - Starting regime conditioning value test
+2026-05-24 20:06:19,565 - INFO - Regime distribution:
+regime
+Late-cycle     0.234043
+Transition     0.228723
+Recovery       0.191489
+Crisis         0.154255
+Expansion      0.090426
+Recession      0.079787
+Stagflation    0.021277
+2026-05-24 20:06:19,742 - INFO - Factor panel: 558688 rows, 52 factors
+2026-05-24 20:06:21,742 - INFO - H2: 0 / 52 factors significant at FDR 10%
+2026-05-24 20:06:28,172 - INFO - Complete. H1=False H2=False H3=False
+2026-05-25 00:20:05,705 - INFO - Starting regime conditioning value test
+2026-05-25 00:20:05,861 - INFO - Regime distribution:
+regime
+Expansion     0.281915
+Late-cycle    0.255319
+Crisis        0.234043
+Transition    0.228723
+2026-05-25 00:20:06,052 - INFO - Factor panel: 558688 rows, 52 factors
+2026-05-25 00:20:08,072 - INFO - H2: 21 / 52 factors significant at FDR 10%
+2026-05-25 00:20:17,827 - INFO - Complete. H1=True H2=True H3=False
+2026-05-25 01:00:29,967 - INFO - Starting regime conditioning value test
+2026-05-25 01:00:30,036 - INFO - Regime distribution:
+regime
+Expansion     0.281915
+Late-cycle    0.255319
+Crisis        0.234043
+Transition    0.228723
+2026-05-25 01:00:30,225 - INFO - Factor panel: 558688 rows, 52 factors
+2026-05-25 01:00:32,318 - INFO - H2: 21 / 52 factors significant at FDR 10%
+2026-05-25 01:00:41,816 - INFO - Complete. H1=True H2=True H3=False

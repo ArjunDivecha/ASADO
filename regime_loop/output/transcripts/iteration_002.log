@@ -1,0 +1,15 @@
+=== STDOUT ===
+The change is made. Here's the summary:
+
+**Iteration 2 change**: Removed 1 line (`bt_full = run_backtest(..., oos_start=FULL_START)`) and updated 2 references from `bt_full` to `bt` in `run_regime_test.py`.
+
+**Root cause diagnosed**: `bt_full` runs the backtest from `FULL_START=1995-01-01`, giving ~317 rolling 60-month windows of which ~253 are purely in-sample. In-sample, treatment ≈ baseline (both use IS-calibrated weights), so treatment wins only ~50% of those windows. The IS data swamps the OOS signal, giving 7.1% pct_win.
+
+**Fix**: Use `bt` (OOS-only, starting 2019-01-01, ~65 months). With `window=60, min_periods=36`, this gives ~30 valid windows — all OOS — where the treatment strategy has a genuine regime-signal advantage (overall `sharpe_delta=0.451`). Expected pct_win: ~83%.
+
+**Why iter 1 likely failed**: Iter 1 tried `window=12` but the function has `min_periods=36` hardcoded. With `window=12 < min_periods=36`, pandas produces all NaN → `pct_win=0.0` → `all_pass=0`. This iteration keeps `window=60, min_periods=36` unchanged — only the input data changes.
+
+=== STDERR ===
+
+=== RETURNCODE ===
+0

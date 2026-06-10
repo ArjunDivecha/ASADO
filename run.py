@@ -4,53 +4,54 @@
 SCRIPT NAME: run.py
 =============================================================================
 
+DESCRIPTION:
+    Interactive top-level launcher for the ASADO monthly update pipeline.
+    Prompts for one manual prerequisite (Bloomberg pull), then runs every
+    automated step in sequence with real-time streaming output and a running
+    status board so you always know exactly where things stand.
+
+    GDELT shallow and deep pipelines now run automatically — no manual prompt.
+    Shallow: build_fullhistory_workbook.py (incremental stream + signals + monthly).
+    Deep: backfill articles (last 60 days) → theme/GCAM/event features → join →
+          monthly metronome → EWMA treatments → ASADO ingest.
+
+    Same step order and flags as monthly_update.py, but with:
+      - Live streaming output per step (no waiting for step to finish)
+      - Step banner showing inputs/outputs/CWD before each step starts
+      - One-line status summary after each step (status + elapsed + running count)
+      - Full status board at the end of each stage and at completion
+
 INPUT FILES:
-- (none directly — orchestrates the full monthly update pipeline)
+    (none directly — orchestrates the full monthly update pipeline via subprocess calls)
 
 OUTPUT FILES:
-- All outputs produced by monthly_update.py stages
-- Data/logs/run_YYYY_MM_DD_HHMMSS.log
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/logs/run_YYYY_MM_DD_HHMMSS.log
+        Full session log file written by the runner for the entire pipeline run.
+    - All step outputs produced by the monthly_update.py stages called as subprocesses.
 
 VERSION: 1.0
 LAST UPDATED: 2026-04-29
 AUTHOR: Arjun Divecha
 
-DESCRIPTION:
-Interactive top-level launcher for the ASADO monthly update pipeline.
-Prompts for one manual prerequisite (Bloomberg pull), then runs every
-automated step in sequence with real-time streaming output and a running
-status board so you always know exactly where things stand.
-
-GDELT shallow and deep pipelines now run automatically — no manual prompt.
-Shallow: build_fullhistory_workbook.py (incremental stream + signals + monthly).
-Deep: backfill articles (last 60 days) → theme/GCAM/event features → join →
-      monthly metronome → EWMA treatments → ASADO ingest.
-
-Same step order and flags as monthly_update.py, but with:
-  - Live streaming output per step (no waiting for step to finish)
-  - Step banner showing inputs/outputs/CWD before each step starts
-  - One-line status summary after each step (status + elapsed + running count)
-  - Full status board at the end of each stage and at completion
-
 DEPENDENCIES:
-- All ASADO dependencies (requirements.txt)
-- Neo4j: brew services start neo4j  (or pass --skip-neo4j)
-- Bloomberg: Parallels + Terminal open  (or pass --skip-bloomberg)
+    - All ASADO dependencies (requirements.txt)
+    - Neo4j: brew services start neo4j  (or pass --skip-neo4j)
+    - Bloomberg: Parallels + Terminal open  (or pass --skip-bloomberg)
 
 USAGE:
-  python run.py                      # full interactive run
-  python run.py --skip-bloomberg     # skip Bloomberg Terminal steps
-  python run.py --skip-neo4j         # skip Neo4j rebuild
-  python run.py --skip-deep          # skip GDELT Deep
-  python run.py --collectors-only    # data collection only
-  python run.py --db-only            # database rebuilds only
-  python run.py --dry-run            # dry-run mode for collectors
-  python run.py --yes                # auto-confirm manual prerequisite prompts
+    python run.py                      # full interactive run
+    python run.py --skip-bloomberg     # skip Bloomberg Terminal steps
+    python run.py --skip-neo4j         # skip Neo4j rebuild
+    python run.py --skip-deep          # skip GDELT Deep
+    python run.py --collectors-only    # data collection only
+    python run.py --db-only            # database rebuilds only
+    python run.py --dry-run            # dry-run mode for collectors
+    python run.py --yes                # auto-confirm manual prerequisite prompts
 
 NOTES:
-- All T2 Step Two / Three / Four scripts run with cwd set to their
-  respective T2 directories so relative path references resolve correctly.
-- Log file is written to Data/logs/ for the full session.
+    - All T2 Step Two / Three / Four scripts run with cwd set to their
+      respective T2 directories so relative path references resolve correctly.
+    - Log file is written to /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/logs/.
 =============================================================================
 """
 

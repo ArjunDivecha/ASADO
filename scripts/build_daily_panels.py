@@ -4,39 +4,34 @@
 SCRIPT NAME: scripts/build_daily_panels.py
 =============================================================================
 
-INPUT FILES:
-- /Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 Factor Timing Fuzzy Daily/
-    Normalized_T2_MasterCSV.csv            (34.8M rows, 109 normalized _CS/_TS
-                                            variables, 34 countries, 2000-01-01
-                                            to 2026-05-07; tidy long format)
-    T2MasterDaily.xlsx                     (57 sheets, raw factor levels —
-                                            PX_LAST, Tot Return Index, MCAP,
-                                            RSI14 raw, REER raw, etc.; wide
-                                            format, one sheet per variable)
+INPUT FILES (all in-repo — daily pipeline is standalone, written by daily_update.py):
+- /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/t2_daily/
+    Normalized_T2_MasterCSV.csv            (~35.6M rows, normalized _CS/_TS
+                                            variables, 34 countries; tidy long
+                                            format — written by t2_normalize_daily.py)
+    T2 Master Daily.xlsx                    (58 sheets, raw factor levels +
+                                            returns — PX_LAST, Tot Return Index,
+                                            MCAP, RSI14, REER, 1DRet…120DRet, etc.;
+                                            wide format — by build_t2_master_daily.py)
     T2_Optimizer_Top.xlsx                  (selected-factor list — the 8
                                             factors the optimizer actually
                                             uses to drive the strategy)
-    T2_Optimizer.xlsx                     (9,552 rows, 84 columns, daily factor
-                                            returns from T2 optimizer; sheet
-                                            Monthly_Net_Returns, 2000-01-01 →
-                                            2026-02-24)
+    T2_Optimizer.xlsx                      (daily factor returns from the T2
+                                            optimizer; sheet Monthly_Net_Returns
+                                            — written by t2_optimizer_daily.py)
 
-- /Users/arjundivecha/Dropbox/AAA Backup/A Complete/GDELT Factor Timing Fuzzy Daily/
-    T2-Factor-Timing-Daily/GDELT_Factors_MasterCSV.csv
-                                           (11.6M rows, 87 normalized GDELT
-                                            factors aligned to the 34-country
-                                            T2 universe, 2015-06-24 to
-                                            2026-04-19; tidy long format)
-    T2-Factor-Timing-Daily/GDELT_Optimizer.xlsx
-                                           (3,955 rows, 75 columns, daily factor
-                                            returns from GDELT optimizer; sheet
-                                            Monthly_Net_Returns, 2015-06-24 →
-                                            2026-05-08)
+- /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/gdelt_daily/
+    GDELT_Factors_MasterCSV.csv            (~10.2M rows, normalized GDELT factors
+                                            aligned to the 34-country T2 universe;
+                                            tidy long — by gdelt_normalize_daily.py)
+    GDELT_Optimizer.xlsx                   (daily factor returns from the GDELT
+                                            optimizer; sheet Monthly_Net_Returns
+                                            — written by gdelt_optimizer_daily.py)
 
-- /Users/arjundivecha/Dropbox/AAA Backup/A Complete/GDELT/data/panels/
-    country_signal_daily.parquet           (955K rows, 45 columns, raw GDELT
-                                            for 249 ISO3 countries — the
-                                            off-universe entity bridge)
+- /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/gdelt/panels/
+    country_signal_daily.parquet           (~967K rows, raw GDELT for 249 ISO3
+                                            countries — the off-universe entity
+                                            bridge; by scripts/gdelt_ingest/)
 
 OUTPUT TABLES (added to Data/asado.duckdb, additive — existing tables untouched):
 - t2_factors_daily            normalized _CS/_TS daily panel  (~34M rows)
@@ -110,19 +105,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DB_PATH = BASE_DIR / "Data" / "asado.duckdb"
 BACKUP_PATH = BASE_DIR / "Data" / "asado.duckdb.backup"
 
-T2_DAILY_DIR = Path(
-    "/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 Factor Timing Fuzzy Daily"
-)
-GDELT_DAILY_DIR = Path(
-    "/Users/arjundivecha/Dropbox/AAA Backup/A Complete/GDELT Factor Timing Fuzzy Daily/T2-Factor-Timing-Daily"
-)
-GDELT_RAW_DIR = Path(
-    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/GDELT/data/panels"
-)
+# Internalized daily work dirs — the ASADO daily pipeline (daily_update.py)
+# writes here; no longer reads the hand-maintained A Complete/...Daily folders.
+T2_DAILY_DIR = BASE_DIR / "Data" / "work" / "t2_daily"
+GDELT_DAILY_DIR = BASE_DIR / "Data" / "work" / "gdelt_daily"
+# Canonical in-repo GDELT panels (migrated from A Complete/GDELT; rebuilt each
+# run by scripts/gdelt_ingest/build_fullhistory_workbook.py --save-panels).
+GDELT_RAW_DIR = BASE_DIR / "Data" / "gdelt" / "panels"
 
 T2_NORMALIZED_CSV = T2_DAILY_DIR / "Normalized_T2_MasterCSV.csv"
-T2_LEVELS_XLSX    = T2_DAILY_DIR / "T2MasterDaily.xlsx"
-T2_OPTIMIZER_TOP  = T2_DAILY_DIR / "T2_Optimizer_Top.xlsx"
+T2_LEVELS_XLSX    = T2_DAILY_DIR / "T2 Master Daily.xlsx"   # ASADO daily master (raw levels + returns)
+T2_OPTIMIZER_TOP  = T2_DAILY_DIR / "T2_Optimizer_Top.xlsx"  # 8-factor strategy whitelist (static)
 T2_OPTIMIZER_RETURNS = T2_DAILY_DIR / "T2_Optimizer.xlsx"
 GDELT_FACTORS_CSV = GDELT_DAILY_DIR / "GDELT_Factors_MasterCSV.csv"
 GDELT_OPTIMIZER_RETURNS = GDELT_DAILY_DIR / "GDELT_Optimizer.xlsx"
@@ -144,8 +137,12 @@ NEW_VIEWS = ["t2_factors_monthly_from_daily"]
 # normalized CSV — skip on the levels load to avoid duplication; keep raw
 # levels and the few derived signals only)
 T2_LEVELS_SKIP_SHEETS = {
+    # monthly (legacy) return sheets
     "1MRet", "3MRet", "6MRet", "9MRet", "12MRet",
     "1MTR", "3MTR", "12MTR", "12-1MTR",
+    # daily return sheets (ASADO daily master) — already in the normalized CSV
+    "1DRet", "5DRet", "20DRet", "60DRet", "120DRet",
+    "1DTR", "5DTR", "20DTR", "120DTR", "120-5DTR",
 }
 
 logging.basicConfig(

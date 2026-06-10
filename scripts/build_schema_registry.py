@@ -70,7 +70,7 @@ TABLE_DESCRIPTIONS = {
     "wb_commodity_prices": "Canonical World Bank Pink Sheet monthly nominal U.S. dollar commodity prices, keyed by commodity_code.",
     "wb_commodity_indices": "Canonical World Bank Pink Sheet monthly commodity price indices, 2010=100, keyed by index_code.",
     "wb_commodity_features": "Derived trailing commodity features such as level, MOM, YOY, 3M/12M return, volatility, and z-score, keyed by series_code and feature.",
-    "wb_commodity_factor_panel": "Selected global commodity features broadcast to the ASADO 34-country factor panel as explanatory inputs.",
+    "commodity_panel": "GLOBAL commodity series (date x series, NOT country-keyed): level/MOM/YOY/3M/12M-return/vol/z per World Bank Pink Sheet commodity. Join to country returns on date as explanatory context. (Replaces the deprecated country-tiled wb_commodity_factor_panel.)",
     "normalized_panel": (
         "Canonical ASADO-generated normalized factors. Contains _CS same-date cross-sectional z-scores "
         "and _TS rolling time-series z-scores for eligible raw source variables."
@@ -1334,8 +1334,8 @@ def build_access_guide(
                     "use_for": "World Bank Pink Sheet commodity-axis time series and derived monthly commodity features.",
                 },
                 {
-                    "surface": "wb_commodity_factor_panel",
-                    "use_for": "Selected global commodity features broadcast to ASADO countries as explanatory inputs.",
+                    "surface": "commodity_panel",
+                    "use_for": "Global commodity series (date-keyed, not per-country); join to returns on date as explanatory context.",
                 },
                 {
                     "surface": "bilateral_portfolio_matrix",

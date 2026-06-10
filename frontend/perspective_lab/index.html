@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ASADO Perspective Lab</title>
+  </head>
+  <body>
+    <div id="app">
+      <header class="app-header">
+        <div class="brand-block">
+          <div class="brand-mark">A</div>
+          <div>
+            <h1>ASADO Perspective Lab</h1>
+            <p id="db-status">Connecting to DuckDB surfaces</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <select id="dataset-select" aria-label="Dataset"></select>
+          <input id="row-limit" type="number" min="1" max="50000" step="100" aria-label="Row limit" />
+          <button id="load-button" type="button">Load</button>
+          <button id="reload-button" type="button">Refresh</button>
+        </div>
+      </header>
+
+      <main class="lab-shell">
+        <aside class="dataset-rail">
+          <div class="rail-heading">
+            <span>Surfaces</span>
+            <span id="dataset-count">0</span>
+          </div>
+          <div id="dataset-list" class="dataset-list"></div>
+        </aside>
+
+        <section class="workspace">
+          <section class="metric-strip" id="metric-strip"></section>
+
+          <section class="viewer-panel">
+            <div class="panel-toolbar">
+              <div>
+                <h2 id="dataset-title">Dataset</h2>
+                <p id="dataset-description"></p>
+              </div>
+              <div class="status-group">
+                <span id="row-count">0 rows</span>
+                <span id="load-state">Idle</span>
+              </div>
+            </div>
+            <perspective-viewer id="viewer" class="perspective-viewer"></perspective-viewer>
+          </section>
+        </section>
+
+        <aside class="inspector">
+          <section class="inspector-section">
+            <h3>SQL</h3>
+            <pre id="sql-preview"></pre>
+          </section>
+          <section class="inspector-section">
+            <h3>Columns</h3>
+            <div id="column-list" class="column-list"></div>
+          </section>
+        </aside>
+      </main>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
+

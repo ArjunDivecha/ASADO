@@ -1,69 +1,83 @@
 #!/usr/bin/env python3
 """
 =============================================================================
-SCRIPT NAME: scripts/build_predmkt_panel.py
+SCRIPT NAME: build_predmkt_panel.py
 =============================================================================
 
-INPUT FILES:
-- /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/config/predmkt_curated.yaml
-    Hand-curated prediction-market registry. One record per market with:
-    platform, market_id, category tags, optional outcome metadata,
-    optional resolution source text, and spillover-country mappings.
-- /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/config/country_mapping.json
-    Canonical T2 country names used to validate spillover mappings.
-- Public API endpoints (read-only):
-    - Kalshi: https://api.elections.kalshi.com/trade-api/v2
-    - Polymarket Gamma: https://gamma-api.polymarket.com
-    - Polymarket CLOB: https://clob.polymarket.com
-- /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/asado.duckdb
-    Existing ASADO DuckDB warehouse file.
+DESCRIPTION:
+    Builds ASADO Stage 2 prediction-market surfaces from curated Kalshi and
+    Polymarket markets. The script loads a hand-curated registry of prediction
+    markets from YAML, validates it against a canonical country mapping, fetches
+    live market data via public REST APIs, normalizes the results into daily
+    snapshots and dimension tables, and writes them into the ASADO DuckDB
+    warehouse. It also computes derived daily composite signals covering macro
+    indicators, geopolitics, and spillover risk, and tracks resolved-market
+    calibration records.
 
-OUTPUT TABLES (added/updated in Data/asado.duckdb):
-- predmkt_daily
-- predmkt_market_meta
-- predmkt_outcome_meta
-- predmkt_country_spillover
-- predmkt_resolutions
-- predmkt_signals_daily
-- variable_meta (upsert-only for predmkt signal rows when table exists)
+    The script is additive and idempotent by snapshot date: it deletes and
+    rewrites the current date's data for daily fact tables, upserts metadata
+    tables by primary key, and preserves history for prior snapshot dates.
+    Supported modes include registry check, live-market validation, stats
+    printing, table rebuild, dry run, and optional DuckDB backup.
+
+INPUT FILES:
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/config/predmkt_curated.yaml
+        Hand-curated prediction-market registry. One record per market with
+        platform, market_id, category tags, optional outcome metadata, optional
+        resolution source text, and spillover-country mappings. Read via
+        yaml.safe_load.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/config/country_mapping.json
+        Canonical T2 country names used to validate spillover-country mappings.
+        Read via json.loads.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/asado.duckdb
+        Existing ASADO DuckDB warehouse. Read from for resolution-row
+        computation, category-confidence statistics, and table stats. Connected
+        via duckdb.connect.
+    Public API endpoints (read-only):
+        Kalshi: https://api.elections.kalshi.com/trade-api/v2
+        Polymarket Gamma: https://gamma-api.polymarket.com
+        Polymarket CLOB: https://clob.polymarket.com
+
+OUTPUT FILES:
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/asado.duckdb
+        Updated with the following tables: predmkt_daily, predmkt_market_meta,
+        predmkt_outcome_meta, predmkt_country_spillover, predmkt_resolutions,
+        predmkt_signals_daily, and variable_meta (upsert-only for predmkt
+        signal rows). Connection via duckdb.connect; tables created, deleted,
+        and inserted via DuckDB SQL.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/asado.duckdb.predmkt.backup
+        Temporary backup of asado.duckdb created via shutil.copy2 before writes
+        and removed on success (BACKUP_PATH.unlink) or restored on failure
+        (shutil.move). Transient — does not persist under normal operation.
 
 VERSION: 1.0
-LAST UPDATED: 2026-05-08
-AUTHOR: Arjun Divecha (with Codex)
-
-DESCRIPTION:
-Builds ASADO Stage 2 prediction-market surfaces from curated Kalshi and
-Polymarket markets. The script captures a daily snapshot, writes normalized
-fact/dimension tables, tracks resolved-market calibration records, and
-materializes derived daily signals for macro, geopolitics, and spillover risk.
-
-The script is additive and idempotent by snapshot date:
-- It deletes and rewrites the current snapshot date for predmkt_daily/signals.
-- It upserts metadata tables by platform+market keys.
-- It preserves history for prior snapshot dates.
+LAST UPDATED: 2026-06-05
+AUTHOR: Arjun Divecha
 
 DEPENDENCIES:
-- duckdb
-- pandas
-- pyyaml
-- requests
-- urllib3
-- cryptography (optional; required only when Kalshi authenticated mode is used)
+    - duckdb
+    - pandas
+    - pyyaml
+    - requests
+    - urllib3
 
 USAGE:
-  python scripts/build_predmkt_panel.py
-  python scripts/build_predmkt_panel.py --check
-  python scripts/build_predmkt_panel.py --validate-only
-  python scripts/build_predmkt_panel.py --stats
-  python scripts/build_predmkt_panel.py --rebuild
-  python scripts/build_predmkt_panel.py --dry-run
-  python scripts/build_predmkt_panel.py --no-backup
+    python scripts/build_predmkt_panel.py
+    python scripts/build_predmkt_panel.py --check
+    python scripts/build_predmkt_panel.py --validate-only
+    python scripts/build_predmkt_panel.py --stats
+    python scripts/build_predmkt_panel.py --rebuild
+    python scripts/build_predmkt_panel.py --dry-run
+    python scripts/build_predmkt_panel.py --no-backup
 
 NOTES:
-- This is a read-only market-data ingestor. It never trades.
-- The registry is mandatory. Missing or invalid registry is a hard failure.
-- Per-market API failures are logged and skipped so one bad market does not
-  block the full daily snapshot.
+    - This is a read-only market-data ingestor. It never trades.
+    - The curated registry is mandatory. Missing or invalid registry is a hard
+      failure.
+    - Per-market API failures are logged and skipped so one bad market does not
+      block the full daily snapshot.
+    - The temporary backup file (asado.duckdb.predmkt.backup) is cleaned up
+      automatically on success or restored on build failure.
 =============================================================================
 """
 

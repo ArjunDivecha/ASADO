@@ -6,6 +6,30 @@ The official World Bank workbook is the canonical source. This collector keeps
 the full commodity axis in dedicated tables, then broadcasts only the PRD V1
 projection set into ASADO's factor-panel shape as explanatory global context.
 It does not write any optimizer return/output tables.
+
+INPUT FILES:
+- https://...CMO-Historical-Data-Monthly.xlsx  (downloaded to
+    Data/raw/wb_commodity_prices/CMO-Historical-Data-Monthly_<ts>.xlsx)
+
+OUTPUT FILES (all under Data/processed/):
+- wb_commodity_prices.parquet, wb_commodity_indices.parquet,
+  wb_commodity_meta.parquet, wb_commodity_features.parquet,
+  wb_commodity_factor_panel.parquet, wb_commodity_manifest.json,
+  wb_commodity_variable_catalog.csv
+
+VERSION: 1.1
+LAST UPDATED: 2026-06-08
+
+FORMAT NOTE (2026-06): The World Bank removed the short-code header row (the row
+that held CRUDE_BRENT / GOLD / iOVERALL / ...) from the "Monthly Prices" and
+"Monthly Indices" sheets, leaving only the display-name row. That silently broke
+the old fixed-row parser (it read the first DATA row as codes -> series_code
+became numeric junk like '1.63', so the factor projection matched 0 series and
+wb_commodity_factor_panel collapsed to 0 rows). The parser is now
+content-anchored: data-start is the first YYYYMmm row, the code row is detected
+only if its cells are real codes, and when absent the canonical code is recovered
+from the (stable) display name via PRICE_NAME_TO_CODE / INDEX_NAME_TO_CODE. This
+is backward-compatible with the pre-June files that still carry the code row.
 """
 
 from __future__ import annotations
@@ -57,7 +81,8 @@ OUTPUT_PATHS = [
     INDICES_PQ,
     META_PQ,
     FEATURES_PQ,
-    FACTOR_PANEL_PQ,
+    # FACTOR_PANEL_PQ deprecated: commodities are global (commodity_panel), not
+    # broadcast/tiled across countries. The country-tiled factor panel is no longer written.
     MANIFEST_PATH,
     CATALOG_CSV,
 ]
@@ -104,6 +129,185 @@ PROJECTED_PRICE_CODES = {
 }
 PROJECTED_INDEX_CODES = set(INDEX_NAMES)
 PROJECTED_SERIES_CODES = PROJECTED_PRICE_CODES | PROJECTED_INDEX_CODES
+
+# ── Display-name → series_code recovery maps ──────────────────────────────────
+# The World Bank "CMO-Historical-Data-Monthly.xlsx" format changed in June 2026:
+# they REMOVED the short-code row (the row that used to hold CRUDE_BRENT, GOLD,
+# iOVERALL, ...) from both the "Monthly Prices" and "Monthly Indices" sheets,
+# leaving only the human-readable display-name row. The codes the factor
+# projection depends on therefore no longer exist in the source file. These maps
+# recover the canonical code from the (stable) display name. They were extracted
+# from the last workbook that still carried codes (2026-05-16) and verified to
+# resolve every column in the new (2026-06) format. If WB ever restores the code
+# row, the parser uses it directly and ignores these maps.
+PRICE_NAME_TO_CODE = {
+    "Crude oil, average": "CRUDE_PETRO",
+    "Crude oil, Brent": "CRUDE_BRENT",
+    "Crude oil, Dubai": "CRUDE_DUBAI",
+    "Crude oil, WTI": "CRUDE_WTI",
+    "Coal, Australian": "COAL_AUS",
+    "Coal, South African": "COAL_SAFRICA",
+    "Natural gas, US": "NGAS_US",
+    "Natural gas, Europe": "NGAS_EUR",
+    "Liquefied natural gas, Japan": "NGAS_JP",
+    "Natural gas index": "iNATGAS",
+    "Cocoa": "COCOA",
+    "Coffee, Arabica": "COFFEE_ARABIC",
+    "Coffee, Robusta": "COFFEE_ROBUS",
+    "Tea, avg 3 auctions": "TEA_AVG",
+    "Tea, Colombo": "TEA_COLOMBO",
+    "Tea, Kolkata": "TEA_KOLKATA",
+    "Tea, Mombasa": "TEA_MOMBASA",
+    "Coconut oil": "COCONUT_OIL",
+    "Groundnuts": "GRNUT",
+    "Fish meal": "FISH_MEAL",
+    "Groundnut oil": "GRNUT_OIL",
+    "Palm oil": "PALM_OIL",
+    "Palm kernel oil": "PLMKRNL_OIL",
+    "Soybeans": "SOYBEANS",
+    "Soybean oil": "SOYBEAN_OIL",
+    "Soybean meal": "SOYBEAN_MEAL",
+    "Rapeseed oil": "RAPESEED_OIL",
+    "Sunflower oil": "SUNFLOWER_OIL",
+    "Barley": "BARLEY",
+    "Maize": "MAIZE",
+    "Sorghum": "SORGHUM",
+    "Rice, Thai 5%": "RICE_05",
+    "Rice, Thai 25%": "RICE_25",
+    "Rice, Thai A.1": "RICE_A1",
+    "Rice, Viet Namese 5%": "RICE_05_VNM",
+    "Wheat, US SRW": "WHEAT_US_SRW",
+    "Wheat, US HRW": "WHEAT_US_HRW",
+    "Banana, Europe": "BANANA_EU",
+    "Banana, US": "BANANA_US",
+    "Orange": "ORANGE",
+    "Beef": "BEEF",
+    "Chicken": "CHICKEN",
+    "Lamb": "LAMB",
+    "Shrimps, Mexican": "SHRIMP_MEX",
+    "Sugar, EU": "SUGAR_EU",
+    "Sugar, US": "SUGAR_US",
+    "Sugar, world": "SUGAR_WLD",
+    "Tobacco, US import u.v.": "TOBAC_US",
+    "Logs, Cameroon": "LOGS_CMR",
+    "Logs, Malaysian": "LOGS_MYS",
+    "Sawnwood, Cameroon": "SAWNWD_CMR",
+    "Sawnwood, Malaysian": "SAWNWD_MYS",
+    "Plywood": "PLYWOOD",
+    "Cotton, A Index": "COTTON_A_INDX",
+    "Rubber, TSR20": "RUBBER_TSR20",
+    "Rubber, RSS3": "RUBBER1_MYSG",
+    "Phosphate rock": "PHOSROCK",
+    "DAP": "DAP",
+    "TSP": "TSP",
+    "Urea": "UREA_EE_BULK",
+    "Potassium chloride": "POTASH",
+    "Aluminum": "ALUMINUM",
+    "Iron ore, cfr spot": "IRON_ORE",
+    "Copper": "COPPER",
+    "Lead": "LEAD",
+    "Tin": "Tin",
+    "Nickel": "NICKEL",
+    "Zinc": "Zinc",
+    "Gold": "GOLD",
+    "Platinum": "PLATINUM",
+    "Silver": "SILVER",
+}
+
+# Index display-name → code: inverted INDEX_NAMES plus the two workbook spellings
+# that differ from our canonical display strings ("Other Raw Mat.", "Base Metals
+# (ex. iron ore)"), verified against the 2026-05-16 code row.
+INDEX_NAME_TO_CODE = {name: code for code, (name, _cat) in INDEX_NAMES.items()}
+INDEX_NAME_TO_CODE.update({
+    "Other Raw Mat.": "iOTHERRAWMAT",
+    "Base Metals (ex. iron ore)": "iBASEMET",
+})
+
+
+def _norm_name(value: Any) -> str:
+    """Normalize a workbook header cell for name matching: drop footnote
+    asterisks, collapse whitespace, strip."""
+    return re.sub(r"\s+", " ", re.sub(r"\*+", "", str(value))).strip()
+
+
+# Case-insensitive lookups built once at import.
+_PRICE_LOOKUP = {_norm_name(k).lower(): v for k, v in PRICE_NAME_TO_CODE.items()}
+_INDEX_LOOKUP = {_norm_name(k).lower(): v for k, v in INDEX_NAME_TO_CODE.items()}
+
+_PERIOD_RE = re.compile(r"\d{4}M\d{1,2}")
+
+
+def _find_data_start(raw: pd.DataFrame, max_scan: int = 40) -> int:
+    """Row index of the first data row, detected as the first row whose column 0
+    is a World-Bank monthly period token (YYYYMmm). Format-agnostic — survives
+    the removal/insertion of header rows."""
+    for r in range(min(max_scan, len(raw))):
+        if _PERIOD_RE.fullmatch(str(raw.iloc[r, 0]).strip()):
+            return r
+    raise ValueError("Could not locate data-start row (no YYYYMmm in column 0)")
+
+
+def _find_code_row(raw: pd.DataFrame, data_start: int, known_codes: set[str]) -> int | None:
+    """Return the header-band row that actually holds series CODES (cells that
+    are members of the known code set), or None if the source no longer carries
+    a code row (the post-June-2026 format). This is what makes single-word
+    display names like 'Energy' immune to being misread as codes."""
+    for r in range(data_start):
+        vals = [str(raw.iloc[r, c]).strip() for c in range(1, raw.shape[1])]
+        vals = [v for v in vals if v and v.lower() != "nan"]
+        if not vals:
+            continue
+        hits = sum(1 for v in vals if v in known_codes)
+        if hits >= max(3, len(vals) // 2):
+            return r
+    return None
+
+
+def _find_units_row(raw: pd.DataFrame, data_start: int) -> int | None:
+    """Header row holding measurement units — cells like '($/bbl)', '($/mt)'."""
+    best, best_hits = None, 0
+    for r in range(data_start):
+        hits = sum(
+            1 for c in range(1, raw.shape[1])
+            if str(raw.iloc[r, c]).strip().startswith("(")
+        )
+        if hits > best_hits:
+            best, best_hits = r, hits
+    return best if best_hits >= 3 else None
+
+
+def _find_names_row(raw: pd.DataFrame, data_start: int,
+                    units_row: int | None, code_row: int | None) -> int | None:
+    """Header row holding the descriptive commodity names — the row (excluding
+    the units/code rows and the title block) with the most alphabetic cells in
+    columns 1+."""
+    best, best_hits = None, 0
+    for r in range(data_start):
+        if r in (units_row, code_row):
+            continue
+        hits = 0
+        for c in range(1, raw.shape[1]):
+            v = _norm_name(raw.iloc[r, c])
+            if v and v.lower() != "nan" and not v.startswith("(") and re.search(r"[A-Za-z]", v):
+                hits += 1
+        if hits > best_hits:
+            best, best_hits = r, hits
+    return best
+
+
+def _resolve_code(name: str, code_cell: Any, lookup: dict[str, str]) -> str | None:
+    """Resolve a series code: prefer an explicit code cell (old format); else map
+    the display name via `lookup` (new format); else slug the name so the series
+    is still preserved (it just won't be in the projected/broadcast set)."""
+    if code_cell is not None:
+        cc = _clean_code(code_cell)
+        if cc and cc.lower() != "nan":
+            return cc
+    key = _norm_name(name).lower()
+    if key in lookup:
+        return lookup[key]
+    slug = re.sub(r"[^A-Za-z0-9]+", "_", _norm_name(name)).strip("_").upper()
+    return slug or None
 
 logging.basicConfig(
     level=logging.INFO,
@@ -258,29 +462,53 @@ def parse_prices(path: Path, source_url: str) -> tuple[pd.DataFrame, str | None,
     raw = pd.read_excel(path, sheet_name="Monthly Prices", header=None, engine="openpyxl")
     update_label, source_file_date = _parse_source_update_label(raw)
 
-    names = raw.iloc[4, 1:]
-    units = raw.iloc[5, 1:]
-    codes = raw.iloc[6, 1:]
-    data = raw.iloc[7:, :].copy()
+    # Content-anchored header detection (survives the June-2026 removal of the
+    # code row). Data starts at the first YYYYMmm row; names/units rows and the
+    # optional code row are found by content, not fixed offsets.
+    data_start = _find_data_start(raw)
+    known = set(PRICE_NAME_TO_CODE.values())
+    code_row = _find_code_row(raw, data_start, known)
+    units_row = _find_units_row(raw, data_start)
+    names_row = _find_names_row(raw, data_start, units_row, code_row)
+    if names_row is None:
+        raise ValueError("Could not locate the commodity-name row in 'Monthly Prices'")
+
+    names = raw.iloc[names_row, 1:]
+    units = raw.iloc[units_row, 1:] if units_row is not None else None
+    codes = raw.iloc[code_row, 1:] if code_row is not None else None
+    data = raw.iloc[data_start:, :].copy()
     data = data[data.iloc[:, 0].notna()]
 
     frames: list[pd.DataFrame] = []
-    for col_idx, code_value in codes.items():
-        if pd.isna(code_value):
+    slugged: list[str] = []
+    for col_idx in names.index:
+        name = _clean_code(names.get(col_idx))
+        if not name or name.lower() == "nan":
             continue
-        code = _clean_code(code_value)
+        code = _resolve_code(name, codes.get(col_idx) if codes is not None else None, _PRICE_LOOKUP)
+        if not code:
+            continue
+        if code_row is None and _norm_name(name).lower() not in _PRICE_LOOKUP:
+            slugged.append(name)
         frame = pd.DataFrame(
             {
                 "date": data.iloc[:, 0].map(_parse_period),
                 "commodity_code": code,
-                "commodity_name": _clean_code(names.get(col_idx, code)),
-                "unit": _clean_code(units.get(col_idx, "")),
+                "commodity_name": name,
+                "unit": _clean_code(units.get(col_idx, "")) if units is not None else "",
                 "nominal_price_usd": pd.to_numeric(data[col_idx], errors="coerce"),
             }
         )
         frame = frame.dropna(subset=["date", "nominal_price_usd"])
         frames.append(frame)
 
+    if not frames:
+        raise ValueError("Monthly Prices: parsed 0 series — source layout may have changed again")
+    if slugged:
+        log.warning("Monthly Prices: %d column(s) had no code mapping (slugged): %s",
+                    len(slugged), slugged[:8])
+    log.info("Monthly Prices parsed: data_start=%d names_row=%s units_row=%s code_row=%s",
+             data_start, names_row, units_row, code_row)
     prices = pd.concat(frames, ignore_index=True)
     prices["date"] = pd.to_datetime(prices["date"]).dt.date
     prices["category"] = prices["commodity_code"].map(_category_for_code)
@@ -293,16 +521,36 @@ def parse_prices(path: Path, source_url: str) -> tuple[pd.DataFrame, str | None,
 
 def parse_indices(path: Path, source_url: str, source_file_date: str | None) -> pd.DataFrame:
     raw = pd.read_excel(path, sheet_name="Monthly Indices", header=None, engine="openpyxl")
-    codes = raw.iloc[9, 1:]
-    data = raw.iloc[10:, :].copy()
+
+    # Index display names are spread across several merged/wrapped header rows, so
+    # per-column we take the first non-NaN text cell in the header band. The code
+    # row (post-June-2026: absent) is detected by content and preferred when present.
+    data_start = _find_data_start(raw)
+    code_row = _find_code_row(raw, data_start, set(INDEX_NAMES))
+    codes = raw.iloc[code_row, 1:] if code_row is not None else None
+    data = raw.iloc[data_start:, :].copy()
     data = data[data.iloc[:, 0].notna()]
 
     frames: list[pd.DataFrame] = []
-    for col_idx, code_value in codes.items():
-        if pd.isna(code_value):
+    slugged: list[str] = []
+    for col_idx in range(1, raw.shape[1]):
+        name = None
+        for r in range(data_start):
+            if code_row is not None and r == code_row:
+                continue
+            v = _norm_name(raw.iloc[r, col_idx])
+            if v and v.lower() != "nan":
+                name = v
+                break
+        code_cell = codes.get(col_idx) if codes is not None else None
+        if name is None and (code_cell is None or str(code_cell).strip().lower() == "nan"):
             continue
-        code = _clean_code(code_value)
-        display_name, category = INDEX_NAMES.get(code, (code, "aggregate"))
+        code = _resolve_code(name or "", code_cell, _INDEX_LOOKUP)
+        if not code:
+            continue
+        display_name, category = INDEX_NAMES.get(code, (name or code, "aggregate"))
+        if code_row is None and code not in INDEX_NAMES:
+            slugged.append(name or code)
         frame = pd.DataFrame(
             {
                 "date": data.iloc[:, 0].map(_parse_period),
@@ -315,6 +563,12 @@ def parse_indices(path: Path, source_url: str, source_file_date: str | None) -> 
         frame = frame.dropna(subset=["date", "nominal_index_2010_100"])
         frames.append(frame)
 
+    if not frames:
+        raise ValueError("Monthly Indices: parsed 0 series — source layout may have changed again")
+    if slugged:
+        log.warning("Monthly Indices: %d column(s) unmapped (slugged): %s",
+                    len(slugged), slugged[:8])
+    log.info("Monthly Indices parsed: data_start=%d code_row=%s", data_start, code_row)
     indices = pd.concat(frames, ignore_index=True)
     indices["date"] = pd.to_datetime(indices["date"]).dt.date
     indices["source_sheet"] = "Monthly Indices"
@@ -531,7 +785,8 @@ def write_outputs(
     indices.to_parquet(INDICES_PQ, index=False)
     meta.to_parquet(META_PQ, index=False)
     features.to_parquet(FEATURES_PQ, index=False)
-    factor_panel.to_parquet(FACTOR_PANEL_PQ, index=False)
+    # Commodities are GLOBAL series — the country-tiled broadcast (factor_panel) is
+    # no longer persisted; setup_duckdb exposes them via the global commodity_panel view.
     catalog.to_csv(CATALOG_CSV, index=False)
     MANIFEST_PATH.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     return manifest
@@ -569,7 +824,7 @@ def collect(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def check_outputs(allow_stale: bool = False) -> int:
-    missing = [path for path in [PRICES_PQ, INDICES_PQ, FEATURES_PQ, FACTOR_PANEL_PQ, MANIFEST_PATH] if not path.exists()]
+    missing = [path for path in [PRICES_PQ, INDICES_PQ, FEATURES_PQ, MANIFEST_PATH] if not path.exists()]
     if missing:
         for path in missing:
             log.error("Missing commodity output: %s", path)
@@ -578,7 +833,7 @@ def check_outputs(allow_stale: bool = False) -> int:
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     prices = pd.read_parquet(PRICES_PQ)
     indices = pd.read_parquet(INDICES_PQ)
-    factor_panel = pd.read_parquet(FACTOR_PANEL_PQ, columns=["date", "country", "variable"])
+    features = pd.read_parquet(FEATURES_PQ, columns=["series_code", "feature"])
 
     latest = pd.to_datetime(max(prices["date"].max(), indices["date"].max())).date()
     age_days = (datetime.now().date() - latest).days
@@ -592,11 +847,10 @@ def check_outputs(allow_stale: bool = False) -> int:
         status,
     )
     log.info(
-        "wb_commodity_indices: %d series; factor projection: %d variables x %d countries (%s rows)",
+        "wb_commodity_indices: %d series; global commodity features: %d series x %d feature types (commodity_panel)",
         indices["index_code"].nunique(),
-        factor_panel["variable"].nunique(),
-        factor_panel["country"].nunique(),
-        f"{len(factor_panel):,}",
+        features["series_code"].nunique(),
+        features["feature"].nunique(),
     )
     log.info("source_updated_label: %s", manifest.get("source_updated_label"))
     if stale and not allow_stale:

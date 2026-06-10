@@ -4,36 +4,42 @@
 SCRIPT NAME: dashboard.py
 =============================================================================
 
+DESCRIPTION:
+    Real-time terminal dashboard for an ASADO monthly update run.
+    Tails the run log produced by run.py and displays a live updating view of:
+      - All pipeline steps with their status and elapsed time
+      - Data metrics per collector (variables, countries, row counts)
+      - DuckDB table sizes after each rebuild pass
+      - Optimizer ingest results (factor counts, return rows)
+      - Errors and tracebacks as they appear
+      - Live output from the currently running step (last 15 lines)
+      - Feature processing progress bar for long-running steps
+
+    Launched automatically by run.py in a new Terminal window. Can also be
+    run manually: python dashboard.py [path/to/run_*.log]
+
 INPUT FILES:
-- Data/logs/run_*.log  (written by run.py — auto-discovers latest if no arg)
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/logs/run_*.log
+        Run log produced by run.py — auto-discovers the latest if no path
+        argument is given.
 
 OUTPUT FILES:
-- (none — read-only live monitor)
+    (none — read-only live monitor)
 
 VERSION: 1.0
 LAST UPDATED: 2026-04-29
 AUTHOR: Arjun Divecha
 
-DESCRIPTION:
-Real-time terminal dashboard for an ASADO monthly update run.
-Tails the run log produced by run.py and displays a live updating view of:
-  - All pipeline steps with their status and elapsed time
-  - Data metrics per collector (variables, countries, row counts)
-  - DuckDB table sizes after each rebuild pass
-  - Optimizer ingest results (factor counts, return rows)
-  - Errors and tracebacks as they appear
-  - Live output from the currently running step (last 15 lines)
-  - Feature processing progress bar for long-running steps
-
-Launched automatically by run.py in a new Terminal window. Can also be
-run manually: python dashboard.py [path/to/run_*.log]
-
 DEPENDENCIES:
-- rich >= 13.0  (pip install rich)
+    - rich >= 13.0  (pip install rich)
 
 USAGE:
-  python dashboard.py                          # monitor latest log
-  python dashboard.py Data/logs/run_XYZ.log   # monitor specific run
+    python dashboard.py                          # monitor latest log
+    python dashboard.py /path/to/run_XYZ.log     # monitor specific run
+
+NOTES:
+    - Launched automatically by run.py in a new Terminal window via osascript.
+    - Exits when the monitored run completes (no running steps remain).
 =============================================================================
 """
 

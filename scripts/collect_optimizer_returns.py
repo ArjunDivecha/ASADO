@@ -4,68 +4,80 @@
 SCRIPT NAME: collect_optimizer_returns.py
 =============================================================================
 
+DESCRIPTION:
+    Ingests monthly factor-return outputs from the three T2 optimizer pipelines
+    (Econ, T2 Style, GDELT) into the ASADO tidy-panel layer. Each pipeline
+    contributes two slices:
+
+      1. factor_returns        -- date x factor monthly portfolio return (no country axis)
+      2. factor_top20_membership -- date x country x factor weights (sparse, weight > 0)
+
+    Joining membership ⨝ returns on (date, factor, source) gives genuine
+    country-level attribution: which countries were in the bucket x the
+    bucket's return.
+
+    Resilience:
+      - Each source wrapped in try/except. If one optimizer file is
+        unreadable, the corresponding slice in the existing parquet panel is
+        preserved unchanged.
+      - 24-hour cache: skips re-melt when source file mtime is older than the
+        existing parquet's mtime. --force bypasses.
+      - Timestamped backup of both panels before overwrite.
+
 INPUT FILES:
-- /Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 Econ/Econ_Optimizer.xlsx
-    Wide monthly returns of top-20% portfolios. Sheet "Monthly_Net_Returns".
-    First column: Date. Remaining columns: factor names suffixed with _CS or _TS.
-- /Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 Econ/Econ_Top_20_Exposure.csv
-    Wide membership weights. Columns: Date, Country, then one column per factor
-    variant. Cell value = portfolio weight (1/N when country is in the top-20%
-    bucket for that factor that month, 0 otherwise).
-- /Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 Factor Timing Fuzzy/T2_Optimizer.xlsx
-- /Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 Factor Timing Fuzzy/T2_Top_20_Exposure.csv
-- /Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 GDELT/GDELT_Optimizer.xlsx
-- /Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 GDELT/GDELT_Top_20_Exposure.csv
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/econ/Econ_Optimizer.xlsx
+        Wide monthly returns of top-20% portfolios. Sheet
+        "Monthly_Net_Returns". First column: Date. Remaining columns: factor
+        names suffixed with _CS or _TS.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/econ/Econ_Top_20_Exposure.csv
+        Wide membership weights. Columns: Date, Country, then one column per
+        factor variant. Cell value = portfolio weight (1/N when country is in
+        the top-20% bucket for that factor that month, 0 otherwise).
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/t2/T2_Optimizer.xlsx
+        Same layout as Econ_Optimizer.xlsx, from the T2 Style pipeline.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/t2/T2_Top_20_Exposure.csv
+        Same layout as Econ_Top_20_Exposure.csv, from the T2 Style pipeline.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/gdelt/GDELT_Optimizer.xlsx
+        Same layout as Econ_Optimizer.xlsx, from the GDELT pipeline.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/gdelt/GDELT_Top_20_Exposure.csv
+        Same layout as Econ_Top_20_Exposure.csv, from the GDELT pipeline.
 
 OUTPUT FILES:
-- Data/processed/factor_returns_panel.parquet
-    Tidy long format: (date, factor, value, source).
-    factor names retain _CS / _TS suffix (treated as separate variables).
-    value = monthly net return of the top-20% portfolio.
-- Data/processed/factor_top20_membership_panel.parquet
-    Tidy long format: (date, country, factor, weight, source).
-    Sparse: only rows where weight > 0 are stored.
-- Data/processed/run_history.json
-    Append-only record of last 24 runs (success/failure per source).
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/factor_returns_panel.parquet
+        Tidy long format: (date, factor, value, source). factor names retain
+        _CS / _TS suffix (treated as separate variables). value = monthly net
+        return of the top-20% portfolio.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/factor_top20_membership_panel.parquet
+        Tidy long format: (date, country, factor, weight, source). Sparse:
+        only rows where weight > 0 are stored.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/run_history.json
+        Append-only record of last 24 runs (success/failure per source).
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/logs/collect_optimizer_returns_<timestamp>.log
+        Log file created by the logging module on each run.
 
 VERSION: 1.0
-LAST UPDATED: 2026-04-28
+LAST UPDATED: 2026-06-05
 AUTHOR: Arjun Divecha
 
-DESCRIPTION:
-Ingests monthly factor-return outputs from the three T2 optimizer pipelines
-(Econ, T2 Style, GDELT) into the ASADO tidy-panel layer. Each pipeline
-contributes two slices:
-
-  1. factor_returns        — date x factor monthly portfolio return (no country axis)
-  2. factor_top20_membership — date x country x factor weights (sparse, weight > 0)
-
-Joining membership ⨝ returns on (date, factor, source) gives genuine country-
-level attribution: which countries were in the bucket × the bucket's return.
-
-Resilience:
-  - Each source wrapped in try/except. If one optimizer file is unreadable, the
-    corresponding slice in the existing parquet panel is preserved unchanged.
-  - 24-hour cache: skips re-melt when source file mtime is older than the
-    existing parquet's mtime. --force bypasses.
-  - Timestamped backup of both panels before overwrite.
-
 DEPENDENCIES:
-- pandas, openpyxl, pyarrow
+    - pandas
+    - openpyxl
+    - pyarrow
 
 USAGE:
-  python scripts/collect_optimizer_returns.py
-  python scripts/collect_optimizer_returns.py --force
-  python scripts/collect_optimizer_returns.py --dry-run
+    python scripts/collect_optimizer_returns.py
+    python scripts/collect_optimizer_returns.py --force
+    python scripts/collect_optimizer_returns.py --dry-run
 
 NOTES:
-- factor names retain their _CS / _TS suffix; they are separate variables, not
-  normalizations of one another (the construction rule differs).
-- All dates aligned to first-of-month.
-- T2 Style asymmetry: some factors only exist as _CS, others only as _TS.
-  The schema allows that — no enforcement of paired rows.
-- Source files live under /A Complete/, outside the ASADO repo. They are read
-  in place; nothing is copied.
+    - Factor names retain their _CS / _TS suffix; they are separate
+      variables, not normalizations of one another (the construction rule
+      differs).
+    - All dates aligned to first-of-month.
+    - T2 Style asymmetry: some factors only exist as _CS, others only as
+      _TS. The schema allows that -- no enforcement of paired rows.
+    - Source files live under /A Complete/, outside the ASADO repo. They are
+      read in place; nothing is copied.
 =============================================================================
 """
 
@@ -101,28 +113,28 @@ SOURCES: List[Dict[str, Any]] = [
     {
         "key": "econ_optimizer",
         "returns_xlsx": Path(
-            "/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 Econ/Econ_Optimizer.xlsx"
+            "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/econ/Econ_Optimizer.xlsx"
         ),
         "exposure_csv": Path(
-            "/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 Econ/Econ_Top_20_Exposure.csv"
+            "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/econ/Econ_Top_20_Exposure.csv"
         ),
     },
     {
         "key": "t2_optimizer",
         "returns_xlsx": Path(
-            "/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 Factor Timing Fuzzy/T2_Optimizer.xlsx"
+            "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/t2/T2_Optimizer.xlsx"
         ),
         "exposure_csv": Path(
-            "/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 Factor Timing Fuzzy/T2_Top_20_Exposure.csv"
+            "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/t2/T2_Top_20_Exposure.csv"
         ),
     },
     {
         "key": "gdelt_optimizer",
         "returns_xlsx": Path(
-            "/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 GDELT/GDELT_Optimizer.xlsx"
+            "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/gdelt/GDELT_Optimizer.xlsx"
         ),
         "exposure_csv": Path(
-            "/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 GDELT/GDELT_Top_20_Exposure.csv"
+            "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/gdelt/GDELT_Top_20_Exposure.csv"
         ),
     },
 ]

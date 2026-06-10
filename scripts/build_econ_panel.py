@@ -9,7 +9,7 @@ INPUT FILES:
   (date, country, value, variable, source)
 
 OUTPUT FILES:
-- /Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 Econ/Econ.xlsx
+- /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/econ/Econ.xlsx
     Wide monthly workbook consumed by Step Two Econ Create Tidy.py.
     Sheet 1: INDEX — sheet_id, sheet_name, variable, source, source_table,
                      first_date, last_date, n_dates, n_countries_with_data
@@ -60,6 +60,10 @@ from pathlib import Path
 import duckdb
 import pandas as pd
 
+# Econ redundancy drop-list (single source of truth for the prune rule).
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from econ_drop_list import should_drop  # noqa: E402
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "Data"
 PROCESSED_DIR = DATA_DIR / "processed"
@@ -67,7 +71,7 @@ BACKUPS_DIR = DATA_DIR / "backups"
 DUCKDB_PATH = DATA_DIR / "asado.duckdb"
 
 OUTPUT_XLSX = Path(
-    "/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 Econ/Econ.xlsx"
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/econ/Econ.xlsx"
 )
 LOCAL_PARQUET = PROCESSED_DIR / "econ_workbook_panel.parquet"
 
@@ -239,6 +243,14 @@ SHEETS: list[tuple[str, str]] = [
     ("MS_Public_Debt_Short_Term__896c",  "MS_Public_Debt_Short_Term_Pct_GDP"),
     ("MS_Public_Debt_Total_Pct_GDP",     "MS_Public_Debt_Total_Pct_GDP"),
 ]
+
+# Redundancy prune: drop highly-correlated, same-concept factors (see
+# scripts/econ_drop_list.py). Removing a base sheet also removes its derived
+# _CS / _TS / _D12 variants downstream.
+_SHEETS_BEFORE = len(SHEETS)
+SHEETS = [(s, v) for (s, v) in SHEETS if not should_drop(s)]
+logger.info("Econ redundancy prune: %d -> %d sheets (%d redundant dropped).",
+            _SHEETS_BEFORE, len(SHEETS), _SHEETS_BEFORE - len(SHEETS))
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

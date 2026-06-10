@@ -11,10 +11,12 @@ INPUT FILES:
 
 OUTPUT FILES:
 - Data/processed/gdelt_deep_panel.parquet — tidy long format
-    (date, country, value, variable, source) with three sources:
-      gdelt_deep_theme   — 516 vars (258 themes × {_share, _share_delta})
-      gdelt_deep_gcam    — 450 vars (75 GCAM dims × {raw,_fast,_slow,_trend,_z,_fast_z})
-      gdelt_deep_event   — 120 vars (24 event aggregates × {raw,_fast,_trend,_z,_fast_z})
+    (date, country, value, variable, source). Post-prune (2026-06) only the
+    curated keep-list survives (see scripts/gdelt_keep_list.py); variables use
+    their canonical (<=31-char) names:
+      gdelt_deep_theme   — 48 vars (24 curated themes × {_share, _share_delta})
+      gdelt_deep_event   — 16 vars (curated CAMEO/Goldstein event aggregates)
+      gdelt_deep_gcam    — DROPPED (all GCAM emotional dictionaries removed)
 - Data/backups/{ts}/gdelt_deep_panel.parquet — timestamped backup before overwrite
 - Data/processed/run_history.json — appended with run metadata
 
@@ -78,6 +80,11 @@ import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
 
+# Canonical GDELT Deep keep-list — same prune rule as build_gdelt_panel.py so
+# the orphan gdelt_deep_factors table never re-accumulates gcam / theme-tail.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from gdelt_keep_list import canonical_name, keep_deep_feature  # noqa: E402
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "Data"
 PROCESSED_DIR = DATA_DIR / "processed"
@@ -137,15 +144,17 @@ META_COLS = {
 def classify_column(col: str) -> str | None:
     """Return source tag for a Deep column, or None to drop.
 
-    - theme_*  → gdelt_deep_theme
-    - gcam_*   → gdelt_deep_gcam
-    - event_*  → gdelt_deep_event
-    - everything else → drop (upstream raw tone, metronome composites, metadata)
+    Post-prune (2026-06): only keep-list deep features survive (see
+    scripts/gdelt_keep_list.py). All gcam_* and the theme tail are dropped.
+
+    - kept theme_*  → gdelt_deep_theme
+    - kept event_*  → gdelt_deep_event
+    - everything else (gcam_*, theme tail, raw tone, composites, metadata) → drop
     """
+    if not keep_deep_feature(col):
+        return None
     if col.startswith("theme_"):
         return "gdelt_deep_theme"
-    if col.startswith("gcam_"):
-        return "gdelt_deep_gcam"
     if col.startswith("event_"):
         return "gdelt_deep_event"
     return None
@@ -191,9 +200,12 @@ def build_tidy(df: pd.DataFrame, iso3_to_t2: dict[str, list[str]]) -> pd.DataFra
     logger.info("Rows after melt + NaN-drop: %d (%.1f%% retained)",
                 len(long), 100 * len(long) / max(n_before, 1))
 
-    # 6. Tag source.
+    # 6. Tag source (using the original upstream column name), then rename the
+    #    variable to its canonical (<=31-char, collision-free) warehouse name so
+    #    gdelt_deep_factors shares vocabulary with gdelt_panel.
     long["source"] = long["variable"].map(classify_column)
     assert long["source"].notna().all(), "unmapped variable encountered"
+    long["variable"] = long["variable"].map(canonical_name)
 
     # 7. Final canonical column order + dtypes.
     long["date"] = pd.to_datetime(long["date"]).dt.date

@@ -4,52 +4,65 @@
 SCRIPT NAME: setup_neo4j.py
 =============================================================================
 
+DESCRIPTION:
+    Creates and populates a Neo4j knowledge graph for the ASADO country
+    research platform. The script reads country metadata, processed factor
+    panels, bilateral trade/banking/portfolio matrices, and
+    DuckDB-stored time-series to build a graph with seven node types
+    (Country, Factor, Commodity, CentralBank, DataSource, SanctionsProgram,
+    CrisisEvent) and nine edge types (HAS_CENTRAL_BANK, EXPORT_EXPOSED_TO,
+    SUBJECT_TO, HAS_CRISIS_HISTORY, DATA_AVAILABLE_FROM, HAS_FACTOR_EXPOSURE,
+    TRADES_WITH, HAS_BANKING_EXPOSURE_TO, HOLDS_PORTFOLIO). Every run
+    clears all existing nodes and edges first (idempotent rebuild). Pass
+    --check to inspect the existing graph without modifying it.
+
 INPUT FILES:
-- config/country_mapping.json                       (34-country code mapping)
-- Data/processed/extended_factors_panel.parquet      (OFAC sanctions data)
-- Data/processed/bilateral_trade_matrix.parquet      (IMF IMTS bilateral trade)
-- Data/processed/bilateral_banking_matrix.parquet    (BIS LBS banking claims)
-- Data/processed/bilateral_portfolio_matrix.parquet  (IMF PIP + U.S. TIC portfolio holdings)
-- Data/asado.duckdb                                 (for latest factor values)
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/config/country_mapping.json
+        34-country ISO3/ISO2 code mapping; used to create Country nodes and
+        cross-reference sanctions data by T2 name.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/extended_factors_panel.parquet
+        OFAC sanctions indicator variables; used to identify sanctioned
+        countries for SanctionsProgram edges.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/bilateral_trade_matrix.parquet
+        IMF IMTS bilateral trade data; used to create TRADES_WITH edges
+        between Country nodes (threshold: >$100M).
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/bilateral_banking_matrix.parquet
+        BIS LBS banking claims data; used to create HAS_BANKING_EXPOSURE_TO
+        edges between Country nodes.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/bilateral_portfolio_matrix.parquet
+        IMF PIP + U.S. TIC portfolio holdings data; used to create
+        instrument-specific HOLDS_PORTFOLIO edges between Country nodes.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/asado.duckdb
+        DuckDB database containing unified_panel, factor_returns,
+        factor_returns_daily, variable_meta, and event_log tables; queried
+        for factor definitions, return properties, daily stats, and crisis
+        events.
 
 OUTPUT FILES:
-- Neo4j graph database (bolt://localhost:7687)
+    Neo4j graph database (bolt://localhost:7687)
+        Nodes and edges written to the running Neo4j instance. Content is
+        fully replaced on each run.
 
-VERSION: 1.1
-LAST UPDATED: 2026-04-12
+VERSION: 1.0
+LAST UPDATED: 2026-06-05
 AUTHOR: Arjun Divecha
 
-DESCRIPTION:
-Populates the Neo4j knowledge graph with entity nodes and relationship edges
-for the ASADO country research platform. Creates Country, Factor, Commodity,
-CentralBank, DataSource, SanctionsProgram, and CrisisEvent nodes, then
-connects them with typed edges including bilateral trade and banking networks.
-
-Node types:
-  - Country (34)         — from country_mapping.json + enrichment data
-  - Factor (~315)        — from T2 + external + extended + GDELT + IMF variables
-  - Commodity (4)        — Oil, Copper, Gold, Agriculture
-  - CentralBank (30)     — one per unique ISO3 country
-  - DataSource (26)      — each data source in the pipeline
-  - SanctionsProgram     — from OFAC data
-  - CrisisEvent (9)      — major historical crises
-
-Edge types:
-  - HAS_CENTRAL_BANK, EXPORT_EXPOSED_TO, SUBJECT_TO,
-    HAS_CRISIS_HISTORY, DATA_AVAILABLE_FROM, HAS_FACTOR_EXPOSURE,
-    TRADES_WITH, HAS_BANKING_EXPOSURE_TO, HOLDS_PORTFOLIO
-
 DEPENDENCIES:
-- neo4j, duckdb, pandas
+    - neo4j (python driver)
+    - duckdb
+    - pandas
 
 USAGE:
-  python scripts/setup_neo4j.py                # populate graph (clears first)
-  python scripts/setup_neo4j.py --check        # verify existing graph
+    python scripts/setup_neo4j.py                     # populate graph (clears first)
+    python scripts/setup_neo4j.py --check             # verify existing graph only
+    python scripts/setup_neo4j.py --skip-crisis-events # skip CrisisEvent nodes/edges
 
 NOTES:
-- Clears all existing nodes/edges on each run (idempotent rebuild)
-- Neo4j must be running: brew services start neo4j
-- Default credentials: neo4j / mythos2026
+    - Neo4j must be running before execution: brew services start neo4j
+    - Default credentials: neo4j / mythos2026
+    - Clears all existing nodes and edges on every run (idempotent rebuild)
+    - CrisisEvent nodes require the event_log table in DuckDB (built by
+      build_event_log.py); skip with --skip-crisis-events
 =============================================================================
 """
 

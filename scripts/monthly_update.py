@@ -25,25 +25,22 @@ OUTPUT FILES:
 - DuckDB gdelt_deep_factors                       (via load_gdelt_deep_to_duckdb.py)
 - DuckDB gdelt_deep_factors_cs                    (via build_gdelt_deep_cs.py)
 - Data/processed/pit_audit_gdelt_deep.csv         (via qa/pit_audit_gdelt_deep.py)
-- /A Complete/T2 Factor Timing Fuzzy/P2P_Country_Historical_Scores.xlsx (via build_t2_master.py)
-- /A Complete/T2 Factor Timing Fuzzy/T2 Master.xlsx (via build_t2_master.py)
-- /A Complete/T2 GDELT/T2 Master.xlsx             (via build_t2_master.py)
-- /A Complete/T2 Econ/T2 Master.xlsx              (via build_t2_master.py)
-- /A Complete/T2 Factor Timing Fuzzy/Normalized_T2_MasterCSV.csv (via T2 Fuzzy Step Two)
-- /A Complete/T2 GDELT/Normalized_T2_MasterCSV.csv (distributed copy)
-- /A Complete/T2 Econ/Normalized_T2_MasterCSV.csv  (distributed copy)
-- /A Complete/T2 GDELT/GDELT_Factors_MasterCSV.csv (via T2 GDELT Step Two)
-- /A Complete/T2 Econ/Econ_Factors_MasterCSV.csv   (via T2 Econ Step Two)
+  (T2/GDELT/Econ factor pipelines are now standalone inside ASADO; all work
+   files live under Data/work/{t2,gdelt,econ} — no external A Complete/ deps)
+- Data/work/t2/T2 Master.xlsx                     (via build_t2_master.py)
+- Data/work/t2/Normalized_T2_MasterCSV.csv        (via t2_normalize.py)
+- Data/work/t2/T2_Top_20_Exposure.csv             (via t2_optimizer.py step3)
+- Data/work/t2/T2_Optimizer.xlsx                  (via t2_optimizer.py step4)
+- Data/work/gdelt/GDELT.xlsx                       (via build_gdelt_panel.py / core workbook copy)
+- Data/work/gdelt/GDELT_Factors_MasterCSV.csv      (via gdelt_normalize.py)
+- Data/work/gdelt/GDELT_Top_20_Exposure.csv        (via t2_optimizer.py --pipeline gdelt step3)
+- Data/work/gdelt/GDELT_Optimizer.xlsx             (via t2_optimizer.py --pipeline gdelt step4)
+- Data/work/econ/Econ.xlsx                          (via build_econ_panel.py)
+- Data/work/econ/Econ_Factors_MasterCSV.csv         (via econ_normalize.py)
+- Data/work/econ/Econ_Top_20_Exposure.csv           (via t2_optimizer.py --pipeline econ step3)
+- Data/work/econ/Econ_Optimizer.xlsx                (via t2_optimizer.py --pipeline econ step4)
 - Data/processed/econ_workbook_panel.parquet      (via build_econ_panel.py)
-- /A Complete/T2 Econ/Econ.xlsx                   (via build_econ_panel.py)
 - Data/processed/gdelt_workbook_panel.parquet     (via build_gdelt_panel.py)
-- /A Complete/T2 GDELT/GDELT.xlsx                 (via build_gdelt_panel.py)
-- /A Complete/T2 Factor Timing Fuzzy/T2_Top_20_Exposure.csv (via T2 Fuzzy Step Three)
-- /A Complete/T2 Factor Timing Fuzzy/T2_Optimizer.xlsx      (via T2 Fuzzy Step Four)
-- /A Complete/T2 GDELT/GDELT_Top_20_Exposure.csv            (via T2 GDELT Step Three)
-- /A Complete/T2 GDELT/GDELT_Optimizer.xlsx                 (via T2 GDELT Step Four)
-- /A Complete/T2 Econ/Econ_Top_20_Exposure.csv              (via T2 Econ Step Three)
-- /A Complete/T2 Econ/Econ_Optimizer.xlsx                   (via T2 Econ Step Four)
 - Neo4j graph database                            (via setup_neo4j.py)
 - Neo4j vector index on Country nodes             (via build_embeddings.py)
 - Data/cache/query_assistant/*                    (via build_schema_registry.py)
@@ -68,6 +65,7 @@ Pipeline stages:
   5. collect_macrostructure.py --force (IMF FSI + QPSD + sticky-capital + policy-backstop layer)
   5b. collect_wb_commodity_prices.py --force (World Bank Pink Sheet monthly commodity context)
   6. collect_bloomberg.py --force   (Bloomberg bonds, CDS, breakevens, ratings, ETF passive layer)
+  6a. collect_t2_bloomberg.py       (live blpapi → T2 Bloomberg Master.xlsx, replaces Excel dump)
   6b. build_t2_master.py            (P2P via yfinance + T2 Master.xlsx → T2 Fuzzy/GDELT/Econ)
   7. collect_gdelt_deep.py          (GDELT Deep — incremental: themes + GCAM + events)
   8. setup_duckdb.py                (rebuild analytical DB)
@@ -143,9 +141,14 @@ NEO4J_HOST = "localhost"
 NEO4J_BOLT_PORT = 7687
 
 # ── External T2 pipeline directories ────────────────────────────────────────
-T2_FUZZY_DIR  = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 Factor Timing Fuzzy")
-T2_GDELT_DIR  = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 GDELT")
-T2_ECON_DIR   = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 Econ")
+T2_FUZZY_DIR  = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/t2")
+T2_GDELT_DIR  = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/gdelt")
+T2_ECON_DIR   = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/econ")
+
+# ── Canonical in-repo GDELT store (migrated from A Complete/GDELT) ───────────
+# ASADO is the sole source of truth for GDELT: ingestion engine in
+# scripts/gdelt_ingest/, raw GKG cache + panels + workbooks under Data/gdelt/.
+GDELT_DIR = BASE_DIR / "Data" / "gdelt"
 
 
 # Map pip package names to their Python import names where they differ
@@ -436,7 +439,11 @@ def main():
     parser.add_argument("--skip-bloomberg", action="store_true",
                         help="Skip Bloomberg collection (requires Terminal + Parallels)")
     parser.add_argument("--skip-deep", action="store_true",
-                        help="Skip GDELT Deep ingest (themes, GCAM, events)")
+                        help="(Deprecated no-op) GDELT Deep themes/GCAM layer has been retired; "
+                             "the core GDELT chain always runs now.")
+    parser.add_argument("--skip-gdelt-fetch", action="store_true",
+                        help="Rebuild GDELT from the cached country-day store WITHOUT fetching "
+                             "new days from data.gdeltproject.org (offline / testing).")
     parser.add_argument("--skip-wb-commodity", action="store_true",
                         help="Skip World Bank commodity collection and preserve prior processed files")
     parser.add_argument("--commodity-only", action="store_true",
@@ -467,6 +474,33 @@ def main():
         f.write(f"Started: {datetime.now().isoformat()}\n")
         f.write(f"Python: {PYTHON}\n")
         f.write(f"Args: {vars(args)}\n\n")
+
+    # ── Step 0b: Bloomberg-master freshness gate (T2 source) ────────────────
+    # The T2 factor data comes from T2 Bloomberg Master.xlsx, which ASADO now
+    # GENERATES from live blpapi in Stage 1 (Program 6a) instead of reading a
+    # hand-refreshed Excel dump. That changes where the gate belongs:
+    #   - Normal run: Program 6a regenerates the workbook THIS run, then Program
+    #     6b's internal check_bloomberg_freshness() verifies the FRESH file. A
+    #     pre-flight check here would only see last month's not-yet-regenerated
+    #     file and wrongly abort — so we SKIP it and let 6a/6b be the gate.
+    #   - --skip-bloomberg: we reuse the existing workbook untouched, so verify
+    #     HERE that it already covers the last completed month (FAIL IS FAIL).
+    if not args.db_only and not args.commodity_only and args.skip_bloomberg:
+        print("\nChecking Bloomberg master freshness (T2 source, --skip-bloomberg) ...")
+        fresh = subprocess.run(
+            [PYTHON, str(SCRIPTS_DIR / "build_t2_master.py"), "--check-freshness"],
+            capture_output=True, text=True,
+        )
+        print(fresh.stdout + fresh.stderr)
+        with open(log_file, "a") as f:
+            f.write("\nFreshness gate:\n" + fresh.stdout + fresh.stderr + "\n")
+        if fresh.returncode != 0:
+            print("=" * 60)
+            print("  ABORTING UPDATE: existing Bloomberg master is STALE (see above).")
+            print("  Re-run WITHOUT --skip-bloomberg so Program 6a regenerates it")
+            print("  from live blpapi (Bloomberg Terminal must be up on Parallels).")
+            print("=" * 60)
+            return
 
     total_start = time.time()
     results = []
@@ -622,6 +656,55 @@ def main():
         else:
             print("\n  (Bloomberg collection skipped via --skip-bloomberg)")
 
+        # Program 6a: T2 Bloomberg Master — generate the T2 Bloomberg workbook
+        # DIRECTLY from live blpapi (scripts/collect_t2_bloomberg.py), replacing
+        # the old hand-maintained Excel dump "Country Bloomberg Data Master T.xlsx".
+        # Runs in the OpusBloomberg conda env (same as Program 6). The collector
+        # self-probes (bloomberg_setup retry + AAPL ref) and exits non-zero if the
+        # Terminal is unreachable — build_t2_master's freshness gate is the backstop.
+        # Must run BEFORE Program 6b, which reads this workbook.
+        if not args.skip_bloomberg and not args.dry_run:
+            t2bbg_env = '/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg/.venv'
+            t2bbg_script = str(SCRIPTS_DIR / "collect_t2_bloomberg.py")
+            t2bbg_cmd = ["conda", "run", "-p", t2bbg_env, "python", t2bbg_script]
+
+            print(f"\n{'─' * 60}")
+            print(f"STEP: Program 6a: T2 Bloomberg Master (live blpapi -> T2 Bloomberg Master.xlsx)")
+            print(f"CMD:  {' '.join(t2bbg_cmd)}")
+            print(f"{'─' * 60}")
+
+            t2bbg_start = time.time()
+            t2bbg_result = subprocess.run(
+                t2bbg_cmd, capture_output=True, text=True, cwd=str(BASE_DIR),
+                env={**os.environ, "PYTHONUNBUFFERED": "1"},
+            )
+            t2bbg_elapsed = time.time() - t2bbg_start
+            t2bbg_output = t2bbg_result.stdout + t2bbg_result.stderr
+            t2bbg_status = "OK" if t2bbg_result.returncode == 0 else "FAILED"
+            print(t2bbg_output)
+
+            with open(log_file, "a") as f:
+                f.write(f"\n{'=' * 60}\n")
+                f.write(f"STEP: Program 6a: T2 Bloomberg Master\n")
+                f.write(f"STATUS: {t2bbg_status} (exit code {t2bbg_result.returncode})\n")
+                f.write(f"ELAPSED: {t2bbg_elapsed:.1f}s\n")
+                f.write(f"{'=' * 60}\n")
+                f.write(t2bbg_output + "\n")
+
+            results.append({
+                "name": "Program 6a: T2 Bloomberg Master",
+                "status": t2bbg_status,
+                "elapsed": t2bbg_elapsed,
+                "returncode": t2bbg_result.returncode,
+                "output_tail": t2bbg_output.strip().split("\n")[-10:],
+            })
+        elif args.skip_bloomberg:
+            print("\n  (T2 Bloomberg Master generation skipped via --skip-bloomberg; "
+                  "using existing T2 Bloomberg Master.xlsx)")
+        else:  # dry-run
+            print("\n  (T2 Bloomberg Master generation skipped in --dry-run; "
+                  "live blpapi pull not exercised)")
+
         # Program 6b: T2 Master — P2P scores (yfinance) + T2 Master.xlsx from Bloomberg
         t2_flags = ["--dry-run"] if args.dry_run else []
         if args.skip_bloomberg:
@@ -633,19 +716,22 @@ def main():
             log_file
         ))
 
-        # Program 7: GDELT Deep — incremental by default. Past months are
-        # never re-read; the collector skips with status "no_change" if the
-        # source has nothing newer than the existing parquet.
-        if not args.skip_deep:
-            deep_flags = ["--dry-run"] if args.dry_run else []
+        # Program 7: GDELT Deep (themes + GCAM + events) — RETIRED.
+        # The deep-themes layer has been dropped from ASADO; the core GDELT
+        # sentiment/attention chain (ingest -> normalize -> optimizer) fully
+        # replaces it for the warehouse + optimizer.
+
+        # Vintage snapshot — freeze this month's freshly collected panels so
+        # future research can see what was knowable at the time (Alpha-Hunting
+        # Loop PRD §8 priority 2). --force: the monthly pull is the canonical
+        # vintage for the month, replacing any earlier ad-hoc snapshot.
+        if not args.dry_run:
             results.append(run_step(
-                "Program 7: GDELT Deep (themes + GCAM + events, incremental)",
-                "collect_gdelt_deep.py",
-                deep_flags,
+                "Vintage Snapshot (Data/processed -> Data/vintages)",
+                "snapshot_vintages.py",
+                ["--force"],
                 log_file
             ))
-        else:
-            print("\n  (GDELT Deep ingest skipped via --skip-deep)")
 
     # ── Stage 2: Database Rebuilds ────────────────────────────────────
     if not args.collectors_only:
@@ -683,29 +769,50 @@ def main():
             log_file
         ))
 
-        # GDELT.xlsx — reads country_signal_monthly_deep.parquet (no DuckDB dep)
-        if not args.skip_deep:
-            results.append(run_step(
-                "GDELT Workbook Export (GDELT.xlsx)",
-                "build_gdelt_panel.py",
-                [],
-                log_file
-            ))
+        # GDELT INGEST — ASADO-internal port of the GKG pipeline. Fetches new
+        # GKG days from data.gdeltproject.org incrementally, rebuilds the signal
+        # panels, and exports the monthly + daily workbooks into the canonical
+        # in-repo store (Data/gdelt/). Replaces the old shutil copy from
+        # A Complete/GDELT — ASADO is now the sole source of truth for GDELT.
+        gdelt_ingest_flags = [
+            "--daily", "--save-panels",
+            "--country-day-dir", str(GDELT_DIR / "country_day"),
+            "--manifest-dir", str(GDELT_DIR / "manifests" / "country_day"),
+            "--lookups-dir", str(GDELT_DIR / "lookups"),
+            "--panels-dir", str(GDELT_DIR / "panels"),
+            "--output", str(GDELT_DIR / "spreadsheet" / "GDELT.xlsx"),
+            "--output-daily", str(GDELT_DIR / "spreadsheet" / "GDELT_DAILY.xlsx"),
+        ]
+        if args.skip_gdelt_fetch:
+            gdelt_ingest_flags.append("--skip-fetch")
+        results.append(run_step(
+            "GDELT Ingest (GKG source -> panels + workbooks, in-repo)",
+            "gdelt_ingest/build_fullhistory_workbook.py",
+            gdelt_ingest_flags,
+            log_file,
+        ))
+        # Hand the freshly-built monthly workbook to the normalize/optimizer work dir.
+        import shutil
+        src_wb = GDELT_DIR / "spreadsheet" / "GDELT.xlsx"
+        dest = T2_GDELT_DIR / "GDELT.xlsx"
+        if src_wb.exists():
+            shutil.copy2(src_wb, dest)
+            print(f"  GDELT.xlsx -> {dest} (for normalize/optimizer)")
         else:
-            print("\n  (GDELT workbook export skipped via --skip-deep)")
+            print(f"  WARNING: in-repo GDELT.xlsx not found: {src_wb}")
 
         print("\n\n" + "=" * 60)
         print("  STAGE 2C: T2 PIPELINE STEP TWOS")
         print("=" * 60)
 
-        # T2 Factor Timing Fuzzy Step Two → Normalized_T2_MasterCSV.csv
-        # (reads T2 Master.xlsx produced by build_t2_master.py in Stage 1)
+        # T2 normalization — ASADO-internal port of Fuzzy Step Two.
+        # Reads T2 Master.xlsx (from build_t2_master.py) → Normalized_T2_MasterCSV.csv.
+        # No external "T2 Factor Timing Fuzzy" run required.
         results.append(run_step(
-            "T2 Fuzzy Step Two (Normalized_T2_MasterCSV.csv)",
-            str(T2_FUZZY_DIR / "Step Two Create Normalized Tidy.py"),
-            [],
+            "T2 Normalize (ASADO → Normalized_T2_MasterCSV.csv)",
+            "t2_normalize.py",
+            ["--no-xlsx"],
             log_file,
-            cwd=T2_FUZZY_DIR,
         ))
 
         # Distribute Normalized_T2_MasterCSV.csv to T2 GDELT and T2 Econ so
@@ -719,25 +826,43 @@ def main():
         else:
             print("  WARNING: Normalized_T2_MasterCSV.csv not found — T2 Step Twos will fall back to T2 Master.xlsx")
 
-        # T2 GDELT Step Two → GDELT_Factors_MasterCSV.csv
-        if not args.skip_deep:
-            results.append(run_step(
-                "T2 GDELT Step Two (GDELT_Factors_MasterCSV.csv)",
-                str(T2_GDELT_DIR / "Step Two GDELT Create Tidy.py"),
-                [],
-                log_file,
-                cwd=T2_GDELT_DIR,
-            ))
-        else:
-            print("\n  (T2 GDELT Step Two skipped via --skip-deep)")
-
-        # T2 Econ Step Two → Econ_Factors_MasterCSV.csv
+        # Benchmark returns — ASADO-internal port of "Step Two Point Five".
+        # Rebuilds Portfolio_Data.xlsx (Returns/Weights/Benchmarks) from the
+        # Bloomberg-rooted T2 Master so the optimizer's net-of-benchmark returns
+        # are NOT clipped to a stale benchmark month. Without this, all three
+        # pipelines' factor returns truncate to whatever month the old
+        # Portfolio_Data.xlsx reached (the GDELT-stuck-at-2026-03 bug).
         results.append(run_step(
-            "T2 Econ Step Two (Econ_Factors_MasterCSV.csv)",
-            str(T2_ECON_DIR / "Step Two Econ Create Tidy.py"),
+            "Benchmark Returns (ASADO -> Portfolio_Data.xlsx)",
+            "build_benchmark_rets.py",
             [],
             log_file,
-            cwd=T2_ECON_DIR,
+        ))
+        # Distribute the fresh Portfolio_Data.xlsx to GDELT + Econ work dirs.
+        portfolio_src = T2_FUZZY_DIR / "Portfolio_Data.xlsx"
+        if portfolio_src.exists():
+            import shutil
+            for dest_dir in (T2_GDELT_DIR, T2_ECON_DIR):
+                shutil.copy2(portfolio_src, dest_dir / "Portfolio_Data.xlsx")
+                print(f"  Copied Portfolio_Data.xlsx -> {dest_dir.name}/")
+        else:
+            print("  WARNING: Portfolio_Data.xlsx not found — optimizer returns may truncate to a stale benchmark")
+
+        # GDELT normalize — ASADO-internal port of T2 GDELT Step Two (core, always runs).
+        results.append(run_step(
+            "GDELT Normalize (ASADO -> GDELT_Factors_MasterCSV.csv)",
+            "gdelt_normalize.py",
+            [],
+            log_file,
+        ))
+
+        # Econ normalize — ASADO-internal port of T2 Econ Step Two.
+        # (Econ.xlsx is built in-repo by build_econ_panel.py from unified_panel.)
+        results.append(run_step(
+            "Econ Normalize (ASADO → Econ_Factors_MasterCSV.csv)",
+            "econ_normalize.py",
+            [],
+            log_file,
         ))
 
         # ── Steps Three + Four for all three T2 pipelines ────────────────
@@ -746,61 +871,46 @@ def main():
         # portfolios and writes the Optimizer.xlsx.  These must run AFTER the
         # Step Twos have produced fresh *_Factors_MasterCSV.csv files.
 
-        # T2 Factor Timing Fuzzy Step Three → T2_Top_20_Exposure.csv
+        # T2 optimizer — ASADO-internal port of Fuzzy Steps Three + Four.
         results.append(run_step(
-            "T2 Fuzzy Step Three (T2_Top_20_Exposure.csv)",
-            str(T2_FUZZY_DIR / "Step Three Top20 Portfolios Fast.py"),
-            [],
+            "T2 Optimizer Step Three (ASADO → T2_Top_20_Exposure.csv)",
+            "t2_optimizer.py",
+            ["--step", "three"],
             log_file,
-            cwd=T2_FUZZY_DIR,
+        ))
+        results.append(run_step(
+            "T2 Optimizer Step Four (ASADO → T2_Optimizer.xlsx)",
+            "t2_optimizer.py",
+            ["--step", "four"],
+            log_file,
         ))
 
-        # T2 Factor Timing Fuzzy Step Four → T2_Optimizer.xlsx
+        # GDELT optimizer — ASADO-internal port (t2_optimizer --pipeline gdelt; core, always runs).
         results.append(run_step(
-            "T2 Fuzzy Step Four (T2_Optimizer.xlsx)",
-            str(T2_FUZZY_DIR / "Step Four Create Monthly Top20 Returns FAST.py"),
-            [],
+            "GDELT Optimizer Step Three (ASADO -> GDELT_Top_20_Exposure.csv)",
+            "t2_optimizer.py",
+            ["--pipeline", "gdelt", "--step", "three"],
             log_file,
-            cwd=T2_FUZZY_DIR,
+        ))
+        results.append(run_step(
+            "GDELT Optimizer Step Four (ASADO -> GDELT_Optimizer.xlsx)",
+            "t2_optimizer.py",
+            ["--pipeline", "gdelt", "--step", "four"],
+            log_file,
         ))
 
-        # T2 GDELT Step Three → GDELT_Top_20_Exposure.csv
-        if not args.skip_deep:
-            results.append(run_step(
-                "T2 GDELT Step Three (GDELT_Top_20_Exposure.csv)",
-                str(T2_GDELT_DIR / "Step Three GDELT Top20 Portfolios Fast.py"),
-                [],
-                log_file,
-                cwd=T2_GDELT_DIR,
-            ))
-
-            # T2 GDELT Step Four → GDELT_Optimizer.xlsx
-            results.append(run_step(
-                "T2 GDELT Step Four (GDELT_Optimizer.xlsx)",
-                str(T2_GDELT_DIR / "Step Four GDELT Create Monthly Top20 Returns FAST.py"),
-                [],
-                log_file,
-                cwd=T2_GDELT_DIR,
-            ))
-        else:
-            print("\n  (T2 GDELT Steps Three+Four skipped via --skip-deep)")
-
-        # T2 Econ Step Three → Econ_Top_20_Exposure.csv
+        # Econ optimizer — ASADO-internal port (t2_optimizer --pipeline econ).
         results.append(run_step(
-            "T2 Econ Step Three (Econ_Top_20_Exposure.csv)",
-            str(T2_ECON_DIR / "Step Three Econ Top20 Portfolios Fast.py"),
-            [],
+            "Econ Optimizer Step Three (ASADO → Econ_Top_20_Exposure.csv)",
+            "t2_optimizer.py",
+            ["--pipeline", "econ", "--step", "three"],
             log_file,
-            cwd=T2_ECON_DIR,
         ))
-
-        # T2 Econ Step Four → Econ_Optimizer.xlsx
         results.append(run_step(
-            "T2 Econ Step Four (Econ_Optimizer.xlsx)",
-            str(T2_ECON_DIR / "Step Four Econ Create Monthly Top20 Returns FAST.py"),
-            [],
+            "Econ Optimizer Step Four (ASADO → Econ_Optimizer.xlsx)",
+            "t2_optimizer.py",
+            ["--pipeline", "econ", "--step", "four"],
             log_file,
-            cwd=T2_ECON_DIR,
         ))
 
         # Ingest freshly-produced Optimizer.xlsx + Top-20 exposure CSVs
@@ -858,35 +968,10 @@ def main():
             log_file
         ))
 
-        # GDELT Deep DB stages — sibling tables to gdelt_panel; not unioned
-        # into feature_panel until the normalization decision lands.
-        if not args.skip_deep:
-            print("\n\n" + "=" * 60)
-            print("  STAGE 2E: GDELT DEEP DB STAGES")
-            print("=" * 60)
-
-            results.append(run_step(
-                "GDELT Deep → DuckDB (gdelt_deep_factors)",
-                "load_gdelt_deep_to_duckdb.py",
-                [],
-                log_file
-            ))
-
-            results.append(run_step(
-                "GDELT Deep _CS variants (gdelt_deep_factors_cs)",
-                "build_gdelt_deep_cs.py",
-                [],
-                log_file
-            ))
-
-            results.append(run_step(
-                "GDELT Deep PIT audit",
-                "qa/pit_audit_gdelt_deep.py",
-                [],
-                log_file
-            ))
-        else:
-            print("\n  (GDELT Deep DB stages skipped via --skip-deep)")
+        # GDELT Deep DB stages (gdelt_deep_factors / _cs / PIT audit) — RETIRED.
+        # Deep-themes tables are no longer built. Existing gdelt_deep_factors*
+        # tables in the live DB are left as harmless dead tables until a separate
+        # cleanup drops them.
 
         if not args.skip_neo4j:
             if ensure_neo4j():

@@ -1233,21 +1233,27 @@ def collect_eia(countries: Dict) -> pd.DataFrame:
         records = []
         for iso3 in iso_list:
             try:
+                # EIA returns 4 unit variants per year (MTOE/QBTU/TBPD/TJ); the
+                # variable is TBPD, so filter to it. length=5000 + desc avoids the
+                # old asc/length=100 truncation that capped data at ~2019.
                 url = (
                     f"https://api.eia.gov/v2/international/data/?"
                     f"api_key={api_key}&frequency=annual"
                     f"&data[0]=value"
                     f"&facets[activityId][]=2"
                     f"&facets[productId][]=5"
+                    f"&facets[unit][]=TBPD"
                     f"&facets[countryRegionId][]={iso3}"
-                    f"&start=2000&length=100"
-                    f"&sort[0][column]=period&sort[0][direction]=asc"
+                    f"&start=2000&length=5000"
+                    f"&sort[0][column]=period&sort[0][direction]=desc"
                 )
                 resp = fetch_with_retry(url, timeout=30)
                 data = resp.json()
                 rows = data.get("response", {}).get("data", [])
 
                 for row in rows:
+                    if row.get("unit") != "TBPD":   # belt-and-suspenders vs the facet
+                        continue
                     val = pd.to_numeric(row.get("value"), errors="coerce")
                     if pd.isna(val):
                         continue

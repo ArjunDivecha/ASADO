@@ -1,0 +1,20 @@
+{
+  "name": "asado-perspective-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5174",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 5175"
+  },
+  "dependencies": {
+    "@perspective-dev/client": "4.5.0",
+    "@perspective-dev/server": "4.5.0",
+    "@perspective-dev/viewer": "4.5.0",
+    "@perspective-dev/viewer-datagrid": "4.5.0"
+  },
+  "devDependencies": {
+    "vite": "^7.2.0"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "h1": {
+    "pass": true,
+    "weighted_persist_1m": 0.7929840948233948,
+    "persist_1m": 0.7866666666666666,
+    "persist_3m": 0.6085790884718498,
+    "persist_6m": 0.5297297297297298,
+    "mean_duration": 4.6419753086419755
+  },
+  "h2": {
+    "pass": true,
+    "n_sig": 21
+  },
+  "h3": {
+    "pass": false,
+    "sharpe_delta": 0.4510145996163716
+  }
+}

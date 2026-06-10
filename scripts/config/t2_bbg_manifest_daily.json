@@ -1,0 +1,6455 @@
+{
+  "bdh_params": {
+    "start": "19991231",
+    "periodicity": "DAILY",
+    "currency": "USD"
+  },
+  "sheets": [
+    {
+      "sheet": "Gold",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 3,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 4,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 5,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 6,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 7,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 8,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 9,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 10,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 11,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 12,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 13,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 14,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 15,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 16,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 17,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 18,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 19,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 20,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 21,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 22,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 23,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 24,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 25,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 26,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 27,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 28,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 29,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 30,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 31,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 32,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 33,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 34,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 35,
+          "ticker": "XAU Curncy",
+          "field": "PX_LAST"
+        }
+      ]
+    },
+    {
+      "sheet": "LT Growth",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "MXSG Index",
+          "field": "IN090"
+        },
+        {
+          "col": 3,
+          "ticker": "MXAU Index",
+          "field": "IN090"
+        },
+        {
+          "col": 4,
+          "ticker": "MSDUCA Index",
+          "field": "IN090"
+        },
+        {
+          "col": 5,
+          "ticker": "MSDUGR Index",
+          "field": "IN090"
+        },
+        {
+          "col": 6,
+          "ticker": "MSDUJN Index",
+          "field": "IN090"
+        },
+        {
+          "col": 7,
+          "ticker": "MSDUSZ Index",
+          "field": "IN090"
+        },
+        {
+          "col": 8,
+          "ticker": "MSDUUK Index",
+          "field": "IN090"
+        },
+        {
+          "col": 9,
+          "ticker": "CCMP Index",
+          "field": "IN090"
+        },
+        {
+          "col": 10,
+          "ticker": "SPX Index",
+          "field": "IN090"
+        },
+        {
+          "col": 11,
+          "ticker": "MSDUFR Index",
+          "field": "IN090"
+        },
+        {
+          "col": 12,
+          "ticker": "MSDUNE Index",
+          "field": "IN090"
+        },
+        {
+          "col": 13,
+          "ticker": "MSDUSW Index",
+          "field": "IN090"
+        },
+        {
+          "col": 14,
+          "ticker": "MSDUIT Index",
+          "field": "IN090"
+        },
+        {
+          "col": 15,
+          "ticker": "MSEUSCF Index",
+          "field": "IN090"
+        },
+        {
+          "col": 16,
+          "ticker": "MXCL Index",
+          "field": "IN090"
+        },
+        {
+          "col": 17,
+          "ticker": "MXID Index",
+          "field": "IN090"
+        },
+        {
+          "col": 18,
+          "ticker": "MXPH Index",
+          "field": "IN090"
+        },
+        {
+          "col": 19,
+          "ticker": "MXPL Index",
+          "field": "IN090"
+        },
+        {
+          "col": 20,
+          "ticker": "RTY Index",
+          "field": "IN090"
+        },
+        {
+          "col": 21,
+          "ticker": "MXMY Index",
+          "field": "IN090"
+        },
+        {
+          "col": 22,
+          "ticker": "MSEUSTW Index",
+          "field": "IN090"
+        },
+        {
+          "col": 23,
+          "ticker": "MXMX Index",
+          "field": "IN090"
+        },
+        {
+          "col": 24,
+          "ticker": "MXKR Index",
+          "field": "IN090"
+        },
+        {
+          "col": 25,
+          "ticker": "MXBR Index",
+          "field": "IN090"
+        },
+        {
+          "col": 26,
+          "ticker": "MXZA Index",
+          "field": "IN090"
+        },
+        {
+          "col": 27,
+          "ticker": "MSDUDE Index",
+          "field": "IN090"
+        },
+        {
+          "col": 28,
+          "ticker": "MXIN Index",
+          "field": "IN090"
+        },
+        {
+          "col": 29,
+          "ticker": "MSELTCF Index",
+          "field": "IN090"
+        },
+        {
+          "col": 30,
+          "ticker": "MXHK Index",
+          "field": "IN090"
+        },
+        {
+          "col": 31,
+          "ticker": "MXTH Index",
+          "field": "IN090"
+        },
+        {
+          "col": 32,
+          "ticker": "MXTR Index",
+          "field": "IN090"
+        },
+        {
+          "col": 33,
+          "ticker": "MSDUSP Index",
+          "field": "IN090"
+        },
+        {
+          "col": 34,
+          "ticker": "MXVI Index",
+          "field": "IN090"
+        },
+        {
+          "col": 35,
+          "ticker": "MXSA Index",
+          "field": "IN090"
+        }
+      ]
+    },
+    {
+      "sheet": "Advance Decline",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "MXSG Index",
+          "field": "IX109"
+        },
+        {
+          "col": 3,
+          "ticker": "MXAU Index",
+          "field": "IX109"
+        },
+        {
+          "col": 4,
+          "ticker": "MSDUCA Index",
+          "field": "IX109"
+        },
+        {
+          "col": 5,
+          "ticker": "MSDUGR Index",
+          "field": "IX109"
+        },
+        {
+          "col": 6,
+          "ticker": "MSDUJN Index",
+          "field": "IX109"
+        },
+        {
+          "col": 7,
+          "ticker": "MSDUSZ Index",
+          "field": "IX109"
+        },
+        {
+          "col": 8,
+          "ticker": "MSDUUK Index",
+          "field": "IX109"
+        },
+        {
+          "col": 9,
+          "ticker": "CCMP Index",
+          "field": "IX109"
+        },
+        {
+          "col": 10,
+          "ticker": "SPX Index",
+          "field": "IX109"
+        },
+        {
+          "col": 11,
+          "ticker": "MSDUFR Index",
+          "field": "IX109"
+        },
+        {
+          "col": 12,
+          "ticker": "MSDUNE Index",
+          "field": "IX109"
+        },
+        {
+          "col": 13,
+          "ticker": "MSDUSW Index",
+          "field": "IX109"
+        },
+        {
+          "col": 14,
+          "ticker": "MSDUIT Index",
+          "field": "IX109"
+        },
+        {
+          "col": 15,
+          "ticker": "MSEUSCF Index",
+          "field": "IX109"
+        },
+        {
+          "col": 16,
+          "ticker": "MXCL Index",
+          "field": "IX109"
+        },
+        {
+          "col": 17,
+          "ticker": "MXID Index",
+          "field": "IX109"
+        },
+        {
+          "col": 18,
+          "ticker": "MXPH Index",
+          "field": "IX109"
+        },
+        {
+          "col": 19,
+          "ticker": "MXPL Index",
+          "field": "IX109"
+        },
+        {
+          "col": 20,
+          "ticker": "RTY Index",
+          "field": "IX109"
+        },
+        {
+          "col": 21,
+          "ticker": "MXMY Index",
+          "field": "IX109"
+        },
+        {
+          "col": 22,
+          "ticker": "MSEUSTW Index",
+          "field": "IX109"
+        },
+        {
+          "col": 23,
+          "ticker": "MXMX Index",
+          "field": "IX109"
+        },
+        {
+          "col": 24,
+          "ticker": "MXKR Index",
+          "field": "IX109"
+        },
+        {
+          "col": 25,
+          "ticker": "MXBR Index",
+          "field": "IX109"
+        },
+        {
+          "col": 26,
+          "ticker": "MXZA Index",
+          "field": "IX109"
+        },
+        {
+          "col": 27,
+          "ticker": "MSDUDE Index",
+          "field": "IX109"
+        },
+        {
+          "col": 28,
+          "ticker": "MXIN Index",
+          "field": "IX109"
+        },
+        {
+          "col": 29,
+          "ticker": "MSELTCF Index",
+          "field": "IX109"
+        },
+        {
+          "col": 30,
+          "ticker": "MXHK Index",
+          "field": "IX109"
+        },
+        {
+          "col": 31,
+          "ticker": "MXTH Index",
+          "field": "IX109"
+        },
+        {
+          "col": 32,
+          "ticker": "MXTR Index",
+          "field": "IX109"
+        },
+        {
+          "col": 33,
+          "ticker": "MSDUSP Index",
+          "field": "IX109"
+        },
+        {
+          "col": 34,
+          "ticker": "MXVI Index",
+          "field": "IX109"
+        },
+        {
+          "col": 35,
+          "ticker": "MXSA Index",
+          "field": "IX109"
+        }
+      ]
+    },
+    {
+      "sheet": "Oil",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 3,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 4,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 5,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 6,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 7,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 8,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 9,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 10,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 11,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 12,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 13,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 14,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 15,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 16,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 17,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 18,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 19,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 20,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 21,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 22,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 23,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 24,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 25,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 26,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 27,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 28,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 29,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 30,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 31,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 32,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 33,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 34,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 35,
+          "ticker": "CO1 Comdty",
+          "field": "PX_LAST"
+        }
+      ]
+    },
+    {
+      "sheet": "Copper",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 3,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 4,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 5,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 6,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 7,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 8,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 9,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 10,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 11,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 12,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 13,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 14,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 15,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 16,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 17,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 18,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 19,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 20,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 21,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 22,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 23,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 24,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 25,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 26,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 27,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 28,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 29,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 30,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 31,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 32,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 33,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 34,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 35,
+          "ticker": "HG1 Comdty",
+          "field": "PX_LAST"
+        }
+      ]
+    },
+    {
+      "sheet": "Agriculture",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 3,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 4,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 5,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 6,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 7,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 8,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 9,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 10,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 11,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 12,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 13,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 14,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 15,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 16,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 17,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 18,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 19,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 20,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 21,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 22,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 23,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 24,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 25,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 26,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 27,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 28,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 29,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 30,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 31,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 32,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 33,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 34,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 35,
+          "ticker": "SPGCAG Index",
+          "field": "PX_LAST"
+        }
+      ]
+    },
+    {
+      "sheet": "Debt to EV",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "MSDLSG Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 3,
+          "ticker": "MSDLAS Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 4,
+          "ticker": "MSDLCA Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 5,
+          "ticker": "MSDUGR Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 6,
+          "ticker": "MSDUJN Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 7,
+          "ticker": "MSDUSZ Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 8,
+          "ticker": "MSDUUK Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 9,
+          "ticker": "CCMP Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 10,
+          "ticker": "SPX Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 11,
+          "ticker": "MSDUFR Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 12,
+          "ticker": "MSDUNE Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 13,
+          "ticker": "MSDUSW Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 14,
+          "ticker": "MSDUIT Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 15,
+          "ticker": "SHCOMP Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 16,
+          "ticker": "MSELTCH Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 17,
+          "ticker": "MXID Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 18,
+          "ticker": "M3PH Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 19,
+          "ticker": "MXPL Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 20,
+          "ticker": "RTY Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 21,
+          "ticker": "MSDLMAF Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 22,
+          "ticker": "TAMSCI Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 23,
+          "ticker": "MSELTMXF Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 24,
+          "ticker": "MXKR Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 25,
+          "ticker": "MSELTBR Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 26,
+          "ticker": "MXZA Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 27,
+          "ticker": "MSDLDE Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 28,
+          "ticker": "MXIN Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 29,
+          "ticker": "MSELTCF Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 30,
+          "ticker": "MXHK Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 31,
+          "ticker": "MXTH Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 32,
+          "ticker": "MXTR Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 33,
+          "ticker": "MSDLSP Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 34,
+          "ticker": "MXVI Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        },
+        {
+          "col": 35,
+          "ticker": "MXSA Index",
+          "field": "TOTAL_DEBT_TO_CURRENT_EV"
+        }
+      ]
+    },
+    {
+      "sheet": "EV to EBITDA",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "MSDLSG Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 3,
+          "ticker": "MSDLAS Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 4,
+          "ticker": "MSDLCA Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 5,
+          "ticker": "MSDUGR Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 6,
+          "ticker": "MSDUJN Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 7,
+          "ticker": "MSDUSZ Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 8,
+          "ticker": "MSDUUK Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 9,
+          "ticker": "CCMP Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 10,
+          "ticker": "SPX Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 11,
+          "ticker": "MSDUFR Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 12,
+          "ticker": "MSDUNE Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 13,
+          "ticker": "MSDUSW Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 14,
+          "ticker": "MSDUIT Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 15,
+          "ticker": "SHCOMP Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 16,
+          "ticker": "MSELTCH Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 17,
+          "ticker": "MXID Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 18,
+          "ticker": "M3PH Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 19,
+          "ticker": "MXPL Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 20,
+          "ticker": "RTY Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 21,
+          "ticker": "MSDLMAF Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 22,
+          "ticker": "TAMSCI Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 23,
+          "ticker": "MSELTMXF Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 24,
+          "ticker": "MXKR Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 25,
+          "ticker": "MSELTBR Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 26,
+          "ticker": "MXZA Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 27,
+          "ticker": "MSDLDE Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 28,
+          "ticker": "MXIN Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 29,
+          "ticker": "MSELTCF Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 30,
+          "ticker": "MXHK Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 31,
+          "ticker": "MXTH Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 32,
+          "ticker": "MXTR Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 33,
+          "ticker": "MSDLSP Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 34,
+          "ticker": "MXVI Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        },
+        {
+          "col": 35,
+          "ticker": "MXSA Index",
+          "field": "BEST_CUR_EV_TO_EBITDA"
+        }
+      ]
+    },
+    {
+      "sheet": "REER",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "BISBSGR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 3,
+          "ticker": "BISBAUR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 4,
+          "ticker": "BISBCAR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 5,
+          "ticker": "BISBDER Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 6,
+          "ticker": "BISBJPR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 7,
+          "ticker": "BISBCHR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 8,
+          "ticker": "BISBGBR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 9,
+          "ticker": "BISBUSR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 10,
+          "ticker": "BISBUSR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 11,
+          "ticker": "BISBFRR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 12,
+          "ticker": "BISBNLR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 13,
+          "ticker": "BISBSER Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 14,
+          "ticker": "BISBITR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 15,
+          "ticker": "BISBCNR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 16,
+          "ticker": "BISBCLR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 17,
+          "ticker": "BISBIDR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 18,
+          "ticker": "BISBPHR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 19,
+          "ticker": "BISBPLR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 20,
+          "ticker": "BISBUSR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 21,
+          "ticker": "BISBMYR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 22,
+          "ticker": "BISBTWR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 23,
+          "ticker": "BISBMXR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 24,
+          "ticker": "BISBKRR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 25,
+          "ticker": "BISBBRR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 26,
+          "ticker": "BISBZAR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 27,
+          "ticker": "BISBDKR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 28,
+          "ticker": "BISBINR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 29,
+          "ticker": "BISBCNR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 30,
+          "ticker": "BISBHKR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 31,
+          "ticker": "BISBTHR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 32,
+          "ticker": "BISBTRR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 33,
+          "ticker": "BISBESR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 34,
+          "ticker": "BISBINR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 35,
+          "ticker": "BISBSAR Index",
+          "field": "PX_LAST"
+        }
+      ]
+    },
+    {
+      "sheet": "GDP",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "EHGDSGY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 3,
+          "ticker": "EHGDAUY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 4,
+          "ticker": "EHGDCAY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 5,
+          "ticker": "EHGDDEY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 6,
+          "ticker": "EHGDJPY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 7,
+          "ticker": "EHGDCHY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 8,
+          "ticker": "EHGDGBY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 9,
+          "ticker": "EHGDUSY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 10,
+          "ticker": "EHGDUSY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 11,
+          "ticker": "EHGDFRY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 12,
+          "ticker": "EHGDNLY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 13,
+          "ticker": "EHGDSEY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 14,
+          "ticker": "EHGDITY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 15,
+          "ticker": "EHGDCNY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 16,
+          "ticker": "EHGDCLY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 17,
+          "ticker": "EHGDIDY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 18,
+          "ticker": "EHGDPHY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 19,
+          "ticker": "EHGDPLY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 20,
+          "ticker": "EHGDUSY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 21,
+          "ticker": "EHGDMYY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 22,
+          "ticker": "EHGDTWY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 23,
+          "ticker": "EHGDMXY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 24,
+          "ticker": "EHGDKRY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 25,
+          "ticker": "EHGDBRY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 26,
+          "ticker": "EHGDZAY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 27,
+          "ticker": "EHGDDKY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 28,
+          "ticker": "EHGDINY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 29,
+          "ticker": "EHGDCNY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 30,
+          "ticker": "EHGDHKY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 31,
+          "ticker": "EHGDTHY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 32,
+          "ticker": "EHGDTRY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 33,
+          "ticker": "EHGDESY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 34,
+          "ticker": "EHGDVNY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 35,
+          "ticker": "EHGDSAY Index",
+          "field": "PX_LAST"
+        }
+      ]
+    },
+    {
+      "sheet": "Bloom Country Risk",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "RSSCSNOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 3,
+          "ticker": "RSSCAUOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 4,
+          "ticker": "RSSCCAOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 5,
+          "ticker": "RSSCGEOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 6,
+          "ticker": "RSSCJPOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 7,
+          "ticker": "RSSCSTOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 8,
+          "ticker": "RSSCUKOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 9,
+          "ticker": "RSSCUSOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 10,
+          "ticker": "RSSCUSOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 11,
+          "ticker": "RSSCFROR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 12,
+          "ticker": "RSSCNEOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 13,
+          "ticker": "RSSCSWOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 14,
+          "ticker": "RSSCITOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 15,
+          "ticker": "RSSCCNOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 16,
+          "ticker": "RSSCCHOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 17,
+          "ticker": "RSSCIDOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 18,
+          "ticker": "RSSCPHOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 19,
+          "ticker": "RSSCPOOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 20,
+          "ticker": "RSSCUSOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 21,
+          "ticker": "RSSCMLOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 22,
+          "ticker": "RSSCTWOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 23,
+          "ticker": "RSSCMXOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 24,
+          "ticker": "RSSCSKOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 25,
+          "ticker": "RSSCBROR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 26,
+          "ticker": "RSSCSAOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 27,
+          "ticker": "RSSCDNOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 28,
+          "ticker": "RSSCINOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 29,
+          "ticker": "RSSCHKOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 30,
+          "ticker": "RSSCHKOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 31,
+          "ticker": "RSSCTHOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 32,
+          "ticker": "RSSCTROR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 33,
+          "ticker": "RSSCSPOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 34,
+          "ticker": "RSSCVTOR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 35,
+          "ticker": "RSSCSDOR Index",
+          "field": "PX_LAST"
+        }
+      ]
+    },
+    {
+      "sheet": "Current Account",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "EHCASG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 3,
+          "ticker": "EHCAAU Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 4,
+          "ticker": "EHCACA Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 5,
+          "ticker": "EHCADE Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 6,
+          "ticker": "EHCAJP Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 7,
+          "ticker": "EHCACH Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 8,
+          "ticker": "EHCAGB Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 9,
+          "ticker": "EHCAUS Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 10,
+          "ticker": "EHCAUS Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 11,
+          "ticker": "EHCAFR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 12,
+          "ticker": "EHCANL Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 13,
+          "ticker": "EHCASE Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 14,
+          "ticker": "EHCAIT Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 15,
+          "ticker": "EHCACN Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 16,
+          "ticker": "EHCACL Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 17,
+          "ticker": "EHCAID Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 18,
+          "ticker": "EHCAPH Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 19,
+          "ticker": "EHCAPL Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 20,
+          "ticker": "EHCAUS Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 21,
+          "ticker": "EHCAMY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 22,
+          "ticker": "EHCATW Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 23,
+          "ticker": "EHCAMX Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 24,
+          "ticker": "EHCAKR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 25,
+          "ticker": "EHCABR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 26,
+          "ticker": "EHCAZA Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 27,
+          "ticker": "EHCADK Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 28,
+          "ticker": "EHCAIN Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 29,
+          "ticker": "EHCACN Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 30,
+          "ticker": "EHCAHK Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 31,
+          "ticker": "EHCATH Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 32,
+          "ticker": "EHCATR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 33,
+          "ticker": "EHCAES Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 34,
+          "ticker": "EHCAVNY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 35,
+          "ticker": "EHCASA Index",
+          "field": "PX_LAST"
+        }
+      ]
+    },
+    {
+      "sheet": "Inflation",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "SICPIYOY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 3,
+          "ticker": "ACPMYOY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 4,
+          "ticker": "CACPIYOY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 5,
+          "ticker": "GRCP20YY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 6,
+          "ticker": "JNCPIYOY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 7,
+          "ticker": "SZCPIYOY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 8,
+          "ticker": "UKRPCJYR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 9,
+          "ticker": "CPI YOY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 10,
+          "ticker": "CPI YOY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 11,
+          "ticker": "FRCPIYOY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 12,
+          "ticker": "NECPIYOY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 13,
+          "ticker": "SWCPIYOY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 14,
+          "ticker": "ITCPIYOY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 15,
+          "ticker": "CNCPIYOY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 16,
+          "ticker": "CNPINSYO Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 17,
+          "ticker": "IDCPIY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 18,
+          "ticker": "PHC2II Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 19,
+          "ticker": "POCPIYOY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 20,
+          "ticker": "CPI YOY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 21,
+          "ticker": "MACPIYOY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 22,
+          "ticker": "TWCPIYOY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 23,
+          "ticker": "MXCPYOY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 24,
+          "ticker": "KOCPIYOY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 25,
+          "ticker": "BZPIIPCY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 26,
+          "ticker": "SACPIYOY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 27,
+          "ticker": "DNCPIYOY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 28,
+          "ticker": "INFUTOTY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 29,
+          "ticker": "CNCPIYOY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 30,
+          "ticker": "HKCPIY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 31,
+          "ticker": "THCPIYOY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 32,
+          "ticker": "TUCPIY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 33,
+          "ticker": "SPIPCYOY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 34,
+          "ticker": "VNCPIYOY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 35,
+          "ticker": "SACPIYOY Index",
+          "field": "PX_LAST"
+        }
+      ]
+    },
+    {
+      "sheet": "PX_LAST",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "MXSG Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 3,
+          "ticker": "MXAU Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 4,
+          "ticker": "MSDUCA Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 5,
+          "ticker": "MSDUGR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 6,
+          "ticker": "MSDUJN Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 7,
+          "ticker": "MSDUSZ Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 8,
+          "ticker": "MSDUUK Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 9,
+          "ticker": "CCMP Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 10,
+          "ticker": "SPX Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 11,
+          "ticker": "MSDUFR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 12,
+          "ticker": "MSDUNE Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 13,
+          "ticker": "MSDUSW Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 14,
+          "ticker": "MSDUIT Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 15,
+          "ticker": "MSEUSCF Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 16,
+          "ticker": "MXCL Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 17,
+          "ticker": "MXID Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 18,
+          "ticker": "MXPH Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 19,
+          "ticker": "MXPL Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 20,
+          "ticker": "RTY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 21,
+          "ticker": "MXMY Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 22,
+          "ticker": "MSEUSTW Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 23,
+          "ticker": "MXMX Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 24,
+          "ticker": "MXKR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 25,
+          "ticker": "MXBR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 26,
+          "ticker": "MXZA Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 27,
+          "ticker": "MSDUDE Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 28,
+          "ticker": "MXIN Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 29,
+          "ticker": "MSELTCF Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 30,
+          "ticker": "MXHK Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 31,
+          "ticker": "MXTH Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 32,
+          "ticker": "MXTR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 33,
+          "ticker": "MSDUSP Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 34,
+          "ticker": "MXVI Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 35,
+          "ticker": "MXSA Index",
+          "field": "PX_LAST"
+        }
+      ]
+    },
+    {
+      "sheet": "120MA",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "MXSG Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 3,
+          "ticker": "MXAU Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 4,
+          "ticker": "MSDUCA Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 5,
+          "ticker": "MSDUGR Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 6,
+          "ticker": "MSDUJN Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 7,
+          "ticker": "MSDUSZ Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 8,
+          "ticker": "MSDUUK Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 9,
+          "ticker": "CCMP Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 10,
+          "ticker": "SPX Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 11,
+          "ticker": "MSDUFR Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 12,
+          "ticker": "MSDUNE Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 13,
+          "ticker": "MSDUSW Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 14,
+          "ticker": "MSDUIT Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 15,
+          "ticker": "MSEUSCF Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 16,
+          "ticker": "MXCL Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 17,
+          "ticker": "MXID Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 18,
+          "ticker": "MXPH Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 19,
+          "ticker": "MXPL Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 20,
+          "ticker": "RTY Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 21,
+          "ticker": "MXMY Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 22,
+          "ticker": "MSEUSTW Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 23,
+          "ticker": "MXMX Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 24,
+          "ticker": "MXKR Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 25,
+          "ticker": "MXBR Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 26,
+          "ticker": "MXZA Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 27,
+          "ticker": "MSDUDE Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 28,
+          "ticker": "MXIN Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 29,
+          "ticker": "MSELTCF Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 30,
+          "ticker": "MXHK Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 31,
+          "ticker": "MXTH Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 32,
+          "ticker": "MXTR Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 33,
+          "ticker": "MSDUSP Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 34,
+          "ticker": "MXVI Index",
+          "field": "MOV_AVG_120D"
+        },
+        {
+          "col": 35,
+          "ticker": "MXSA Index",
+          "field": "MOV_AVG_120D"
+        }
+      ]
+    },
+    {
+      "sheet": "RSI14",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "MXSG Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 3,
+          "ticker": "MXAU Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 4,
+          "ticker": "MSDUCA Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 5,
+          "ticker": "MSDUGR Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 6,
+          "ticker": "MSDUJN Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 7,
+          "ticker": "MSDUSZ Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 8,
+          "ticker": "MSDUUK Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 9,
+          "ticker": "CCMP Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 10,
+          "ticker": "SPX Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 11,
+          "ticker": "MSDUFR Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 12,
+          "ticker": "MSDUNE Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 13,
+          "ticker": "MSDUSW Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 14,
+          "ticker": "MSDUIT Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 15,
+          "ticker": "MSEUSCF Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 16,
+          "ticker": "MXCL Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 17,
+          "ticker": "MXID Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 18,
+          "ticker": "MXPH Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 19,
+          "ticker": "MXPL Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 20,
+          "ticker": "RTY Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 21,
+          "ticker": "MXMY Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 22,
+          "ticker": "MSEUSTW Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 23,
+          "ticker": "MXMX Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 24,
+          "ticker": "MXKR Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 25,
+          "ticker": "MXBR Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 26,
+          "ticker": "MXZA Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 27,
+          "ticker": "MSDUDE Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 28,
+          "ticker": "MXIN Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 29,
+          "ticker": "MSELTCF Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 30,
+          "ticker": "MXHK Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 31,
+          "ticker": "MXTH Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 32,
+          "ticker": "MXTR Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 33,
+          "ticker": "MSDUSP Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 34,
+          "ticker": "MXVI Index",
+          "field": "RSI_14D"
+        },
+        {
+          "col": 35,
+          "ticker": "MXSA Index",
+          "field": "RSI_14D"
+        }
+      ]
+    },
+    {
+      "sheet": "Tot Return Index ",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "MXSG Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 3,
+          "ticker": "MXAU Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 4,
+          "ticker": "MSDUCA Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 5,
+          "ticker": "MSDUGR Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 6,
+          "ticker": "MSDUJN Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 7,
+          "ticker": "MSDUSZ Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 8,
+          "ticker": "MSDUUK Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 9,
+          "ticker": "CCMP Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 10,
+          "ticker": "SPX Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 11,
+          "ticker": "MSDUFR Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 12,
+          "ticker": "MSDUNE Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 13,
+          "ticker": "MSDUSW Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 14,
+          "ticker": "MSDUIT Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 15,
+          "ticker": "MSEUSCF Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 16,
+          "ticker": "MXCL Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 17,
+          "ticker": "MXID Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 18,
+          "ticker": "MXPH Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 19,
+          "ticker": "MXPL Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 20,
+          "ticker": "RTY Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 21,
+          "ticker": "MXMY Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 22,
+          "ticker": "MSEUSTW Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 23,
+          "ticker": "MXMX Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 24,
+          "ticker": "MXKR Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 25,
+          "ticker": "MXBR Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 26,
+          "ticker": "MXZA Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 27,
+          "ticker": "MSDUDE Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 28,
+          "ticker": "MXIN Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 29,
+          "ticker": "MSELTCF Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 30,
+          "ticker": "MXHK Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 31,
+          "ticker": "MXTH Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 32,
+          "ticker": "MXTR Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 33,
+          "ticker": "MSDUSP Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 34,
+          "ticker": "MXVI Index",
+          "field": "tot_return_index_gross_dvds"
+        },
+        {
+          "col": 35,
+          "ticker": "MXSA Index",
+          "field": "tot_return_index_gross_dvds"
+        }
+      ]
+    },
+    {
+      "sheet": "MCAP",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "WCAUSING Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 3,
+          "ticker": "WCAUAUST Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 4,
+          "ticker": "WCAUCAN Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 5,
+          "ticker": "WCAUGERM Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 6,
+          "ticker": "WCAUJAPA Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 7,
+          "ticker": "WCAUSWIT Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 8,
+          "ticker": "WCAUUK Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 9,
+          "ticker": "WCAUUS Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 10,
+          "ticker": "WCAUUS Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 11,
+          "ticker": "WCAUFRAN Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 12,
+          "ticker": "WCAUNETH Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 13,
+          "ticker": "WCAUSWED Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 14,
+          "ticker": "WCAUITAL Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 15,
+          "ticker": "WCAUCHIN Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 16,
+          "ticker": "WCAUCHIL Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 17,
+          "ticker": "WCAUINDO Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 18,
+          "ticker": "WCAUPHIL Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 19,
+          "ticker": "WCAUPOLA Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 20,
+          "ticker": "WCAUUS Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 21,
+          "ticker": "WCAUMALA Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 22,
+          "ticker": "WCAUTAIW Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 23,
+          "ticker": "WCAUMEX Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 24,
+          "ticker": "WCAUSK Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 25,
+          "ticker": "WCAUBRAZ Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 26,
+          "ticker": "WCAUSAF Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 27,
+          "ticker": "WCAUDENM Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 28,
+          "ticker": "WCAUINDI Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 29,
+          "ticker": "WCAUCHIN Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 30,
+          "ticker": "WCAUHK Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 31,
+          "ticker": "WCAUTHAI Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 32,
+          "ticker": "WCAUTURK Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 33,
+          "ticker": "WCAUSPAI Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 34,
+          "ticker": "WCAUVIET Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 35,
+          "ticker": "WCAUSAUD Index",
+          "field": "PX_LAST"
+        }
+      ]
+    },
+    {
+      "sheet": "Earnings Yield",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "MSDLSG Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 3,
+          "ticker": "MSDLAS Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 4,
+          "ticker": "MSDLCA Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 5,
+          "ticker": "MSDUGR Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 6,
+          "ticker": "MSDUJN Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 7,
+          "ticker": "MSDUSZ Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 8,
+          "ticker": "MSDUUK Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 9,
+          "ticker": "CCMP Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 10,
+          "ticker": "SPX Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 11,
+          "ticker": "MSDUFR Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 12,
+          "ticker": "MSDUNE Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 13,
+          "ticker": "MSDUSW Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 14,
+          "ticker": "MSDUIT Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 15,
+          "ticker": "SHCOMP Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 16,
+          "ticker": "MSELTCH Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 17,
+          "ticker": "MXID Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 18,
+          "ticker": "M3PH Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 19,
+          "ticker": "MXPL Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 20,
+          "ticker": "RTY Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 21,
+          "ticker": "MSDLMAF Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 22,
+          "ticker": "TAMSCI Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 23,
+          "ticker": "MSELTMXF Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 24,
+          "ticker": "MXKR Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 25,
+          "ticker": "MSELTBR Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 26,
+          "ticker": "MXZA Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 27,
+          "ticker": "MSDLDE Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 28,
+          "ticker": "MXIN Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 29,
+          "ticker": "MSELTCF Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 30,
+          "ticker": "MXHK Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 31,
+          "ticker": "MXTH Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 32,
+          "ticker": "MXTR Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 33,
+          "ticker": "MSDLSP Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 34,
+          "ticker": "MXVI Index",
+          "field": "EARN_YLD"
+        },
+        {
+          "col": 35,
+          "ticker": "MXSA Index",
+          "field": "EARN_YLD"
+        }
+      ]
+    },
+    {
+      "sheet": "Best PE ",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "MSDLSG Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 3,
+          "ticker": "MSDLAS Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 4,
+          "ticker": "MSDLCA Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 5,
+          "ticker": "MSDUGR Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 6,
+          "ticker": "MSDUJN Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 7,
+          "ticker": "MSDUSZ Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 8,
+          "ticker": "MSDUUK Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 9,
+          "ticker": "CCMP Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 10,
+          "ticker": "SPX Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 11,
+          "ticker": "MSDUFR Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 12,
+          "ticker": "MSDUNE Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 13,
+          "ticker": "MSDUSW Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 14,
+          "ticker": "MSDUIT Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 15,
+          "ticker": "SHCOMP Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 16,
+          "ticker": "MSELTCH Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 17,
+          "ticker": "MXID Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 18,
+          "ticker": "M3PH Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 19,
+          "ticker": "MXPL Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 20,
+          "ticker": "RTY Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 21,
+          "ticker": "MSDLMAF Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 22,
+          "ticker": "TAMSCI Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 23,
+          "ticker": "MSELTMXF Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 24,
+          "ticker": "MXKR Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 25,
+          "ticker": "MSELTBR Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 26,
+          "ticker": "MXZA Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 27,
+          "ticker": "MSDLDE Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 28,
+          "ticker": "MXIN Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 29,
+          "ticker": "MSELTCF Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 30,
+          "ticker": "MXHK Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 31,
+          "ticker": "MXTH Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 32,
+          "ticker": "MXTR Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 33,
+          "ticker": "MSDLSP Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 34,
+          "ticker": "MXVI Index",
+          "field": "BEST_PE_RATIO"
+        },
+        {
+          "col": 35,
+          "ticker": "MXSA Index",
+          "field": "BEST_PE_RATIO"
+        }
+      ]
+    },
+    {
+      "sheet": "Trailing PE",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "MSDLSG Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 3,
+          "ticker": "MSDLAS Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 4,
+          "ticker": "MSDLCA Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 5,
+          "ticker": "MSDUGR Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 6,
+          "ticker": "MSDUJN Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 7,
+          "ticker": "MSDUSZ Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 8,
+          "ticker": "MSDUUK Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 9,
+          "ticker": "CCMP Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 10,
+          "ticker": "SPX Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 11,
+          "ticker": "MSDUFR Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 12,
+          "ticker": "MSDUNE Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 13,
+          "ticker": "MSDUSW Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 14,
+          "ticker": "MSDUIT Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 15,
+          "ticker": "SHCOMP Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 16,
+          "ticker": "MSELTCH Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 17,
+          "ticker": "MXID Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 18,
+          "ticker": "M3PH Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 19,
+          "ticker": "MXPL Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 20,
+          "ticker": "RTY Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 21,
+          "ticker": "MSDLMAF Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 22,
+          "ticker": "TAMSCI Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 23,
+          "ticker": "MSELTMXF Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 24,
+          "ticker": "MXKR Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 25,
+          "ticker": "MSELTBR Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 26,
+          "ticker": "MXZA Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 27,
+          "ticker": "MSDLDE Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 28,
+          "ticker": "MXIN Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 29,
+          "ticker": "MSELTCF Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 30,
+          "ticker": "MXHK Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 31,
+          "ticker": "MXTH Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 32,
+          "ticker": "MXTR Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 33,
+          "ticker": "MSDLSP Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 34,
+          "ticker": "MXVI Index",
+          "field": "PE_RATIO"
+        },
+        {
+          "col": 35,
+          "ticker": "MXSA Index",
+          "field": "PE_RATIO"
+        }
+      ]
+    },
+    {
+      "sheet": "Positive PE ",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "MSDLSG Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 3,
+          "ticker": "MSDLAS Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 4,
+          "ticker": "MSDLCA Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 5,
+          "ticker": "MSDUGR Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 6,
+          "ticker": "MSDUJN Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 7,
+          "ticker": "MSDUSZ Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 8,
+          "ticker": "MSDUUK Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 9,
+          "ticker": "CCMP Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 10,
+          "ticker": "SPX Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 11,
+          "ticker": "MSDUFR Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 12,
+          "ticker": "MSDUNE Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 13,
+          "ticker": "MSDUSW Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 14,
+          "ticker": "MSDUIT Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 15,
+          "ticker": "SHCOMP Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 16,
+          "ticker": "MSELTCH Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 17,
+          "ticker": "MXID Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 18,
+          "ticker": "M3PH Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 19,
+          "ticker": "MXPL Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 20,
+          "ticker": "RTY Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 21,
+          "ticker": "MSDLMAF Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 22,
+          "ticker": "TAMSCI Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 23,
+          "ticker": "MSELTMXF Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 24,
+          "ticker": "MXKR Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 25,
+          "ticker": "MSELTBR Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 26,
+          "ticker": "MXZA Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 27,
+          "ticker": "MSDLDE Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 28,
+          "ticker": "MXIN Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 29,
+          "ticker": "MSELTCF Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 30,
+          "ticker": "MXHK Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 31,
+          "ticker": "MXTH Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 32,
+          "ticker": "MXTR Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 33,
+          "ticker": "MSDLSP Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 34,
+          "ticker": "MXVI Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        },
+        {
+          "col": 35,
+          "ticker": "MXSA Index",
+          "field": "INDX_ADJ_POS_PX_EE"
+        }
+      ]
+    },
+    {
+      "sheet": "Best ROE",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "MSDLSG Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 3,
+          "ticker": "MSDLAS Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 4,
+          "ticker": "MSDLCA Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 5,
+          "ticker": "MSDUGR Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 6,
+          "ticker": "MSDUJN Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 7,
+          "ticker": "MSDUSZ Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 8,
+          "ticker": "MSDUUK Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 9,
+          "ticker": "CCMP Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 10,
+          "ticker": "SPX Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 11,
+          "ticker": "MSDUFR Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 12,
+          "ticker": "MSDUNE Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 13,
+          "ticker": "MSDUSW Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 14,
+          "ticker": "MSDUIT Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 15,
+          "ticker": "SHCOMP Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 16,
+          "ticker": "MSELTCH Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 17,
+          "ticker": "MXID Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 18,
+          "ticker": "M3PH Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 19,
+          "ticker": "MXPL Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 20,
+          "ticker": "RTY Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 21,
+          "ticker": "MSDLMAF Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 22,
+          "ticker": "TAMSCI Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 23,
+          "ticker": "MSELTMXF Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 24,
+          "ticker": "MXKR Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 25,
+          "ticker": "MSELTBR Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 26,
+          "ticker": "MXZA Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 27,
+          "ticker": "MSDLDE Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 28,
+          "ticker": "MXIN Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 29,
+          "ticker": "MSELTCF Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 30,
+          "ticker": "MXHK Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 31,
+          "ticker": "MXTH Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 32,
+          "ticker": "MXTR Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 33,
+          "ticker": "MSDLSP Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 34,
+          "ticker": "MXVI Index",
+          "field": "BEST_ROE"
+        },
+        {
+          "col": 35,
+          "ticker": "MXSA Index",
+          "field": "BEST_ROE"
+        }
+      ]
+    },
+    {
+      "sheet": "Best Cash Flow",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "MSDLSG Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 3,
+          "ticker": "MSDLAS Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 4,
+          "ticker": "MSDLCA Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 5,
+          "ticker": "MSDUGR Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 6,
+          "ticker": "MSDUJN Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 7,
+          "ticker": "MSDUSZ Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 8,
+          "ticker": "MSDUUK Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 9,
+          "ticker": "CCMP Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 10,
+          "ticker": "SPX Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 11,
+          "ticker": "MSDUFR Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 12,
+          "ticker": "MSDUNE Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 13,
+          "ticker": "MSDUSW Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 14,
+          "ticker": "MSDUIT Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 15,
+          "ticker": "SHCOMP Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 16,
+          "ticker": "MSELTCH Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 17,
+          "ticker": "MXID Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 18,
+          "ticker": "M3PH Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 19,
+          "ticker": "MXPL Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 20,
+          "ticker": "RTY Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 21,
+          "ticker": "MSDLMAF Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 22,
+          "ticker": "TAMSCI Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 23,
+          "ticker": "MSELTMXF Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 24,
+          "ticker": "MXKR Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 25,
+          "ticker": "MSELTBR Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 26,
+          "ticker": "MXZA Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 27,
+          "ticker": "MSDLDE Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 28,
+          "ticker": "MXIN Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 29,
+          "ticker": "MSELTCF Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 30,
+          "ticker": "MXHK Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 31,
+          "ticker": "MXTH Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 32,
+          "ticker": "MXTR Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 33,
+          "ticker": "MSDLSP Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 34,
+          "ticker": "MXVI Index",
+          "field": "BEST_PX_CPS_RATIO"
+        },
+        {
+          "col": 35,
+          "ticker": "MXSA Index",
+          "field": "BEST_PX_CPS_RATIO"
+        }
+      ]
+    },
+    {
+      "sheet": "Best PBK",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "MSDLSG Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 3,
+          "ticker": "MSDLAS Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 4,
+          "ticker": "MSDLCA Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 5,
+          "ticker": "MSDUGR Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 6,
+          "ticker": "MSDUJN Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 7,
+          "ticker": "MSDUSZ Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 8,
+          "ticker": "MSDUUK Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 9,
+          "ticker": "CCMP Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 10,
+          "ticker": "SPX Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 11,
+          "ticker": "MSDUFR Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 12,
+          "ticker": "MSDUNE Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 13,
+          "ticker": "MSDUSW Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 14,
+          "ticker": "MSDUIT Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 15,
+          "ticker": "SHCOMP Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 16,
+          "ticker": "MSELTCH Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 17,
+          "ticker": "MXID Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 18,
+          "ticker": "M3PH Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 19,
+          "ticker": "MXPL Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 20,
+          "ticker": "RTY Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 21,
+          "ticker": "MSDLMAF Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 22,
+          "ticker": "TAMSCI Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 23,
+          "ticker": "MSELTMXF Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 24,
+          "ticker": "MXKR Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 25,
+          "ticker": "MSELTBR Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 26,
+          "ticker": "MXZA Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 27,
+          "ticker": "MSDLDE Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 28,
+          "ticker": "MXIN Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 29,
+          "ticker": "MSELTCF Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 30,
+          "ticker": "MXHK Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 31,
+          "ticker": "MXTH Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 32,
+          "ticker": "MXTR Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 33,
+          "ticker": "MSDLSP Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 34,
+          "ticker": "MXVI Index",
+          "field": "BEST_PX_BPS_RATIO"
+        },
+        {
+          "col": 35,
+          "ticker": "MXSA Index",
+          "field": "BEST_PX_BPS_RATIO"
+        }
+      ]
+    },
+    {
+      "sheet": "Best Price Sales",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "MSDLSG Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 3,
+          "ticker": "MSDLAS Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 4,
+          "ticker": "MSDLCA Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 5,
+          "ticker": "MSDUGR Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 6,
+          "ticker": "MSDUJN Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 7,
+          "ticker": "MSDUSZ Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 8,
+          "ticker": "MSDUUK Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 9,
+          "ticker": "CCMP Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 10,
+          "ticker": "SPX Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 11,
+          "ticker": "MSDUFR Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 12,
+          "ticker": "MSDUNE Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 13,
+          "ticker": "MSDUSW Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 14,
+          "ticker": "MSDUIT Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 15,
+          "ticker": "SHCOMP Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 16,
+          "ticker": "MSELTCH Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 17,
+          "ticker": "MXID Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 18,
+          "ticker": "M3PH Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 19,
+          "ticker": "MXPL Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 20,
+          "ticker": "RTY Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 21,
+          "ticker": "MSDLMAF Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 22,
+          "ticker": "TAMSCI Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 23,
+          "ticker": "MSELTMXF Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 24,
+          "ticker": "MXKR Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 25,
+          "ticker": "MSELTBR Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 26,
+          "ticker": "MXZA Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 27,
+          "ticker": "MSDLDE Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 28,
+          "ticker": "MXIN Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 29,
+          "ticker": "MSELTCF Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 30,
+          "ticker": "MXHK Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 31,
+          "ticker": "MXTH Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 32,
+          "ticker": "MXTR Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 33,
+          "ticker": "MSDLSP Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 34,
+          "ticker": "MXVI Index",
+          "field": "BEST_PX_SALES_RATIO"
+        },
+        {
+          "col": 35,
+          "ticker": "MXSA Index",
+          "field": "BEST_PX_SALES_RATIO"
+        }
+      ]
+    },
+    {
+      "sheet": "Best Div Yield",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "MSDLSG Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 3,
+          "ticker": "MSDLAS Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 4,
+          "ticker": "MSDLCA Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 5,
+          "ticker": "MSDUGR Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 6,
+          "ticker": "MSDUJN Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 7,
+          "ticker": "MSDUSZ Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 8,
+          "ticker": "MSDUUK Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 9,
+          "ticker": "CCMP Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 10,
+          "ticker": "SPX Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 11,
+          "ticker": "MSDUFR Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 12,
+          "ticker": "MSDUNE Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 13,
+          "ticker": "MSDUSW Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 14,
+          "ticker": "MSDUIT Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 15,
+          "ticker": "SHCOMP Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 16,
+          "ticker": "MSELTCH Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 17,
+          "ticker": "MXID Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 18,
+          "ticker": "M3PH Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 19,
+          "ticker": "MXPL Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 20,
+          "ticker": "RTY Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 21,
+          "ticker": "MSDLMAF Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 22,
+          "ticker": "TAMSCI Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 23,
+          "ticker": "MSELTMXF Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 24,
+          "ticker": "MXKR Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 25,
+          "ticker": "MSELTBR Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 26,
+          "ticker": "MXZA Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 27,
+          "ticker": "MSDLDE Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 28,
+          "ticker": "MXIN Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 29,
+          "ticker": "MSELTCF Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 30,
+          "ticker": "MXHK Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 31,
+          "ticker": "MXTH Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 32,
+          "ticker": "MXTR Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 33,
+          "ticker": "MSDLSP Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 34,
+          "ticker": "MXVI Index",
+          "field": "BEST_DIV_YLD"
+        },
+        {
+          "col": 35,
+          "ticker": "MXSA Index",
+          "field": "BEST_DIV_YLD"
+        }
+      ]
+    },
+    {
+      "sheet": "BEST EPS",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "MSDLSG Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 3,
+          "ticker": "MSDLAS Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 4,
+          "ticker": "MSDLCA Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 5,
+          "ticker": "MSDUGR Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 6,
+          "ticker": "MSDUJN Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 7,
+          "ticker": "MSDUSZ Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 8,
+          "ticker": "MSDUUK Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 9,
+          "ticker": "CCMP Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 10,
+          "ticker": "SPX Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 11,
+          "ticker": "MSDUFR Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 12,
+          "ticker": "MSDUNE Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 13,
+          "ticker": "MSDUSW Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 14,
+          "ticker": "MSDUIT Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 15,
+          "ticker": "SHCOMP Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 16,
+          "ticker": "MSELTCH Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 17,
+          "ticker": "MXID Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 18,
+          "ticker": "M3PH Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 19,
+          "ticker": "MXPL Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 20,
+          "ticker": "RTY Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 21,
+          "ticker": "MSDLMAF Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 22,
+          "ticker": "TAMSCI Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 23,
+          "ticker": "MSELTMXF Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 24,
+          "ticker": "MXKR Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 25,
+          "ticker": "MSELTBR Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 26,
+          "ticker": "MXZA Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 27,
+          "ticker": "MSDLDE Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 28,
+          "ticker": "MXIN Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 29,
+          "ticker": "MSELTCF Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 30,
+          "ticker": "MXHK Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 31,
+          "ticker": "MXTH Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 32,
+          "ticker": "MXTR Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 33,
+          "ticker": "MSDLSP Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 34,
+          "ticker": "MXVI Index",
+          "field": "BEST_EPS"
+        },
+        {
+          "col": 35,
+          "ticker": "MXSA Index",
+          "field": "BEST_EPS"
+        }
+      ]
+    },
+    {
+      "sheet": "Trailing EPS",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "MXSG Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 3,
+          "ticker": "MSDUAS  Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 4,
+          "ticker": "MSDUCA Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 5,
+          "ticker": "MSDUGR Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 6,
+          "ticker": "MSDUJN Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 7,
+          "ticker": "MSDUSZ Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 8,
+          "ticker": "MSDUUK Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 9,
+          "ticker": "CCMP Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 10,
+          "ticker": "SPX Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 11,
+          "ticker": "MSDUFR Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 12,
+          "ticker": "MSDUNE Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 13,
+          "ticker": "MSDUSW Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 14,
+          "ticker": "MSDUIT Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 15,
+          "ticker": "SHCOMP Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 16,
+          "ticker": "MSELTCH Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 17,
+          "ticker": "MXID Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 18,
+          "ticker": "M3PH Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 19,
+          "ticker": "MXPL Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 20,
+          "ticker": "RTY Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 21,
+          "ticker": "MSDLMAF Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 22,
+          "ticker": "TAMSCI Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 23,
+          "ticker": "MSELTMXF Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 24,
+          "ticker": "MXKR Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 25,
+          "ticker": "MSELTBR Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 26,
+          "ticker": "MXZA Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 27,
+          "ticker": "MSDLGE Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 28,
+          "ticker": "M1IN Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 29,
+          "ticker": "MSELTCF Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 30,
+          "ticker": "MXQA Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 31,
+          "ticker": "MXTH Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 32,
+          "ticker": "MXTR Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 33,
+          "ticker": "MGCUAE Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 34,
+          "ticker": "MXVI Index",
+          "field": "TRAIL_12M_EPS"
+        },
+        {
+          "col": 35,
+          "ticker": "MXSA Index",
+          "field": "TRAIL_12M_EPS"
+        }
+      ]
+    },
+    {
+      "sheet": "Shiller PE",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "MSDLSG Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 3,
+          "ticker": "MSDLAS Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 4,
+          "ticker": "MSDLCA Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 5,
+          "ticker": "MSDUGR Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 6,
+          "ticker": "MSDUJN Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 7,
+          "ticker": "MSDUSZ Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 8,
+          "ticker": "MSDUUK Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 9,
+          "ticker": "CCMP Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 10,
+          "ticker": "SPX Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 11,
+          "ticker": "MSDUFR Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 12,
+          "ticker": "MSDUNE Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 13,
+          "ticker": "MSDUSW Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 14,
+          "ticker": "MSDUIT Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 15,
+          "ticker": "SHCOMP Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 16,
+          "ticker": "MSELTCH Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 17,
+          "ticker": "MXID Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 18,
+          "ticker": "M3PH Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 19,
+          "ticker": "MXPL Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 20,
+          "ticker": "RTY Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 21,
+          "ticker": "MSDLMAF Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 22,
+          "ticker": "TAMSCI Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 23,
+          "ticker": "MSELTMXF Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 24,
+          "ticker": "MXKR Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 25,
+          "ticker": "MSELTBR Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 26,
+          "ticker": "MXZA Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 27,
+          "ticker": "MSDLDE Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 28,
+          "ticker": "MXIN Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 29,
+          "ticker": "MSELTCF Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 30,
+          "ticker": "MXHK Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 31,
+          "ticker": "MXTH Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 32,
+          "ticker": "MXTR Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 33,
+          "ticker": "MSDLSP Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 34,
+          "ticker": "MXVI Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        },
+        {
+          "col": 35,
+          "ticker": "MXSA Index",
+          "field": "LONG_TERM_PRICE_EARNINGS_RATIO"
+        }
+      ]
+    },
+    {
+      "sheet": "Operating Margin",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "MSDLSG Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 3,
+          "ticker": "MSDLAS Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 4,
+          "ticker": "MSDLCA Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 5,
+          "ticker": "MSDUGR Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 6,
+          "ticker": "MSDUJN Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 7,
+          "ticker": "MSDUSZ Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 8,
+          "ticker": "MSDUUK Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 9,
+          "ticker": "CCMP Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 10,
+          "ticker": "SPX Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 11,
+          "ticker": "MSDUFR Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 12,
+          "ticker": "MSDUNE Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 13,
+          "ticker": "MSDUSW Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 14,
+          "ticker": "MSDUIT Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 15,
+          "ticker": "SHCOMP Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 16,
+          "ticker": "MSELTCH Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 17,
+          "ticker": "MXID Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 18,
+          "ticker": "M3PH Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 19,
+          "ticker": "MXPL Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 20,
+          "ticker": "RTY Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 21,
+          "ticker": "MSDLMAF Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 22,
+          "ticker": "TAMSCI Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 23,
+          "ticker": "MSELTMXF Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 24,
+          "ticker": "MXKR Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 25,
+          "ticker": "MSELTBR Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 26,
+          "ticker": "MXZA Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 27,
+          "ticker": "MSDLDE Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 28,
+          "ticker": "MXIN Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 29,
+          "ticker": "MSELTCF Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 30,
+          "ticker": "MXHK Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 31,
+          "ticker": "MXTH Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 32,
+          "ticker": "MXTR Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 33,
+          "ticker": "MSDLSP Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 34,
+          "ticker": "MXVI Index",
+          "field": "OPER_MARGIN"
+        },
+        {
+          "col": 35,
+          "ticker": "MXSA Index",
+          "field": "OPER_MARGIN"
+        }
+      ]
+    },
+    {
+      "sheet": "360 Day Vol",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "MSDLSG Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 3,
+          "ticker": "MSDLAS Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 4,
+          "ticker": "MSDLCA Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 5,
+          "ticker": "MSDUGR Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 6,
+          "ticker": "MSDUJN Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 7,
+          "ticker": "MSDUSZ Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 8,
+          "ticker": "MSDUUK Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 9,
+          "ticker": "CCMP Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 10,
+          "ticker": "SPX Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 11,
+          "ticker": "MSDUFR Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 12,
+          "ticker": "MSDUNE Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 13,
+          "ticker": "MSDUSW Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 14,
+          "ticker": "MSDUIT Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 15,
+          "ticker": "SHCOMP Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 16,
+          "ticker": "MSELTCH Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 17,
+          "ticker": "MXID Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 18,
+          "ticker": "M3PH Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 19,
+          "ticker": "MXPL Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 20,
+          "ticker": "RTY Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 21,
+          "ticker": "MSDLMAF Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 22,
+          "ticker": "TAMSCI Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 23,
+          "ticker": "MSELTMXF Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 24,
+          "ticker": "MXKR Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 25,
+          "ticker": "MSELTBR Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 26,
+          "ticker": "MXZA Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 27,
+          "ticker": "MSDLDE Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 28,
+          "ticker": "MXIN Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 29,
+          "ticker": "MSELTCF Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 30,
+          "ticker": "MXHK Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 31,
+          "ticker": "MXTH Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 32,
+          "ticker": "MXTR Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 33,
+          "ticker": "MSDLSP Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 34,
+          "ticker": "MXVI Index",
+          "field": "volatility_360D"
+        },
+        {
+          "col": 35,
+          "ticker": "MXSA Index",
+          "field": "volatility_360D"
+        }
+      ]
+    },
+    {
+      "sheet": "20 Day Vol",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "MSDLSG Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 3,
+          "ticker": "MSDLAS Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 4,
+          "ticker": "MSDLCA Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 5,
+          "ticker": "MSDUGR Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 6,
+          "ticker": "MSDUJN Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 7,
+          "ticker": "MSDUSZ Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 8,
+          "ticker": "MSDUUK Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 9,
+          "ticker": "CCMP Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 10,
+          "ticker": "SPX Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 11,
+          "ticker": "MSDUFR Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 12,
+          "ticker": "MSDUNE Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 13,
+          "ticker": "MSDUSW Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 14,
+          "ticker": "MSDUIT Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 15,
+          "ticker": "SHCOMP Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 16,
+          "ticker": "MSELTCH Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 17,
+          "ticker": "MXID Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 18,
+          "ticker": "M3PH Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 19,
+          "ticker": "MXPL Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 20,
+          "ticker": "RTY Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 21,
+          "ticker": "MSDLMAF Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 22,
+          "ticker": "TAMSCI Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 23,
+          "ticker": "MSELTMXF Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 24,
+          "ticker": "MXKR Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 25,
+          "ticker": "MSELTBR Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 26,
+          "ticker": "MXZA Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 27,
+          "ticker": "MSDLDE Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 28,
+          "ticker": "MXIN Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 29,
+          "ticker": "MSELTCF Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 30,
+          "ticker": "MXHK Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 31,
+          "ticker": "MXTH Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 32,
+          "ticker": "MXTR Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 33,
+          "ticker": "MSDLSP Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 34,
+          "ticker": "MXVI Index",
+          "field": "volatility_20D"
+        },
+        {
+          "col": 35,
+          "ticker": "MXSA Index",
+          "field": "volatility_20D"
+        }
+      ]
+    },
+    {
+      "sheet": "10Yr Bond",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "GTSGD10YR Corp",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 3,
+          "ticker": "GTAUD10YR Corp",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 4,
+          "ticker": "GTCAD10YR Corp",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 5,
+          "ticker": "GTEUR10YR Corp",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 6,
+          "ticker": "GTJPY10YR Corp",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 7,
+          "ticker": "GTCHF10YR Corp",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 8,
+          "ticker": "GTGBP10YR Corp",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 9,
+          "ticker": "GT10 Govt",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 10,
+          "ticker": "GT10 Govt",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 11,
+          "ticker": "GTEUR10YR Corp",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 12,
+          "ticker": "GTEUR10YR Corp",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 13,
+          "ticker": "GTSEK10YR Corp",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 14,
+          "ticker": "GTEUR10YR Corp",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 15,
+          "ticker": "GTCNY10YR Corp",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 16,
+          "ticker": "GTCLP10YR Corp",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 17,
+          "ticker": "GTIDR10YR Corp",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 18,
+          "ticker": "GTPHP10YR Corp",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 19,
+          "ticker": "GTPLN10YR Corp",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 20,
+          "ticker": "GT10 Govt",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 21,
+          "ticker": "GTMYR10YR Corp",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 22,
+          "ticker": "GTTWD10YR Corp",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 23,
+          "ticker": "GTMXN10YR Corp",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 24,
+          "ticker": "GTKRW10YR Corp",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 25,
+          "ticker": "GTBRL10YR Corp",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 26,
+          "ticker": "GTZAR10YR Corp",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 27,
+          "ticker": "GTEUR10YR Corp",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 28,
+          "ticker": "GTINR10YR Corp",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 29,
+          "ticker": "GTCNY10YR Corp",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 30,
+          "ticker": "GTCNY10YR Corp",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 31,
+          "ticker": "GTTHB10YR Corp",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 32,
+          "ticker": "GTTRY10YR Corp",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 33,
+          "ticker": "GTEUR10YR Corp",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 34,
+          "ticker": "GGVB10YR Index",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 35,
+          "ticker": "GTSAR10YR Corp",
+          "field": "PX_LAST"
+        }
+      ]
+    },
+    {
+      "sheet": "Currency",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "SGD  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 3,
+          "ticker": "AUD  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 4,
+          "ticker": "CAD  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 5,
+          "ticker": "EUR  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 6,
+          "ticker": "JPY  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 7,
+          "ticker": "CHF  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 8,
+          "ticker": "GBP  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 9,
+          "ticker": "USD  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 10,
+          "ticker": "USD  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 11,
+          "ticker": "EUR  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 12,
+          "ticker": "EUR  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 13,
+          "ticker": "SEK  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 14,
+          "ticker": "EUR  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 15,
+          "ticker": "CNY  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 16,
+          "ticker": "CLP  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 17,
+          "ticker": "IDR  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 18,
+          "ticker": "PHP  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 19,
+          "ticker": "PLN  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 20,
+          "ticker": "USD  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 21,
+          "ticker": "MYR  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 22,
+          "ticker": "TWD  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 23,
+          "ticker": "MXN  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 24,
+          "ticker": "KRW  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 25,
+          "ticker": "BRL  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 26,
+          "ticker": "ZAR  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 27,
+          "ticker": "EUR  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 28,
+          "ticker": "INR  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 29,
+          "ticker": "CNY  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 30,
+          "ticker": "HKD  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 31,
+          "ticker": "THB  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 32,
+          "ticker": "TRY  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 33,
+          "ticker": "EUR  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 34,
+          "ticker": "VND  Curncy",
+          "field": "PX_LAST"
+        },
+        {
+          "col": 35,
+          "ticker": "SAR  Curncy",
+          "field": "PX_LAST"
+        }
+      ]
+    },
+    {
+      "sheet": "Currency Vol",
+      "n_cols": 34,
+      "columns": [
+        {
+          "col": 2,
+          "ticker": "SGD  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 3,
+          "ticker": "AUD  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 4,
+          "ticker": "CAD  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 5,
+          "ticker": "EUR  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 6,
+          "ticker": "JPY  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 7,
+          "ticker": "CHF  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 8,
+          "ticker": "GBP  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 9,
+          "ticker": "USD  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 10,
+          "ticker": "USD  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 11,
+          "ticker": "EUR  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 12,
+          "ticker": "EUR  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 13,
+          "ticker": "SEK  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 14,
+          "ticker": "EUR  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 15,
+          "ticker": "CNY  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 16,
+          "ticker": "CLP  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 17,
+          "ticker": "IDR  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 18,
+          "ticker": "PHP  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 19,
+          "ticker": "PLN  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 20,
+          "ticker": "USD  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 21,
+          "ticker": "MYR  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 22,
+          "ticker": "TWD  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 23,
+          "ticker": "MXN  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 24,
+          "ticker": "KRW  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 25,
+          "ticker": "BRL  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 26,
+          "ticker": "ZAR  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 27,
+          "ticker": "EUR  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 28,
+          "ticker": "INR  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 29,
+          "ticker": "CNY  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 30,
+          "ticker": "HKD  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 31,
+          "ticker": "THB  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 32,
+          "ticker": "TRY  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 33,
+          "ticker": "EUR  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 34,
+          "ticker": "VND  Curncy",
+          "field": "VOLATILITY_360D"
+        },
+        {
+          "col": 35,
+          "ticker": "SAR  Curncy",
+          "field": "VOLATILITY_360D"
+        }
+      ]
+    }
+  ],
+  "calc": {
+    "mcap_split_factors": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0.25,
+      0.6666666666666666,
+      1,
+      1,
+      1,
+      1,
+      0.5,
+      1,
+      1,
+      1,
+      1,
+      0.08333333333333333,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0.5,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "mcap_tickers": [
+      "WCAUSING Index",
+      "WCAUAUST Index",
+      "WCAUCAN Index",
+      "WCAUGERM Index",
+      "WCAUJAPA Index",
+      "WCAUSWIT Index",
+      "WCAUUK Index",
+      "WCAUUS Index",
+      "WCAUUS Index",
+      "WCAUFRAN Index",
+      "WCAUNETH Index",
+      "WCAUSWED Index",
+      "WCAUITAL Index",
+      "WCAUCHIN Index",
+      "WCAUCHIL Index",
+      "WCAUINDO Index",
+      "WCAUPHIL Index",
+      "WCAUPOLA Index",
+      "WCAUUS Index",
+      "WCAUMALA Index",
+      "WCAUTAIW Index",
+      "WCAUMEX Index",
+      "WCAUSK Index",
+      "WCAUBRAZ Index",
+      "WCAUSAF Index",
+      "WCAUDENM Index",
+      "WCAUINDI Index",
+      "WCAUCHIN Index",
+      "WCAUHK Index",
+      "WCAUTHAI Index",
+      "WCAUTURK Index",
+      "WCAUSPAI Index",
+      "WCAUVIET Index",
+      "WCAUSAUD Index"
+    ],
+    "etf_order": [
+      "EWS",
+      "EWA",
+      "EWC",
+      "EWG",
+      "EWJ",
+      "EWL",
+      "EWU",
+      "QQQ",
+      "SPY",
+      "EWQ",
+      "EWN",
+      "EWD",
+      "EWI",
+      "ASHR",
+      "ECH",
+      "EIDO",
+      "EPHE",
+      "EPOL",
+      "IWM",
+      "EWM",
+      "EWT",
+      "EWW",
+      "EWY",
+      "EWZ",
+      "EZA",
+      "EDEN",
+      "INDA",
+      "MCHI",
+      "EWH",
+      "THD",
+      "TUR",
+      "EWP",
+      "VNM",
+      "KSA"
+    ]
+  }
+}

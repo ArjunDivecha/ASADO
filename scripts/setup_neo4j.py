@@ -685,7 +685,10 @@ def set_daily_factor_stats(session):
       - daily_cum_return_30d: cumulative return over last 30 trading days
       - daily_cum_return_252d: cumulative return over last 252 trading days
       - daily_return_source: 't2_optimizer_daily' or 'gdelt_optimizer_daily'
-      - is_optimizer_selected: whether this factor is in the live strategy
+
+    NOTE (2026-06-10): the is_optimizer_selected property was removed — it
+    came from a stale static file (T2_Optimizer_Top.xlsx, retired Fuzzy Daily
+    project) and did not describe any live strategy.
     """
     con = duckdb.connect(str(DB_PATH), read_only=True)
     try:
@@ -701,22 +704,6 @@ def set_daily_factor_stats(session):
             con.close()
             print("  Daily factor stats: skipped (factor_returns_daily table absent)")
             return 0
-
-        # Check if variable_meta exists for optimizer flag
-        try:
-            has_meta = con.execute(
-                "SELECT COUNT(*) FROM information_schema.tables "
-                "WHERE table_schema='main' AND table_name='variable_meta'"
-            ).fetchone()[0]
-        except Exception:
-            has_meta = 0
-
-        optimizer_factors = set()
-        if has_meta:
-            opt_rows = con.execute(
-                "SELECT variable FROM variable_meta WHERE is_optimizer_selected"
-            ).fetchall()
-            optimizer_factors = {r[0] for r in opt_rows}
 
         # Compute daily stats per factor
         rows = con.execute(
@@ -815,7 +802,6 @@ def set_daily_factor_stats(session):
         cum_ret_252d = float(cum_252d) if n_252d and n_252d >= 60 else None
 
         last_iso = latest_date.isoformat() if latest_date is not None else None
-        is_opt = factor in optimizer_factors
 
         session.run(
             """
@@ -828,8 +814,8 @@ def set_daily_factor_stats(session):
                 f.daily_max_drawdown_252d = $max_dd,
                 f.daily_cum_return_30d = $cum_ret_30d,
                 f.daily_cum_return_252d = $cum_ret_252d,
-                f.daily_return_source = $source,
-                f.is_optimizer_selected = $is_opt
+                f.daily_return_source = $source
+            REMOVE f.is_optimizer_selected
             """,
             name=factor,
             latest_return=float(latest_return) if latest_return is not None else None,
@@ -841,12 +827,10 @@ def set_daily_factor_stats(session):
             cum_ret_30d=cum_ret_30d,
             cum_ret_252d=cum_ret_252d,
             source=source,
-            is_opt=is_opt,
         )
         count += 1
 
-    print(f"  Daily factor stats applied: {count} factor x source pairs "
-          f"({len(optimizer_factors)} optimizer-selected)")
+    print(f"  Daily factor stats applied: {count} factor x source pairs")
     return count
 
 

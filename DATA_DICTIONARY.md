@@ -480,7 +480,8 @@ Current relationship types:
 - `daily_max_drawdown_252d`
 - `daily_cum_return_30d`, `daily_cum_return_252d`
 - `daily_return_source` (`t2_optimizer_daily` or `gdelt_optimizer_daily`)
-- `is_optimizer_selected` (`true` for the 8 live strategy factors)
+
+(`is_optimizer_selected` was removed 2026-06-10 — stale Fuzzy Daily artifact, not a live strategy.)
 
 These are refreshed on every `setup_neo4j.py` rebuild (automatic in monthly_update.py).
 
@@ -583,8 +584,7 @@ The daily extension adds ~58M rows of daily-frequency data to the same `asado.du
 ### Key Concepts
 
 - **Normalized vs raw**: `t2_factors_daily` contains cross-sectional (`_CS`) and time-series (`_TS`) z-scored factors. `t2_levels_daily` contains the raw underlying values (prices, RSI14 level, REER level, etc.)
-- **Optimizer-selected factors**: 8 key factors that drive the strategy portfolio — queryable via `variable_meta.is_optimizer_selected`
-- **Factor returns**: `factor_returns_daily` contains daily portfolio returns for 178 factors, sourced from the T2 and GDELT optimizers. `source` is `t2_optimizer_daily` or `gdelt_optimizer_daily`.
+- **Factor returns**: `factor_returns_daily` contains daily portfolio returns for 180 factors, sourced from the T2 and GDELT optimizers. `source` is `t2_optimizer_daily` or `gdelt_optimizer_daily`. (The old "8 optimizer-selected factors" concept and `variable_meta.is_optimizer_selected` flag were removed 2026-06-10 — stale Fuzzy Daily artifact.)
 - **Trading calendar**: Not all countries trade on the same days (Saudi Arabia is Sun-Thu, China has Golden Week, etc.). `daily_calendar` provides per-country trading-day flags.
 - **Off-universe GDELT**: `gdelt_raw_daily` covers 249 countries (including Iran, North Korea, etc.) — useful as an entity bridge beyond the 34-country T2 universe.
 
@@ -597,7 +597,7 @@ SELECT date, variable, value
 FROM t2_factors_daily
 WHERE country = 'Turkey'
   AND date BETWEEN DATE '2018-08-08' AND DATE '2018-08-18'
-  AND variable IN (SELECT variable FROM variable_meta WHERE is_optimizer_selected)
+  AND variable IN ('20DTR_CS', 'RSI14_CS', 'REER_CS')   -- pick explicit variables
 ORDER BY variable, date;
 ```
 

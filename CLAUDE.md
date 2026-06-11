@@ -446,10 +446,10 @@ Core surfaces all use tidy schema: `(date DATE, country VARCHAR, value DOUBLE, v
 
 **Nodes:**
 - **Country** (34) — t2_name, iso3, dm_em, region, currency_code, state_embedding (34d)
-- **Factor** (current graph build) — name, category, source, daily_sharpe_252d, daily_vol_252d, daily_cum_return_252d, daily_max_drawdown_252d, is_optimizer_selected
+- **Factor** (current graph build) — name, category, source, daily_sharpe_252d, daily_vol_252d, daily_cum_return_252d, daily_max_drawdown_252d
 - **CentralBank** (31), **DataSource** (37), **CrisisEvent** (9), **SanctionsProgram** (6), **Commodity** (4)
 
-**Daily stats on Factor nodes:** `factor_returns_daily` currently contains 178 optimizer factors. Neo4j Factor nodes created during `setup_neo4j.py` carry `daily_*` properties when they map to those return series. Use `f.is_optimizer_selected = true` to filter to the 8 live strategy factors.
+**Daily stats on Factor nodes:** `factor_returns_daily` currently contains 180 factor return series. Neo4j Factor nodes created during `setup_neo4j.py` carry `daily_*` properties when they map to those return series. (The old `is_optimizer_selected` flag / "8 live factors" concept was removed 2026-06-10 — it was a stale artifact of the retired Fuzzy Daily project, not a live strategy.)
 
 **Edges:**
 - **HAS_FACTOR_EXPOSURE** (3.7K) — Country → Factor (latest values)

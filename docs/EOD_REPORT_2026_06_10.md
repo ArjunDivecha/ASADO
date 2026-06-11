@@ -178,3 +178,102 @@ Fixes:
 | `scripts/daily_update.py` | v1.1 — loop chained as final stage |
 | `tests/loop/test_harness_daily_v2.py` | NEW — 8 honesty tests |
 | `ledgers/thesis_ledger.jsonl` | 3 review events + 1 kill |
+
+---
+
+# Evening session addendum — 2026-06-10
+
+Four more work streams completed after the morning report.
+
+## 10. "8 factors" artifact removed system-wide
+
+You flagged that the "8 live strategy factors" concept was not meaningful — it
+traced to a stale static file (`T2_Optimizer_Top.xlsx`) that had leaked into
+the schema as `is_optimizer_selected`. Removed everywhere:
+
+- File deleted; `variable_meta` column dropped (index recreated);
+  `build_daily_panels.py`, `build_predmkt_panel.py`, `setup_neo4j.py`,
+  `asado_mcp_server.py` all cleaned (MCP now raises a clear error if a
+  caller asks for `variables="optimizer"`).
+- D7 crowding now scans **all 178 factors** dynamically instead of a
+  hardcoded 8; herding entity renamed `FACTOR_HERDING`.
+- All docs and the schema cache regenerated.
+
+## 11. Semantic Registry Phase 2 — Tier-A semantics authored
+
+- NEW `config/tier_a_semantics.yaml`: 242 hand-authored base-variable
+  definitions (units, cross-country comparability, economic mechanism,
+  concept tags) covering T2/Bloomberg, IMF, World Bank, FRED, OECD, BIS,
+  macrostructure composites, prediction markets, and more.
+- NEW `scripts/apply_tier_a_semantics.py` merges them into
+  `config/variable_registry_seed.yaml` and propagates to `_CS`/`_TS`
+  variants (plus templated ECB FX and Pink Sheet commodity entries).
+- Coverage: **1,300 of 1,434 registry entries** now have real semantics
+  (remainder = lower-priority GDELT). CI green; data dictionary re-rendered.
+
+## 12. Forward event calendar (PRD Priority 5) — live
+
+- NEW `config/forward_calendar_seed.yaml`: verified 2026 dates for FOMC,
+  ECB, BOJ, BOE, RBA, Copom, RBI, BOK, Banxico; MSCI review dates (incl.
+  the June 23 Vietnam classification decision); FTSE Vietnam EM
+  implementation; US midterm / Brazil / Sweden / Taiwan elections.
+- NEW `scripts/loop/build_forward_calendar.py` loads it into the loop DB
+  with hard validation + staleness warnings; wired into `loop_daily_job.py`;
+  the nightly brief now renders a "next 30 days" catalyst section.
+
+## 13. Foreign investor flows (PRD Priority 6) — SIX markets live
+
+Network reality check on the 7 PRD exchanges: TWSE times out (geo-block),
+KRX/SET/IDX return 403, PSE needs report scraping, B3 needs endpoint
+discovery. Two-source solution built:
+
+**India — NSDL FPI direct (works from this network):**
+- NEW `scripts/loop/collect_foreign_flows.py` — drives NSDL's ASP.NET
+  archive (GET tokens → POST date), parses the depository-confirmed daily
+  FPI table, handles holiday-date empty responses, caches every raw HTML
+  response. Backfilled 2017→today: 493 weekly requests, 0 failures,
+  2,147 trading days. Variables: equity net/gross buy/gross sell, debt
+  net, total net (all USD mn, source=nsdl_fpi).
+
+**Korea, Taiwan, Thailand, Philippines, Indonesia — Bloomberg (your
+suggestion; Terminal came back up late evening):**
+- Discovered + verified the exchange-sourced flow tickers via
+  `//blp/instruments`: KPCPNTFR/KQCPNTFR (KOSPI/KOSDAQ net, KRW),
+  TAFINET/TAFIBUY/TAFISELL (TWSE, TWD), THIVNET$ (SET, USD),
+  VUPHBNET (PSE, USD), JASXFIBA/JASXFISA (IDX buy/sell, IDR).
+- Cross-validated against India: Bloomberg FIINNET$ 09-Jun = −406.3 USD mn,
+  identical to NSDL's 10-Jun reporting row (−406.29) → Bloomberg uses
+  trade dates, NSDL reports T+1.
+- NEW `scripts/loop/collect_foreign_flows_bbg.py` (OpusBloomberg env) —
+  pulls all five markets, converts KRW/TWD/IDR to USD with same-day FX,
+  $20bn/day sanity guard. **Full 2005→today backfill in 10 seconds**
+  (~5,200 days per market).
+- History validates against known episodes: COVID crash Feb–Mar 2020 =
+  Korea −$13.5B / Taiwan −$15.0B / India −$9.2B; 2008 Korea −$36.6B;
+  2022 Taiwan record −$42.1B. Checked Korea 2026 YTD (−$78.7B, looks
+  extreme) — distribution is smooth, worst day −$4.9B, genuinely the
+  heaviest foreign selling on record, not an artifact.
+- Panel: `Data/work/loop/foreign_flows.parquet` (57.8K rows, 6 countries,
+  2005→today) + loop-DB `foreign_flows_daily`; timestamped backup taken.
+- Both steps wired into `loop_daily_job.py` (Bloomberg step runs first,
+  parquet-only; NSDL step merges India + rebuilds the DB table). Brief
+  shows last/5d/20d + 5d z per country. First night's read: **Korea 5d
+  z=−2.6 (−$11.3B/5d), Taiwan z=−2.7, India z=−1.8** — the EM foreign
+  flow tape is heavily one-sided right now.
+- Still open: Vietnam, Saudi, Brazil (no Bloomberg exchange-flow series
+  found in first search pass). Valuation/CDS pulls (Priorities 7–8) can
+  now proceed since the Terminal is back.
+
+## Evening files touched
+
+| File | Change |
+|---|---|
+| `config/tier_a_semantics.yaml` | NEW — 242 Tier-A semantic definitions |
+| `scripts/apply_tier_a_semantics.py` | NEW — merge + variant propagation |
+| `config/forward_calendar_seed.yaml` | NEW — curated 2026 catalyst dates |
+| `scripts/loop/build_forward_calendar.py` | NEW — loads calendar into loop DB |
+| `scripts/loop/collect_foreign_flows.py` | NEW — NSDL India FPI flows collector |
+| `scripts/loop/collect_foreign_flows_bbg.py` | NEW — Bloomberg flows: KR/TW/TH/PH/ID, 2005+ |
+| `scripts/loop/build_dislocations.py` | + calendar & flows brief sections; D7 all-factor scan |
+| `scripts/loop/loop_daily_job.py` | + build_forward_calendar, collect_foreign_flows steps |
+| `scripts/build_daily_panels.py`, `scripts/build_predmkt_panel.py`, `scripts/setup_neo4j.py`, `scripts/asado_mcp_server.py` | 8-factor artifact removal |

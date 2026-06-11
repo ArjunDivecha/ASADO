@@ -13,9 +13,6 @@ INPUT FILES (all in-repo — daily pipeline is standalone, written by daily_upda
                                             returns — PX_LAST, Tot Return Index,
                                             MCAP, RSI14, REER, 1DRet…120DRet, etc.;
                                             wide format — by build_t2_master_daily.py)
-    T2_Optimizer_Top.xlsx                  (selected-factor list — the 8
-                                            factors the optimizer actually
-                                            uses to drive the strategy)
     T2_Optimizer.xlsx                      (daily factor returns from the T2
                                             optimizer; sheet Monthly_Net_Returns
                                             — written by t2_optimizer_daily.py)
@@ -39,7 +36,7 @@ OUTPUT TABLES (added to Data/asado.duckdb, additive — existing tables untouche
 - gdelt_factors_daily         34-country normalized GDELT     (~11.6M rows)
 - gdelt_raw_daily             249-country raw GDELT signals   (~955K rows)
 - factor_returns_daily        daily optimizer factor returns  (~1.2M rows)
-- variable_meta               frequency / optimizer-selected / source mapping
+- variable_meta               frequency / category / source mapping
 - daily_calendar              (country, date, is_trading_day) derived from
                               non-null 1DRet observations
 - t2_factors_monthly_from_daily  VIEW: last-trading-day-of-month snapshot
@@ -58,8 +55,10 @@ t2_raw, factor_returns, etc.) are NOT touched.
 
 The variable_meta table is the key unlock: every variable gets tagged with
 its native frequency, monthly equivalent (so "1MRet" can route to "20DRet"
-on the daily side), source file, category, and an is_optimizer_selected
-flag derived from T2_Optimizer_Top.xlsx.
+on the daily side), source file, and category.
+(2026-06-10: the is_optimizer_selected flag was REMOVED — it was derived
+from a static T2_Optimizer_Top.xlsx left over from the old Fuzzy Daily
+project and did not describe any live strategy.)
 
 The script always backs up asado.duckdb before writing. On any failure,
 new tables are dropped and the backup is restored.
@@ -115,7 +114,6 @@ GDELT_RAW_DIR = BASE_DIR / "Data" / "gdelt" / "panels"
 
 T2_NORMALIZED_CSV = T2_DAILY_DIR / "Normalized_T2_MasterCSV.csv"
 T2_LEVELS_XLSX    = T2_DAILY_DIR / "T2 Master Daily.xlsx"   # ASADO daily master (raw levels + returns)
-T2_OPTIMIZER_TOP  = T2_DAILY_DIR / "T2_Optimizer_Top.xlsx"  # 8-factor strategy whitelist (static)
 T2_OPTIMIZER_RETURNS = T2_DAILY_DIR / "T2_Optimizer.xlsx"
 GDELT_FACTORS_CSV = GDELT_DAILY_DIR / "GDELT_Factors_MasterCSV.csv"
 GDELT_OPTIMIZER_RETURNS = GDELT_DAILY_DIR / "GDELT_Optimizer.xlsx"
@@ -159,7 +157,7 @@ log = logging.getLogger(__name__)
 
 def check_inputs(skip_levels: bool = False) -> List[Path]:
     """Verify all required input files exist. Returns list of missing files."""
-    required = [T2_NORMALIZED_CSV, GDELT_FACTORS_CSV, GDELT_RAW_PQ, T2_OPTIMIZER_TOP,
+    required = [T2_NORMALIZED_CSV, GDELT_FACTORS_CSV, GDELT_RAW_PQ,
                T2_OPTIMIZER_RETURNS, GDELT_OPTIMIZER_RETURNS]
     if not skip_levels:
         required.append(T2_LEVELS_XLSX)
@@ -408,17 +406,14 @@ def load_factor_returns_daily(con: duckdb.DuckDBPyConnection) -> int:
 def build_variable_meta(con: duckdb.DuckDBPyConnection) -> int:
     """
     Build variable_meta: one row per variable across all daily tables, tagged
-    with native_frequency, monthly_equivalent, category, source_file, and
-    is_optimizer_selected (read from T2_Optimizer_Top.xlsx).
+    with native_frequency, monthly_equivalent, category, and source_file.
+
+    NOTE (2026-06-10): the is_optimizer_selected column was removed. It was
+    derived from a static T2_Optimizer_Top.xlsx (last generated 2026-02 by
+    the retired Fuzzy Daily project) and did not describe any live strategy.
     """
     log.info("Building variable_meta ...")
     t0 = time.time()
-
-    # ── Read optimizer-selected factors ────────────────────────────────────
-    opt = pd.read_excel(T2_OPTIMIZER_TOP, sheet_name=0)
-    selected = [c.strip() for c in opt.columns
-                if c not in ("Date", "Return ", "Next ", "Return", "Next")]
-    log.info("  optimizer-selected factors (%d): %s", len(selected), selected)
 
     # ── Categorize variables ───────────────────────────────────────────────
     def categorize(v: str) -> str:
@@ -472,7 +467,6 @@ def build_variable_meta(con: duckdb.DuckDBPyConnection) -> int:
             "monthly_equivalent": monthly_equiv_map.get(v, None),
             "is_normalized": v.endswith("_CS") or v.endswith("_TS"),
             "category": categorize(v),
-            "is_optimizer_selected": v in selected,
         })
 
     # T2 levels (raw)
@@ -490,7 +484,6 @@ def build_variable_meta(con: duckdb.DuckDBPyConnection) -> int:
             "monthly_equivalent": None,
             "is_normalized": False,
             "category": categorize(v),
-            "is_optimizer_selected": False,
         })
 
     # GDELT factors
@@ -505,7 +498,6 @@ def build_variable_meta(con: duckdb.DuckDBPyConnection) -> int:
             "monthly_equivalent": None,
             "is_normalized": v.endswith("_CS") or v.endswith("_TS"),
             "category": categorize(v),
-            "is_optimizer_selected": False,
         })
 
     # GDELT raw (wide-format columns, treat each column as a variable)
@@ -522,7 +514,6 @@ def build_variable_meta(con: duckdb.DuckDBPyConnection) -> int:
             "monthly_equivalent": None,
             "is_normalized": v.endswith("_z"),
             "category": "gdelt_raw",
-            "is_optimizer_selected": False,
         })
 
     # Prediction-market derived signals (if Stage 2 table exists).
@@ -544,7 +535,6 @@ def build_variable_meta(con: duckdb.DuckDBPyConnection) -> int:
                 "monthly_equivalent": None,
                 "is_normalized": False,
                 "category": "predmkt_signal",
-                "is_optimizer_selected": False,
             })
 
     # Monthly World Bank Pink Sheet commodity context. These are global
@@ -567,7 +557,6 @@ def build_variable_meta(con: duckdb.DuckDBPyConnection) -> int:
                 "monthly_equivalent": v,
                 "is_normalized": False,
                 "category": "commodity",
-                "is_optimizer_selected": False,
                 "freshness_expectation": "monthly",
             })
 
@@ -590,17 +579,13 @@ def build_variable_meta(con: duckdb.DuckDBPyConnection) -> int:
             monthly_equivalent,
             CAST(is_normalized AS BOOLEAN) AS is_normalized,
             category,
-            CAST(is_optimizer_selected AS BOOLEAN) AS is_optimizer_selected,
             freshness_expectation
         FROM meta_stage
     """)
     con.unregister("meta_stage")
 
     n = con.execute("SELECT COUNT(*) FROM variable_meta").fetchone()[0]
-    n_opt = con.execute(
-        "SELECT COUNT(*) FROM variable_meta WHERE is_optimizer_selected").fetchone()[0]
-    log.info("  variable_meta: %d rows | %d optimizer-selected | %.1fs",
-             n, n_opt, time.time() - t0)
+    log.info("  variable_meta: %d rows | %.1fs", n, time.time() - t0)
     return n
 
 
@@ -870,7 +855,7 @@ def main() -> int:
         if all(t in existing for t in NEW_TABLES):
             db_mtime = DB_PATH.stat().st_mtime
             input_mtimes = [p.stat().st_mtime for p in [
-                T2_NORMALIZED_CSV, GDELT_FACTORS_CSV, GDELT_RAW_PQ, T2_OPTIMIZER_TOP,
+                T2_NORMALIZED_CSV, GDELT_FACTORS_CSV, GDELT_RAW_PQ,
                 T2_OPTIMIZER_RETURNS, GDELT_OPTIMIZER_RETURNS
             ] if p.exists()]
             if not args.skip_levels and T2_LEVELS_XLSX.exists():

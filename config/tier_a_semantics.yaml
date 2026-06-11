@@ -1,0 +1,2077 @@
+# =========================================================================
+# TIER-A SEMANTICS — hand-authored base-variable semantics (Phase 2 of
+# PRD_Semantic_Layer_Variable_Registry.md)
+# =========================================================================
+#
+# WHAT THIS FILE IS:
+#   One entry per base_variable (the un-suffixed concept). The apply script
+#   (scripts/apply_tier_a_semantics.py) merges these into
+#   config/variable_registry_seed.yaml, propagating to _CS/_TS variants
+#   with deterministic rules (units become z-score, comparability becomes
+#   true, definition gets a normalization prefix).
+#
+# INPUT FILES:  (this file is itself an input to the apply script)
+# OUTPUT:       none directly — consumed by scripts/apply_tier_a_semantics.py
+#
+# RULES:
+#   - review_status defaults to 'model_drafted' when applied. Entries with
+#     'review: needs_review' are genuinely uncertain — verify before use.
+#   - sign is NEVER set here: it is derived deterministically from the
+#     normalize-script flip lists by build_variable_registry.py.
+#   - concept vocabulary (from the PRD): valuation / momentum / growth /
+#     monetary / external / sentiment / structural / commodity / network /
+#     technical.
+#   - Verified against live data 2026-06-10: "X 12" / "X 120" suffixes are
+#     12- and 120-period percent changes (corr 0.9998/0.9999 vs recomputed).
+#     "120MA Signal" is continuous (price / 120-period MA, range 0.19-3.97).
+#     P2P construction could NOT be confirmed (best hypothesis corr 0.64) —
+#     flagged needs_review.
+#
+# VERSION: 1.0   LAST UPDATED: 2026-06-10   AUTHOR: Claude (drafted), Arjun (to verify)
+# =========================================================================
+
+# ── T2 / Bloomberg country-index variables ────────────────────────────────
+
+- base_variable: PX_LAST
+  provider: T2/Bloomberg
+  definition: Country equity index price level in local currency (Bloomberg PX_LAST).
+  units: index level (local currency)
+  cross_country_comparable: false
+  economic_mechanism: Price level itself is not a signal; it is the raw input for returns, moving averages, and drawdown measures.
+  concept: technical
+
+- base_variable: Tot Return Index
+  provider: T2/Bloomberg
+  definition: Country equity total return index level (price plus reinvested dividends) in local currency.
+  units: index level (local currency)
+  cross_country_comparable: false
+  economic_mechanism: Source series for all total-return (TR) calculations; not a signal by itself.
+  concept: technical
+
+- base_variable: MCAP
+  provider: T2/Bloomberg
+  definition: Total equity market capitalization of the country index, in USD millions.
+  units: USD millions
+  cross_country_comparable: true
+  economic_mechanism: Size proxy; large markets attract flows and index weight but may offer lower expected returns (size effect).
+  concept: structural
+
+- base_variable: MCAP Adj
+  provider: T2/Bloomberg
+  definition: Float/index-adjusted equity market capitalization of the country index, in USD millions.
+  units: USD millions
+  cross_country_comparable: true
+  economic_mechanism: Investable size — what index trackers can actually buy; drives passive flow mechanics.
+  concept: structural
+
+- base_variable: Mcap Weights
+  provider: T2/Bloomberg
+  definition: Country share of total market capitalization across the 34-country universe (weights sum to 1 each date).
+  units: share (0-1)
+  cross_country_comparable: true
+  economic_mechanism: Benchmark-weight proxy; rising weight attracts momentum-chasing passive flows, extreme weight concentration signals crowding.
+  concept: structural
+  valid_range: "0 to 1"
+
+# — Returns family (price returns from PX_LAST; total returns from TRI) —
+
+- base_variable: 1DRet
+  provider: T2/Bloomberg
+  definition: 1-day price return of the country equity index.
+  units: decimal return
+  cross_country_comparable: true
+  economic_mechanism: Daily return building block; outcome variable, not a predictor.
+  concept: momentum
+
+- base_variable: 5DRet
+  provider: T2/Bloomberg
+  definition: Trailing 5-trading-day price return of the country equity index.
+  units: decimal return
+  cross_country_comparable: true
+  economic_mechanism: Very short-horizon price action; at this horizon reversal typically dominates continuation.
+  concept: momentum
+
+- base_variable: 20DRet
+  provider: T2/Bloomberg
+  definition: Trailing 20-trading-day (~1 month) price return of the country equity index.
+  units: decimal return
+  cross_country_comparable: true
+  economic_mechanism: One-month return; classic short-term reversal input in cross-sectional country ranking.
+  concept: momentum
+
+- base_variable: 60DRet
+  provider: T2/Bloomberg
+  definition: Trailing 60-trading-day (~3 month) price return of the country equity index.
+  units: decimal return
+  cross_country_comparable: true
+  economic_mechanism: Intermediate momentum; continuation tends to build between 3 and 12 months.
+  concept: momentum
+
+- base_variable: 120DRet
+  provider: T2/Bloomberg
+  definition: Trailing 120-trading-day (~6 month) price return of the country equity index.
+  units: decimal return
+  cross_country_comparable: true
+  economic_mechanism: Medium-horizon momentum; persistent country performance reflects slow-moving macro repricing.
+  concept: momentum
+
+- base_variable: 12MRet
+  provider: T2/Bloomberg
+  definition: Trailing 12-month price return of the country equity index.
+  units: decimal return
+  cross_country_comparable: true
+  economic_mechanism: Twelve-month momentum — the canonical lookback for cross-sectional momentum strategies.
+  concept: momentum
+
+- base_variable: 3MRet
+  provider: T2/Bloomberg
+  definition: Trailing 3-month price return of the country equity index.
+  units: decimal return
+  cross_country_comparable: true
+  economic_mechanism: Quarterly momentum; balances signal freshness against reversal noise.
+  concept: momentum
+
+- base_variable: 6MRet
+  provider: T2/Bloomberg
+  definition: Trailing 6-month price return of the country equity index.
+  units: decimal return
+  cross_country_comparable: true
+  economic_mechanism: Six-month momentum, a standard intermediate horizon.
+  concept: momentum
+
+- base_variable: 9MRet
+  provider: T2/Bloomberg
+  definition: Trailing 9-month price return of the country equity index.
+  units: decimal return
+  cross_country_comparable: true
+  economic_mechanism: Nine-month momentum, between the canonical 6- and 12-month windows.
+  concept: momentum
+
+- base_variable: 1MTR
+  provider: T2/Bloomberg
+  definition: Trailing 1-month total return (dividends reinvested) of the country equity index.
+  units: decimal return
+  cross_country_comparable: true
+  economic_mechanism: One-month total return; reversal input and the monthly outcome variable.
+  concept: momentum
+
+- base_variable: 3MTR
+  provider: T2/Bloomberg
+  definition: Trailing 3-month total return of the country equity index.
+  units: decimal return
+  cross_country_comparable: true
+  economic_mechanism: Quarterly total-return momentum.
+  concept: momentum
+
+- base_variable: 12MTR
+  provider: T2/Bloomberg
+  definition: Trailing 12-month total return of the country equity index.
+  units: decimal return
+  cross_country_comparable: true
+  economic_mechanism: Twelve-month total-return momentum, the canonical momentum lookback.
+  concept: momentum
+
+- base_variable: 12-1MTR
+  provider: T2/Bloomberg
+  definition: 12-month total return minus the most recent 1-month total return (momentum excluding the reversal month).
+  units: decimal return
+  cross_country_comparable: true
+  economic_mechanism: Classic 12-1 momentum — strips the short-term reversal month from the momentum lookback to avoid fighting mean reversion.
+  concept: momentum
+  mechanism_reference: Jegadeesh & Titman (1993)
+
+- base_variable: 1DTR
+  provider: T2/Bloomberg
+  definition: 1-trading-day total return of the country equity index.
+  units: decimal return
+  cross_country_comparable: true
+  economic_mechanism: Daily total-return building block; outcome variable, not a predictor.
+  concept: momentum
+
+- base_variable: 5DTR
+  provider: T2/Bloomberg
+  definition: Trailing 5-trading-day total return of the country equity index.
+  units: decimal return
+  cross_country_comparable: true
+  economic_mechanism: One-week total return; reversal-dominated horizon.
+  concept: momentum
+
+- base_variable: 20DTR
+  provider: T2/Bloomberg
+  definition: Trailing 20-trading-day total return of the country equity index (daily analog of 1MTR).
+  units: decimal return
+  cross_country_comparable: true
+  economic_mechanism: One-month total return on the daily surface; reversal input.
+  concept: momentum
+
+- base_variable: 120DTR
+  provider: T2/Bloomberg
+  definition: Trailing 120-trading-day total return of the country equity index (daily analog of the long-horizon momentum lookback; mapped to 12MTR in variable_meta).
+  units: decimal return
+  cross_country_comparable: true
+  economic_mechanism: Long-horizon total-return momentum on the daily surface.
+  concept: momentum
+
+- base_variable: 120-5DTR
+  provider: T2/Bloomberg
+  definition: 120-trading-day total return minus 5-trading-day total return (daily analog of 12-1 momentum-ex-reversal).
+  units: decimal return
+  cross_country_comparable: true
+  economic_mechanism: Momentum excluding the most recent week to sidestep short-term reversal.
+  concept: momentum
+  mechanism_reference: Jegadeesh & Titman (1993)
+
+# — Technicals —
+
+- base_variable: 120MA
+  provider: T2/Bloomberg
+  definition: 120-period moving average of the country equity index price (months on the monthly surface, trading days on the daily surface).
+  units: index level (local currency)
+  cross_country_comparable: false
+  economic_mechanism: Trend anchor; input to the 120MA Signal ratio.
+  concept: technical
+
+- base_variable: 120MA Signal
+  provider: T2/Bloomberg
+  definition: Country equity index price relative to its 120-period moving average (continuous ratio; verified range 0.19-3.97 on the monthly surface).
+  units: ratio
+  cross_country_comparable: true
+  economic_mechanism: Trend-following signal — price above its long moving average indicates an established uptrend; crossover systems buy strength.
+  concept: technical
+
+- base_variable: RSI14
+  provider: T2/Bloomberg
+  definition: 14-period Relative Strength Index of the country equity index (bounded 0-100).
+  units: index (0-100)
+  cross_country_comparable: true
+  economic_mechanism: Overbought/oversold oscillator — measures the balance of recent up-moves vs down-moves; extremes signal exhaustion or strong trend depending on regime.
+  concept: technical
+  valid_range: "0 to 100"
+
+- base_variable: Advance Decline
+  provider: T2/Bloomberg
+  definition: Net advancing minus declining issues in the country market (market breadth count).
+  units: count (net issues)
+  cross_country_comparable: false
+  economic_mechanism: Breadth — broad participation confirms an index move; narrow leadership flags fragility.
+  concept: technical
+
+- base_variable: P2P
+  provider: T2/Bloomberg
+  definition: Bounded price-position measure related to the index's standing versus its trailing peak/range (construction not confirmed from data; observed range -0.76 to +0.99).
+  units: ratio (bounded approx -1 to 1)
+  cross_country_comparable: true
+  economic_mechanism: Likely a drawdown/range-position signal; exact window and formula unverified.
+  concept: technical
+  review: needs_review
+  notes: Best data hypothesis (12m range position, corr 0.64) is not conclusive. Confirm construction with the T2 source before using in new signals.
+
+- base_variable: 20 Day Vol
+  provider: T2/Bloomberg
+  definition: Realized volatility of daily index returns over the trailing 20 trading days.
+  units: percent (realized volatility)
+  cross_country_comparable: true
+  economic_mechanism: Short-window risk gauge; vol spikes accompany drawdowns and depress risk appetite (low-vol anomaly favors calm markets cross-sectionally).
+  concept: technical
+
+- base_variable: 360 Day Vol
+  provider: T2/Bloomberg
+  definition: Realized volatility of daily index returns over the trailing 360 trading days.
+  units: percent (realized volatility)
+  cross_country_comparable: true
+  economic_mechanism: Structural risk level of the market; persistent high vol demands a risk premium.
+  concept: technical
+
+# — Valuation block —
+
+- base_variable: Trailing PE
+  provider: T2/Bloomberg
+  definition: Country index price divided by trailing 12-month aggregate earnings per share.
+  units: ratio (x earnings)
+  cross_country_comparable: true
+  economic_mechanism: Cheapness on realized earnings — low P/E countries have historically outperformed over multi-year horizons (value effect).
+  concept: valuation
+
+- base_variable: Best PE
+  provider: T2/Bloomberg
+  definition: Country index price divided by Bloomberg BEst consensus forward earnings per share.
+  units: ratio (x earnings)
+  cross_country_comparable: true
+  economic_mechanism: Forward-looking cheapness; embeds analyst expectations, so it reacts faster than trailing P/E but inherits forecast bias.
+  concept: valuation
+
+- base_variable: Shiller PE
+  provider: T2/Bloomberg
+  definition: Cyclically-adjusted price-to-earnings ratio — price divided by a multi-year average of real earnings.
+  units: ratio (x earnings)
+  cross_country_comparable: true
+  economic_mechanism: Smooths the earnings cycle; high CAPE implies low long-run expected returns (mean reversion of valuations).
+  concept: valuation
+  mechanism_reference: Campbell & Shiller (1988)
+
+- base_variable: Positive PE
+  provider: T2/Bloomberg
+  definition: Country index P/E computed restricting to positive-earnings constituents (avoids negative/undefined aggregate P/E).
+  units: ratio (x earnings)
+  cross_country_comparable: true
+  economic_mechanism: Cleaner value measure in markets where loss-makers distort the aggregate multiple.
+  concept: valuation
+
+- base_variable: Earnings Yield
+  provider: T2/Bloomberg
+  definition: Trailing aggregate earnings divided by price for the country index (inverse of P/E), in percent.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Value measure directly comparable to bond yields; high earnings yield = cheap equity vs fixed income.
+  concept: valuation
+  quality_flag: suspect
+  valid_range: "approx -100 to 100"
+  notes: Observed max 5.1e10 — upstream data errors present; clip before use.
+
+- base_variable: Best PBK
+  provider: T2/Bloomberg
+  definition: Country index price divided by Bloomberg BEst consensus book value per share.
+  units: ratio (x book)
+  cross_country_comparable: true
+  economic_mechanism: Asset-based cheapness; low P/B markets price in distress and have historically recovered (value effect).
+  concept: valuation
+
+- base_variable: Best Price Sales
+  provider: T2/Bloomberg
+  definition: Country index price divided by Bloomberg BEst consensus sales per share.
+  units: ratio (x sales)
+  cross_country_comparable: true
+  economic_mechanism: Revenue-based valuation less sensitive to margin cycles and accounting choices than P/E.
+  concept: valuation
+
+- base_variable: EV to EBITDA
+  provider: T2/Bloomberg
+  definition: Aggregate enterprise value divided by EBITDA for the country index.
+  units: ratio (x EBITDA)
+  cross_country_comparable: true
+  economic_mechanism: Capital-structure-neutral valuation; compares whole-firm value to pre-interest cash earnings.
+  concept: valuation
+
+- base_variable: Best Div Yield
+  provider: T2/Bloomberg
+  definition: Bloomberg BEst consensus forward dividend yield for the country index, in percent.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Income component of return; high payout markets are typically cheaper and more mature.
+  concept: valuation
+  quality_flag: suspect
+  valid_range: "0 to 25"
+  notes: Observed max 2.1e10 — upstream data errors present; clip before use.
+
+- base_variable: Best Cash Flow
+  provider: T2/Bloomberg
+  definition: Bloomberg BEst consensus cash-flow-based valuation measure for the country index (exact field — per-share level vs price multiple — unconfirmed).
+  units: ratio or per-share (unconfirmed)
+  cross_country_comparable: true
+  economic_mechanism: Cash-flow valuation is harder to manage than earnings; cheap-on-cash-flow markets revert upward.
+  concept: valuation
+  review: needs_review
+
+- base_variable: Debt to EV
+  provider: T2/Bloomberg
+  definition: Aggregate debt divided by enterprise value for the country index.
+  units: ratio
+  cross_country_comparable: true
+  economic_mechanism: Corporate leverage — high debt share of EV amplifies equity downside in tightening cycles.
+  concept: structural
+
+- base_variable: Operating Margin
+  provider: T2/Bloomberg
+  definition: Aggregate operating income as a percent of sales for the country index.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Profitability/quality — high-margin markets compound faster and de-rate less in downturns.
+  concept: growth
+
+- base_variable: Best ROE
+  provider: T2/Bloomberg
+  definition: Bloomberg BEst consensus forward return on equity for the country index, in percent.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Quality factor — sustained high ROE indicates durable competitive advantage and pricing power.
+  concept: growth
+
+- base_variable: LT Growth
+  provider: T2/Bloomberg
+  definition: Bloomberg consensus long-term EPS growth estimate for the country index, in percent.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Embedded growth expectations — extreme optimism tends to disappoint (expectations risk), making this a contrarian input as much as a growth one.
+  concept: growth
+  quality_flag: suspect
+  valid_range: "-100 to 100"
+  notes: Observed max 2.4e6 — upstream data errors present; clip before use.
+
+# — Earnings level / revision family —
+
+- base_variable: BEST EPS
+  provider: T2/Bloomberg
+  definition: Bloomberg BEst consensus forward earnings per share for the country index (index-aggregate, local currency).
+  units: per-share (local currency)
+  cross_country_comparable: false
+  economic_mechanism: Level input to forward P/E; its revisions (see Best EPS 252) carry the signal.
+  concept: growth
+
+- base_variable: Best EPS 252
+  provider: T2/Bloomberg
+  definition: Change in Bloomberg BEst consensus forward EPS over the trailing 252 trading days (estimate-revision momentum).
+  units: percent change
+  cross_country_comparable: true
+  economic_mechanism: Earnings-revision momentum — analysts update beliefs slowly, so upgrades predict further upgrades and price strength.
+  concept: growth
+
+- base_variable: Trailing EPS
+  provider: T2/Bloomberg
+  definition: Trailing 12-month aggregate earnings per share for the country index (local currency).
+  units: per-share (local currency)
+  cross_country_comparable: false
+  economic_mechanism: Realized earnings level; denominator of trailing P/E.
+  concept: growth
+
+- base_variable: Trailing EPS 252
+  provider: T2/Bloomberg
+  definition: Change in trailing 12-month EPS over the trailing 252 trading days (realized earnings momentum).
+  units: percent change
+  cross_country_comparable: true
+  economic_mechanism: Realized earnings growth momentum; markets with accelerating delivered earnings re-rate upward.
+  concept: growth
+
+- base_variable: Trailing EPS 36
+  provider: T2/Bloomberg
+  definition: Change in trailing 12-month EPS over the trailing 36 periods (months on the monthly surface).
+  units: percent change
+  cross_country_comparable: true
+  economic_mechanism: Three-year realized earnings growth — slow-moving fundamental momentum.
+  concept: growth
+
+# — Macro variables on the T2 surface —
+
+- base_variable: GDP
+  provider: T2/Bloomberg
+  definition: Real GDP growth rate, year over year, in percent.
+  units: percent (YoY)
+  cross_country_comparable: true
+  economic_mechanism: Growth is largely priced; growth surprises and second derivatives, not levels, move equity markets.
+  concept: growth
+
+- base_variable: Inflation
+  provider: T2/Bloomberg
+  definition: Consumer price inflation, year over year, in percent.
+  units: percent (YoY)
+  cross_country_comparable: true
+  economic_mechanism: High/rising inflation forces tightening and compresses equity multiples; moderate stable inflation is benign.
+  concept: monetary
+
+- base_variable: Current Account
+  provider: T2/Bloomberg
+  definition: Current account balance as a percent of GDP.
+  units: percent of GDP
+  cross_country_comparable: true
+  economic_mechanism: External financing need — deficit countries depend on foreign capital and sell off harder when global liquidity tightens.
+  concept: external
+
+- base_variable: Budget Def
+  provider: T2/Bloomberg
+  definition: General government budget balance as a percent of GDP (negative = deficit).
+  units: percent of GDP
+  cross_country_comparable: true
+  economic_mechanism: Fiscal space — persistent large deficits raise sovereign risk premia and crowd out private investment.
+  concept: structural
+
+- base_variable: Debt to GDP
+  provider: T2/Bloomberg
+  definition: Government debt as a percent of GDP.
+  units: percent of GDP
+  cross_country_comparable: true
+  economic_mechanism: Debt overhang — high public debt limits fiscal response capacity and raises default/inflation-tax risk.
+  concept: structural
+
+- base_variable: 10Yr Bond
+  provider: T2/Bloomberg
+  definition: 10-year government bond yield, in percent.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Long rate embeds policy expectations, inflation compensation, and term premium; rising yields raise the equity discount rate.
+  concept: monetary
+
+- base_variable: 10Yr Bond 12
+  provider: T2/Bloomberg
+  definition: 12-period percent change in the 10-year government bond yield (months on the monthly surface, trading days on the daily surface).
+  units: percent change
+  cross_country_comparable: true
+  economic_mechanism: Rate momentum — sustained yield rises tighten financial conditions before equities fully reprice.
+  concept: monetary
+
+- base_variable: 10Yr Bond 120
+  provider: T2/Bloomberg
+  definition: 120-period percent change in the 10-year government bond yield.
+  units: percent change
+  cross_country_comparable: true
+  economic_mechanism: Long-window rate trend — cumulative tightening or easing cycle position.
+  concept: monetary
+
+- base_variable: Bloom Country Risk
+  provider: T2/Bloomberg
+  definition: Bloomberg composite country risk score (observed range 7-99; scale orientation unconfirmed).
+  units: score
+  cross_country_comparable: true
+  economic_mechanism: Composite of political/economic/financial risk; repricing of country risk moves equity risk premia.
+  concept: structural
+  review: needs_review
+  notes: U.S. scores 78 with range 7-99, which conflicts with the flip-list lower_is_better orientation unless the scale is inverted upstream. Confirm scale direction before using raw values.
+
+- base_variable: REER
+  provider: T2/Bloomberg
+  definition: Real effective exchange rate index (trade-weighted, inflation-adjusted; ~100 = base period).
+  units: index (base ~100)
+  cross_country_comparable: true
+  economic_mechanism: Competitiveness — an elevated REER means an expensive currency, eroding exports and preceding currency/equity underperformance; a cheap REER supports recovery.
+  concept: external
+
+# — FX and FX-vol —
+
+- base_variable: Currency
+  provider: T2/Bloomberg
+  definition: Spot exchange rate in local currency units per USD (U.S. = 1.0).
+  units: LCU per USD
+  cross_country_comparable: false
+  economic_mechanism: Level is country-specific scale; changes (Currency 12/120) carry the depreciation signal.
+  concept: external
+
+- base_variable: Currency 12
+  provider: T2/Bloomberg
+  definition: 12-period percent change in the LCU/USD exchange rate (positive = depreciation vs USD).
+  units: percent change
+  cross_country_comparable: true
+  economic_mechanism: Depreciation pressure — sustained currency weakness signals capital outflows and imported inflation, usually equity-negative for EMs in USD terms.
+  concept: external
+
+- base_variable: Currency 120
+  provider: T2/Bloomberg
+  definition: 120-period percent change in the LCU/USD exchange rate (positive = depreciation vs USD).
+  units: percent change
+  cross_country_comparable: true
+  economic_mechanism: Long-window currency trend — cumulative devaluation cycle position.
+  concept: external
+
+- base_variable: Currency Vol
+  provider: T2/Bloomberg
+  definition: Realized volatility of the LCU/USD exchange rate (0 for the USD-based sleeves).
+  units: percent (realized volatility)
+  cross_country_comparable: true
+  economic_mechanism: FX stress gauge — currency vol spikes mark balance-of-payments pressure and risk-off episodes.
+  concept: external
+
+# — Global commodity prices broadcast onto the T2 surface —
+
+- base_variable: Gold
+  provider: T2/Bloomberg
+  definition: Gold spot price in USD per troy ounce (global series broadcast to all countries).
+  units: USD/oz
+  cross_country_comparable: true
+  economic_mechanism: Safe-haven and real-rate hedge; gold rallies signal falling real yields or rising tail risk.
+  concept: commodity
+
+- base_variable: Gold 12
+  provider: T2/Bloomberg
+  definition: 12-period percent change in the gold price (verified against recomputed 12-month change, corr 0.9998).
+  units: percent change
+  cross_country_comparable: true
+  economic_mechanism: Gold momentum proxies the direction of real rates and risk appetite.
+  concept: commodity
+
+- base_variable: Gold 120
+  provider: T2/Bloomberg
+  definition: 120-period percent change in the gold price (verified on the daily surface, corr 0.9999).
+  units: percent change
+  cross_country_comparable: true
+  economic_mechanism: Long-cycle gold trend; persistent strength flags structural monetary debasement concerns.
+  concept: commodity
+
+- base_variable: Oil
+  provider: T2/Bloomberg
+  definition: Crude oil spot price in USD per barrel (global series broadcast to all countries).
+  units: USD/bbl
+  cross_country_comparable: true
+  economic_mechanism: Terms-of-trade shock axis — oil rallies transfer income to exporters (Saudi) from importers (Japan, India).
+  concept: commodity
+
+- base_variable: Oil 12
+  provider: T2/Bloomberg
+  definition: 12-period percent change in the crude oil price.
+  units: percent change
+  cross_country_comparable: true
+  economic_mechanism: Oil momentum drives inflation expectations and exporter/importer equity divergence.
+  concept: commodity
+
+- base_variable: Oil 120
+  provider: T2/Bloomberg
+  definition: 120-period percent change in the crude oil price.
+  units: percent change
+  cross_country_comparable: true
+  economic_mechanism: Long-cycle energy trend; sustained moves reshape current accounts and fiscal balances.
+  concept: commodity
+
+- base_variable: Copper
+  provider: T2/Bloomberg
+  definition: Copper spot price in USD per metric ton (global series broadcast to all countries).
+  units: USD/mt
+  cross_country_comparable: true
+  economic_mechanism: Dr. Copper — global industrial demand barometer; rallies favor metal exporters (Chile, Peru-like profiles) and cyclical markets.
+  concept: commodity
+
+- base_variable: Copper 12
+  provider: T2/Bloomberg
+  definition: 12-period percent change in the copper price.
+  units: percent change
+  cross_country_comparable: true
+  economic_mechanism: Copper momentum tracks global manufacturing cycle acceleration.
+  concept: commodity
+
+- base_variable: Copper 120
+  provider: T2/Bloomberg
+  definition: 120-period percent change in the copper price.
+  units: percent change
+  cross_country_comparable: true
+  economic_mechanism: Long-cycle industrial-metal trend; capex super-cycle indicator.
+  concept: commodity
+
+- base_variable: Agriculture
+  provider: T2/Bloomberg
+  definition: Global agriculture commodity price index level (broadcast to all countries).
+  units: index level
+  cross_country_comparable: true
+  economic_mechanism: Food price axis — rallies squeeze food-importing EM consumers and lift agricultural exporters.
+  concept: commodity
+
+- base_variable: Agriculture 12
+  provider: T2/Bloomberg
+  definition: 12-period percent change in the agriculture commodity index.
+  units: percent change
+  cross_country_comparable: true
+  economic_mechanism: Food inflation impulse; feeds EM CPI with a lag and pressures policy rates.
+  concept: commodity
+
+- base_variable: Agriculture 120
+  provider: T2/Bloomberg
+  definition: 120-period percent change in the agriculture commodity index.
+  units: percent change
+  cross_country_comparable: true
+  economic_mechanism: Long-cycle food price trend; structural terms-of-trade driver for agrarian economies.
+  concept: commodity
+
+# ── Bloomberg terminal collector (collect_bloomberg.py) ──────────────────
+
+- base_variable: BBG_Govt_Bond_2Y
+  provider: Bloomberg
+  definition: 2-year government bond yield, in percent.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Front-end rate — the market's read on the policy path over the next two years.
+  concept: monetary
+
+- base_variable: BBG_Govt_Bond_5Y
+  provider: Bloomberg
+  definition: 5-year government bond yield, in percent.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Belly of the curve; blends policy path and term premium.
+  concept: monetary
+
+- base_variable: BBG_Govt_Bond_10Y
+  provider: Bloomberg
+  definition: 10-year government bond yield, in percent.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Benchmark long rate; the equity discount-rate anchor.
+  concept: monetary
+
+- base_variable: BBG_Govt_Bond_30Y
+  provider: Bloomberg
+  definition: 30-year government bond yield, in percent.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Ultra-long rate; dominated by term premium and structural inflation credibility.
+  concept: monetary
+
+- base_variable: BBG_Yield_Curve_10Y2Y
+  provider: Bloomberg
+  definition: 10-year minus 2-year government bond yield spread, in percentage points.
+  units: percentage points
+  cross_country_comparable: true
+  economic_mechanism: Curve slope — inversion historically precedes recessions; steepening signals easing cycles or reflation.
+  concept: monetary
+
+- base_variable: BBG_CDS_5Y
+  provider: Bloomberg
+  definition: 5-year sovereign credit default swap spread, in basis points.
+  units: basis points
+  cross_country_comparable: true
+  economic_mechanism: Market price of sovereign default risk; widening CDS leads equity selloffs in stressed countries.
+  concept: external
+
+- base_variable: BBG_MIPD_5Y
+  provider: Bloomberg
+  definition: Bloomberg market-implied probability of sovereign default over 5 years, derived from CDS pricing, in percent.
+  units: percent (probability)
+  cross_country_comparable: true
+  economic_mechanism: Default probability extracted from credit markets; direct read on solvency stress.
+  concept: external
+  valid_range: "0 to 100"
+
+- base_variable: BBG_OIS_10Y
+  provider: Bloomberg
+  definition: 10-year overnight indexed swap rate, in percent.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Pure expected-policy-path rate with minimal credit content; the risk-free leg for z-spread construction.
+  concept: monetary
+
+- base_variable: BBG_ZSpread_OIS_10Y
+  provider: Bloomberg
+  definition: 10-year government bond yield minus the 10-year OIS rate, in basis points (sovereign z-spread).
+  units: basis points
+  cross_country_comparable: true
+  economic_mechanism: Strips policy expectations from the bond yield, isolating sovereign credit and liquidity premia.
+  concept: external
+
+- base_variable: BBG_Breakeven_10Y
+  provider: Bloomberg
+  definition: 10-year breakeven inflation rate from inflation-linked vs nominal bonds, in percent.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Market-priced inflation expectations; un-anchoring shows up here before realized CPI.
+  concept: monetary
+
+- base_variable: BBG_WIRP_ImpliedRate
+  provider: Bloomberg
+  definition: Policy rate implied by interest-rate futures/swaps for upcoming central bank meetings (Bloomberg WIRP).
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: The market's priced policy path; gaps between WIRP and the actual path are monetary surprises.
+  concept: monetary
+
+- base_variable: BBG_ECFC_GDP
+  provider: Bloomberg
+  definition: Bloomberg consensus economist forecast for real GDP growth, in percent.
+  units: percent (YoY forecast)
+  cross_country_comparable: true
+  economic_mechanism: Consensus growth expectation — the benchmark that defines a growth surprise; revisions carry the signal.
+  concept: growth
+
+- base_variable: BBG_ECFC_CPI
+  provider: Bloomberg
+  definition: Bloomberg consensus economist forecast for CPI inflation, in percent.
+  units: percent (YoY forecast)
+  cross_country_comparable: true
+  economic_mechanism: Consensus inflation expectation; revisions upward force priced-in tightening.
+  concept: monetary
+
+- base_variable: BBG_PMI_Manufacturing
+  provider: Bloomberg
+  definition: Manufacturing Purchasing Managers Index (50 = expansion threshold).
+  units: diffusion index (50 = neutral)
+  cross_country_comparable: true
+  economic_mechanism: Timeliest growth read available; crossing 50 marks cycle turning points before GDP data exist.
+  concept: growth
+  valid_range: "20 to 80"
+
+- base_variable: BBG_PMI_Services
+  provider: Bloomberg
+  definition: Services Purchasing Managers Index (50 = expansion threshold).
+  units: diffusion index (50 = neutral)
+  cross_country_comparable: true
+  economic_mechanism: Domestic-demand cycle read; complements manufacturing PMI in service-heavy economies.
+  concept: growth
+  valid_range: "20 to 80"
+
+- base_variable: BBG_M2_YoY
+  provider: Bloomberg
+  definition: Broad money (M2) growth, year over year, in percent.
+  units: percent (YoY)
+  cross_country_comparable: true
+  economic_mechanism: Liquidity impulse — accelerating money growth leads asset reflation and, with lags, inflation.
+  concept: monetary
+  quality_flag: suspect
+  valid_range: "-30 to 60"
+  notes: Vietnam observed near 110,000 — upstream unit error; clip or exclude before use.
+
+- base_variable: BBG_Debt_GDP_Ratio
+  provider: Bloomberg
+  definition: Government debt as a percent of GDP (Bloomberg-sourced).
+  units: percent of GDP
+  cross_country_comparable: true
+  economic_mechanism: Fiscal capacity constraint; duplicates Debt to GDP from the T2 surface with Bloomberg vintage.
+  concept: structural
+
+- base_variable: MS_Country_ETF_AUM_USD
+  provider: Bloomberg
+  definition: Total assets under management of US-listed single-country ETFs tracking this market, in USD.
+  units: USD
+  cross_country_comparable: true
+  economic_mechanism: Passive ownership base — large ETF AUM makes the market sensitive to US-domiciled flow swings.
+  concept: structural
+
+- base_variable: MS_Country_ETF_NetFlow_USD
+  provider: Bloomberg
+  definition: Net creations minus redemptions of US-listed country ETFs, in USD.
+  units: USD
+  cross_country_comparable: true
+  economic_mechanism: Realized foreign passive demand; persistent inflows are price-supportive, sharp outflows mark sentiment breaks.
+  concept: sentiment
+
+- base_variable: MS_ETF_NetFlow_to_MarketCap
+  provider: Bloomberg
+  definition: Country ETF net flow scaled by the market's total capitalization.
+  units: ratio
+  cross_country_comparable: true
+  economic_mechanism: Flow pressure per unit of market size — the same dollar flow moves a small market far more than a large one.
+  concept: sentiment
+
+- base_variable: MS_ETF_NetCreation_Shares
+  provider: Bloomberg
+  definition: Net ETF shares created minus redeemed for the country's US-listed ETFs.
+  units: shares
+  cross_country_comparable: false
+  economic_mechanism: Share-count mechanics of the flow signal; raw input to USD flow measures.
+  concept: sentiment
+
+- base_variable: MS_ETF_Creation_Unit_Size_Shares
+  provider: Bloomberg
+  definition: ETF creation unit size for the country's primary US-listed ETF, in shares.
+  units: shares
+  cross_country_comparable: false
+  economic_mechanism: Plumbing constant for the creation/redemption process; not a signal.
+  concept: structural
+
+- base_variable: MS_ETF_Creation_Fee_USD
+  provider: Bloomberg
+  definition: Creation fee for the country's primary US-listed ETF, in USD.
+  units: USD
+  cross_country_comparable: false
+  economic_mechanism: Arbitrage friction; higher fees widen the ETF premium/discount band.
+  concept: structural
+
+- base_variable: MS_ETF_Redemption_Fee_USD
+  provider: Bloomberg
+  definition: Redemption fee for the country's primary US-listed ETF, in USD.
+  units: USD
+  cross_country_comparable: false
+  economic_mechanism: Arbitrage friction on the redemption side; widens the discount band in stress.
+  concept: structural
+
+- base_variable: MS_Index_Weight
+  provider: Bloomberg
+  definition: Country weight in the relevant MSCI benchmark index, in percent.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Benchmark gravity — index weight determines mechanical passive allocation and rebalance flows.
+  concept: structural
+
+- base_variable: MS_Index_Weight_Change
+  provider: Bloomberg
+  definition: Change in the country's MSCI benchmark weight, in percentage points.
+  units: percentage points
+  cross_country_comparable: true
+  economic_mechanism: Weight migration forces passive rebalancing — upweights get bought mechanically, downweights sold.
+  concept: structural
+
+- base_variable: MS_Passive_AUM_to_MarketCap
+  provider: Bloomberg
+  definition: Passive (ETF) assets tracking the market as a share of its total capitalization.
+  units: ratio
+  cross_country_comparable: true
+  economic_mechanism: Passive ownership share — high passive penetration weakens price discovery and amplifies flow-driven moves.
+  concept: structural
+
+- base_variable: MS_Passive_Flow_Distortion
+  provider: Bloomberg
+  definition: ASADO-derived measure of price pressure attributable to passive flows (flow intensity relative to market depth).
+  units: score
+  cross_country_comparable: true
+  economic_mechanism: When passive flow dominates trading, prices detach from fundamentals — both a risk flag and a mean-reversion setup.
+  concept: sentiment
+
+# ── IMF collector (collect_imf.py) ────────────────────────────────────────
+
+- base_variable: IMF_CPI_Index
+  provider: IMF
+  definition: Consumer price index level (IMF IFS).
+  units: index
+  cross_country_comparable: false
+  economic_mechanism: Price level series; YoY transform carries the inflation signal.
+  concept: monetary
+
+- base_variable: IMF_CPI_Inflation_YoY
+  provider: IMF
+  definition: Consumer price inflation, year over year, from IMF IFS, in percent.
+  units: percent (YoY)
+  cross_country_comparable: true
+  economic_mechanism: Inflation drives policy tightening and real-return erosion; high inflation compresses equity multiples.
+  concept: monetary
+
+- base_variable: IMF_Discount_Rate
+  provider: IMF
+  definition: Central bank discount/policy rate from IMF IFS, in percent.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: The policy stance itself; level and direction set domestic liquidity conditions.
+  concept: monetary
+
+- base_variable: IMF_Money_Market_Rate
+  provider: IMF
+  definition: Short-term interbank money market rate from IMF IFS, in percent.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Realized short-rate conditions including interbank stress; spreads to policy rate flag funding pressure.
+  concept: monetary
+
+- base_variable: IMF_TBill_Rate
+  provider: IMF
+  definition: Treasury bill rate from IMF IFS, in percent.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Government short-rate; risk-free anchor for local-currency asset pricing.
+  concept: monetary
+
+- base_variable: IMF_Govt_Bond_Yield
+  provider: IMF
+  definition: Long-term government bond yield from IMF IFS, in percent.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Long-rate anchor from the IMF vintage; cross-check for the Bloomberg 10Y series.
+  concept: monetary
+
+- base_variable: IMF_XRate_LCU_per_USD
+  provider: IMF
+  definition: Exchange rate in local currency units per USD (IMF IFS, period average).
+  units: LCU per USD
+  cross_country_comparable: false
+  economic_mechanism: FX level; the depreciation rate, not the level, is the signal.
+  concept: external
+
+- base_variable: IMF_Employment_Index
+  provider: IMF
+  definition: Employment index from IMF IFS (base period = 100).
+  units: index
+  cross_country_comparable: false
+  economic_mechanism: Labor market cycle; employment growth confirms or refutes GDP momentum.
+  concept: growth
+
+- base_variable: IMF_Exports_USD
+  provider: IMF
+  definition: Merchandise exports in USD (IMF IFS/DOTS).
+  units: USD
+  cross_country_comparable: false
+  economic_mechanism: External demand level; growth rates and balances carry the signal.
+  concept: external
+
+- base_variable: IMF_Imports_USD
+  provider: IMF
+  definition: Merchandise imports in USD (IMF IFS/DOTS).
+  units: USD
+  cross_country_comparable: false
+  economic_mechanism: Domestic demand read through the trade channel.
+  concept: external
+
+- base_variable: IMF_Exports_YoY
+  provider: IMF
+  definition: Merchandise export growth, year over year, in percent.
+  units: percent (YoY)
+  cross_country_comparable: true
+  economic_mechanism: External demand impulse — export acceleration leads industrial production and earnings in open economies.
+  concept: external
+
+- base_variable: IMF_Imports_YoY
+  provider: IMF
+  definition: Merchandise import growth, year over year, in percent.
+  units: percent (YoY)
+  cross_country_comparable: true
+  economic_mechanism: Import surges flag strong domestic demand but also widening trade deficits.
+  concept: external
+
+- base_variable: IMF_Trade_Balance_USD
+  provider: IMF
+  definition: Merchandise trade balance (exports minus imports), in USD.
+  units: USD
+  cross_country_comparable: false
+  economic_mechanism: Net trade position level; scaled versions (vs GDP) are comparable cross-country.
+  concept: external
+
+- base_variable: IMF_Trade_Openness_USD
+  provider: IMF
+  definition: Exports plus imports in USD (gross trade flows).
+  units: USD
+  cross_country_comparable: false
+  economic_mechanism: Trade integration level; high-openness economies transmit global shocks faster.
+  concept: external
+
+- base_variable: IMF_Export_Price_Index
+  provider: IMF
+  definition: Export price index (IMF IFS).
+  units: index
+  cross_country_comparable: false
+  economic_mechanism: Numerator of terms of trade; rising export prices are an income transfer into the country.
+  concept: external
+
+- base_variable: IMF_Import_Price_Index
+  provider: IMF
+  definition: Import price index (IMF IFS).
+  units: index
+  cross_country_comparable: false
+  economic_mechanism: Denominator of terms of trade; import price spikes (oil, food) act as a consumption tax.
+  concept: external
+
+- base_variable: IMF_BOP_Current_Account
+  provider: IMF
+  definition: Current account balance from IMF Balance of Payments statistics, in USD.
+  units: USD
+  cross_country_comparable: false
+  economic_mechanism: External funding need in level terms; the GDP-scaled version is the comparable signal.
+  concept: external
+
+- base_variable: IMF_BOP_Financial_Account_Bal
+  provider: IMF
+  definition: Financial account balance from IMF BOP, in USD.
+  units: USD
+  cross_country_comparable: false
+  economic_mechanism: Net capital flow counterpart of the current account; sign flips mark sudden stops.
+  concept: external
+
+- base_variable: IMF_BOP_Direct_Investment_Net
+  provider: IMF
+  definition: Net foreign direct investment from IMF BOP, in USD.
+  units: USD
+  cross_country_comparable: false
+  economic_mechanism: Sticky capital — FDI-funded deficits are far safer than portfolio-funded ones.
+  concept: external
+
+- base_variable: IMF_BOP_Portfolio_Investment_Net
+  provider: IMF
+  definition: Net portfolio investment from IMF BOP, in USD.
+  units: USD
+  cross_country_comparable: false
+  economic_mechanism: Hot money — portfolio flows reverse fastest in risk-off, driving FX and equity stress.
+  concept: external
+
+- base_variable: IMF_WEO_GDP_Growth
+  provider: IMF
+  definition: IMF World Economic Outlook real GDP growth (history + forecast vintages), in percent.
+  units: percent (YoY)
+  cross_country_comparable: true
+  economic_mechanism: The institutional consensus growth path; WEO revisions move sovereign risk pricing.
+  concept: growth
+  notes: WEO is forecast-bearing — PIT use requires vintage care (flagged in Phase 3).
+
+- base_variable: IMF_WEO_Inflation
+  provider: IMF
+  definition: IMF WEO consumer price inflation (history + forecast vintages), in percent.
+  units: percent (YoY)
+  cross_country_comparable: true
+  economic_mechanism: Institutional inflation outlook; anchors medium-term policy expectations.
+  concept: monetary
+  notes: Forecast-bearing — PIT vintage care required.
+
+- base_variable: IMF_WEO_CA_GDP
+  provider: IMF
+  definition: IMF WEO current account balance as percent of GDP.
+  units: percent of GDP
+  cross_country_comparable: true
+  economic_mechanism: External vulnerability gauge — persistent deficits above ~4% of GDP precede currency crises.
+  concept: external
+  notes: Forecast-bearing — PIT vintage care required.
+
+- base_variable: IMF_WEO_Debt_GDP
+  provider: IMF
+  definition: IMF WEO general government gross debt as percent of GDP.
+  units: percent of GDP
+  cross_country_comparable: true
+  economic_mechanism: Fiscal sustainability anchor; high and rising debt limits crisis response capacity.
+  concept: structural
+  notes: Forecast-bearing — PIT vintage care required.
+
+- base_variable: IMF_WEO_Unemployment
+  provider: IMF
+  definition: IMF WEO unemployment rate, in percent.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Labor slack; falling unemployment supports demand but late-cycle tightness precedes policy restriction.
+  concept: growth
+
+- base_variable: IMF_WEO_Population
+  provider: IMF
+  definition: IMF WEO total population, in millions.
+  units: millions of persons
+  cross_country_comparable: false
+  economic_mechanism: Scale denominator for per-capita comparisons; not a signal.
+  concept: structural
+
+- base_variable: MS_Bank_Capital_Adequacy
+  provider: IMF
+  definition: Bank regulatory capital to risk-weighted assets (IMF Financial Soundness Indicators), in percent.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Banking system loss-absorption capacity; thin capital turns macro shocks into credit crunches.
+  concept: structural
+
+- base_variable: MS_Bank_Liquidity_Ratio
+  provider: IMF
+  definition: Bank liquid assets to total assets (IMF FSI), in percent.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Funding resilience — liquid banking systems survive deposit flight without fire sales.
+  concept: structural
+
+- base_variable: MS_Bank_Liquidity_Coverage_Ratio
+  provider: IMF
+  definition: Bank liquidity coverage ratio (high-quality liquid assets vs 30-day stressed outflows, IMF FSI), in percent.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Basel III stress-survival metric; below-100 readings flag acute funding fragility.
+  concept: structural
+
+- base_variable: MS_Bank_Net_Stable_Funding_Ratio
+  provider: IMF
+  definition: Bank net stable funding ratio (available vs required stable funding, IMF FSI), in percent.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Structural funding-mismatch metric; low NSFR systems depend on flighty wholesale funding.
+  concept: structural
+
+- base_variable: MS_NPL_Ratio
+  provider: IMF
+  definition: Non-performing loans to total gross loans (IMF FSI), in percent.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Realized credit stress; rising NPLs absorb bank capital and choke new lending.
+  concept: structural
+
+- base_variable: MS_NPL_Net_Provisions_to_Capital_Pct
+  provider: IMF
+  definition: NPLs net of provisions as a percent of bank capital (IMF FSI).
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Unprovisioned credit losses relative to capital — the cleanest single solvency-erosion gauge.
+  concept: structural
+
+- base_variable: MS_CentralBank_BalanceSheet_GDP
+  provider: IMF
+  definition: Central bank balance sheet size as percent of GDP.
+  units: percent of GDP
+  cross_country_comparable: true
+  economic_mechanism: Monetary footprint — large balance sheets signal QE/financial repression; rapid expansion debases, rapid contraction tightens.
+  concept: monetary
+  quality_flag: suspect
+  notes: PRD flags observed values in the hundreds of thousands for some countries — unit inconsistency upstream; validate range before use.
+
+- base_variable: MS_CentralBank_Claims_on_Government_Pct_GDP
+  provider: IMF
+  definition: Central bank claims on central government as percent of GDP.
+  units: percent of GDP
+  cross_country_comparable: true
+  economic_mechanism: Monetary financing of the fiscal deficit — the classic precursor of inflation crises.
+  concept: monetary
+  quality_flag: suspect
+  notes: Same upstream unit concerns as MS_CentralBank_BalanceSheet_GDP.
+
+# ── World Bank WDI / WGI (collect_external.py, collect_extended.py) ───────
+
+- base_variable: WB_GDP_Growth_Real
+  provider: World Bank
+  definition: Real GDP growth from World Bank WDI, year over year, in percent.
+  units: percent (YoY)
+  cross_country_comparable: true
+  economic_mechanism: Annual growth vintage; slow-moving confirmation of cycle position.
+  concept: growth
+
+- base_variable: WB_Inflation_CPI
+  provider: World Bank
+  definition: CPI inflation from World Bank WDI, in percent.
+  units: percent (YoY)
+  cross_country_comparable: true
+  economic_mechanism: Annual inflation vintage; complements monthly IMF/Bloomberg series.
+  concept: monetary
+
+- base_variable: WB_Current_Account_GDP
+  provider: World Bank
+  definition: Current account balance as percent of GDP (WDI).
+  units: percent of GDP
+  cross_country_comparable: true
+  economic_mechanism: External funding need; deficits financed by hot money are the EM crisis template.
+  concept: external
+
+- base_variable: WB_Govt_Debt_GDP
+  provider: World Bank
+  definition: Central government debt as percent of GDP (WDI).
+  units: percent of GDP
+  cross_country_comparable: true
+  economic_mechanism: Fiscal headroom; constrains counter-cyclical response.
+  concept: structural
+
+- base_variable: WB_External_Debt_GNI
+  provider: World Bank
+  definition: External debt stock as percent of gross national income (WDI).
+  units: percent of GNI
+  cross_country_comparable: true
+  economic_mechanism: FX-denominated liability burden — depreciation mechanically inflates this debt, the original-sin channel.
+  concept: external
+
+- base_variable: WB_FX_Reserves
+  provider: World Bank
+  definition: Total foreign exchange reserves including gold, in USD (WDI).
+  units: USD
+  cross_country_comparable: false
+  economic_mechanism: Crisis-fighting ammunition; scaled versions (import cover) are the comparable form.
+  concept: external
+
+- base_variable: WB_Import_Cover_Months
+  provider: World Bank
+  definition: FX reserves expressed as months of import cover (WDI).
+  units: months
+  cross_country_comparable: true
+  economic_mechanism: Reserve adequacy rule-of-thumb — below ~3 months flags vulnerability to sudden stops.
+  concept: external
+  valid_range: "0 to 36"
+
+- base_variable: WB_FDI_Inflows_GDP
+  provider: World Bank
+  definition: Foreign direct investment net inflows as percent of GDP (WDI).
+  units: percent of GDP
+  cross_country_comparable: true
+  economic_mechanism: Sticky capital inflow — FDI-funded growth is more durable than portfolio-funded growth.
+  concept: external
+
+- base_variable: WB_Domestic_Credit_GDP
+  provider: World Bank
+  definition: Domestic credit to private sector as percent of GDP (WDI).
+  units: percent of GDP
+  cross_country_comparable: true
+  economic_mechanism: Financial depth and leverage; rapid credit deepening precedes banking crises (complements the BIS gap).
+  concept: structural
+
+- base_variable: WB_Market_Cap_GDP
+  provider: World Bank
+  definition: Stock market capitalization as percent of GDP (WDI).
+  units: percent of GDP
+  cross_country_comparable: true
+  economic_mechanism: Equity market depth — the Buffett-indicator denominator-matched form; extreme highs flag froth.
+  concept: valuation
+
+- base_variable: WB_Trade_Openness
+  provider: World Bank
+  definition: Exports plus imports as percent of GDP (WDI).
+  units: percent of GDP
+  cross_country_comparable: true
+  economic_mechanism: Global-cycle sensitivity — open economies amplify world trade shocks in both directions.
+  concept: external
+
+- base_variable: WB_Unemployment
+  provider: World Bank
+  definition: Unemployment rate (ILO-modeled estimate, WDI), in percent.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Labor slack measure on a standardized basis.
+  concept: growth
+
+- base_variable: WB_Population
+  provider: World Bank
+  definition: Total population (WDI).
+  units: persons
+  cross_country_comparable: false
+  economic_mechanism: Scale denominator; not a signal.
+  concept: structural
+
+- base_variable: WB_Population_Growth
+  provider: World Bank
+  definition: Population growth rate (WDI), in percent.
+  units: percent (YoY)
+  cross_country_comparable: true
+  economic_mechanism: Demographic tailwind/headwind to trend growth and housing demand.
+  concept: structural
+
+- base_variable: WB_OldAge_Dependency
+  provider: World Bank
+  definition: Old-age dependency ratio — population 65+ as percent of working-age population (WDI).
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Aging burden — rising dependency suppresses trend growth, strains fiscal balances, and shifts savings behavior.
+  concept: structural
+
+- base_variable: WB_Labor_Force
+  provider: World Bank
+  definition: Total labor force (WDI).
+  units: persons
+  cross_country_comparable: false
+  economic_mechanism: Scale series; growth rate proxies labor input to potential GDP.
+  concept: structural
+
+- base_variable: WB_Female_LFP
+  provider: World Bank
+  definition: Female labor force participation rate (WDI), in percent.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Untapped labor capacity; rising female participation lifts potential growth.
+  concept: structural
+
+- base_variable: WB_Female_Labor_Share
+  provider: World Bank
+  definition: Female share of the total labor force (WDI), in percent.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Labor market inclusiveness; structural development indicator.
+  concept: structural
+
+- base_variable: WB_CO2_Per_Capita
+  provider: World Bank
+  definition: CO2 emissions per capita, in metric tons (WDI).
+  units: metric tons per capita
+  cross_country_comparable: true
+  economic_mechanism: Carbon intensity — transition-policy exposure for carbon-heavy economies.
+  concept: structural
+
+- base_variable: WB_Renewable_Energy_Share
+  provider: World Bank
+  definition: Renewable energy as percent of total final energy consumption (WDI).
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Energy transition position — insulates against fossil shocks and carbon-pricing regimes.
+  concept: structural
+
+- base_variable: WB_Control_Corruption
+  provider: World Bank
+  definition: Worldwide Governance Indicators control-of-corruption score (approx -2.5 to +2.5).
+  units: score (-2.5 to 2.5)
+  cross_country_comparable: true
+  economic_mechanism: Institutional quality — corruption taxes investment and raises the equity risk premium.
+  concept: structural
+  valid_range: "-2.5 to 2.5"
+
+- base_variable: WB_Govt_Effectiveness
+  provider: World Bank
+  definition: WGI government effectiveness score (approx -2.5 to +2.5).
+  units: score (-2.5 to 2.5)
+  cross_country_comparable: true
+  economic_mechanism: State capacity — effective governments execute counter-cyclical policy and infrastructure.
+  concept: structural
+  valid_range: "-2.5 to 2.5"
+
+- base_variable: WB_Political_Stability
+  provider: World Bank
+  definition: WGI political stability and absence of violence score (approx -2.5 to +2.5).
+  units: score (-2.5 to 2.5)
+  cross_country_comparable: true
+  economic_mechanism: Political risk discount — instability raises required returns and deters FDI.
+  concept: structural
+  valid_range: "-2.5 to 2.5"
+
+- base_variable: WB_Regulatory_Quality
+  provider: World Bank
+  definition: WGI regulatory quality score (approx -2.5 to +2.5).
+  units: score (-2.5 to 2.5)
+  cross_country_comparable: true
+  economic_mechanism: Business climate quality; predictable regulation lowers the cost of capital.
+  concept: structural
+  valid_range: "-2.5 to 2.5"
+
+- base_variable: WB_Rule_of_Law
+  provider: World Bank
+  definition: WGI rule of law score (approx -2.5 to +2.5).
+  units: score (-2.5 to 2.5)
+  cross_country_comparable: true
+  economic_mechanism: Property-rights enforcement — the deepest institutional driver of long-run valuation multiples.
+  concept: structural
+  valid_range: "-2.5 to 2.5"
+
+- base_variable: WB_Voice_Accountability
+  provider: World Bank
+  definition: WGI voice and accountability score (approx -2.5 to +2.5).
+  units: score (-2.5 to 2.5)
+  cross_country_comparable: true
+  economic_mechanism: Democratic accountability; correlates with policy predictability and minority-shareholder protection.
+  concept: structural
+  valid_range: "-2.5 to 2.5"
+
+# ── World Bank QPSD — public debt structure (collect_macrostructure.py) ───
+
+- base_variable: MS_Public_Debt_Total_Pct_GDP
+  provider: World Bank QPSD
+  definition: Total general government debt as percent of GDP (World Bank Quarterly Public Sector Debt).
+  units: percent of GDP
+  cross_country_comparable: true
+  economic_mechanism: Headline debt burden at quarterly frequency — timelier than annual WDI/WEO vintages.
+  concept: structural
+
+- base_variable: MS_Public_Debt_Short_Term_Pct_GDP
+  provider: World Bank QPSD
+  definition: Short-term public debt as percent of GDP (QPSD).
+  units: percent of GDP
+  cross_country_comparable: true
+  economic_mechanism: Rollover exposure — short-maturity debt must be refinanced at current rates, transmitting rate shocks to the budget fast.
+  concept: structural
+
+- base_variable: MS_Public_Debt_Short_Maturity_Pct
+  provider: World Bank QPSD
+  definition: Share of public debt with short residual maturity, in percent (QPSD).
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Maturity-structure fragility — the higher the share, the faster a rate shock becomes a fiscal shock.
+  concept: structural
+  valid_range: "0 to 100"
+
+- base_variable: MS_Public_Debt_Foreign_Currency_Pct_GDP
+  provider: World Bank QPSD
+  definition: Foreign-currency-denominated public debt as percent of GDP (QPSD).
+  units: percent of GDP
+  cross_country_comparable: true
+  economic_mechanism: Original sin — FX debt inflates mechanically when the currency depreciates, the classic EM crisis amplifier.
+  concept: external
+
+- base_variable: MS_Public_Debt_Domestic_Currency_Pct_GDP
+  provider: World Bank QPSD
+  definition: Domestic-currency public debt as percent of GDP (QPSD).
+  units: percent of GDP
+  cross_country_comparable: true
+  economic_mechanism: Inflatable debt — local-currency debt can be eroded by inflation rather than defaulted on.
+  concept: structural
+
+- base_variable: MS_Public_Debt_Local_Currency_Pct
+  provider: World Bank QPSD
+  definition: Share of public debt denominated in local currency, in percent (QPSD).
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Currency-composition resilience — high local-currency share removes the depreciation-default spiral.
+  concept: structural
+  valid_range: "0 to 100"
+
+- base_variable: MS_Public_Debt_External_Creditors_Pct_GDP
+  provider: World Bank QPSD
+  definition: Public debt held by external creditors as percent of GDP (QPSD).
+  units: percent of GDP
+  cross_country_comparable: true
+  economic_mechanism: Foreign-creditor dependence — external holders sell in global risk-off regardless of local fundamentals.
+  concept: external
+
+- base_variable: MS_Public_Debt_Domestic_Creditors_Pct_GDP
+  provider: World Bank QPSD
+  definition: Public debt held by domestic creditors as percent of GDP (QPSD).
+  units: percent of GDP
+  cross_country_comparable: true
+  economic_mechanism: Captive domestic investor base — stickier funding, but deepens the bank-sovereign doom loop.
+  concept: structural
+
+- base_variable: MS_Public_Debt_Foreign_Held_Pct
+  provider: World Bank QPSD
+  definition: Share of public debt held by foreign investors, in percent (QPSD).
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Foreign-ownership share of the bond market — high shares mean local yields are hostage to global flows.
+  concept: external
+  valid_range: "0 to 100"
+
+# ── FRED global/US series (broadcast) ─────────────────────────────────────
+
+- base_variable: FRED_VIX
+  provider: FRED
+  definition: CBOE VIX index — 30-day implied volatility of S&P 500 options (global broadcast).
+  units: percent (implied vol)
+  cross_country_comparable: true
+  economic_mechanism: The global risk-appetite dial; VIX spikes drive synchronized EM outflows independent of local fundamentals.
+  concept: sentiment
+
+- base_variable: FRED_HY_OAS
+  provider: FRED
+  definition: ICE BofA US High Yield option-adjusted spread, in basis points (global broadcast).
+  units: basis points
+  cross_country_comparable: true
+  economic_mechanism: Credit risk appetite — HY spread widening marks tightening financial conditions that spill into EM equities.
+  concept: sentiment
+
+- base_variable: FRED_UST_2Y
+  provider: FRED
+  definition: US 2-year Treasury yield, in percent (global broadcast).
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: The Fed-path anchor — rising US front-end rates pull capital out of EM carry positions.
+  concept: monetary
+
+- base_variable: FRED_UST_10Y
+  provider: FRED
+  definition: US 10-year Treasury yield, in percent (global broadcast).
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: The global discount rate — every risk asset reprices off the US 10Y.
+  concept: monetary
+
+- base_variable: FRED_Yield_Curve_10Y2Y
+  provider: FRED
+  definition: US 10-year minus 2-year Treasury spread, in percentage points (global broadcast).
+  units: percentage points
+  cross_country_comparable: true
+  economic_mechanism: The US recession-probability curve signal; inversions precede global slowdowns.
+  concept: monetary
+
+- base_variable: FRED_USD_Broad_Index
+  provider: FRED
+  definition: Federal Reserve broad trade-weighted US dollar index (global broadcast).
+  units: index
+  cross_country_comparable: true
+  economic_mechanism: The dollar cycle — USD strength tightens global funding conditions and crushes EM dollar-debtors.
+  concept: external
+
+# ── OECD (collect_extended.py) ────────────────────────────────────────────
+
+- base_variable: OECD_CLI
+  provider: OECD
+  definition: OECD Composite Leading Indicator (amplitude-adjusted, 100 = trend).
+  units: index (100 = trend)
+  cross_country_comparable: true
+  economic_mechanism: Designed to lead the business cycle by ~6 months; turning points are the signal, not levels.
+  concept: growth
+
+- base_variable: OECD_BCI
+  provider: OECD
+  definition: OECD Business Confidence Indicator (100 = long-term average).
+  units: index (100 = neutral)
+  cross_country_comparable: true
+  economic_mechanism: Corporate sentiment leads capex and hiring; divergence from consumer confidence flags margin pressure.
+  concept: sentiment
+
+- base_variable: OECD_CCI
+  provider: OECD
+  definition: OECD Consumer Confidence Indicator (100 = long-term average).
+  units: index (100 = neutral)
+  cross_country_comparable: true
+  economic_mechanism: Household sentiment leads discretionary spending; collapses precede demand contractions.
+  concept: sentiment
+
+- base_variable: MS_Household_Direct_Equity_Share
+  provider: OECD
+  definition: Share of household financial assets held directly in equities, in percent (OECD household accounts).
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Retail participation depth — high household equity exposure amplifies wealth effects and panic selling.
+  concept: structural
+
+- base_variable: MS_Pension_Assets_GDP
+  provider: OECD
+  definition: Pension fund assets as percent of GDP (OECD).
+  units: percent of GDP
+  cross_country_comparable: true
+  economic_mechanism: Institutional investor depth — large pension pools are a stabilizing domestic bid for local assets.
+  concept: structural
+
+- base_variable: MS_Insurance_Assets_GDP
+  provider: OECD
+  definition: Insurance company assets as percent of GDP (OECD).
+  units: percent of GDP
+  cross_country_comparable: true
+  economic_mechanism: Long-horizon institutional capital; deepens local bond demand and dampens yield spikes.
+  concept: structural
+
+# ── BIS (collect_external.py / collect_extended.py) ───────────────────────
+
+- base_variable: BIS_Credit_GDP_Gap
+  provider: BIS
+  definition: Credit-to-GDP gap — deviation of the private credit/GDP ratio from its one-sided HP trend, in percentage points (BIS).
+  units: percentage points
+  cross_country_comparable: true
+  economic_mechanism: The single best-documented banking-crisis early warning — gaps above ~10pp flag credit booms that end badly.
+  concept: structural
+  mechanism_reference: Borio & Lowe (2002); Basel III CCyB anchor
+
+- base_variable: BIS_DSR_Private
+  provider: BIS
+  definition: Private non-financial sector debt service ratio — debt payments as percent of income (BIS).
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Cash-flow burden of debt — rising DSRs choke consumption and investment even before defaults start.
+  concept: structural
+
+- base_variable: BIS_Policy_Rate
+  provider: BIS
+  definition: Central bank policy rate (BIS), in percent.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: The policy stance; real policy rate (vs inflation) determines whether conditions are loose or tight.
+  concept: monetary
+
+- base_variable: BIS_Property_Price
+  provider: BIS
+  definition: Residential property price index (BIS, typically 2010=100).
+  units: index
+  cross_country_comparable: false
+  economic_mechanism: Housing cycle — property busts impair bank collateral and household balance sheets simultaneously.
+  concept: structural
+
+- base_variable: BIS_REER
+  provider: BIS
+  definition: BIS real effective exchange rate index (2020=100).
+  units: index (2020=100)
+  cross_country_comparable: true
+  economic_mechanism: Competitiveness gauge from the BIS basket; elevated REER erodes export share and precedes corrections.
+  concept: external
+
+# ── FAO food trade (collect_extended.py) ──────────────────────────────────
+
+- base_variable: FAO_Self_Sufficiency
+  provider: FAO
+  definition: Food self-sufficiency ratio — domestic production relative to consumption (FAO).
+  units: ratio
+  cross_country_comparable: true
+  economic_mechanism: Food-shock insulation — self-sufficient countries are immune to global food price spikes that destabilize importers.
+  concept: structural
+
+- base_variable: FAO_Import_Dependency
+  provider: FAO
+  definition: Food import dependency ratio — imports relative to domestic supply (FAO).
+  units: ratio
+  cross_country_comparable: true
+  economic_mechanism: Food-crisis vulnerability — import-dependent countries face inflation and social stress when food prices spike.
+  concept: external
+
+- base_variable: FAO_AgExport_GDP_Share
+  provider: FAO
+  definition: Agricultural exports as a share of GDP (FAO).
+  units: percent of GDP
+  cross_country_comparable: true
+  economic_mechanism: Agri-exporter exposure — food price rallies are a terms-of-trade gain for these economies.
+  concept: external
+
+- base_variable: FAO_Terms_of_Trade
+  provider: FAO
+  definition: Agricultural terms of trade — export vs import price relation for food (FAO).
+  units: ratio/index
+  cross_country_comparable: true
+  economic_mechanism: Food terms-of-trade swing — direct income transfer between agri exporters and importers.
+  concept: external
+
+- base_variable: FAO_Trade_Openness
+  provider: FAO
+  definition: Agricultural trade openness — food trade flows relative to GDP (FAO).
+  units: ratio
+  cross_country_comparable: true
+  economic_mechanism: Food-trade integration; transmits global agri shocks in both directions.
+  concept: external
+
+# ── Demographic Inflation Pressure (Demographics_Inflation_Factor/) ───────
+
+- base_variable: DIP_abs
+  provider: ASADO derived (demographics)
+  definition: Demographic Inflation Pressure, absolute — the inflation pressure (in CPI percentage points) implied by the country's age structure, from cohort-weighted inflation betas.
+  units: percentage points of CPI
+  cross_country_comparable: true
+  economic_mechanism: Age cohorts differ in net consumption vs production; dependent-heavy populations are inflationary, working-age-heavy ones disinflationary. Mechanically forecastable decades ahead.
+  concept: structural
+  mechanism_reference: Demographics_Inflation_Factor/README.md (Juselius-Takats demographic inflation literature)
+
+- base_variable: DIP_rel
+  provider: ASADO derived (demographics)
+  definition: Demographic Inflation Pressure relative to the 34-country panel mean each year, in percentage points (positive = more inflationary demographics than average).
+  units: percentage points vs panel mean
+  cross_country_comparable: true
+  economic_mechanism: The tradeable cross-sectional form — relative demographic inflation pressure predicts relative policy tightness and real-rate differentials years ahead.
+  concept: structural
+
+- base_variable: DIP_rel_chg_5y
+  provider: ASADO derived (demographics)
+  definition: 5-year change in DIP_rel — how fast the country's relative demographic inflation pressure is shifting.
+  units: percentage points (5y change)
+  cross_country_comparable: true
+  economic_mechanism: Demographic momentum — markets price levels but underweight predictable demographic drift.
+  concept: structural
+
+- base_variable: DIP_rel_chg_10y
+  provider: ASADO derived (demographics)
+  definition: 10-year change in DIP_rel.
+  units: percentage points (10y change)
+  cross_country_comparable: true
+  economic_mechanism: Long-horizon demographic drift; fully forecastable from existing cohorts.
+  concept: structural
+
+# ── UNDP human development (collect_extended.py) ──────────────────────────
+
+- base_variable: UNDP_HDI
+  provider: UNDP
+  definition: Human Development Index — composite of life expectancy, education, and income (0-1 scale).
+  units: index (0-1)
+  cross_country_comparable: true
+  economic_mechanism: Development level; slow-moving structural quality anchor.
+  concept: structural
+  quality_flag: suspect
+  valid_range: "0 to 1"
+  notes: PRD flags observed values of 93-130 — upstream scaling error (likely x100 plus rank contamination); validate before use.
+
+- base_variable: UNDP_IHDI
+  provider: UNDP
+  definition: Inequality-adjusted Human Development Index (0-1 scale).
+  units: index (0-1)
+  cross_country_comparable: true
+  economic_mechanism: Development discounted by inequality; large HDI-IHDI gaps flag social fragility.
+  concept: structural
+  valid_range: "0 to 1"
+
+- base_variable: UNDP_GDI
+  provider: UNDP
+  definition: Gender Development Index — ratio of female to male HDI (UNDP).
+  units: ratio
+  cross_country_comparable: true
+  economic_mechanism: Gender parity in development; correlates with labor-force depth and institutional quality.
+  concept: structural
+
+- base_variable: UNDP_GII
+  provider: UNDP
+  definition: Gender Inequality Index (0 = equality, 1 = maximum inequality; UNDP).
+  units: index (0-1)
+  cross_country_comparable: true
+  economic_mechanism: Structural inequality drag on potential growth.
+  concept: structural
+  valid_range: "0 to 1"
+
+# ── Geopolitical risk (Caldara-Iacoviello) ────────────────────────────────
+
+- base_variable: GPR
+  provider: GPR (Caldara-Iacoviello)
+  definition: Country-level Geopolitical Risk index — share of news articles mentioning geopolitical tensions for this country (Caldara-Iacoviello).
+  units: index
+  cross_country_comparable: true
+  economic_mechanism: Geopolitical tail-risk pricing — GPR spikes raise risk premia and capital flight; persistent elevation suppresses investment.
+  concept: sentiment
+  mechanism_reference: Caldara & Iacoviello (2022), "Measuring Geopolitical Risk"
+
+- base_variable: Global_GPR
+  provider: GPR (Caldara-Iacoviello)
+  definition: Global Geopolitical Risk index (broadcast to all countries).
+  units: index
+  cross_country_comparable: true
+  economic_mechanism: World geopolitical temperature; global spikes hit risk assets broadly with EMs underperforming.
+  concept: sentiment
+
+- base_variable: Global_GPR_Act
+  provider: GPR (Caldara-Iacoviello)
+  definition: Global GPR acts sub-index — realized geopolitical events (wars, attacks) as opposed to threats.
+  units: index
+  cross_country_comparable: true
+  economic_mechanism: Realized geopolitical shock component; markets often bottom when threats become acts.
+  concept: sentiment
+
+- base_variable: Global_GPR_Threat
+  provider: GPR (Caldara-Iacoviello)
+  definition: Global GPR threats sub-index — threatened/anticipated geopolitical tensions.
+  units: index
+  cross_country_comparable: true
+  economic_mechanism: Anticipatory risk pricing; threat escalation drives hedging demand before any event occurs.
+  concept: sentiment
+
+# ── ND-GAIN climate (collect_extended.py) ─────────────────────────────────
+
+- base_variable: NDGAIN_Score
+  provider: ND-GAIN
+  definition: Notre Dame Global Adaptation Index composite — readiness minus vulnerability to climate change (higher = better positioned).
+  units: score (0-100)
+  cross_country_comparable: true
+  economic_mechanism: Climate-transition resilience; structurally discounts physically-exposed, unprepared economies.
+  concept: structural
+  valid_range: "0 to 100"
+
+- base_variable: NDGAIN_Readiness
+  provider: ND-GAIN
+  definition: ND-GAIN readiness sub-score — economic, governance, and social capacity to deploy adaptation investment.
+  units: score (0-1)
+  cross_country_comparable: true
+  economic_mechanism: Adaptation capacity; high-readiness countries convert climate stress into investment opportunity.
+  concept: structural
+
+- base_variable: NDGAIN_Vulnerability
+  provider: ND-GAIN
+  definition: ND-GAIN vulnerability sub-score — exposure and sensitivity to climate disruption.
+  units: score (0-1)
+  cross_country_comparable: true
+  economic_mechanism: Physical climate risk; vulnerable economies face rising disaster losses and insurance withdrawal.
+  concept: structural
+
+# ── ILO labor (collect_extended.py) ───────────────────────────────────────
+
+- base_variable: ILO_Unemployment_Rate
+  provider: ILO
+  definition: Unemployment rate from ILOSTAT modeled estimates, in percent.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Standardized labor slack; rising unemployment confirms downturns and triggers policy easing.
+  concept: growth
+
+- base_variable: ILO_LFP_Rate
+  provider: ILO
+  definition: Labor force participation rate from ILOSTAT, in percent.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Labor supply depth; falling participation shrinks potential growth even with low unemployment.
+  concept: structural
+
+# ── ASADO-derived macrostructure composites (collect_macrostructure.py) ───
+
+- base_variable: MS_CentralBank_SovDebt_Share
+  provider: ASADO derived
+  definition: Central bank claims on central government as a share of total public debt (transparent public-data proxy; QPSD denominator preferred, WEO fallback).
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Monetary financing share — central banks absorbing their own sovereign's debt is the fiscal-dominance signature.
+  concept: monetary
+  valid_range: "0 to 100"
+
+- base_variable: MS_Investor_Base_Fragility
+  provider: ASADO derived
+  definition: Transparent percentile composite of investor-base fragility (foreign ownership, debt structure, banking exposure); no fitted weights.
+  units: percentile score (0-100)
+  cross_country_comparable: true
+  economic_mechanism: Who holds the bonds determines crisis dynamics — flighty foreign and leveraged holders amplify selloffs.
+  concept: structural
+  valid_range: "0 to 100"
+
+- base_variable: MS_Reserve_Adequacy
+  provider: ASADO derived
+  definition: Blend of import-cover strength and inverse external-debt burden (import-cover component only where external debt is missing).
+  units: score
+  cross_country_comparable: true
+  economic_mechanism: Crisis-fighting capacity — adequate reserves deter speculative attacks; inadequacy invites them.
+  concept: external
+
+- base_variable: MS_Swap_Line_Access
+  provider: ASADO derived
+  definition: Policy-support proxy from Federal Reserve standing/temporary USD swap line access (full backstop for US sleeves).
+  units: score
+  cross_country_comparable: true
+  economic_mechanism: Fed swap lines are the ultimate USD liquidity backstop — access historically capped funding stress in 2008/2020.
+  concept: external
+
+- base_variable: MS_Policy_Backstop
+  provider: ASADO derived
+  definition: Composite of MS_Reserve_Adequacy and MS_Swap_Line_Access — total external liquidity backstop.
+  units: score
+  cross_country_comparable: true
+  economic_mechanism: Combined self-insurance plus insurance-by-alliance; the full measure of sudden-stop resilience.
+  concept: external
+
+# ── Misc singles ──────────────────────────────────────────────────────────
+
+- base_variable: EIA_Petroleum_Consumption_TBPD
+  provider: EIA
+  definition: Petroleum consumption in thousand barrels per day (EIA).
+  units: thousand barrels/day
+  cross_country_comparable: false
+  economic_mechanism: Oil-demand exposure scale; per-GDP intensity determines oil-shock sensitivity.
+  concept: commodity
+
+- base_variable: EPU
+  provider: EPU (policyuncertainty.com)
+  definition: Economic Policy Uncertainty index — newspaper-based frequency of policy-uncertainty coverage (Baker-Bloom-Davis).
+  units: index (~100 = historical mean)
+  cross_country_comparable: true
+  economic_mechanism: Policy uncertainty delays firm investment and hiring; EPU spikes depress near-term returns but mark fear-driven entry points.
+  concept: sentiment
+  mechanism_reference: Baker, Bloom & Davis (2016)
+
+- base_variable: MS_US_Holder_Share_Pct
+  provider: IMF PIP / US TIC
+  definition: Share of the country's portfolio securities held by US investors, in percent (IMF Portfolio Investment Positions / US Treasury TIC).
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: US-investor dependence — high US ownership ties the market to US risk appetite and dollar cycles.
+  concept: external
+  valid_range: "0 to 100"
+
+- base_variable: OFAC_Sanctioned
+  provider: OFAC
+  definition: Binary flag — country is associated with an active OFAC sanctions program (SDN association data, not a sovereign-target registry).
+  units: binary (0/1)
+  cross_country_comparable: true
+  economic_mechanism: Sanctions exposure restricts capital access and trade; flag changes are discrete repricing events.
+  concept: structural
+  valid_range: "0 or 1"
+
+- base_variable: OFAC_Sanctions_Count
+  provider: OFAC
+  definition: Count of OFAC sanctions programs associated with the country (SDN association data).
+  units: count
+  cross_country_comparable: true
+  economic_mechanism: Sanctions intensity; escalation precedes financial-channel isolation.
+  concept: structural
+
+# ── Graph features (scripts/loop/build_graph_features.py) ─────────────────
+
+- base_variable: GRAPH_TRADE_NBR_RET_GAP_21D
+  provider: ASADO graph (Neo4j edges)
+  definition: Trade-weighted neighbor 21-day return minus own 21-day return (TRADES_WITH edge weights).
+  units: decimal return gap
+  cross_country_comparable: true
+  economic_mechanism: Shock propagation along trade links — when trading partners reprice and the country has not, the gap predicts catch-up or contagion.
+  concept: network
+
+- base_variable: GRAPH_TRADE_NBR_RET_GAP_63D
+  provider: ASADO graph (Neo4j edges)
+  definition: Trade-weighted neighbor 63-day return minus own 63-day return.
+  units: decimal return gap
+  cross_country_comparable: true
+  economic_mechanism: Quarterly-horizon version of the trade propagation gap.
+  concept: network
+
+- base_variable: GRAPH_BANK_NBR_RET_GAP_21D
+  provider: ASADO graph (Neo4j edges)
+  definition: Banking-exposure-weighted neighbor 21-day return minus own 21-day return (HAS_BANKING_EXPOSURE_TO edges).
+  units: decimal return gap
+  cross_country_comparable: true
+  economic_mechanism: Financial contagion channel — stress in creditor/debtor banking partners transmits through funding and credit lines.
+  concept: network
+
+- base_variable: GRAPH_BANK_NBR_RET_GAP_63D
+  provider: ASADO graph (Neo4j edges)
+  definition: Banking-exposure-weighted neighbor 63-day return minus own 63-day return.
+  units: decimal return gap
+  cross_country_comparable: true
+  economic_mechanism: Quarterly-horizon banking contagion gap.
+  concept: network
+
+- base_variable: GRAPH_PORT_HOLDER_STRESS_21D
+  provider: ASADO graph (Neo4j edges)
+  definition: HOLDS_PORTFOLIO-weighted holder-country drawdown over 21 days — stress among the countries that own this market's securities.
+  units: decimal (weighted drawdown)
+  cross_country_comparable: true
+  economic_mechanism: Holder-stress selling — when the investors' home markets draw down, they liquidate foreign holdings, pressuring this market regardless of local fundamentals.
+  concept: network
+
+- base_variable: GRAPH_TWOHOP_TRADE_GAP_21D
+  provider: ASADO graph (Neo4j edges)
+  definition: Two-hop trade propagation gap — middle trading partner repriced (|z|>1) while the endpoint has not (|z|<0.5).
+  units: decimal return gap
+  cross_country_comparable: true
+  economic_mechanism: Indirect shock transmission — supply-chain shocks travel two hops with a lag the market is slow to price.
+  concept: network
+
+- base_variable: GRAPH_NBR_DRAWDOWN_COUNT
+  provider: ASADO graph (Neo4j edges)
+  definition: Edge-weighted count of neighbor countries in greater than 10 percent drawdown (contagion pressure).
+  units: weighted count
+  cross_country_comparable: true
+  economic_mechanism: Neighborhood stress density — when many connected economies are drawing down simultaneously, contagion probability rises non-linearly.
+  concept: network
+
+# ── Prediction-market curated signals (build_predmkt_panel.py) ────────────
+
+- base_variable: recession_prob_12m
+  provider: Kalshi/Polymarket (curated)
+  definition: Prediction-market implied probability of a US recession within 12 months.
+  units: probability (0-1)
+  cross_country_comparable: true
+  economic_mechanism: Crowd-priced macro tail risk; complements yield-curve recession models with real-money odds.
+  concept: sentiment
+  valid_range: "0 to 1"
+
+- base_variable: cpi_nowcast_yoy_next
+  provider: Kalshi/Polymarket (curated)
+  definition: Prediction-market implied nowcast of the next US CPI YoY print.
+  units: percent (YoY)
+  cross_country_comparable: true
+  economic_mechanism: Real-money inflation nowcast — sharper than surveys into print day; surprises vs this move rates.
+  concept: monetary
+
+- base_variable: cpi_nowcast_core_next
+  provider: Kalshi/Polymarket (curated)
+  definition: Prediction-market implied nowcast of the next US core CPI print.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Core inflation nowcast — the Fed-relevant print, priced by real money.
+  concept: monetary
+
+- base_variable: unemployment_nowcast_next
+  provider: Kalshi/Polymarket (curated)
+  definition: Prediction-market implied nowcast of the next US unemployment rate print.
+  units: percent
+  cross_country_comparable: true
+  economic_mechanism: Labor data nowcast; payroll surprises drive rate repricing.
+  concept: growth
+
+- base_variable: fed_decision_distribution_next
+  provider: Kalshi/Polymarket (curated)
+  definition: Prediction-market implied distribution over the next FOMC decision (cut/hold/hike encoded).
+  units: probability-weighted encoding
+  cross_country_comparable: true
+  economic_mechanism: Meeting-level policy odds; divergence from OIS pricing is a cross-market signal.
+  concept: monetary
+
+- base_variable: fed_cut_count_expectation
+  provider: Kalshi/Polymarket (curated)
+  definition: Prediction-market implied expected number of Fed rate cuts over the contract horizon.
+  units: count (expected cuts)
+  cross_country_comparable: true
+  economic_mechanism: Easing-cycle pricing; repricing of the cut path moves the dollar and EM risk appetite.
+  concept: monetary
+
+- base_variable: oil_shock_prob_30d
+  provider: Kalshi/Polymarket (curated)
+  definition: Prediction-market implied probability of an oil price shock within 30 days.
+  units: probability (0-1)
+  cross_country_comparable: true
+  economic_mechanism: Energy tail-risk odds; rising shock probability is a leading hedge signal for importers vs exporters.
+  concept: commodity
+  valid_range: "0 to 1"
+
+- base_variable: hormuz_disruption_prob_90d
+  provider: Kalshi/Polymarket (curated)
+  definition: Prediction-market implied probability of a Strait of Hormuz shipping disruption within 90 days.
+  units: probability (0-1)
+  cross_country_comparable: true
+  economic_mechanism: Chokepoint risk — Hormuz carries ~20% of global oil; disruption odds price the sharpest energy tail.
+  concept: commodity
+  valid_range: "0 to 1"
+
+- base_variable: regional_conflict_premium_middle_east
+  provider: Kalshi/Polymarket (curated)
+  definition: Composite prediction-market conflict premium for the Middle East region.
+  units: score
+  cross_country_comparable: true
+  economic_mechanism: Region-specific geopolitical pricing; feeds oil risk and regional market discounts.
+  concept: sentiment
+
+- base_variable: regional_conflict_premium_eastern_europe
+  provider: Kalshi/Polymarket (curated)
+  definition: Composite prediction-market conflict premium for Eastern Europe.
+  units: score
+  cross_country_comparable: true
+  economic_mechanism: Conflict-escalation pricing for the region; drives European energy and defense repricing.
+  concept: sentiment
+
+- base_variable: regional_conflict_premium_pacific
+  provider: Kalshi/Polymarket (curated)
+  definition: Composite prediction-market conflict premium for the Pacific region (Taiwan-strait centric).
+  units: score
+  cross_country_comparable: true
+  economic_mechanism: The Taiwan-scenario tail — repricing hits Taiwan/China/Korea semis complex first.
+  concept: sentiment
+
+- base_variable: tariff_intensity_by_country
+  provider: Kalshi/Polymarket (curated)
+  definition: Prediction-market implied tariff/trade-restriction intensity mapped to countries.
+  units: score
+  cross_country_comparable: true
+  economic_mechanism: Trade-war exposure pricing; tariff odds hit export-dependent markets ahead of implementation.
+  concept: external
+
+- base_variable: predmkt_country_risk_composite
+  provider: Kalshi/Polymarket (curated)
+  definition: ASADO composite of prediction-market signals mapped to country downside risk (>0 = implied downside risk).
+  units: score (signed)
+  cross_country_comparable: true
+  economic_mechanism: Aggregated real-money odds of country-negative scenarios; a LOOK trigger, never a mechanical trade.
+  concept: sentiment
+
+- base_variable: predmkt_country_opportunity_composite
+  provider: Kalshi/Polymarket (curated)
+  definition: ASADO composite of prediction-market signals mapped to country upside (>0 = implied upside).
+  units: score (signed)
+  cross_country_comparable: true
+  economic_mechanism: Aggregated real-money odds of country-positive scenarios (deals, easing, resolution events).
+  concept: sentiment

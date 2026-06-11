@@ -24,12 +24,11 @@
 
 ```
 variable, source_table, source_file, native_frequency, monthly_equivalent,
-is_normalized (BOOLEAN), category, is_optimizer_selected (BOOLEAN),
-freshness_expectation
+is_normalized (BOOLEAN), category, freshness_expectation
 ```
 
 - `monthly_equivalent`: maps daily names to monthly (e.g., `20DTR_CS` → `1MTR_CS`)
-- `is_optimizer_selected`: 8 factors flagged: `120DTR_TS`, `120MA Signal_CS/TS`, `20DTR_CS/TS`, `REER_CS`, `RSI14_CS/TS`
+- `is_optimizer_selected` was REMOVED 2026-06-10: it came from a static `T2_Optimizer_Top.xlsx` left by the retired Fuzzy Daily project and did not describe any live strategy.
 - `category`: return, technical, volatility, valuation_fund, macro, commodity, fx, rates, size, risk, gdelt_signal, gdelt_raw, other
 - World Bank commodity broadcast variables are present with `source_table='wb_commodity_factor_panel'`, `category='commodity'`, and `freshness_expectation='monthly'`.
 
@@ -57,7 +56,8 @@ freshness_expectation
 | `daily_cum_return_30d` | Cumulative return (30-day) |
 | `daily_cum_return_252d` | Cumulative return (1-year) |
 | `daily_return_source` | `t2_optimizer_daily` or `gdelt_optimizer_daily` |
-| `is_optimizer_selected` | `true` for the 8 strategy factors |
+
+(`is_optimizer_selected` was removed 2026-06-10 — stale Fuzzy Daily artifact.)
 
 Example Cypher queries:
 
@@ -65,20 +65,14 @@ Example Cypher queries:
 // Top factors by daily Sharpe
 MATCH (f:Factor)
 WHERE f.daily_sharpe_252d IS NOT NULL
-RETURN f.name, f.daily_sharpe_252d, f.daily_vol_252d, f.is_optimizer_selected
+RETURN f.name, f.daily_sharpe_252d, f.daily_vol_252d
 ORDER BY f.daily_sharpe_252d DESC LIMIT 10
 
 // Factors connected to Turkey, ranked by Sharpe
 MATCH (c:Country {t2_name: 'Turkey'})-[r:HAS_FACTOR_EXPOSURE]->(f:Factor)
 WHERE f.daily_sharpe_252d IS NOT NULL
-RETURN f.name, f.daily_sharpe_252d, r.value AS exposure, f.is_optimizer_selected
+RETURN f.name, f.daily_sharpe_252d, r.value AS exposure
 ORDER BY f.daily_sharpe_252d DESC LIMIT 10
-
-// Optimizer-selected factors with their daily stats
-MATCH (f:Factor)
-WHERE f.is_optimizer_selected = true
-RETURN f.name, f.daily_sharpe_252d, f.daily_vol_252d, f.daily_cum_return_252d
-ORDER BY f.daily_sharpe_252d DESC
 ```
 
 ### Monthly Orchestrator
@@ -94,7 +88,6 @@ ORDER BY f.daily_sharpe_252d DESC
 | `T2 Factor Timing Fuzzy Daily/Normalized_T2_MasterCSV.csv` | 1.6 GB | 2026-05-07 |
 | `T2 Factor Timing Fuzzy Daily/T2MasterDaily.xlsx` | 116 MB | 2026-04-21 |
 | `T2 Factor Timing Fuzzy Daily/T2_Optimizer.xlsx` | — | 2026-02-24 |
-| `T2 Factor Timing Fuzzy Daily/T2_Optimizer_Top.xlsx` | 1.1 MB | 2026-02-22 |
 | `GDELT Factor Timing Fuzzy Daily/T2-Factor-Timing-Daily/GDELT_Factors_MasterCSV.csv` | 556 MB | 2026-05-08 |
 | `GDELT Factor Timing Fuzzy Daily/T2-Factor-Timing-Daily/GDELT_Optimizer.xlsx` | — | 2026-05-08 |
 | `GDELT/data/panels/country_signal_daily.parquet` | 170 MB | 2026-04-19 upstream snapshot; live `gdelt_raw_daily` loaded through 2026-05-07 |
@@ -116,13 +109,13 @@ python scripts/build_daily_panels.py --check
 import duckdb
 con = duckdb.connect('Data/asado.duckdb', read_only=True)
 
-# Optimizer-selected factors for Brazil, last 5 days
+# Selected factors for Brazil, last 5 days (pick explicit variables)
 con.execute("""
     SELECT t.date, t.variable, t.value
     FROM t2_factors_daily t
     WHERE t.country = 'Brazil'
       AND t.date >= DATE '2026-05-01'
-      AND t.variable IN (SELECT variable FROM variable_meta WHERE is_optimizer_selected)
+      AND t.variable IN ('20DTR_CS', 'RSI14_CS', 'REER_CS')
     ORDER BY t.variable, t.date
 """).fetchdf()
 
@@ -145,8 +138,8 @@ con.execute("""
     ORDER BY date
 """).fetchdf()
 
-# Variable metadata — what's optimizer-selected?
-con.execute("SELECT * FROM variable_meta WHERE is_optimizer_selected").fetchdf()
+# Variable metadata
+con.execute("SELECT * FROM variable_meta WHERE source_table = 't2_factors_daily'").fetchdf()
 
 # Trading calendar — Saudi Arabia (Sun-Thu)
 con.execute("""

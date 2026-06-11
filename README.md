@@ -40,6 +40,17 @@ python scripts/daily_update.py          # daily metronome: T2 + GDELT factors & 
 **Prerequisites:** Bloomberg Terminal logged in on the Parallels Windows VM (for the live pulls);
 Neo4j running (`brew services start neo4j`). Logs land in `Data/logs/`.
 
+**Automated morning run (2026-06-10):** launchd job `com.arjundivecha.asado-daily`
+runs `scripts/run_asado_daily.sh` weekdays at 07:30. It auto-starts the Parallels
+VM + bbcomm, runs a live Bloomberg data-pull preflight (iMessages once and
+retries every 20 min until 11:00 if the Terminal needs a login), then runs
+`daily_update.py --resume` with one auto-retry. `daily_update.py` is now
+**fail-fast + resumable**: completed stages checkpoint to
+`Data/logs/daily_update_progress_YYYY_MM_DD.json`, a failed stage aborts the
+rest (no downstream stages on stale data), and `--resume` continues from the
+failed stage without redoing the Bloomberg pull. The 07:00 NightWatch digest
+(`A Working/NightWatch/`) reports the result each morning.
+
 ### Common options
 ```bash
 python scripts/monthly_update.py --skip-bloomberg     # no Terminal — reuse existing Bloomberg data

@@ -145,7 +145,6 @@ def _schema_snapshot(refresh_schema: bool = False) -> dict[str, Any]:
             "Use event_window tool for daily event studies instead of raw SQL — it now "
             "includes a return_summary block with pre/post/window country returns and "
             "factor return leaders/laggards.",
-            "variable_meta.is_optimizer_selected flags the 8 strategy-driving factors.",
             "Use graph_role to separate sovereign proxies from market sleeves in Neo4j.",
             "ChinaA is the sovereign proxy for China for graph-network questions.",
             "Sanctions data is OFAC/SDN association data, not a sovereign target registry.",
@@ -363,7 +362,7 @@ def event_window(
     date: str,
     days_before: int = 10,
     days_after: int = 10,
-    variables: str = "optimizer",
+    variables: str = "all",
     include_gdelt: bool = True,
     include_factor_returns: bool = True,
     max_rows: int = 500,
@@ -375,14 +374,22 @@ def event_window(
         days_before: Calendar days before the event date to include.
         days_after: Calendar days after the event date to include.
         variables: Which T2 variables to include. Options:
-            "optimizer" = 8 optimizer-selected factors (default),
-            "all" = all 109 normalized variables,
+            "all" = all normalized variables (default),
             or a comma-separated list of specific variable names.
+            ("optimizer" was removed 2026-06-10 — the 8-factor whitelist was a
+            stale artifact from the retired Fuzzy Daily project.)
         include_gdelt: Whether to include GDELT daily signals for this country.
         include_factor_returns: Whether to include daily factor returns in the window.
         max_rows: Maximum rows per section.
     """
     import duckdb as _duckdb
+
+    if variables == "optimizer":
+        raise ValueError(
+            "The 'optimizer' variable shortcut was removed (2026-06-10): the "
+            "8-factor whitelist was a stale artifact, not a live strategy. "
+            "Pass 'all' or an explicit comma-separated variable list."
+        )
 
     db_path = str(BASE_DIR / "Data" / "asado.duckdb")
     con = _duckdb.connect(db_path, read_only=True)
@@ -391,13 +398,7 @@ def event_window(
     end_date = f"DATE '{date}' + INTERVAL {days_after} DAY"
 
     # Resolve variable filter
-    if variables == "optimizer":
-        var_filter = """
-            AND t.variable IN (
-                SELECT variable FROM variable_meta WHERE is_optimizer_selected
-            )
-        """
-    elif variables == "all":
+    if variables == "all":
         var_filter = ""
     else:
         var_list = ", ".join(f"'{v.strip()}'" for v in variables.split(","))
@@ -439,9 +440,6 @@ def event_window(
             SELECT f.date, f.factor, f.value, f.source
             FROM factor_returns_daily f
             WHERE f.date BETWEEN {start_date} AND {end_date}
-              AND f.factor IN (
-                  SELECT variable FROM variable_meta WHERE is_optimizer_selected
-              )
             ORDER BY f.factor, f.date
             LIMIT {max_rows}
         """).fetchdf()
@@ -1097,13 +1095,22 @@ def daily_factor_series(
     """
     Args:
         country: T2 country name or ISO3 code (ISO3 for gdelt_raw source).
-        variables: Comma-separated variable names, or "optimizer" for the 8 selected.
+        variables: Comma-separated variable names.
+            ("optimizer" was removed 2026-06-10 — the 8-factor whitelist was a
+            stale artifact from the retired Fuzzy Daily project.)
         start_date: Start date in YYYY-MM-DD format.
         end_date: End date in YYYY-MM-DD format.
         source: Which table to query: "t2" (default), "t2_levels", "gdelt", "gdelt_raw".
         max_rows: Maximum rows to return.
     """
     import duckdb as _duckdb
+
+    if variables == "optimizer":
+        raise ValueError(
+            "The 'optimizer' variable shortcut was removed (2026-06-10): the "
+            "8-factor whitelist was a stale artifact, not a live strategy. "
+            "Pass an explicit comma-separated variable list."
+        )
 
     db_path = str(BASE_DIR / "Data" / "asado.duckdb")
     con = _duckdb.connect(db_path, read_only=True)
@@ -1117,15 +1124,8 @@ def daily_factor_series(
         "gdelt_returns": "gdelt_factors_daily",
     }
 
-    if variables == "optimizer":
-        var_filter = """
-            AND variable IN (
-                SELECT variable FROM variable_meta WHERE is_optimizer_selected
-            )
-        """
-    else:
-        var_list = ", ".join(f"'{v.strip()}'" for v in variables.split(","))
-        var_filter = f"AND variable IN ({var_list})"
+    var_list = ", ".join(f"'{v.strip()}'" for v in variables.split(","))
+    var_filter = f"AND variable IN ({var_list})"
 
     if source == "gdelt_raw":
         # Wide format — return all signal columns for the country
@@ -1139,12 +1139,7 @@ def daily_factor_series(
         """).fetchdf()
     elif source == "factor_returns_daily":
         # Country arg is ignored — these are factor portfolio returns, not country-keyed.
-        var_list = ", ".join(f"'{v.strip()}'" for v in variables.split(","))
-        factor_filter = (
-            "AND factor IN (SELECT variable FROM variable_meta WHERE is_optimizer_selected)"
-            if variables == "optimizer"
-            else f"AND factor IN ({var_list})"
-        )
+        factor_filter = f"AND factor IN ({var_list})"
         df = con.execute(f"""
             SELECT date, factor, value, source
             FROM factor_returns_daily

@@ -1,0 +1,654 @@
+# ============================================================================
+# ASADO Forward Event Calendar Seed (Alpha-Hunting Loop Phase 3, Priority 5)
+# ============================================================================
+# Hand-curated FORWARD-looking scheduled events: central bank decision dates,
+# elections, and index reviews. Complements event_log_seed.yaml (backward-
+# looking history). Loaded into the LOOP DuckDB (Data/loop/asado_loop.duckdb,
+# table `forward_calendar`) by scripts/loop/build_forward_calendar.py.
+#
+# RULES (FAIL-IS-FAIL):
+# - Every date here was verified against a primary or near-primary source on
+#   the date in `verified_on`. NO dates from memory.
+# - date_confirmed: false marks events whose month is certain but whose exact
+#   day is not yet published (e.g. FTSE implementation day).
+# - When a scheduled event has happened, the daily builder simply stops
+#   showing it (event_date < today); entries are kept for audit.
+#
+# Category vocabulary: central_bank, election, index_review
+# Severity: high, medium, low
+# countries_affected: comma-separated T2 names; null = see is_global
+#
+# VERSION: 1.0   LAST UPDATED: 2026-06-10   AUTHOR: Claude (verified via web)
+# ============================================================================
+
+# ─── FOMC (decision day = day 2). Source: federalreserve.gov press release
+#     2024-08-09, verified 2026-06-10 ──────────────────────────────────────
+
+- event_id: fomc_2026_06_17
+  event_date: "2026-06-17"
+  label: "FOMC decision (June, with SEP)"
+  category: central_bank
+  severity: high
+  is_global: true
+  countries_affected: "U.S., NASDAQ, US SmallCap"
+  source_url: "https://www.federalreserve.gov/newsevents/pressreleases/monetary20240809a.htm"
+  tags: "fomc,fed,sep"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: fomc_2026_07_29
+  event_date: "2026-07-29"
+  label: "FOMC decision (July)"
+  category: central_bank
+  severity: high
+  is_global: true
+  countries_affected: "U.S., NASDAQ, US SmallCap"
+  source_url: "https://www.federalreserve.gov/newsevents/pressreleases/monetary20240809a.htm"
+  tags: "fomc,fed"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: fomc_2026_09_16
+  event_date: "2026-09-16"
+  label: "FOMC decision (September, with SEP)"
+  category: central_bank
+  severity: high
+  is_global: true
+  countries_affected: "U.S., NASDAQ, US SmallCap"
+  source_url: "https://www.federalreserve.gov/newsevents/pressreleases/monetary20240809a.htm"
+  tags: "fomc,fed,sep"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: fomc_2026_10_28
+  event_date: "2026-10-28"
+  label: "FOMC decision (October)"
+  category: central_bank
+  severity: high
+  is_global: true
+  countries_affected: "U.S., NASDAQ, US SmallCap"
+  source_url: "https://www.federalreserve.gov/newsevents/pressreleases/monetary20240809a.htm"
+  tags: "fomc,fed"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: fomc_2026_12_09
+  event_date: "2026-12-09"
+  label: "FOMC decision (December, with SEP)"
+  category: central_bank
+  severity: high
+  is_global: true
+  countries_affected: "U.S., NASDAQ, US SmallCap"
+  source_url: "https://www.federalreserve.gov/newsevents/pressreleases/monetary20240809a.htm"
+  tags: "fomc,fed,sep"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+# ─── ECB Governing Council (decision day = day 2). Source: ecb.europa.eu
+#     meetings calendar, verified 2026-06-10 ────────────────────────────────
+
+- event_id: ecb_2026_06_11
+  event_date: "2026-06-11"
+  label: "ECB monetary policy decision (June)"
+  category: central_bank
+  severity: high
+  is_global: true
+  countries_affected: "France, Germany, Italy, Netherlands, Spain, Denmark"
+  source_url: "https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html"
+  tags: "ecb,eurozone"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: ecb_2026_07_23
+  event_date: "2026-07-23"
+  label: "ECB monetary policy decision (July)"
+  category: central_bank
+  severity: high
+  is_global: true
+  countries_affected: "France, Germany, Italy, Netherlands, Spain, Denmark"
+  source_url: "https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html"
+  tags: "ecb,eurozone"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: ecb_2026_09_10
+  event_date: "2026-09-10"
+  label: "ECB monetary policy decision (September, hosted by Bundesbank)"
+  category: central_bank
+  severity: high
+  is_global: true
+  countries_affected: "France, Germany, Italy, Netherlands, Spain, Denmark"
+  source_url: "https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html"
+  tags: "ecb,eurozone"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: ecb_2026_10_29
+  event_date: "2026-10-29"
+  label: "ECB monetary policy decision (October)"
+  category: central_bank
+  severity: high
+  is_global: true
+  countries_affected: "France, Germany, Italy, Netherlands, Spain, Denmark"
+  source_url: "https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html"
+  tags: "ecb,eurozone"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: ecb_2026_12_17
+  event_date: "2026-12-17"
+  label: "ECB monetary policy decision (December)"
+  category: central_bank
+  severity: high
+  is_global: true
+  countries_affected: "France, Germany, Italy, Netherlands, Spain, Denmark"
+  source_url: "https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html"
+  tags: "ecb,eurozone"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+# ─── Bank of Japan MPM (decision day = day 2). Source: boj.or.jp scheduled
+#     dates PDF (2025-07-31), verified 2026-06-10 ───────────────────────────
+
+- event_id: boj_2026_06_16
+  event_date: "2026-06-16"
+  label: "BOJ monetary policy decision (June)"
+  category: central_bank
+  severity: high
+  is_global: true
+  countries_affected: "Japan"
+  source_url: "https://www.boj.or.jp/en/mopo/mpmsche_minu/m_ref/mref250731a.pdf"
+  tags: "boj,japan,yen"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: boj_2026_07_31
+  event_date: "2026-07-31"
+  label: "BOJ monetary policy decision (July, with Outlook Report)"
+  category: central_bank
+  severity: high
+  is_global: true
+  countries_affected: "Japan"
+  source_url: "https://www.boj.or.jp/en/mopo/mpmsche_minu/m_ref/mref250731a.pdf"
+  tags: "boj,japan,yen,outlook"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: boj_2026_09_18
+  event_date: "2026-09-18"
+  label: "BOJ monetary policy decision (September)"
+  category: central_bank
+  severity: high
+  is_global: true
+  countries_affected: "Japan"
+  source_url: "https://www.boj.or.jp/en/mopo/mpmsche_minu/m_ref/mref250731a.pdf"
+  tags: "boj,japan,yen"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: boj_2026_10_30
+  event_date: "2026-10-30"
+  label: "BOJ monetary policy decision (October, with Outlook Report)"
+  category: central_bank
+  severity: high
+  is_global: true
+  countries_affected: "Japan"
+  source_url: "https://www.boj.or.jp/en/mopo/mpmsche_minu/m_ref/mref250731a.pdf"
+  tags: "boj,japan,yen,outlook"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: boj_2026_12_18
+  event_date: "2026-12-18"
+  label: "BOJ monetary policy decision (December)"
+  category: central_bank
+  severity: high
+  is_global: true
+  countries_affected: "Japan"
+  source_url: "https://www.boj.or.jp/en/mopo/mpmsche_minu/m_ref/mref250731a.pdf"
+  tags: "boj,japan,yen"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+# ─── Bank of England MPC (announcement at noon). Source: bankofengland.co.uk
+#     confirmed 2026 dates, verified 2026-06-10 ─────────────────────────────
+
+- event_id: boe_2026_06_18
+  event_date: "2026-06-18"
+  label: "BOE MPC decision (June)"
+  category: central_bank
+  severity: medium
+  is_global: false
+  countries_affected: "U.K."
+  source_url: "https://www.bankofengland.co.uk/monetary-policy/upcoming-mpc-dates"
+  tags: "boe,uk"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: boe_2026_07_30
+  event_date: "2026-07-30"
+  label: "BOE MPC decision (July, with Monetary Policy Report)"
+  category: central_bank
+  severity: medium
+  is_global: false
+  countries_affected: "U.K."
+  source_url: "https://www.bankofengland.co.uk/monetary-policy/upcoming-mpc-dates"
+  tags: "boe,uk,mpr"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: boe_2026_09_17
+  event_date: "2026-09-17"
+  label: "BOE MPC decision (September)"
+  category: central_bank
+  severity: medium
+  is_global: false
+  countries_affected: "U.K."
+  source_url: "https://www.bankofengland.co.uk/monetary-policy/upcoming-mpc-dates"
+  tags: "boe,uk"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: boe_2026_11_05
+  event_date: "2026-11-05"
+  label: "BOE MPC decision (November, with Monetary Policy Report)"
+  category: central_bank
+  severity: medium
+  is_global: false
+  countries_affected: "U.K."
+  source_url: "https://www.bankofengland.co.uk/monetary-policy/upcoming-mpc-dates"
+  tags: "boe,uk,mpr"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: boe_2026_12_17
+  event_date: "2026-12-17"
+  label: "BOE MPC decision (December)"
+  category: central_bank
+  severity: medium
+  is_global: false
+  countries_affected: "U.K."
+  source_url: "https://www.bankofengland.co.uk/monetary-policy/upcoming-mpc-dates"
+  tags: "boe,uk"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+# ─── RBA Monetary Policy Board (decision 2:30pm day 2). Source: rba.gov.au
+#     media release 2025-02, verified 2026-06-10 ─────────────────────────────
+
+- event_id: rba_2026_06_16
+  event_date: "2026-06-16"
+  label: "RBA rate decision (June)"
+  category: central_bank
+  severity: medium
+  is_global: false
+  countries_affected: "Australia"
+  source_url: "https://www.rba.gov.au/media-releases/2025/mr-25-02.html"
+  tags: "rba,australia"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: rba_2026_08_11
+  event_date: "2026-08-11"
+  label: "RBA rate decision (August, with SMP)"
+  category: central_bank
+  severity: medium
+  is_global: false
+  countries_affected: "Australia"
+  source_url: "https://www.rba.gov.au/media-releases/2025/mr-25-02.html"
+  tags: "rba,australia,smp"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: rba_2026_09_29
+  event_date: "2026-09-29"
+  label: "RBA rate decision (September)"
+  category: central_bank
+  severity: medium
+  is_global: false
+  countries_affected: "Australia"
+  source_url: "https://www.rba.gov.au/media-releases/2025/mr-25-02.html"
+  tags: "rba,australia"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: rba_2026_11_03
+  event_date: "2026-11-03"
+  label: "RBA rate decision (November, with SMP)"
+  category: central_bank
+  severity: medium
+  is_global: false
+  countries_affected: "Australia"
+  source_url: "https://www.rba.gov.au/media-releases/2025/mr-25-02.html"
+  tags: "rba,australia,smp"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: rba_2026_12_08
+  event_date: "2026-12-08"
+  label: "RBA rate decision (December)"
+  category: central_bank
+  severity: medium
+  is_global: false
+  countries_affected: "Australia"
+  source_url: "https://www.rba.gov.au/media-releases/2025/mr-25-02.html"
+  tags: "rba,australia"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+# ─── Brazil Copom (decision evening of day 2). Source: BCB calendar via
+#     Estadão/UOL 2025-06-24, verified 2026-06-10 ───────────────────────────
+
+- event_id: copom_2026_06_17
+  event_date: "2026-06-17"
+  label: "Copom Selic decision (June)"
+  category: central_bank
+  severity: high
+  is_global: false
+  countries_affected: "Brazil"
+  source_url: "https://www.estadao.com.br/einvestidor/financas-pessoais/copom-2026-calendario-reunioes-selic-banco-central/"
+  tags: "copom,brazil,selic"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: copom_2026_08_05
+  event_date: "2026-08-05"
+  label: "Copom Selic decision (August)"
+  category: central_bank
+  severity: high
+  is_global: false
+  countries_affected: "Brazil"
+  source_url: "https://www.estadao.com.br/einvestidor/financas-pessoais/copom-2026-calendario-reunioes-selic-banco-central/"
+  tags: "copom,brazil,selic"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: copom_2026_09_16
+  event_date: "2026-09-16"
+  label: "Copom Selic decision (September)"
+  category: central_bank
+  severity: high
+  is_global: false
+  countries_affected: "Brazil"
+  source_url: "https://www.estadao.com.br/einvestidor/financas-pessoais/copom-2026-calendario-reunioes-selic-banco-central/"
+  tags: "copom,brazil,selic"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: copom_2026_11_04
+  event_date: "2026-11-04"
+  label: "Copom Selic decision (November)"
+  category: central_bank
+  severity: high
+  is_global: false
+  countries_affected: "Brazil"
+  source_url: "https://www.estadao.com.br/einvestidor/financas-pessoais/copom-2026-calendario-reunioes-selic-banco-central/"
+  tags: "copom,brazil,selic"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: copom_2026_12_09
+  event_date: "2026-12-09"
+  label: "Copom Selic decision (December)"
+  category: central_bank
+  severity: high
+  is_global: false
+  countries_affected: "Brazil"
+  source_url: "https://www.estadao.com.br/einvestidor/financas-pessoais/copom-2026-calendario-reunioes-selic-banco-central/"
+  tags: "copom,brazil,selic"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+# ─── RBI MPC (decision day = day 3). Source: rbi.org.in FY2026-27 schedule,
+#     verified 2026-06-10 ────────────────────────────────────────────────────
+
+- event_id: rbi_2026_08_05
+  event_date: "2026-08-05"
+  label: "RBI MPC decision (August)"
+  category: central_bank
+  severity: high
+  is_global: false
+  countries_affected: "India"
+  source_url: "https://rbi.org.in/Scripts/Annualpolicy.aspx"
+  tags: "rbi,india,repo"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: rbi_2026_10_07
+  event_date: "2026-10-07"
+  label: "RBI MPC decision (October)"
+  category: central_bank
+  severity: high
+  is_global: false
+  countries_affected: "India"
+  source_url: "https://rbi.org.in/Scripts/Annualpolicy.aspx"
+  tags: "rbi,india,repo"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: rbi_2026_12_04
+  event_date: "2026-12-04"
+  label: "RBI MPC decision (December)"
+  category: central_bank
+  severity: high
+  is_global: false
+  countries_affected: "India"
+  source_url: "https://rbi.org.in/Scripts/Annualpolicy.aspx"
+  tags: "rbi,india,repo"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+# ─── Bank of Korea (Base Rate decisions; Q4 2026 dates not yet confirmed —
+#     extend when BOK publishes). Source: BOK/tradingeconomics, verified
+#     2026-06-10 ─────────────────────────────────────────────────────────────
+
+- event_id: bok_2026_07_16
+  event_date: "2026-07-16"
+  label: "BOK Base Rate decision (July)"
+  category: central_bank
+  severity: high
+  is_global: false
+  countries_affected: "Korea"
+  source_url: "https://www.bok.or.kr/eng/bbs/E0000627/view.do?menuNo=400022&nttId=10094301"
+  tags: "bok,korea"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: bok_2026_08_27
+  event_date: "2026-08-27"
+  label: "BOK Base Rate decision (August)"
+  category: central_bank
+  severity: high
+  is_global: false
+  countries_affected: "Korea"
+  source_url: "https://www.bok.or.kr/eng/bbs/E0000627/view.do?menuNo=400022&nttId=10094301"
+  tags: "bok,korea"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+# ─── Banxico (Thursday 13:00 announcements). Source: banxico.org.mx 2026
+#     calendar PDF, verified 2026-06-10 ──────────────────────────────────────
+
+- event_id: banxico_2026_06_25
+  event_date: "2026-06-25"
+  label: "Banxico rate decision (June)"
+  category: central_bank
+  severity: high
+  is_global: false
+  countries_affected: "Mexico"
+  source_url: "https://www.banxico.org.mx/politica-monetaria/d/%7B3B4BDA5B-E7E8-E414-2066-DA0CB3F7C36F%7D.pdf"
+  tags: "banxico,mexico"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: banxico_2026_08_06
+  event_date: "2026-08-06"
+  label: "Banxico rate decision (August)"
+  category: central_bank
+  severity: high
+  is_global: false
+  countries_affected: "Mexico"
+  source_url: "https://www.banxico.org.mx/politica-monetaria/d/%7B3B4BDA5B-E7E8-E414-2066-DA0CB3F7C36F%7D.pdf"
+  tags: "banxico,mexico"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: banxico_2026_09_24
+  event_date: "2026-09-24"
+  label: "Banxico rate decision (September)"
+  category: central_bank
+  severity: high
+  is_global: false
+  countries_affected: "Mexico"
+  source_url: "https://www.banxico.org.mx/politica-monetaria/d/%7B3B4BDA5B-E7E8-E414-2066-DA0CB3F7C36F%7D.pdf"
+  tags: "banxico,mexico"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: banxico_2026_11_05
+  event_date: "2026-11-05"
+  label: "Banxico rate decision (November)"
+  category: central_bank
+  severity: high
+  is_global: false
+  countries_affected: "Mexico"
+  source_url: "https://www.banxico.org.mx/politica-monetaria/d/%7B3B4BDA5B-E7E8-E414-2066-DA0CB3F7C36F%7D.pdf"
+  tags: "banxico,mexico"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: banxico_2026_12_17
+  event_date: "2026-12-17"
+  label: "Banxico rate decision (December)"
+  category: central_bank
+  severity: high
+  is_global: false
+  countries_affected: "Mexico"
+  source_url: "https://www.banxico.org.mx/politica-monetaria/d/%7B3B4BDA5B-E7E8-E414-2066-DA0CB3F7C36F%7D.pdf"
+  tags: "banxico,mexico"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+# ─── Index reviews. Sources: msci.com press releases, verified 2026-06-10 ───
+
+- event_id: msci_2026_06_18_accessibility
+  event_date: "2026-06-18"
+  label: "MSCI 2026 Global Market Accessibility Review results"
+  category: index_review
+  severity: medium
+  is_global: true
+  countries_affected: "Vietnam, Korea, Taiwan, ChinaA"
+  source_url: "https://www.msci.com/downloads/documents/press-releases/media-room/PR_MSCI_2026_Annual_Market_Classification_Review_Announcement_Date.pdf"
+  tags: "msci,accessibility,classification"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: msci_2026_06_23_classification
+  event_date: "2026-06-23"
+  label: "MSCI 2026 Annual Market Classification Review (Vietnam EM-watchlist decision)"
+  category: index_review
+  severity: high
+  is_global: true
+  countries_affected: "Vietnam, Korea, Taiwan, ChinaA"
+  source_url: "https://www.msci.com/downloads/documents/press-releases/media-room/PR_MSCI_2026_Annual_Market_Classification_Review_Announcement_Date.pdf"
+  tags: "msci,classification,vietnam,em_upgrade"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: msci_2026_08_12_review
+  event_date: "2026-08-12"
+  label: "MSCI August 2026 Index Review announcement (effective Sep 1)"
+  category: index_review
+  severity: medium
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.msci.com/eqb/pressreleases/archive/ir_dates.pdf"
+  tags: "msci,index_review,rebalance"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: msci_2026_11_11_review
+  event_date: "2026-11-11"
+  label: "MSCI November 2026 Index Review announcement (effective Dec 1)"
+  category: index_review
+  severity: medium
+  is_global: true
+  countries_affected: null
+  source_url: "https://www.msci.com/eqb/pressreleases/archive/ir_dates.pdf"
+  tags: "msci,index_review,rebalance"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: ftse_2026_09_vietnam_upgrade
+  event_date: "2026-09-21"
+  label: "FTSE Russell Vietnam EM upgrade implementation (exact day TBC; confirmed 'September 2026')"
+  category: index_review
+  severity: high
+  is_global: false
+  countries_affected: "Vietnam"
+  source_url: "https://vir.com.vn/vietnam-moves-closer-to-msci-upgrade-152136.html"
+  tags: "ftse,vietnam,em_upgrade,passive_flows"
+  date_confirmed: false
+  verified_on: "2026-06-10"
+
+# ─── Elections (fixed-by-law or commission-confirmed dates only) ────────────
+
+- event_id: us_midterms_2026_11_03
+  event_date: "2026-11-03"
+  label: "US midterm elections (House + 1/3 Senate)"
+  category: election
+  severity: high
+  is_global: true
+  countries_affected: "U.S., NASDAQ, US SmallCap"
+  source_url: "https://en.wikipedia.org/wiki/2026_United_States_elections"
+  tags: "election,us,midterms"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: brazil_general_2026_10_04
+  event_date: "2026-10-04"
+  label: "Brazil general election — first round (president, congress, governors)"
+  category: election
+  severity: high
+  is_global: false
+  countries_affected: "Brazil"
+  source_url: "https://en.wikipedia.org/wiki/2026_Brazilian_general_election"
+  tags: "election,brazil,presidential"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: brazil_runoff_2026_10_25
+  event_date: "2026-10-25"
+  label: "Brazil presidential election — runoff (if needed)"
+  category: election
+  severity: high
+  is_global: false
+  countries_affected: "Brazil"
+  source_url: "https://en.wikipedia.org/wiki/2026_Brazilian_general_election"
+  tags: "election,brazil,presidential,runoff"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: sweden_general_2026_09_13
+  event_date: "2026-09-13"
+  label: "Sweden general election (Riksdag)"
+  category: election
+  severity: medium
+  is_global: false
+  countries_affected: "Sweden"
+  source_url: "https://en.wikipedia.org/wiki/2026_Swedish_general_election"
+  tags: "election,sweden"
+  date_confirmed: true
+  verified_on: "2026-06-10"
+
+- event_id: taiwan_local_2026_11_28
+  event_date: "2026-11-28"
+  label: "Taiwan nine-in-one local elections (CEC-confirmed)"
+  category: election
+  severity: medium
+  is_global: false
+  countries_affected: "Taiwan"
+  source_url: "https://www.taipeitimes.com/News/taiwan/archives/2025/11/01/2003846466"
+  tags: "election,taiwan,local,cross_strait"
+  date_confirmed: true
+  verified_on: "2026-06-10"

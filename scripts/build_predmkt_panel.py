@@ -1757,7 +1757,6 @@ def _upsert_variable_meta(con: duckdb.DuckDBPyConnection, signal_names: list[str
                 "monthly_equivalent": None,
                 "is_normalized": False,
                 "category": "predmkt_signal",
-                "is_optimizer_selected": False,
             }
             for name in sorted(set(signal_names))
         ]
@@ -1776,11 +1775,11 @@ def _upsert_variable_meta(con: duckdb.DuckDBPyConnection, signal_names: list[str
         """
         INSERT INTO variable_meta (
             variable, source_table, source_file, native_frequency,
-            monthly_equivalent, is_normalized, category, is_optimizer_selected
+            monthly_equivalent, is_normalized, category
         )
         SELECT
             variable, source_table, source_file, native_frequency,
-            monthly_equivalent, is_normalized, category, is_optimizer_selected
+            monthly_equivalent, is_normalized, category
         FROM stage_predmkt_variable_meta
         """
     )

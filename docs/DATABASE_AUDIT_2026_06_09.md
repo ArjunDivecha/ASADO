@@ -82,7 +82,7 @@ HAS_CRISIS_HISTORY 297 · HAS_CENTRAL_BANK 31 · SUBJECT_TO 31 · EXPORT_EXPOSED
 - `bilateral_portfolio_matrix` 56.9K (1997→2026-03).
 - Prediction markets: `predmkt_daily` (20), `predmkt_signals_daily` (36), `predmkt_country_spillover` (49), `predmkt_market_meta` (10), `predmkt_outcome_meta` (20), `predmkt_resolutions` (0). Sparse/recent.
 - `event_log` 146 curated events.
-- `variable_meta` 657 rows — metadata: source_table, native_frequency, monthly_equivalent, is_normalized, category, is_optimizer_selected, freshness_expectation. (No deep semantics — units/sign/PIT/mechanism — per the Semantic-Layer PRD.)
+- `variable_meta` 657 rows — metadata: source_table, native_frequency, monthly_equivalent, is_normalized, category, is_optimizer_selected, freshness_expectation. (No deep semantics — units/sign/PIT/mechanism — per the Semantic-Layer PRD.) *Update 2026-06-10: `is_optimizer_selected` has since been removed — stale Fuzzy Daily artifact.*
 - `country_reference` 31.
 
 ## Coverage notes & anomalies

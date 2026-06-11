@@ -62,9 +62,11 @@ v1.1 changes (2026-06-10):
    narrower. (Root cause of the original t2_levels_daily staleness - the
    full-sample winsorize freeze - was fixed in build_t2_master_daily v1.1.)
 
-DETECTORS LIVE: D1 D2 D4 D5 D7 D8 D9.
+DETECTORS LIVE: D1 D2 D3 D4 D5 D7 D8 D9.
+  D3 went live 2026-06-11 (A3 revision momentum, v1): WEO vintage backfill
+  2008+ via collect_weo_vintages.py gives every revision its own z-history;
+  D4 v2 same date: daily 5Y CDS leg + direct-pull 10Y (sovereign_daily).
 BLOCKED (insufficient accumulated data, reported in the brief):
-  D3 revision momentum (needs >= 2 monthly vintages; first = 2026_06)
   D6 prediction-market disagreement (predmkt history accumulating from 2026-06-10)
 
 STATUS MODEL: new -> persisting / intensifying (|z| up >= 20%) / fading
@@ -103,24 +105,34 @@ REGIME_TAGS = BASE_DIR / "regime" / "results" / "regime_tags.parquet"
 ZWIN = 756       # ~3y of trading days for self-history z-scores
 ZMIN = 252       # minimum history before a z is trusted
 
-OPT8 = ["120DTR_TS", "120MA Signal_CS", "120MA Signal_TS", "20DTR_CS",
-        "20DTR_TS", "REER_CS", "RSI14_CS", "RSI14_TS"]
+# D7 scans ALL T2 factor return series in factor_returns_daily (live list,
+# pulled at runtime). The old hardcoded OPT8 whitelist was a stale artifact
+# of the retired Fuzzy Daily project and was removed 2026-06-10.
+D7_MAX_DISPERSION_FLAGS = 10   # report only the most-compressed factors
 
 # Structural exclusions for D4 legs (not staleness):
 NO_FX_LEG = {"U.S.", "NASDAQ", "US SmallCap"}       # USD vs USD = no FX surface
 PEGGED_FX = {"Saudi Arabia", "Hong Kong"}           # peg/band: FX z is not an equity cross-check
+NO_CDS = {"Canada", "Denmark", "Germany", "Hong Kong", "India", "NASDAQ",
+          "Netherlands", "Singapore", "Sweden", "Switzerland", "Taiwan",
+          "U.K.", "U.S.", "US SmallCap"}            # no liquid sovereign CDS ticker
 
 # D1: tot_trade_shares category -> Pink Sheet aggregate 3m-return variable
+# (v1, 2026-06-11: 6 Comtrade HS-chapter categories; precious + fertilizer
+# were invisible in the old WDI 4-section version)
 D1_INDEX_MAP = {
     "fuel": "WB_CMDTY_IENERGY_RET_3M_PCT",
     "ores_metals": "WB_CMDTY_IMETMIN_RET_3M_PCT",
+    "precious": "WB_CMDTY_IPRECIOUSMET_RET_3M_PCT",
     "food": "WB_CMDTY_IFOOD_RET_3M_PCT",
     "agri_raw": "WB_CMDTY_IRAW_MATERIAL_RET_3M_PCT",
+    "fertilizer": "WB_CMDTY_IFERTILIZERS_RET_3M_PCT",
 }
 D1_TOT_Z_MIN = 1.5        # |ToT impulse z| trigger
 D1_OWN_Z_MAX = 0.5        # own 21d equity return must be unresolved
 D1_REER_Z_MAX = 0.5       # REER 3m change must be flat
 D1_COMMODITY_MAX_AGE_D = 60   # Pink Sheet is monthly, published early next month
+D3_REVISION_MAX_AGE_D = 120   # WEO vintage counts as live news for ~4 months
 D4_LEVEL_MAX_AGE_D = 7        # FX/10Y series silent > 7 calendar days = stale
 D9_ETF_MAX_AGE_D = 7
 
@@ -291,13 +303,13 @@ def d1_tot_impulse(con, ret21: pd.DataFrame, run_date: pd.Timestamp) -> list[dic
                 "commodity_asof": str(cmp_asof.date()),
                 "reading": ("ToT improving, equity+REER not repriced"
                             if tot_z > 0 else "ToT deteriorating, equity+REER not repriced"),
-                "note": "shares = latest WDI year, static across history (v0.5; Comtrade SITC-2 is the v1 upgrade)",
+                "note": "shares = latest Comtrade HS-chapter year (2023-2025), static across history; 6 categories incl. precious+fertilizer (D1 v1, 2026-06-11)",
             },
         })
     if missing_shares:
         rows.append(degraded_row("D1", "A1", "share_coverage",
-                                 {c: "no WDI data" for c in missing_shares},
-                                 "World Bank has no data for these (Taiwan is structural until Comtrade)"))
+                                 {c: "no trade-share data" for c in missing_shares},
+                                 "neither WDI nor WITS produced shares for these countries"))
     return rows
 
 
@@ -341,16 +353,111 @@ def d2_graph_propagation(con, ret21: pd.DataFrame) -> list[dict]:
     return rows
 
 
+def d3_revision_momentum(con, ret_piv: pd.DataFrame, run_date: pd.Timestamp) -> list[dict]:
+    """A3 v1 (2026-06-11, PRD Priority 9): WEO forecast-revision momentum
+    quadrants. Latest-vintage GDP-growth revision (current-year + next-year
+    average), z-scored against the country's OWN 2008+ revision history from
+    the weo_vintages backfill, crossed with 6m price momentum:
+
+        revised UP   + price flat/weak   -> long flag  (upgrade not priced)
+        revised DOWN + price flat/strong -> short flag (downgrade not priced)
+
+    A vintage is treated as live news for D3_REVISION_MAX_AGE_D calendar days
+    after publication; past that the revision is stale and D3 goes quiet
+    until the next vintage."""
+    rows: list[dict] = []
+    rev = con.execute(
+        """
+        SELECT vintage, vintage_date, country, target_year, revision
+        FROM weo_revisions
+        WHERE variable = 'WEO_GDP_GROWTH_PCT'
+          AND target_year - CAST(substr(vintage, 1, 4) AS INTEGER) IN (0, 1)
+        """
+    ).fetchdf()
+    if rev.empty:
+        return [degraded_row("D3", "A3", "weo_revisions", {"ALL": "table_empty"},
+                             "run scripts/loop/collect_weo_vintages.py")]
+    rev["vintage_date"] = pd.to_datetime(rev["vintage_date"])
+
+    latest_v = rev["vintage"].max()
+    latest_date = rev.loc[rev["vintage"] == latest_v, "vintage_date"].iloc[0]
+    age_d = (run_date - latest_date).days
+    if age_d > D3_REVISION_MAX_AGE_D:
+        return [degraded_row("D3", "A3", "weo_vintage_age",
+                             {latest_v: f"published {latest_date.date()}, {age_d}d ago"},
+                             "latest WEO vintage older than the live-news window; D3 quiet until next vintage")]
+
+    # avg of current-year + next-year revision, per (vintage, country)
+    avg = (rev.groupby(["vintage", "country"])["revision"].mean()
+              .unstack("country").sort_index())
+    ret126 = trailing_ret(ret_piv, 126)
+
+    for c in T2_UNIVERSE:
+        if c not in avg.columns:
+            continue
+        hist = avg[c].dropna()
+        if latest_v not in hist.index or len(hist) < 10:
+            continue
+        cur = float(hist.loc[latest_v])
+        prior = hist.drop(index=latest_v)
+        sd = prior.std()
+        if not sd or np.isnan(sd):
+            continue
+        rev_z = (cur - prior.mean()) / sd
+        if abs(rev_z) < 1.0:
+            continue
+        mom_z = zscore_last(ret126[c]) if c in ret126.columns else np.nan
+        if np.isnan(mom_z):
+            continue
+        # only the unpriced quadrants fire
+        if rev_z >= 1.0 and mom_z < 0.5:
+            direction, reading = "long", "forecast revised up, price has not followed"
+        elif rev_z <= -1.0 and mom_z > -0.5:
+            direction, reading = "short", "forecast revised down, price has not repriced"
+        else:
+            continue
+        rows.append({
+            "detector": "D3", "archetype": "A3", "entity": c,
+            "direction": direction,
+            "severity": round(rev_z, 2),
+            "components": {
+                "vintage": latest_v,
+                "gdp_revision_pp": round(cur, 2),
+                "revision_z_vs_own_history": round(rev_z, 2),
+                "n_history_vintages": int(len(prior)),
+                "mom_126d_z": round(mom_z, 2),
+                "reading": reading,
+                "note": "WEO semi-annual vintages (2008+ backfill via DBnomics); avg of current+next-year GDP growth revisions",
+            },
+        })
+    return rows
+
+
 def d4_cross_asset(con, ret5: pd.DataFrame, run_date: pd.Timestamp) -> list[dict]:
-    """A4 v1.1: equity vs FX vs 10Y over the same 5 TRADING days, with
-    staleness guards on the level surfaces."""
+    """A4 v2: equity vs FX vs 10Y vs 5Y CDS over the same 5 TRADING days,
+    with staleness guards on the level surfaces.
+
+    v2 (2026-06-11, PRD Priority 8): daily CDS + fresh direct-pull 10Y from
+    `sovereign_daily` (Bloomberg, scripts/loop/collect_sovereign_daily_bbg.py).
+    10Y prefers the direct pull (fixes Taiwan's dead t2 series), falling back
+    to t2_levels_daily for countries the pull does not cover."""
     rows: list[dict] = []
     fx_c = compress_levels(pivot_var(con, "t2_levels_daily", "Currency"))
-    y10_c = compress_levels(pivot_var(con, "t2_levels_daily", "10Yr Bond"))
+
+    # 10Y: direct Bloomberg pull first, t2 levels as fallback per-country
+    y10_sov = pivot_var(con, "sovereign_daily", "SOV_10Y_YIELD_PCT", qualified=False)
+    y10_t2 = pivot_var(con, "t2_levels_daily", "10Yr Bond")
+    t2_only = [c for c in y10_t2.columns if c not in y10_sov.columns]
+    y10_piv = y10_sov.join(y10_t2[t2_only], how="outer") if t2_only else y10_sov
+    y10_c = compress_levels(y10_piv)
+
+    cds_c = compress_levels(pivot_var(con, "sovereign_daily", "SOV_CDS_5Y_BP", qualified=False))
 
     fx_fresh, fx_stale = staleness_split(fx_c, run_date, D4_LEVEL_MAX_AGE_D,
                                          structural_skip=NO_FX_LEG | PEGGED_FX)
     y_fresh, y_stale = staleness_split(y10_c, run_date, D4_LEVEL_MAX_AGE_D)
+    cds_fresh, cds_stale = staleness_split(cds_c, run_date, D4_LEVEL_MAX_AGE_D,
+                                           structural_skip=NO_CDS)
 
     for c in T2_UNIVERSE:
         if c not in ret5.columns:
@@ -367,6 +474,11 @@ def d4_cross_asset(con, ret5: pd.DataFrame, run_date: pd.Timestamp) -> list[dict
         if c in y_fresh:
             s = y10_c[c]
             y_z = zscore_last(s - s.shift(5))
+        # CDS spread in bp: UP = credit deterioration (risk-off).
+        cds_z = np.nan
+        if c in cds_fresh:
+            s = cds_c[c]
+            cds_z = zscore_last(s - s.shift(5))
         conflicts = []
         if not np.isnan(fx_z) and eq_z >= 1 and fx_z <= -1:
             conflicts.append(("fx_weak_vs_equity_strong", fx_z))
@@ -374,9 +486,14 @@ def d4_cross_asset(con, ret5: pd.DataFrame, run_date: pd.Timestamp) -> list[dict
             conflicts.append(("fx_strong_vs_equity_weak", fx_z))
         if not np.isnan(y_z) and eq_z >= 1 and y_z >= 1.5:
             conflicts.append(("yields_spiking_vs_equity_strong", y_z))
+        if not np.isnan(cds_z) and eq_z >= 1 and cds_z >= 1.5:
+            conflicts.append(("cds_widening_vs_equity_strong", cds_z))
+        if not np.isnan(cds_z) and eq_z <= -1 and cds_z <= -1.5:
+            conflicts.append(("cds_tightening_vs_equity_weak", cds_z))
         if not conflicts:
             continue
-        kind, other_z = conflicts[0]
+        # severity from the strongest conflicting surface
+        kind, other_z = max(conflicts, key=lambda kv: abs(kv[1]))
         rows.append({
             "detector": "D4", "archetype": "A4", "entity": c,
             "direction": "flag",
@@ -385,8 +502,12 @@ def d4_cross_asset(con, ret5: pd.DataFrame, run_date: pd.Timestamp) -> list[dict
                 "equity_5d_z": round(eq_z, 2),
                 "fx_strength_5d_z": round(fx_z, 2) if not np.isnan(fx_z) else None,
                 "y10_chg_5d_z": round(y_z, 2) if not np.isnan(y_z) else None,
+                "cds_chg_5d_z": round(cds_z, 2) if not np.isnan(cds_z) else None,
+                "cds_level_bp": (round(float(cds_c[c].iloc[-1]), 1)
+                                 if c in cds_fresh and len(cds_c[c]) else None),
                 "conflict": kind,
-                "note": "trading-day windows (v1.1); CDS surface monthly-only, daily CDS lands Phase 3",
+                "all_conflicts": [k for k, _ in conflicts] if len(conflicts) > 1 else None,
+                "note": "trading-day windows; v2 adds daily 5Y CDS + direct-pull 10Y (sovereign_daily)",
             },
         })
     if fx_stale:
@@ -395,6 +516,9 @@ def d4_cross_asset(con, ret5: pd.DataFrame, run_date: pd.Timestamp) -> list[dict
     if y_stale:
         rows.append(degraded_row("D4", "A4", "10Yr Bond", y_stale,
                                  "10Y leg skipped for these countries (stale/missing series)"))
+    if cds_stale:
+        rows.append(degraded_row("D4", "A4", "CDS_5Y", cds_stale,
+                                 "CDS leg skipped for these countries (stale/missing series)"))
     return rows
 
 
@@ -429,32 +553,59 @@ def d5_attention_no_resolution(con, ret5: pd.DataFrame) -> list[dict]:
 
 
 def d7_factor_crowding(con) -> list[dict]:
+    """Factor crowding scan over ALL T2 factor return series (live list from
+    factor_returns_daily) — no hardcoded whitelist."""
     rows = []
-    # dispersion compression per optimizer characteristic
-    for f in OPT8:
-        piv = pivot_var(con, "t2_factors_daily", f)
-        disp = piv.std(axis=1).dropna()
+
+    factors = [r[0] for r in con.execute(
+        """SELECT DISTINCT factor FROM asado.factor_returns_daily
+           WHERE source = 't2_optimizer_daily' AND value IS NOT NULL
+           ORDER BY factor"""
+    ).fetchall()]
+    if not factors:
+        return rows
+
+    # dispersion compression per factor characteristic — single scan, then
+    # keep only the D7_MAX_DISPERSION_FLAGS most-compressed factors.
+    # (std computed in pandas: DuckDB STDDEV_SAMP overflows on a few series
+    # with extreme values.)
+    f_ph = ",".join("?" for _ in factors)
+    c_ph = ",".join("?" for _ in T2_UNIVERSE)
+    vals_df = con.execute(
+        f"""SELECT date, variable, value
+            FROM asado.t2_factors_daily
+            WHERE variable IN ({f_ph}) AND country IN ({c_ph})
+              AND value IS NOT NULL AND isfinite(value)""",
+        factors + list(T2_UNIVERSE),
+    ).fetchdf()
+    vals_df["date"] = pd.to_datetime(vals_df["date"])
+
+    flagged = []
+    for f, grp in vals_df.groupby("variable"):
+        disp = grp.groupby("date")["value"].std().sort_index().dropna()
         if len(disp) < ZMIN:
             continue
         z = zscore_last(disp)
         if np.isnan(z) or z > -1.5:
             continue
+        flagged.append((z, f, float(disp.iloc[-1])))
+    flagged.sort()  # most negative z first
+    for z, f, last_disp in flagged[:D7_MAX_DISPERSION_FLAGS]:
         rows.append({
             "detector": "D7", "archetype": "A7", "entity": f,
             "direction": "flag",
             "severity": round(z, 2),
             "components": {
-                "xs_dispersion": round(float(disp.iloc[-1]), 4),
+                "xs_dispersion": round(last_disp, 4),
                 "dispersion_z_3y": round(z, 2),
                 "reading": "cross-sectional dispersion compressed - factor crowded, de-weight candidate",
             },
         })
-    # herding: avg pairwise 63d corr of the 8 live factor return series
-    ph = ",".join("?" for _ in OPT8)
+
+    # herding: avg pairwise 63d corr of all T2 factor return series
     fr = con.execute(
-        f"""SELECT date, factor, value FROM asado.factor_returns_daily
-            WHERE source = 't2_optimizer_daily' AND factor IN ({ph}) AND value IS NOT NULL""",
-        OPT8,
+        """SELECT date, factor, value FROM asado.factor_returns_daily
+           WHERE source = 't2_optimizer_daily' AND value IS NOT NULL"""
     ).fetchdf()
     fr["date"] = pd.to_datetime(fr["date"])
     fp = fr.pivot_table(index="date", columns="factor", values="value").sort_index()
@@ -471,13 +622,14 @@ def d7_factor_crowding(con) -> list[dict]:
         z = zscore_last(cs)
         if not np.isnan(z) and z >= 1.5:
             rows.append({
-                "detector": "D7", "archetype": "A7", "entity": "OPT8_HERDING",
+                "detector": "D7", "archetype": "A7", "entity": "FACTOR_HERDING",
                 "direction": "flag",
                 "severity": round(z, 2),
                 "components": {
                     "avg_pairwise_corr_63d": round(float(cs.iloc[-1]), 3),
                     "corr_z_3y": round(z, 2),
-                    "reading": "the 8 live factors are moving together - herding/regime stress",
+                    "n_factors": int(fp.shape[1]),
+                    "reading": "T2 factor return series are moving together - herding/regime stress",
                 },
             })
     return rows
@@ -620,6 +772,7 @@ def run(as_of: Optional[str] = None) -> int:
         for name, fn in [
             ("D1", lambda: d1_tot_impulse(con, ret21, run_date)),
             ("D2", lambda: d2_graph_propagation(con, ret21)),
+            ("D3", lambda: d3_revision_momentum(con, ret_piv, run_date)),
             ("D4", lambda: d4_cross_asset(con, ret5, run_date)),
             ("D5", lambda: d5_attention_no_resolution(con, ret5)),
             ("D7", lambda: d7_factor_crowding(con)),
@@ -740,20 +893,20 @@ def run(as_of: Optional[str] = None) -> int:
             con.execute("INSERT INTO dislocation_daily BY NAME SELECT * FROM df")
         log(f"dislocation_daily: +{len(df)} rows for {run_date.date()}")
 
-        write_brief(df, run_date, regime)
+        write_brief(con, df, run_date, regime)
         return 0
     finally:
         con.close()
 
 
-def write_brief(df: pd.DataFrame, run_date: pd.Timestamp, regime: str) -> None:
+def write_brief(con, df: pd.DataFrame, run_date: pd.Timestamp, regime: str) -> None:
     BRIEF_DIR.mkdir(parents=True, exist_ok=True)
     path = BRIEF_DIR / f"brief_{run_date.strftime('%Y_%m_%d')}.md"
     lines = [
         f"# Dislocation brief — {run_date.date()}",
         "",
         f"- Regime context: **{regime}** (context only; no mechanical overlay — H3 failed)",
-        f"- Rows: {len(df)} | detectors live: D1 D2 D4 D5 D7 D8 D9 (v1.1 trading-day windows) | blocked: D3 (needs ≥2 vintages; first = 2026_06), D6 (predmkt accumulating since 2026-06-10)",
+        f"- Rows: {len(df)} | detectors live: D1 D2 D3 D4 D5 D7 D8 D9 (D3 WEO revisions v1 + D4 daily-CDS v2 since 2026-06-11) | blocked: D6 (predmkt accumulating since 2026-06-10)",
         "- Read me: severity = z vs own 3y history. `flag` = informational, not directional. D5 is a LOOK trigger, never a trade signal. DEGRADED rows = inputs stale/missing, scan ran narrower than designed.",
         "",
     ]
@@ -780,8 +933,196 @@ def write_brief(df: pd.DataFrame, run_date: pd.Timestamp, regime: str) -> None:
             lines += ["", "## Resolved since last run", ""]
             for r in resolved.itertuples():
                 lines.append(f"- {r.detector} {r.entity} ({r.direction}) after {r.days_active}d: **{r.resolution_note}**")
+    lines += _calendar_section(con, run_date)
+    lines += _flows_section(con, run_date)
+    lines += _etf_positioning_section(con, run_date)
+    lines += _cot_section(con, run_date)
     path.write_text("\n".join(lines) + "\n")
     log(f"brief: {path}")
+
+
+def _calendar_section(con, run_date: pd.Timestamp) -> list[str]:
+    """Next-30-day scheduled catalysts from forward_calendar (loop DB).
+
+    Theses need catalysts (PRD Priority 5): the Layer 2 session should see
+    what is scheduled before reasoning about dislocations. Missing table is
+    reported, not swallowed. Reuses the caller's open loop-DB connection
+    (DuckDB forbids a second same-file connection with different config).
+    """
+    try:
+        cal = con.execute(
+            """
+            SELECT event_date, severity, label, countries_affected, date_confirmed
+            FROM forward_calendar
+            WHERE event_date BETWEEN CAST(? AS DATE) AND CAST(? AS DATE) + INTERVAL 30 DAY
+            ORDER BY event_date, severity
+            """,
+            [str(run_date.date()), str(run_date.date())],
+        ).fetchdf()
+    except Exception as exc:
+        return ["", "## Forward calendar (next 30 days)", "",
+                f"UNAVAILABLE ({exc}) — run scripts/loop/build_forward_calendar.py"]
+
+    lines = ["", "## Forward calendar (next 30 days)", ""]
+    if cal.empty:
+        lines.append("No scheduled catalysts in the window.")
+        return lines
+    for r in cal.itertuples():
+        scope = r.countries_affected or "global"
+        tbc = "" if r.date_confirmed else " *(day not yet confirmed)*"
+        d = pd.Timestamp(r.event_date).date()
+        lines.append(f"- **{d}** [{r.severity}] {r.label} — {scope}{tbc}")
+    return lines
+
+
+def _flows_section(con, run_date: pd.Timestamp) -> list[str]:
+    """Foreign investor flow snapshot from foreign_flows_daily (loop DB).
+
+    Context only, not a detector (yet): latest day plus 5-day and 20-day
+    cumulative net equity flow per country, with a z-score of the 5-day sum
+    against that country's own 1-year history of 5-day sums. Missing table
+    is reported, not swallowed.
+    """
+    try:
+        raw = con.execute(
+            """
+            SELECT date, country, value FROM foreign_flows_daily
+            WHERE variable = 'FOREIGN_EQUITY_NET_USD_MN'
+              AND date <= CAST(? AS DATE)
+            ORDER BY country, date
+            """,
+            [str(run_date.date())],
+        ).fetchdf()
+    except Exception as exc:
+        return ["", "## Foreign investor flows (equity, USD mn)", "",
+                f"UNAVAILABLE ({exc}) — run scripts/loop/collect_foreign_flows.py"]
+
+    lines = ["", "## Foreign investor flows (equity, USD mn)", ""]
+    if raw.empty:
+        lines.append("No flow data yet.")
+        return lines
+    for country, g in raw.groupby("country"):
+        g = g.sort_values("date")
+        last_date = pd.Timestamp(g["date"].iloc[-1]).date()
+        last = g["value"].iloc[-1]
+        sum5 = g["value"].tail(5).sum()
+        sum20 = g["value"].tail(20).sum()
+        roll5 = g["value"].rolling(5).sum().dropna()
+        hist = roll5.tail(252)
+        z5 = (sum5 - hist.mean()) / hist.std() if len(hist) >= 60 and hist.std() > 0 else None
+        z_str = f", 5d z={z5:+.1f}" if z5 is not None else ""
+        stale = " *(STALE)*" if (run_date.date() - last_date).days > 5 else ""
+        lines.append(
+            f"- **{country}** ({last_date}{stale}): last {last:+,.0f} | "
+            f"5d {sum5:+,.0f} | 20d {sum20:+,.0f}{z_str}"
+        )
+    return lines
+
+
+def _etf_positioning_section(con, run_date: pd.Timestamp) -> list[str]:
+    """ETF share-count positioning extremes from etf_flow_signals (loop DB).
+
+    Context only, not a detector (yet — PRD P11 says this unblocks crowding
+    detectors). Shows only countries whose 21-day creation/redemption flow is
+    stretched (|z| >= 2 vs own trailing year) so the Layer 2 session sees
+    crowding without 34 rows of noise. Missing table reported, not swallowed.
+    """
+    try:
+        df = con.execute(
+            """
+            SELECT country, etf,
+              MAX(CASE WHEN variable='ETF_FLOW_21D_Z' THEN value END)        AS z,
+              MAX(CASE WHEN variable='ETF_FLOW_21D_USD_MN' THEN value END)   AS flow_mn,
+              MAX(CASE WHEN variable='ETF_FLOW_21D_PCT_AUM' THEN value END)  AS pct_aum,
+              MAX(date)                                                      AS asof
+            FROM etf_flow_signals
+            WHERE date = (SELECT MAX(date) FROM etf_flow_signals WHERE date <= CAST(? AS DATE))
+            GROUP BY 1, 2
+            """,
+            [str(run_date.date())],
+        ).fetchdf()
+    except Exception as exc:
+        return ["", "## ETF positioning (21d creations/redemptions)", "",
+                f"UNAVAILABLE ({exc}) — run scripts/loop/load_etf_flows.py"]
+
+    lines = ["", "## ETF positioning (21d creations/redemptions)", ""]
+    if df.empty:
+        lines.append("No ETF flow data yet.")
+        return lines
+    asof = pd.Timestamp(df["asof"].iloc[0]).date()
+    stale = " *(STALE)*" if (run_date.date() - asof).days > 5 else ""
+    hot = df[df["z"].abs() >= 2.0].sort_values("z", ascending=False)
+    if hot.empty:
+        lines.append(f"No stretched positioning (|21d flow z| >= 2) as of {asof}{stale}.")
+        return lines
+    lines.append(f"As of {asof}{stale} — |21d flow z| >= 2 vs own trailing year:")
+    for r in hot.itertuples():
+        lines.append(
+            f"- **{r.country}** ({r.etf}): z={r.z:+.1f}, 21d {r.flow_mn:+,.0f}mn "
+            f"({r.pct_aum:+.1f}% of AUM)"
+        )
+    # Short interest extremes (semi-monthly; |z| >= 2 vs own ~2y)
+    try:
+        si = con.execute(
+            """
+            SELECT country, etf,
+              MAX(CASE WHEN variable='ETF_SHORT_PCT_SHOUT' THEN value END) AS si_pct,
+              MAX(CASE WHEN variable='ETF_SHORT_PCT_Z' THEN value END)     AS si_z,
+              MAX(date)                                                    AS asof
+            FROM etf_flow_signals
+            WHERE variable LIKE 'ETF_SHORT%'
+              AND date = (SELECT MAX(date) FROM etf_flow_signals
+                          WHERE variable = 'ETF_SHORT_PCT_Z' AND date <= CAST(? AS DATE))
+            GROUP BY 1, 2 HAVING si_z IS NOT NULL AND ABS(si_z) >= 2.0
+            ORDER BY si_z DESC
+            """,
+            [str(run_date.date())],
+        ).fetchdf()
+        if not si.empty:
+            si_asof = pd.Timestamp(si["asof"].iloc[0]).date()
+            lines += ["", f"Short interest extremes (FINRA settle {si_asof}, |z| >= 2 vs own ~2y):"]
+            for r in si.itertuples():
+                lines.append(f"- **{r.country}** ({r.etf}): SI {r.si_pct:.1f}% of shares out, z={r.si_z:+.1f}")
+    except Exception as exc:
+        lines += ["", f"Short interest UNAVAILABLE ({exc})"]
+    return lines
+
+
+def _cot_section(con, run_date: pd.Timestamp) -> list[str]:
+    """Commodity speculator positioning extremes from cot_signals (loop DB).
+
+    Context for D1: when specs are record-long a commodity, the flow that
+    could chase a ToT impulse is already positioned. Shows |z| >= 1.5 only.
+    Missing table reported, not swallowed.
+    """
+    try:
+        df = con.execute(
+            """
+            SELECT commodity, net_pct_oi, net_pct_oi_z52w AS z, date
+            FROM cot_signals
+            WHERE date = (SELECT MAX(date) FROM cot_signals WHERE date <= CAST(? AS DATE))
+            ORDER BY z DESC
+            """,
+            [str(run_date.date())],
+        ).fetchdf()
+    except Exception as exc:
+        return ["", "## Commodity positioning (CFTC COT, weekly)", "",
+                f"UNAVAILABLE ({exc}) — run scripts/loop/collect_cot.py"]
+
+    lines = ["", "## Commodity positioning (CFTC COT, weekly)", ""]
+    if df.empty:
+        lines.append("No COT data yet.")
+        return lines
+    asof = pd.Timestamp(df["date"].iloc[0]).date()
+    stale = " *(STALE)*" if (run_date.date() - asof).days > 12 else ""
+    hot = df[df["z"].abs() >= 1.5]
+    if hot.empty:
+        lines.append(f"No stretched speculator positioning (|52w z| >= 1.5) as of {asof}{stale}.")
+        return lines
+    lines.append(f"As of {asof}{stale} — speculator net as % of OI, |52w z| >= 1.5:")
+    for r in hot.itertuples():
+        lines.append(f"- **{r.commodity}**: net {r.net_pct_oi:+.1f}% of OI, z={r.z:+.1f}")
+    return lines
 
 
 def check() -> int:

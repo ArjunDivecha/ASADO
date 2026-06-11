@@ -366,10 +366,12 @@ def verify_duckdb():
             return
 
         con = duckdb.connect(str(db_path), read_only=True)
+        # wb_commodity_factor_panel is deprecated (country-tiled commodity data);
+        # global commodity series now live in wb_commodity_prices + commodity_panel view.
         tables = ["t2_master", "t2_raw", "country_reference", "external_factors", "extended_factors",
                    "gdelt_panel", "imf_factors", "macrostructure_factors", "bloomberg_factors",
-                   "wb_commodity_factor_panel", "factor_returns", "factor_top20_membership",
-                   "normalized_panel"]
+                   "wb_commodity_prices", "demographics_dip", "factor_returns",
+                   "factor_top20_membership", "normalized_panel"]
 
         print("\n  DuckDB Verification:")
         total = 0
@@ -383,6 +385,10 @@ def verify_duckdb():
                     count = con.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
                     n_factors = con.execute(f"SELECT COUNT(DISTINCT factor) FROM {t}").fetchone()[0]
                     print(f"    {t:20s}: {count:>10,} rows, {n_factors:>4} factors")
+                elif t == "wb_commodity_prices":
+                    count = con.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
+                    n_codes = con.execute(f"SELECT COUNT(DISTINCT commodity_code) FROM {t}").fetchone()[0]
+                    print(f"    {t:20s}: {count:>10,} rows, {n_codes:>3} commodities")
                 else:
                     count = con.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
                     n_vars = con.execute(f"SELECT COUNT(DISTINCT variable) FROM {t}").fetchone()[0]
@@ -965,6 +971,18 @@ def main():
             "Event Log (curated event registry)",
             "build_event_log.py",
             [],
+            log_file
+        ))
+
+        # Variable Registry (semantic layer) — reloads curated seed from
+        # config/variable_registry_seed.yaml, rescans auto-facts from the
+        # freshly rebuilt DB, rebuilds variable_registry_full, and re-renders
+        # docs/VARIABLE_DICTIONARY.md. --bootstrap-seed appends skeleton rows
+        # for any newly-appeared variables (never edits existing entries).
+        results.append(run_step(
+            "Variable Registry (semantic layer)",
+            "build_variable_registry.py",
+            ["--bootstrap-seed"],
             log_file
         ))
 

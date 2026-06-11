@@ -17,14 +17,14 @@
 
 ## 0. One-paragraph summary
 
-ASADO's optimizer owns the unconditional cross-section (8 live factors, top-7, monthly). This PRD builds the layer above it: a system whose job is to find the trades the optimizer structurally cannot see — conjunctions across subsystems, regime-conditional signal flips, shocks propagating along graph edges before prices move at the endpoints, discrete events mapped to mechanisms, and the explicit gap between what the data knows and what markets have priced. The design accepts one governing constraint: **a frontier model can generate hypotheses ~1000x faster than honest validation can process them**, so the validation harness and trial-counting ledger are built *first*, and every other component — the nightly dislocation engine, the graph-feature factory, the new data feeds — is a client of that skeptic, never a bypass of it.
+ASADO's optimizer owns the unconditional cross-section (top-7, monthly; the old "8 live factors" whitelist was identified 2026-06-10 as a stale Fuzzy Daily artifact and removed). This PRD builds the layer above it: a system whose job is to find the trades the optimizer structurally cannot see — conjunctions across subsystems, regime-conditional signal flips, shocks propagating along graph edges before prices move at the endpoints, discrete events mapped to mechanisms, and the explicit gap between what the data knows and what markets have priced. The design accepts one governing constraint: **a frontier model can generate hypotheses ~1000x faster than honest validation can process them**, so the validation harness and trial-counting ledger are built *first*, and every other component — the nightly dislocation engine, the graph-feature factory, the new data feeds — is a client of that skeptic, never a bypass of it.
 
 ---
 
 ## 1. Thesis and division of labor
 
 ### 1.1 What the optimizer owns (do not compete)
-Ranking 34 countries on stationary, linear, univariate signals. The 8 live factors, top-7 membership, monthly rebalance. `factor_returns` / `factor_returns_daily` are the outcome source of truth.
+Ranking 34 countries on stationary, linear, univariate signals. Top-7 membership, monthly rebalance. `factor_returns` / `factor_returns_daily` are the outcome source of truth. (The "8 live factors" whitelist formerly referenced here was a stale Fuzzy Daily artifact — removed 2026-06-10.)
 
 ### 1.2 What the model owns (the five edges)
 
@@ -46,7 +46,7 @@ Ranking 34 countries on stationary, linear, univariate signals. The 8 live facto
 | A4 | Cross-asset incoherence (equity / CDS / FX disagree, same country, same week) | E1/E5 | **Partially** — CDS is monthly-only in the DB (§4 D4) |
 | A5 | Attention without resolution (GDELT attention shock, \|return\| small) | E4 | Yes |
 | A6 | Prediction-market vs sovereign-market disagreement | E5 | No — predmkt has 1 live snapshot; needs daily accumulation (§8 Phase 0) |
-| A7 | Factor-level crowding (dispersion compression in the 8 live factors) | E2 | Yes |
+| A7 | Factor-level crowding (dispersion compression across all T2 factor return series) | E2 | Yes |
 
 ---
 
@@ -136,7 +136,7 @@ Resolved rows are kept (never deleted) — the resolution history is itself trai
 
 **D6 — Prediction-market vs sovereign-market disagreement (A6).** Blocked on predmkt daily accumulation (Phase 0 cron) + registry expansion. Trigger once live: Δprobability (5d) on a country-mapped market |>10pts| AND mapped sovereign surface (CDS / FX / equity) flat — or the inverse. Uses `predmkt_country_spillover` elasticities. Spillover covers only 18/34 countries; coverage gap reported, not silently dropped.
 
-**D7 — Factor crowding (A7).** For each of the 8 `is_optimizer_selected` factors: cross-sectional dispersion of the underlying characteristic (from `t2_factors_daily`), rolling z. Compression below −1.5z → `flag` row: factor crowded, de-weight candidate. Also: factor daily-return correlation spike among the 8 (herding).
+**D7 — Factor crowding (A7).** For every T2 factor with a live return series in `factor_returns_daily` (~106 factors; the old 8-factor whitelist was removed 2026-06-10 as a stale artifact): cross-sectional dispersion of the underlying characteristic (from `t2_factors_daily`), rolling z. Compression below −1.5z → `flag` row, capped at the 10 most-compressed factors per day. Also: average pairwise daily-return correlation spike across all factor return series (herding).
 
 **D8 — Open-thesis stewardship rows.** For every open thesis in `thesis_ledger` — and, once the News-repo bridge (§8 priority 3) lands, every live position in `portfolio_holdings_daily` — current mark, distance to invalidation level, days to horizon, any new dislocation rows touching the same entity. Guarantees Layer 2 reviews positions against the *frozen* entry thesis, not a remembered one, and against the *actual* book, not an assumed one.
 
@@ -274,7 +274,7 @@ All collectors follow the existing resilience pattern (per-source try/except, so
 |---|---|---|
 | Nightly (after `build_daily_panels.py`) | Component D → Component A → ledger loaders → auto-marking | `dislocation_daily` rows, brief markdown, updated marks |
 | Daily (model session) | Layer 2 daily pass: D8 stewardship rows first, then new dislocations | Updated/closed theses; new theses; harness calls for anything promotable |
-| Monthly (aligned to optimizer rebalance) | Layer 2 monthly pass: regime-conditional confidence/veto on the 8 live factors + independent valuation+catalyst theses + factor hypotheses | Monthly memo; registered hypotheses |
+| Monthly (aligned to optimizer rebalance) | Layer 2 monthly pass: regime-conditional confidence/veto on factor signals + independent valuation+catalyst theses + factor hypotheses | Monthly memo; registered hypotheses |
 | Monthly (automatic) | Calibration report | Brier by archetype; ledger stats |
 | Quarterly | Distillation: survivors → PKS; retired-hypothesis post-mortems | Knowledge updates |
 

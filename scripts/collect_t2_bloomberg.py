@@ -30,8 +30,8 @@ OUTPUT FILES:
     - --out  (default: Data/work/t2/T2 Bloomberg Master.xlsx)
       Same sheet structure as the legacy dump; build_t2_master reads this.
 
-VERSION: 1.0
-LAST UPDATED: 2026-06-07
+VERSION: 1.1
+LAST UPDATED: 2026-06-11
 AUTHOR: Arjun Divecha (built by Claude Code)
 
 DEPENDENCIES:
@@ -134,10 +134,16 @@ def main() -> int:
     #  ~1,292 single-security round-trips into ~30, the way Excel's BDH batches).
     from collections import defaultdict
     import time as _time
+    # Sheets whose values must be pulled in LOCAL terms (no USD currency
+    # override — Bloomberg's BDH FX-conversion divides yield-type series by
+    # the spot rate, which is never the right thing for a bond yield).
+    NO_OVERRIDE_SHEETS = {"10Yr Bond"}
+
     by_field = defaultdict(set)
     for s in sheets:
         for c in s["columns"]:
-            by_field[c["field"]].add(c["ticker"])
+            if s["sheet"] not in NO_OVERRIDE_SHEETS:
+                by_field[c["field"]].add(c["ticker"])
     npairs = sum(len(v) for v in by_field.values())
     print(f"== {npairs} ticker-field series in {len(by_field)} batched requests (by field), "
           f"{start}->{end}, {currency}, {freq} ==", flush=True)
@@ -162,19 +168,51 @@ def main() -> int:
             print(f"    [{fi}/{len(by_field)}] {fld}: {len(tickers)} tickers ({_time.time()-t0:.1f}s)", flush=True)
     print(f"  all pulls done in {_time.time()-t0:.1f}s", flush=True)
 
+    # Pull yield-style sheets in LOCAL terms (no currency=USD override).
+    # Bloomberg's BDH currency override FX-divides yield series for some
+    # securities — e.g. GTBRL10YR Corp 14.46 → 2.81 via USDBRL divide,
+    # GGVB10YR Index 4.35 → 0.0002 via USDVND divide. Pulling without the
+    # override keeps yields in their natural local-currency units.
+    by_field_local = defaultdict(set)
+    for s in sheets:
+        if s["sheet"] in NO_OVERRIDE_SHEETS:
+            for c in s["columns"]:
+                by_field_local[c["field"]].add(c["ticker"])
+    if by_field_local:
+        nlocal = sum(len(v) for v in by_field_local.values())
+        print(f"== {nlocal} no-override series pulling in LOCAL terms ==", flush=True)
+        t_local = _time.time()
+        with BBG() as bbg:
+            for fi, (fld, tickers) in enumerate(sorted(by_field_local.items()), 1):
+                tickers = sorted(tickers)
+                try:
+                    batch = bbg.hist_batch(tickers, fld, start, end, periodicity=freq,
+                                           calendar_fill=is_daily)
+                except Exception as e:
+                    print(f"  WARN local batch failed field={fld}: {e}", flush=True)
+                    batch = {}
+                for tk in tickers:
+                    series[(tk, fld, "_LOCAL")] = collapse(batch.get(tk, []), fld)
+                print(f"    [{fi}/{len(by_field_local)}] local {fld}: {len(tickers)} tickers "
+                      f"({_time.time()-t_local:.1f}s)", flush=True)
+        print(f"  local-terms pulls done in {_time.time()-t_local:.1f}s", flush=True)
+
     # assemble each direct sheet: date index = union of its columns' dates
     sheet_frames = {}
     for s in sheets:
         cols = s["columns"]
+        is_no_override = s["sheet"] in NO_OVERRIDE_SHEETS
         all_idx = pd.DatetimeIndex([]) if is_daily else pd.PeriodIndex([], freq="M")
         for c in cols:
-            sr = series.get((c["ticker"], c["field"]), pd.Series(dtype=float))
+            idx_key = (c["ticker"], c["field"], "_LOCAL") if is_no_override else (c["ticker"], c["field"])
+            sr = series.get(idx_key, pd.Series(dtype=float))
             all_idx = all_idx.union(sr.index)
         all_idx = all_idx.sort_values()
         frame = pd.DataFrame(index=all_idx)
         meta = {}  # col -> (ticker, field)
         for c in cols:
-            frame[c["col"]] = series.get((c["ticker"], c["field"]), pd.Series(dtype=float)).reindex(all_idx).ffill()  # Fill=P
+            key = (c["ticker"], c["field"], "_LOCAL") if is_no_override else (c["ticker"], c["field"])
+            frame[c["col"]] = series.get(key, pd.Series(dtype=float)).reindex(all_idx).ffill()  # Fill=P
             meta[c["col"]] = (c["ticker"], c["field"])
         if is_daily:
             # keep every complete trading day up to and including the last available

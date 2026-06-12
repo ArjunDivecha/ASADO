@@ -9,20 +9,26 @@ Newest items at the top. When you fix one, delete the entry or mark it done.
 
 ## Open
 
-### 2. T2 daily feed: "10Yr Bond" for Brazil is wrong
-- **Found:** 2026-06-11
-- **Where:** `t2_levels_daily`, variable `10Yr Bond`, country Brazil (comes from the T2
-  manifest pull, `scripts/config/t2_bbg_manifest_daily.json` → sheet "10Yr Bond").
-- **Problem:** prints ~2.85 while Brazil's local 10Y is ~14.8 (the new direct pull
-  `sovereign_daily` has the correct 14.81). Looks like the T2 sheet's Brazil column
-  points at the wrong ticker. Downstream consumers of T2 "10Yr Bond" for Brazil
-  (including the optimizer's bond factors, if used) see a wrong level.
-- **Mitigation in place:** D4 and the valuation block read `sovereign_daily` instead.
-- **Action:** check the Brazil column ticker in the T2 manifest / upstream T2 workbook.
+*(none — all items resolved)*
 
 ---
 
 ## Done
+
+### 2. T2 "10Yr Bond" sheet: USD override + dead Taiwan ticker — FIXED 2026-06-11
+- Root cause: `collect_t2_bloomberg.py` pulled every sheet with `currency=USD`,
+  which FX-divides yield series for some currencies (Brazil 14.46→2.81,
+  Mexico 9.01→0.52, Vietnam 4.35→0.0002). Taiwan's `GTTWD10YR Corp` was dead.
+- Fix: exempted the "10Yr Bond" sheet from the global USD override (pulls in local
+  terms). Swapped Taiwan to `TPGBTW10 Index` in both manifests. Fixed `all_idx`
+  builder to use the local-series key. Also discovered the pipeline was missing
+  the `build_t2_master_daily.py` conversion step (ticker→country headers).
+- Daily verification (vs `sovereign_daily`): Brazil 14.46, Mexico 9.01,
+  Taiwan 1.69, Vietnam 4.35 ✓. Monthly: 10Yr Bond_CS now z-scored from correct
+  levels across all countries (Vietnam NaN is edge case from zero→4.35 transition;
+  self-corrects on next full monthly run).
+- Files: `scripts/collect_t2_bloomberg.py` (v1.0→v1.1),
+  `scripts/config/t2_bbg_manifest.json`, `scripts/config/t2_bbg_manifest_daily.json`.
 
 ### 1. Monthly Bloomberg ticker map — FIXED 2026-06-11 (approved by Arjun)
 - Full Terminal re-audit found the rot went deeper than first reported: Saudi

@@ -7,15 +7,23 @@ SCRIPT NAME: scripts/loop/load_market_implied.py
 INPUT FILES:
 - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/loop/market_implied_daily.parquet
     Tidy daily panel written by scripts/loop/collect_market_implied_bbg.py:
-    FX_IMPVOL_1M_PCT + FX_RR25_1M_PCT (29 countries, 2006+), RISK_* global
-    dashboard (VIX/VIX3M/MOVE/HY OAS/IG OAS/DXY/BBDXY), CMD_* generic
-    1st/2nd commodity contracts (CL/CO/HG/GC/NG).
+    FX_IMPVOL_1M/1W/3M_PCT + FX_RR25_1M_PCT + FX_BF25_1M_PCT (29 countries,
+    2006+), RISK_* global dashboard (VIX/VIX3M/MOVE/HY OAS/IG OAS/DXY/BBDXY),
+    CMD_* generic 1st/2nd commodity contracts (CL/CO/HG/GC/NG).
 
 OUTPUT FILES:
 - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/asado_loop.duckdb
     Table `market_implied_daily`  — idempotent rebuild from the parquet.
     Table `market_implied_signals` — derived daily signal surface:
       FX_IMPVOL_Z252 / FX_RR25_Z252   per-country z vs own trailing 252d
+      FX_BF25_Z252                    z of 25D butterfly (tail premium) (v1.1)
+      FX_CARRY_Z252                   z of 3M forward-implied carry (v1.2) —
+                                      a carry SPIKE without a rate hike is
+                                      devaluation expectation in the forwards
+      FX_VOL_TERM_PCT                 1W vol - 3M vol, vol points (v1.1);
+                                      > 0 = inverted term structure = the
+                                      market prices stress NOW, not later
+      FX_VOL_TERM_Z252                z of the term slope vs trailing 252d
       RISK_VIX_TERM_RATIO             VIX3M / VIX (< 1 = inverted = acute stress)
       RISK_*_Z252                     z of each dashboard series vs trailing 252d
       CMD_<ROOT>_CURVE_PCT            (front/second - 1) * 100; > 0 = backwardation
@@ -23,8 +31,8 @@ OUTPUT FILES:
     Lives in the LOOP DB because setup_duckdb.py deletes the main warehouse
     monthly.
 
-VERSION: 1.0
-LAST UPDATED: 2026-06-11
+VERSION: 1.1
+LAST UPDATED: 2026-06-12
 AUTHOR: Arjun Divecha (built by agent session, Alpha-Hunting Loop)
 
 DESCRIPTION:
@@ -90,11 +98,26 @@ def build_signals(panel: pd.DataFrame) -> pd.DataFrame:
 
     # ---- FX per-country z-scores -------------------------------------------
     for raw_var, z_var in [("FX_IMPVOL_1M_PCT", "FX_IMPVOL_Z252"),
-                           ("FX_RR25_1M_PCT", "FX_RR25_Z252")]:
+                           ("FX_RR25_1M_PCT", "FX_RR25_Z252"),
+                           ("FX_BF25_1M_PCT", "FX_BF25_Z252"),
+                           ("FX_CARRY_3M_PCT", "FX_CARRY_Z252")]:
         sub = panel[panel["variable"] == raw_var]
         for country, g in sub.groupby("country"):
             s = g.set_index("date")["value"].sort_index()
             emit(rolling_z(s), country, z_var)
+
+    # ---- FX vol term slope (1W - 3M, vol points) -----------------------------
+    # Normally negative (term premium); a POSITIVE slope means the options
+    # market prices more vol in the next week than over the next quarter —
+    # the classic signature of an imminent event (election, peg break, crisis).
+    fx_tenors = panel[panel["variable"].isin(["FX_IMPVOL_1W_PCT", "FX_IMPVOL_3M_PCT"])]
+    for country, g in fx_tenors.groupby("country"):
+        piv = g.pivot_table(index="date", columns="variable", values="value").sort_index()
+        if {"FX_IMPVOL_1W_PCT", "FX_IMPVOL_3M_PCT"} <= set(piv.columns):
+            both = piv[["FX_IMPVOL_1W_PCT", "FX_IMPVOL_3M_PCT"]].dropna()
+            slope = both["FX_IMPVOL_1W_PCT"] - both["FX_IMPVOL_3M_PCT"]
+            emit(slope, country, "FX_VOL_TERM_PCT")
+            emit(rolling_z(slope), country, "FX_VOL_TERM_Z252")
 
     # ---- Global risk dashboard ---------------------------------------------
     glob = panel[panel["country"] == "GLOBAL"]

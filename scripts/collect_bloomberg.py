@@ -160,7 +160,7 @@ COUNTRY_TICKERS = {
     # CDS: [ISSUER] CDS USD SR 5Y Corp ([ISSUER] ... D14 Corp post-2014 names)
     # Breakevens: [CC]GGBE10 Index
     "Australia":     {"bond_2y": "GACGB2 Index",   "bond_5y": "GACGB5 Index",   "bond_10y": "GACGB10 Index",   "bond_30y": "GACGB30 Index",  "cds_5y": "AUSTLA CDS USD SR 5Y Corp",   "breakeven_10y": None},
-    "Brazil":        {"bond_2y": "GEBR2Y Index",    "bond_5y": "GEBR5Y Index",    "bond_10y": "GEBR10Y Index",   "bond_30y": None,              "cds_5y": "BRAZIL CDS USD SR 5Y Corp",   "breakeven_10y": None},
+    "Brazil":        {"bond_2y": "GTBRL2Y Govt",    "bond_5y": "GEBR5Y Index",    "bond_10y": "GEBR10Y Index",   "bond_30y": None,              "cds_5y": "BRAZIL CDS USD SR 5Y Corp",   "breakeven_10y": None},
     "Canada":        {"bond_2y": "GCAN2YR Index",   "bond_5y": "GCAN5YR Index",   "bond_10y": "GCAN10YR Index",  "bond_30y": "GCAN30YR Index",  "cds_5y": None,                           "breakeven_10y": "C90510Y Index"},
     "Chile":         {"bond_2y": None,               "bond_5y": None,               "bond_10y": "CLGB10Y Index",   "bond_30y": None,              "cds_5y": "CHILE CDS USD SR 5Y Corp",    "breakeven_10y": None},
     "ChinaA":        {"bond_2y": "GCNY2YR Index",   "bond_5y": "GCNY5YR Index",   "bond_10y": "GCNY10YR Index",  "bond_30y": "GCNY30YR Index",  "cds_5y": "CHINAG CDS USD SR 5Y Corp",   "breakeven_10y": None},

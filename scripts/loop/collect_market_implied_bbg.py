@@ -7,13 +7,24 @@ SCRIPT NAME: scripts/loop/collect_market_implied_bbg.py
 INPUT FILES:
 - Bloomberg Terminal via OpusBloomberg (network source, no local input file).
     Three families of daily market-implied series, every ticker verified
-    with a live 1-security test pull on 2026-06-11 before first batch use:
-      1. FX options surfaces — 1M ATM implied vol ([PAIR]V1M Curncy) and
-         25-delta 1M risk reversals ([PAIR]25R1M Curncy) for 24 T2 currency
-         pairs (majors, LatAm, CEEMEA, NDF Asia, and the HKD/SAR pegs).
-      2. Global risk dashboard — VIX, VIX3M, MOVE, US HY OAS (LF98OAS),
+    with a live 1-security test pull (2026-06-11 for the v1.0 set,
+    2026-06-12 for the v1.1 additions) before first batch use:
+      1. FX options surfaces — for 24 T2 currency pairs (majors, LatAm,
+         CEEMEA, NDF Asia, and the HKD/SAR pegs):
+           1M ATM implied vol      [PAIR]V1M Curncy
+           1W ATM implied vol      [PAIR]V1W Curncy    (v1.1)
+           3M ATM implied vol      [PAIR]V3M Curncy    (v1.1)
+           25-delta 1M risk rev.   [PAIR]25R1M Curncy
+           25-delta 1M butterfly   [PAIR]25B1M Curncy  (v1.1)
+      2. FX 3M forwards + spot (v1.2) — outright forward tickers
+         ([ROOT]3M Curncy, e.g. BCN3M = USDBRL NDF, KWN3M = USDKRW NDF)
+         plus the spot pair, for 25 pairs (the 24 vol pairs + USDDKK:
+         Denmark has no options surface but has a liquid forward).
+         Verified live 2026-06-12: PX_LAST on these tickers is the
+         OUTRIGHT forward rate, not points.
+      3. Global risk dashboard — VIX, VIX3M, MOVE, US HY OAS (LF98OAS),
          US IG OAS (LUACOAS), DXY, BBDXY.
-      3. Commodity futures curve — generic 1st and 2nd contracts for WTI
+      4. Commodity futures curve — generic 1st and 2nd contracts for WTI
          (CL), Brent (CO), copper (HG), gold (GC), US natgas (NG).
 
 OUTPUT FILES:
@@ -23,11 +34,24 @@ OUTPUT FILES:
     Germany, Italy, Netherlands, Spain; USDCNH to ChinaA+ChinaH); risk
     dashboard and commodity rows carry country='GLOBAL'. Variables:
       FX_IMPVOL_1M_PCT     1M ATM implied vol, annualized %
+      FX_IMPVOL_1W_PCT     1W ATM implied vol (v1.1) — with 3M gives the
+                           vol TERM SLOPE: 1W >> 3M = stress priced NOW
+      FX_IMPVOL_3M_PCT     3M ATM implied vol (v1.1)
       FX_RR25_1M_PCT       25-delta 1M risk reversal, vol points,
                            SIGN-NORMALIZED so positive = options market
                            paying a premium for LOCAL-currency depreciation
                            (USD-base pairs keep raw sign; XXXUSD pairs are
                            flipped). USD itself has no pair (numeraire).
+      FX_BF25_1M_PCT       25-delta 1M butterfly, vol points (v1.1) — the
+                           tail/kurtosis premium; symmetric, NO sign flip
+      FX_CARRY_3M_PCT      forward-implied carry, annualized % (v1.2):
+                           (fwd/spot - 1) * 4 * 100, SIGN-NORMALIZED so
+                           positive = LOCAL short rates above USD (the
+                           classic carry-trade long leg). NDF-implied for
+                           capital-controlled currencies (KRW, TWD, INR,
+                           IDR, MYR, PHP, BRL, CLP) — the offshore-implied
+                           rate, which is exactly what a foreign investor
+                           can actually capture.
       RISK_<NAME>          VIX / VIX3M / MOVE / HY_OAS / IG_OAS / DXY / BBDXY
       CMD_<ROOT><1|2>      commodity generic 1st/2nd contract settle
     New rows win on (date, country, variable). This script does NOT touch
@@ -37,8 +61,8 @@ OUTPUT FILES:
     Append-only quota log (timestamp, script, operation, est_hits, rows,
     elapsed_s, status) per the bloomberg-skill mandatory pattern.
 
-VERSION: 1.0
-LAST UPDATED: 2026-06-11
+VERSION: 1.2
+LAST UPDATED: 2026-06-12
 AUTHOR: Arjun Divecha (built by agent session, Alpha-Hunting Loop)
 
 DESCRIPTION:
@@ -52,11 +76,12 @@ classic dislocation inputs: a country whose RR spikes while its equity
 market and CDS are quiet is exactly the cross-asset incoherence the loop's
 D4 detector hunts for.
 
-Quota economics (see bloomberg-skill limits.md): all 65 series were
-first-pulled on 2026-06-11 so they are FREE against the monthly unique-ID
-counter from now on. A nightly 15-day incremental run costs ~65 hits
-(~0.01% of the daily cap); the full backfill is also 1 hit per series
-because HistoricalDataRequest cost ignores date range.
+Quota economics (see bloomberg-skill limits.md): the v1.0 65 series were
+first-pulled 2026-06-11, the v1.1 additions (72 series: 24 pairs x
+butterfly/1W vol/3M vol) on 2026-06-12 — all FREE against the monthly
+unique-ID counter from then on. A nightly 15-day incremental run costs
+~137 hits (~0.03% of the daily cap); a full backfill is also 1 hit per
+series because HistoricalDataRequest cost ignores date range.
 
 DEPENDENCIES:
 - OpusBloomberg conda env: blpapi, pandas, pyarrow (NOT the project venv)
@@ -132,6 +157,24 @@ FX_PAIRS: dict[str, tuple[list[str], bool]] = {
     "USDSAR": (["Saudi Arabia"], False),
 }
 
+# FX 3M forward roots (outright forward = "[ROOT]3M Curncy", spot = pair).
+# NDF roots for capital-controlled currencies per the findatapy grid +
+# live verification 2026-06-12. USDDKK has forwards but no options surface.
+FWD_3M_ROOTS: dict[str, str] = {
+    "EURUSD": "EUR", "GBPUSD": "GBP", "AUDUSD": "AUD", "USDJPY": "JPY",
+    "USDCAD": "CAD", "USDCHF": "CHF", "USDSEK": "SEK", "USDBRL": "BCN",
+    "USDCLP": "CHN", "USDMXN": "MXN", "USDCNH": "CNH", "USDHKD": "HKD",
+    "USDINR": "IRN", "USDIDR": "IHN", "USDKRW": "KWN", "USDMYR": "MRN",
+    "USDPHP": "PPN", "USDSGD": "SGD", "USDTWD": "NTN", "USDTHB": "THB",
+    "USDPLN": "PLN", "USDZAR": "ZAR", "USDTRY": "TRY", "USDSAR": "SAR",
+    "USDDKK": "DKK",
+}
+
+# forward-only pairs (no options surface): pair -> (countries, flip)
+FWD_EXTRA_PAIRS: dict[str, tuple[list[str], bool]] = {
+    "USDDKK": (["Denmark"], False),
+}
+
 RISK_TICKERS: dict[str, str] = {
     "VIX Index": "RISK_VIX",
     "VIX3M Index": "RISK_VIX3M",
@@ -147,7 +190,14 @@ COMMODITY_ROOTS = ["CL", "CO", "HG", "GC", "NG"]
 # variable prefix -> (lo, hi) sanity bounds (value must be in (lo, hi])
 SANITY: dict[str, tuple[float, float]] = {
     "FX_IMPVOL_1M_PCT": (0.0, 200.0),
+    "FX_IMPVOL_1W_PCT": (0.0, 300.0),   # 1W vol spikes harder than 1M
+    "FX_IMPVOL_3M_PCT": (0.0, 200.0),
     "FX_RR25_1M_PCT": (-50.0, 50.0),
+    "FX_BF25_1M_PCT": (-10.0, 30.0),    # butterflies are small and >= ~0
+    # carry: TRY printed >100% annualized in 2023-24; deeply negative only
+    # on broken data, allow modest negatives (DM funding currencies)
+    "FX_CARRY_3M_PCT": (-100.0, 500.0),
+
     "RISK_VIX": (0.0, 400.0),
     "RISK_VIX3M": (0.0, 400.0),
     "RISK_MOVE": (0.0, 400.0),
@@ -211,9 +261,14 @@ def collect(start: str, end: str) -> pd.DataFrame:
 
     fx_tickers = []
     for pair in FX_PAIRS:
-        fx_tickers += [f"{pair}V1M Curncy", f"{pair}25R1M Curncy"]
+        fx_tickers += [f"{pair}V1M Curncy", f"{pair}25R1M Curncy",
+                       f"{pair}V1W Curncy", f"{pair}V3M Curncy",
+                       f"{pair}25B1M Curncy"]
+    fwd_tickers = []
+    for pair, root in FWD_3M_ROOTS.items():
+        fwd_tickers += [f"{root}3M Curncy", f"{pair} Curncy"]
     cmd_tickers = [f"{root}{n} Comdty" for root in COMMODITY_ROOTS for n in (1, 2)]
-    all_tickers = fx_tickers + list(RISK_TICKERS) + cmd_tickers
+    all_tickers = fx_tickers + fwd_tickers + list(RISK_TICKERS) + cmd_tickers
 
     t0 = time.time()
     with BBG() as bbg:
@@ -239,12 +294,38 @@ def collect(start: str, end: str) -> pd.DataFrame:
 
     for pair, (countries, flip_rr) in FX_PAIRS.items():
         vol = series.get(f"{pair}V1M Curncy", pd.Series(dtype=float))
+        vol1w = series.get(f"{pair}V1W Curncy", pd.Series(dtype=float))
+        vol3m = series.get(f"{pair}V3M Curncy", pd.Series(dtype=float))
         rr = series.get(f"{pair}25R1M Curncy", pd.Series(dtype=float))
+        bf = series.get(f"{pair}25B1M Curncy", pd.Series(dtype=float))
         if flip_rr and not rr.empty:
-            rr = -rr
+            rr = -rr   # butterflies are symmetric — never flipped
         for c in countries:
             emit(vol, c, "FX_IMPVOL_1M_PCT", f"{pair} vol -> {c}")
+            emit(vol1w, c, "FX_IMPVOL_1W_PCT", f"{pair} 1W vol -> {c}")
+            emit(vol3m, c, "FX_IMPVOL_3M_PCT", f"{pair} 3M vol -> {c}")
             emit(rr, c, "FX_RR25_1M_PCT", f"{pair} RR -> {c}")
+            emit(bf, c, "FX_BF25_1M_PCT", f"{pair} BF -> {c}")
+
+    # ---- forward-implied carry (annualized %, local-minus-USD sign) ---------
+    for pair, root in FWD_3M_ROOTS.items():
+        countries, flip = (FX_PAIRS.get(pair) or FWD_EXTRA_PAIRS[pair])
+        fwd = series.get(f"{root}3M Curncy", pd.Series(dtype=float))
+        spot = series.get(f"{pair} Curncy", pd.Series(dtype=float))
+        if fwd.empty or spot.empty:
+            for c in countries:
+                emit(pd.Series(dtype=float), c, "FX_CARRY_3M_PCT", f"{pair} carry -> {c}")
+            continue
+        both = pd.concat([fwd.rename("f"), spot.rename("s")], axis=1, sort=True).dropna()
+        both = both[(both["f"] > 0) & (both["s"] > 0)]
+        if flip:
+            # XXXUSD quote: forward premium on the pair = USD rates BELOW
+            # local; invert the ratio so positive = local rates above USD
+            carry = (both["s"] / both["f"] - 1.0) * 4.0 * 100.0
+        else:
+            carry = (both["f"] / both["s"] - 1.0) * 4.0 * 100.0
+        for c in countries:
+            emit(carry, c, "FX_CARRY_3M_PCT", f"{pair} carry -> {c}")
 
     for ticker, variable in RISK_TICKERS.items():
         emit(series.get(ticker, pd.Series(dtype=float)), "GLOBAL", variable, ticker)

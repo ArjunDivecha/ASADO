@@ -6,22 +6,28 @@ SCRIPT NAME: scripts/loop/collect_sovereign_daily_bbg.py
 
 INPUT FILES:
 - Bloomberg Terminal via OpusBloomberg (network source, no local input file)
-    Sovereign 5Y CDS spreads + generic 10Y government bond yields, daily.
+    Sovereign CDS (5Y + 1Y) + generic government bond yields (10Y + 2Y), daily.
     Ticker map copied from scripts/collect_bloomberg.py COUNTRY_TICKERS
-    (verified against the Terminal 2026-04-12): 19 countries have a CDS
-    ticker ("[ISSUER] CDS USD/EUR SR 5Y Corp"), 31 have a bond_10y ticker.
+    (verified against the Terminal 2026-04-12, re-audited 2026-06-11):
+    20 CDS series ("[ISSUER] CDS USD SR 5Y Corp" + D14 variants), 1Y CDS
+    derived by tenor substitution (verified live 2026-06-12), 32 bond_10y,
+    26 bond_2y tickers.
 
 OUTPUT FILES:
 - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/loop/sovereign_daily.parquet
     Tidy panel (date, country, value, variable, source='bloomberg'):
       SOV_CDS_5Y_BP      5Y CDS spread, basis points (19 countries, 2005+)
+      SOV_CDS_1Y_BP      1Y CDS spread, bp (v1.1) — with 5Y gives the CDS
+                         curve slope; 1Y > 5Y (inversion) = imminent-distress
       SOV_10Y_YIELD_PCT  generic 10Y govt yield, percent (31 countries)
+      SOV_2Y_YIELD_PCT   generic 2Y govt yield, pct (v1.1) — with 10Y gives
+                         the daily 2s10s curve slope per country
     New rows win on (date, country, variable). This script does NOT touch
     DuckDB (no duckdb in the OpusBloomberg env) — see
     scripts/loop/load_sovereign_daily.py for the loop-DB table rebuild.
 
-VERSION: 1.0
-LAST UPDATED: 2026-06-11
+VERSION: 1.1
+LAST UPDATED: 2026-06-12
 AUTHOR: Arjun Divecha (built by agent session, Alpha-Hunting Loop Phase 3)
 
 DESCRIPTION:
@@ -125,6 +131,46 @@ TICKERS = {
     "Vietnam":      ("VIETNM CDS USD SR 5Y Corp",      None),
 }
 
+# t2_name -> 2Y generic govt yield (ticker, field). From the corrected monthly
+# COUNTRY_TICKERS map (collect_bloomberg.py, re-audited 2026-06-11). Countries
+# with no liquid 2Y generic: Chile, Hong Kong, Malaysia, Philippines,
+# Saudi Arabia, Taiwan, Vietnam.
+BOND_2Y = {
+    "Australia":    ("GACGB2 Index", "PX_LAST"),
+    "Brazil":       ("GTBRL2Y Govt", Y),   # GEBR2Y Index is dead (2026-06-12)
+    "Canada":       ("GCAN2YR Index", "PX_LAST"),
+    "ChinaA":       ("GCNY2YR Index", "PX_LAST"),
+    "ChinaH":       ("GCNY2YR Index", "PX_LAST"),
+    "Denmark":      ("GDGB2YR Index", "PX_LAST"),
+    "France":       ("GFRN2 Index", "PX_LAST"),
+    "Germany":      ("GDBR2 Index", "PX_LAST"),
+    "India":        ("GIND2YR Index", "PX_LAST"),
+    "Indonesia":    ("GIDN2YR Index", "PX_LAST"),
+    "Italy":        ("GBTPGR2 Index", "PX_LAST"),
+    "Japan":        ("GJGB2 Index", "PX_LAST"),
+    "Korea":        ("GVSK2YR Index", "PX_LAST"),
+    "Mexico":       ("GMXN02YR Index", "PX_LAST"),
+    "NASDAQ":       ("USGG2YR Index", "PX_LAST"),
+    "Netherlands":  ("GNTH2YR Index", "PX_LAST"),
+    "Poland":       ("POGB2YR Index", "PX_LAST"),
+    "Singapore":    ("MASB2Y Index", "PX_LAST"),
+    "South Africa": ("GSAB2YR Index", "PX_LAST"),
+    "Spain":        ("GSPG2YR Index", "PX_LAST"),
+    "Sweden":       ("GSGB2YR Index", "PX_LAST"),
+    "Switzerland":  ("GSWISS2 Index", "PX_LAST"),
+    "Thailand":     ("GVTL2YR Index", "PX_LAST"),
+    "Turkey":       ("GTTRY2Y Govt", Y),
+    "U.K.":         ("GUKG2 Index", "PX_LAST"),
+    "U.S.":         ("USGG2YR Index", "PX_LAST"),
+    "US SmallCap":  ("USGG2YR Index", "PX_LAST"),
+}
+
+
+def cds_1y_ticker(cds_5y: str) -> str:
+    """Derive the 1Y CDS contract from the 5Y name (same ISDA doc clause).
+    Verified live 2026-06-12 for plain + D14 contracts."""
+    return cds_5y.replace(" SR 5Y ", " SR 1Y ")
+
 
 def hist_series(bbg: BBG, ticker: str, start: str, end: str, field: str = "PX_LAST") -> pd.Series:
     rows = bbg.hist(ticker, field, start, end)
@@ -172,16 +218,25 @@ def collect(start: str, end: str) -> pd.DataFrame:
                     cache[key] = pd.Series(dtype=float)
             return cache[key]
 
+        n_cds1 = n_y2 = 0
         for country, (cds_t, y10_spec) in TICKERS.items():
             frames = []
             if cds_t:
-                s = sanity_filter(get(cds_t), 0, 10_000, f"{country} CDS (bp)")
+                s = sanity_filter(get(cds_t), 0, 10_000, f"{country} CDS 5Y (bp)")
                 if not s.empty:
                     frames.append(pd.DataFrame(
                         {"date": s.index, "value": s.values, "variable": "SOV_CDS_5Y_BP"}))
                     n_cds += 1
                 else:
                     print(f"  WARNING {country}: CDS ticker {cds_t} returned no data")
+                # 1Y CDS — derived contract name, same per-ticker isolation
+                s1 = sanity_filter(get(cds_1y_ticker(cds_t)), 0, 10_000, f"{country} CDS 1Y (bp)")
+                if not s1.empty:
+                    frames.append(pd.DataFrame(
+                        {"date": s1.index, "value": s1.values, "variable": "SOV_CDS_1Y_BP"}))
+                    n_cds1 += 1
+                else:
+                    print(f"  WARNING {country}: 1Y CDS {cds_1y_ticker(cds_t)} returned no data")
             if y10_spec:
                 y10_t, y10_field = y10_spec
                 s = sanity_filter(get(y10_t, y10_field), -5, 100, f"{country} 10Y (pct)")
@@ -191,6 +246,16 @@ def collect(start: str, end: str) -> pd.DataFrame:
                     n_y10 += 1
                 else:
                     print(f"  WARNING {country}: 10Y ticker {y10_t} returned no data")
+            y2_spec = BOND_2Y.get(country)
+            if y2_spec:
+                y2_t, y2_field = y2_spec
+                s = sanity_filter(get(y2_t, y2_field), -5, 100, f"{country} 2Y (pct)")
+                if not s.empty:
+                    frames.append(pd.DataFrame(
+                        {"date": s.index, "value": s.values, "variable": "SOV_2Y_YIELD_PCT"}))
+                    n_y2 += 1
+                else:
+                    print(f"  WARNING {country}: 2Y ticker {y2_t} returned no data")
             if frames:
                 df = pd.concat(frames, ignore_index=True)
                 df["country"] = country
@@ -200,7 +265,8 @@ def collect(start: str, end: str) -> pd.DataFrame:
         raise RuntimeError("no sovereign data collected at all")
     out = pd.concat(records, ignore_index=True)
     out["source"] = "bloomberg"
-    print(f"collected: {n_cds} CDS series, {n_y10} 10Y series, {len(out):,} rows")
+    print(f"collected: {n_cds} CDS-5Y, {n_cds1} CDS-1Y, {n_y10} 10Y, {n_y2} 2Y series, "
+          f"{len(out):,} rows")
     return out[["date", "country", "value", "variable", "source"]]
 
 

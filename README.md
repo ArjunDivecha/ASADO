@@ -241,7 +241,7 @@ state lives in a **separate DuckDB** — `Data/loop/asado_loop.duckdb` — so mo
 `asado.duckdb` can never destroy it. The main DB is attached read-only as the `asado` schema.
 
 ### Nightly job (launchd, 06:45)
-`scripts/loop/loop_daily_job.py` (`com.arjundivecha.asado-loop-daily`) runs 23 steps, in order
+`scripts/loop/loop_daily_job.py` (`com.arjundivecha.asado-loop-daily`) runs 27 steps, in order
 (each in its own subprocess; one failure never stops the rest, but any failure exits non-zero):
 
 1. `collect_news_bridge.py` — portfolio holdings + 800-ticker ETF closes from the News repo
@@ -254,8 +254,10 @@ state lives in a **separate DuckDB** — `Data/loop/asado_loop.duckdb` — so mo
 6. `build_forward_calendar.py` — curated forward catalysts (CB decisions, elections, index reviews).
 7-8. `collect_foreign_flows_bbg.py` + `collect_foreign_flows.py` — Bloomberg exchange-sourced foreign
    equity flows (KR/TW/TH/PH/ID) + NSDL India → `foreign_flows_daily`.
-9-10. `collect_sovereign_daily_bbg.py` + `load_sovereign_daily.py` — daily 5Y CDS (20 countries) +
-   direct-pull 10Y yields (32) → `sovereign_daily` (the D4 v2 cross-asset legs).
+9-10. `collect_sovereign_daily_bbg.py` + `load_sovereign_daily.py` — daily 5Y + 1Y CDS (20/18
+   countries) + direct-pull 10Y + 2Y yields (32/27) → `sovereign_daily` (the D4 v2 cross-asset
+   legs) + `sovereign_signals` (CDS curve slope 5Y−1Y — **inversion = imminent-distress
+   pricing** — and the daily 2s10s govt slope, both with 252d z-scores).
 11. `build_valuation_block.py` — month-end CAPE/PB/DY/EY/ERP + 10y percentiles → `valuation_monthly`.
 12. `collect_weo_vintages.py` — IMF WEO vintage surface → `weo_vintages` / `weo_revisions` (D3 input).
 13-14. `collect_etf_flows_bbg.py` + `load_etf_flows.py` — country-ETF shares-out/NAV/AUM →
@@ -264,19 +266,32 @@ state lives in a **separate DuckDB** — `Data/loop/asado_loop.duckdb` — so mo
    history → `consensus_daily` + `consensus_revisions`.
 17. `collect_cot.py` — CFTC COT speculator positioning, 12 commodity futures (keyless Socrata).
 18-19. `collect_market_implied_bbg.py` + `load_market_implied.py` — **market-implied stress layer**:
-   FX 1M ATM implied vol + 25-delta risk reversals for 24 T2 currency pairs (29 countries, incl. the
-   HKD/SAR peg surfaces), VIX/VIX3M/MOVE/HY-IG-OAS/DXY/BBDXY dashboard, and CL/CO/HG/GC/NG 1st+2nd
-   futures generics (2006+) → `market_implied_daily` + `market_implied_signals` (252d z-scores, VIX
-   term-structure ratio, curve shape). RR is sign-normalized: **positive = options premium on
-   local-currency depreciation**. See `docs/MARKET_IMPLIED_EXTENSION_STATUS.md`.
-20. `build_dislocations.py` — detectors **D1 D2 D3 D4 D5 D7 D8 D9 D10** → `dislocation_daily` +
+   FX ATM implied vol in THREE tenors (1W/1M/3M — the 1W−3M term slope inverts when stress is
+   priced NOW), 25-delta risk reversals + butterflies, and 3M forward/NDF-implied carry for 25 T2
+   currency pairs (30 countries, incl. the HKD/SAR peg surfaces and forward-only Denmark), the
+   VIX/VIX3M/MOVE/HY-IG-OAS/DXY/BBDXY dashboard, and CL/CO/HG/GC/NG 1st+2nd futures generics
+   (2006+) → `market_implied_daily` + `market_implied_signals` (252d z-scores, VIX term-structure
+   ratio, vol term slope, carry z, curve shape). RR is sign-normalized: **positive = options
+   premium on local-currency depreciation**; carry is sign-normalized: **positive = local rates
+   above USD**. See `docs/MARKET_IMPLIED_EXTENSION_STATUS.md` +
+   `docs/BBG_SKILL_ENHANCEMENTS_2026_06_12.md`.
+20-21. `collect_sov_ratings_bql.py` + `load_sov_ratings.py` — **sovereign rating history via BQL**
+   (ASADO's first BQL collector: `//blp/bqlsvc` + EXCEL unlock + the `issuerof()` hop, CDS-contract
+   anchors): S&P/Moody's/Fitch monthly back to 2015, 33 countries, 21-pt numeric scale →
+   `sov_ratings_monthly` + the dated `sov_rating_changes` event table (128 events).
+22-23. `collect_eco_surprise_bbg.py` + `load_eco_surprise.py` — **economic surprise layer**:
+   ACTUAL_RELEASE vs BN_SURVEY_MEDIAN on ECO release tickers (CPI YoY 31 countries, unemployment,
+   GDP, Markit PMI) → `eco_surprise_monthly` + `eco_surprise_signals` (per-print surprise z,
+   growth/inflation surprise composites).
+24. `build_dislocations.py` — detectors **D1 D2 D3 D4 D5 D7 D8 D9 D10** → `dislocation_daily` +
    the daily brief at `Data/dislocations/brief_YYYY_MM_DD.md` (the Layer 2 reading list; includes
-   forward-calendar, market-implied stress, foreign-flow, ETF-positioning and COT context sections).
-   D10 (A10, live 2026-06-11) fires on FX-options-vs-equity conflicts: options stress unpriced by
-   equity, or equity stress unconfirmed by options. D6 stays blocked until predmkt history accumulates.
-21. `build_evidence_packs.py` — freezes GDELT headlines for tonight's fired dislocations.
-22. `ledgers.py --rebuild` — folds the JSONL ledgers into loop-DB tables.
-23. `calibration_report.py` — regenerates the current-month calibration report (PARTIAL-stamped
+   forward-calendar, market-implied stress, sovereign-curves/ratings/surprises, foreign-flow,
+   ETF-positioning and COT context sections). D10 (A10, live 2026-06-11) fires on
+   FX-options-vs-equity conflicts: options stress unpriced by equity, or equity stress unconfirmed
+   by options. D6 stays blocked until predmkt history accumulates.
+25. `build_evidence_packs.py` — freezes GDELT headlines for tonight's fired dislocations.
+26. `ledgers.py --rebuild` — folds the JSONL ledgers into loop-DB tables.
+27. `calibration_report.py` — regenerates the current-month calibration report (PARTIAL-stamped
    until ≥ 10 closed theses).
 
 A second launchd job (`com.arjundivecha.asado-predmkt-daily`, 06:30) runs

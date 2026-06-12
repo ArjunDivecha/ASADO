@@ -1056,6 +1056,7 @@ def write_brief(con, df: pd.DataFrame, run_date: pd.Timestamp, regime: str) -> N
                 lines.append(f"- {r.detector} {r.entity} ({r.direction}) after {r.days_active}d: **{r.resolution_note}**")
     lines += _calendar_section(con, run_date)
     lines += _market_implied_section(con, run_date)
+    lines += _curves_ratings_surprises_section(con, run_date)
     lines += _flows_section(con, run_date)
     lines += _etf_positioning_section(con, run_date)
     lines += _cot_section(con, run_date)
@@ -1281,24 +1282,33 @@ def _market_implied_section(con, run_date: pd.Timestamp) -> list[str]:
         f"DXY z={zfmt('RISK_DXY_Z252')}"
     )
 
+    FX_Z_VARS = ("FX_RR25_Z252", "FX_IMPVOL_Z252", "FX_BF25_Z252",
+                 "FX_VOL_TERM_Z252", "FX_CARRY_Z252")
     fx_countries = {c for (c, v), z in sval.items()
-                    if v in ("FX_RR25_Z252", "FX_IMPVOL_Z252")
-                    and pd.notna(z) and abs(z) >= 2.0}
+                    if v in FX_Z_VARS and pd.notna(z) and abs(z) >= 2.0}
     if fx_countries:
         lines.append("")
-        lines.append("Stretched currencies (|252d z| >= 2; +RR = depreciation premium):")
+        lines.append("Stretched currencies (any |252d z| >= 2; +RR = depreciation "
+                     "premium, +term = 1W vol above 3M = stress NOW, BF = tail "
+                     "premium, +carry = local rates above USD):")
 
         def worst_z(c):
-            zs = [abs(z) for v in ("FX_RR25_Z252", "FX_IMPVOL_Z252")
+            zs = [abs(z) for v in FX_Z_VARS
                   if (z := _num(sval, (c, v))) is not None]
             return max(zs) if zs else 0.0
 
         for c in sorted(fx_countries, key=lambda c: -worst_z(c)):
             rr, rrz = _num(rval, (c, "FX_RR25_1M_PCT")), _num(sval, (c, "FX_RR25_Z252"))
             iv, ivz = _num(rval, (c, "FX_IMPVOL_1M_PCT")), _num(sval, (c, "FX_IMPVOL_Z252"))
+            bfz = _num(sval, (c, "FX_BF25_Z252"))
+            tm, tmz = _num(sval, (c, "FX_VOL_TERM_PCT")), _num(sval, (c, "FX_VOL_TERM_Z252"))
+            cy, cyz = _num(rval, (c, "FX_CARRY_3M_PCT")), _num(sval, (c, "FX_CARRY_Z252"))
             lines.append(
                 f"- **{c}**: RR {_fmt(rr, '{:+.2f}')} (z={_fmt(rrz, '{:+.1f}')}) | "
-                f"impvol {_fmt(iv, '{:.1f}')}% (z={_fmt(ivz, '{:+.1f}')})")
+                f"impvol {_fmt(iv, '{:.1f}')}% (z={_fmt(ivz, '{:+.1f}')}) | "
+                f"BF z={_fmt(bfz, '{:+.1f}')} | term {_fmt(tm, '{:+.1f}')} "
+                f"(z={_fmt(tmz, '{:+.1f}')}) | carry {_fmt(cy, '{:+.1f}')}% "
+                f"(z={_fmt(cyz, '{:+.1f}')})")
     else:
         lines.append("No stretched currency surfaces (|252d z| >= 2).")
 
@@ -1312,6 +1322,111 @@ def _market_implied_section(con, run_date: pd.Timestamp) -> list[str]:
         for root, z in sorted(curves, key=lambda x: -abs(x[1])):
             pct = _num(sval, ("GLOBAL", f"CMD_{root}_CURVE_PCT"))
             lines.append(f"- **{names.get(root, root)}**: front/2nd {_fmt(pct, '{:+.1f}')}% (z={z:+.1f})")
+    return lines
+
+
+def _curves_ratings_surprises_section(con, run_date: pd.Timestamp) -> list[str]:
+    """Sovereign curve shapes, rating changes, and economic surprises
+    (loop DB: sovereign_signals, sov_rating_changes, eco_surprise_signals).
+
+    Context only, not detectors (yet). Three blocks, extremes only:
+      1. CDS curve INVERSIONS (1Y > 5Y = imminent-distress pricing) and
+         stretched 2s10s moves (|z| >= 2).
+      2. Rating changes in the last 90 days (dated, tradeable events).
+      3. Latest economic surprise composites with |z| >= 1.5 (data
+         beating/missing consensus hard).
+    Missing tables reported, not swallowed.
+    """
+    lines = ["", "## Sovereign curves, ratings & macro surprises", ""]
+
+    # --- 1. curve shapes -----------------------------------------------------
+    try:
+        cur = con.execute(
+            """
+            SELECT s.country, s.variable, s.value
+            FROM sovereign_signals s
+            JOIN (SELECT country, variable, MAX(date) AS d
+                  FROM sovereign_signals WHERE date <= CAST(? AS DATE)
+                  GROUP BY 1, 2) m
+              ON s.country = m.country AND s.variable = m.variable AND s.date = m.d
+            """,
+            [str(run_date.date())],
+        ).fetchdf()
+        cval = {(r.country, r.variable): r.value for r in cur.itertuples()}
+        inverted = [(c, v) for (c, var), v in cval.items()
+                    if var == "SOV_CDS_SLOPE_BP" and pd.notna(v) and v < 0]
+        stretched = [(c, cval.get((c, "SOV_2S10S_PCT")), z)
+                     for (c, var), z in cval.items()
+                     if var == "SOV_2S10S_Z252" and pd.notna(z) and abs(z) >= 2.0]
+        if inverted:
+            lines.append("CDS curve INVERTED (1Y above 5Y — imminent-distress pricing):")
+            for c, v in sorted(inverted, key=lambda x: x[1]):
+                lines.append(f"- **{c}**: 5Y-1Y slope {v:+.0f}bp")
+        if stretched:
+            lines.append("Govt 2s10s stretched (|252d z| >= 2):")
+            for c, slope, z in sorted(stretched, key=lambda x: -abs(x[2])):
+                s_str = f"{slope:+.2f}" if slope is not None and pd.notna(slope) else "n/a"
+                lines.append(f"- **{c}**: 2s10s {s_str}pp (z={z:+.1f})")
+        if not inverted and not stretched:
+            lines.append("No CDS curve inversions; no stretched 2s10s moves.")
+    except Exception as exc:
+        lines.append(f"Curve signals UNAVAILABLE ({exc}) — run scripts/loop/load_sovereign_daily.py")
+
+    # --- 2. recent rating changes -------------------------------------------
+    try:
+        chg = con.execute(
+            """
+            SELECT date, country, agency, old_score, new_score, delta
+            FROM sov_rating_changes
+            WHERE date >= CAST(? AS DATE) - INTERVAL 90 DAY
+              AND date <= CAST(? AS DATE)
+            ORDER BY date DESC, country
+            """,
+            [str(run_date.date()), str(run_date.date())],
+        ).fetchdf()
+        lines.append("")
+        if chg.empty:
+            lines.append("No sovereign rating changes in the last 90 days.")
+        else:
+            lines.append("Sovereign rating changes (last 90 days, 21-pt scale, higher = better):")
+            for r in chg.itertuples():
+                arrow = "UPGRADE" if r.delta > 0 else "DOWNGRADE"
+                d = pd.Timestamp(r.date).date()
+                lines.append(
+                    f"- **{r.country}** {arrow} ({r.agency}, {d}): "
+                    f"{r.old_score:.0f} -> {r.new_score:.0f} ({r.delta:+.0f} notches)")
+    except Exception as exc:
+        lines.append(f"Rating changes UNAVAILABLE ({exc}) — run scripts/loop/load_sov_ratings.py")
+
+    # --- 3. economic surprises ------------------------------------------------
+    try:
+        eco = con.execute(
+            """
+            SELECT s.country, s.variable, s.value, s.date
+            FROM eco_surprise_signals s
+            JOIN (SELECT country, variable, MAX(date) AS d
+                  FROM eco_surprise_signals WHERE date <= CAST(? AS DATE)
+                  GROUP BY 1, 2) m
+              ON s.country = m.country AND s.variable = m.variable AND s.date = m.d
+            WHERE s.variable IN ('ECO_GROWTH_SURPRISE_Z', 'ECO_INFL_SURPRISE_Z')
+              AND s.date >= CAST(? AS DATE) - INTERVAL 75 DAY
+            """,
+            [str(run_date.date()), str(run_date.date())],
+        ).fetchdf()
+        hot = eco[eco["value"].abs() >= 1.5]
+        lines.append("")
+        if hot.empty:
+            lines.append("No hot economic surprises (|z| >= 1.5 on latest prints).")
+        else:
+            lines.append("Hot economic surprises (latest print, |z| >= 1.5; +growth = beat, "
+                         "+infl = hotter than consensus):")
+            label = {"ECO_GROWTH_SURPRISE_Z": "growth", "ECO_INFL_SURPRISE_Z": "inflation"}
+            for r in hot.sort_values("value", key=lambda s: s.abs(), ascending=False).itertuples():
+                d = pd.Timestamp(r.date).date()
+                lines.append(f"- **{r.country}** {label[r.variable]} surprise z={r.value:+.1f} ({d})")
+    except Exception as exc:
+        lines.append(f"Surprises UNAVAILABLE ({exc}) — run scripts/loop/load_eco_surprise.py")
+
     return lines
 
 

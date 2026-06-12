@@ -200,8 +200,9 @@ Two conflict shapes, both per-country, both direction `flag`:
 - The risk dashboard and commodity curves are GLOBAL rows — country attribution
   (e.g. Brent backwardation → importers vs exporters) is deliberately left to detectors
   and Layer 2, not baked into the data.
-- 3M tenors (V3M/25R3M) follow the same ticker pattern but are NOT yet pulled — add to the
-  collector's pair loop if term-structure-of-fear becomes interesting.
+- ~~3M tenors follow the same ticker pattern but are NOT yet pulled~~ **Done 2026-06-12:**
+  1W + 3M ATM vol, 25Δ butterflies, and 3M forward-implied carry are now collected
+  (collector v1.2) — see `docs/BBG_SKILL_ENHANCEMENTS_2026_06_12.md`.
 - `market_implied_*` lives in the loop DB only; it is NOT unioned into `unified_panel`/
   `feature_panel` (consistent with the loop/warehouse separation).
 

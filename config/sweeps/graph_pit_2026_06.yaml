@@ -1,0 +1,114 @@
+# =============================================================================
+# SWEEP SPEC: graph_pit_2026_06.yaml
+# =============================================================================
+# The decisive robustness pass for the graph spillover family: every feature
+# here is computed from POINT-IN-TIME edge vintages (collect_pit_edges.py +
+# build_graph_features_pit.py — trade weights lagged to publication, bank
+# quarterly +4m, holder annual +9m), which removes the current-weight
+# lookahead caveat that capped round 1 (H_20260612_022..027) at WEAK.
+# Also first tests of three NEW graph algorithms: Katz 3-hop propagation,
+# PageRank hub amplification, spectral trade blocs.
+# All 7 trials charged to family graph_trade_gap (now 14 total trials -
+# the deflated Sharpe pays for the whole search, as it should).
+# PIT-vs-current sanity: bank gap correlates 0.988 with the v1 feature, so
+# expect similar ICs; what changes is the VALIDITY of the claim.
+#
+# Run: python scripts/harness/sweep_signals.py --spec config/sweeps/graph_pit_2026_06.yaml
+# =============================================================================
+
+sweep_name: graph_pit
+family_key: graph_trade_gap
+archetype: A2
+frequency: daily
+start_date: "2001-01-01"
+author: agent_sweep_2026_06_12
+
+signals:
+  - name: pit_bank_gap_21d
+    table: graph_features_pit_daily
+    variable: GRAPHP_BANK_NBR_RET_GAP_21D
+    direction: higher_is_better
+    universe: "Australia,Brazil,Canada,Chile,Denmark,France,Germany,Hong Kong,Italy,Japan,Korea,Mexico,Netherlands,Philippines,South Africa,Spain,Sweden,Switzerland,Taiwan,U.K.,U.S."
+    mechanism: >
+      Point-in-time re-test of the strongest signal in the ledger
+      (H_20260612_023, nw_t 5.7 on current weights): when the countries whose
+      banks lend to you have rallied over the trailing month, cross-border
+      credit supply is loosening before your equity market has repriced it;
+      now computed with BIS LBS quarterly weights known only at each date, so
+      a surviving result cannot be attributed to edge lookahead.
+
+  - name: pit_twohop_trade_gap
+    table: graph_features_pit_daily
+    variable: GRAPHP_TWOHOP_TRADE_GAP_21D
+    direction: higher_is_better
+    universe: "Australia,Brazil,Canada,Chile,ChinaA,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,Netherlands,Philippines,Poland,Saudi Arabia,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K.,U.S.,Vietnam"
+    mechanism: >
+      Point-in-time re-test of the two-hop supply-chain propagation read
+      (H_20260612_025, nw_t 4.5 on current weights): demand building at your
+      customers' customers diffuses along the trade network with a lag at
+      every hop, so strength two hops out is priced even more slowly than
+      direct partner strength; trade weights are now annual IMF vintages
+      applied only after publication.
+
+  - name: pit_trade_gap_21d
+    table: graph_features_pit_daily
+    variable: GRAPHP_TRADE_NBR_RET_GAP_21D
+    direction: higher_is_better
+    universe: "Australia,Brazil,Canada,Chile,ChinaA,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,Netherlands,Philippines,Poland,Saudi Arabia,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K.,U.S.,Vietnam"
+    mechanism: >
+      Point-in-time re-test of the original family anchor (H_20260610_003,
+      WEAK): when a country's direct trade partners outperformed it over the
+      trailing month, the export-demand impulse has not yet reached its
+      earnings prints and the laggard converges upward; weights are now
+      publication-lagged annual IMF trade shares rather than today's map.
+
+  - name: pit_trade_gap_63d
+    table: graph_features_pit_daily
+    variable: GRAPHP_TRADE_NBR_RET_GAP_63D
+    direction: higher_is_better
+    universe: "Australia,Brazil,Canada,Chile,ChinaA,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,Netherlands,Philippines,Poland,Saudi Arabia,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K.,U.S.,Vietnam"
+    mechanism: >
+      Point-in-time re-test of the quarterly-window trade catch-up
+      (H_20260612_022, nw_t 2.9 on current weights): a full quarter of
+      partner outperformance is the slower, less noisy read of the same
+      export-demand transmission, traded against signal freshness; computed
+      on publication-lagged annual trade vintages.
+
+  - name: pit_katz_trade_gap
+    table: graph_features_pit_daily
+    variable: GRAPHP_KATZ_TRADE_GAP_21D
+    direction: higher_is_better
+    universe: "Australia,Brazil,Canada,Chile,ChinaA,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,Netherlands,Philippines,Poland,Saudi Arabia,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K.,U.S.,Vietnam"
+    mechanism: >
+      NEW: Katz propagation generalizes the one-hop and two-hop gaps into a
+      single read summing all paths up to three hops with decay one half per
+      hop, so it captures the full diffusion front of a demand shock through
+      the trade network at once; if information truly travels the network
+      with per-hop lags, the path-weighted aggregate should rank laggards
+      better than any single-hop slice.
+
+  - name: pit_hub_gap_21d
+    table: graph_features_pit_daily
+    variable: GRAPHP_HUB_GAP_21D
+    direction: higher_is_better
+    universe: "Australia,Brazil,Canada,Chile,ChinaA,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,Netherlands,Philippines,Poland,Saudi Arabia,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K.,U.S.,Vietnam"
+    mechanism: >
+      NEW: hub amplification scales each trade partner's return by that
+      partner's PageRank centrality before weighting, because a shock at a
+      hub country (one the whole network routes through) transmits to more
+      third parties and feeds back, so hub-partner strength should carry
+      more unpriced information for the focal country than the same
+      strength at a peripheral partner.
+
+  - name: pit_bloc_gap_21d
+    table: graph_features_pit_daily
+    variable: GRAPHP_BLOC_GAP_21D
+    direction: higher_is_better
+    universe: "Australia,Brazil,Canada,Chile,ChinaA,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,Netherlands,Philippines,Poland,Saudi Arabia,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K.,U.S.,Vietnam"
+    mechanism: >
+      NEW: spectral clustering on each trade vintage partitions the network
+      into four blocs (regional supply chains in practice), and bloc mates
+      share demand exposure that is broader than any bilateral link; when a
+      country lags the average return of its own bloc the shared-factor move
+      has not yet propagated to it, so the bloc gap should predict catch-up
+      convergence over the following weeks.

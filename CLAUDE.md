@@ -122,7 +122,7 @@ skeptically, and track theses with calibration discipline.
   main DB is attached read-only as the `asado` schema.
 - **Code lives in `scripts/loop/`**, parquet intermediates in `Data/work/loop/`,
   durable artifacts in `Data/loop/`.
-- **Nightly job:** `scripts/loop/loop_daily_job.py` — 27 steps (see README "Nightly job"
+- **Nightly job:** `scripts/loop/loop_daily_job.py` — 32 steps (see README "Nightly job"
   for the full list). Runs as the final stage of `daily_update.py` (~07:30) plus a launchd
   safety net at 11:30 (`com.arjundivecha.asado-loop-daily`). Prediction markets run
   separately at 06:30. One step failing never stops the rest; any failure exits non-zero.
@@ -137,6 +137,17 @@ skeptically, and track theses with calibration discipline.
   (FX vol surfaces 1W/1M/3M + RR + butterflies + 3M forward carry, VIX/MOVE/OAS dashboard,
   commodity curves), BQL sovereign rating history (`sov_rating_changes` events),
   economic surprises (`eco_surprise_signals`), graph features, prediction markets.
+- **The graph machine (2026-06-12, README "The graph machine"):** point-in-time edge
+  vintages (`collect_pit_edges.py`, monthly) → PIT graph features incl. Katz/PageRank-hub/
+  trade-bloc algorithms (`build_graph_features_pit.py` → `graph_features_pit_daily`),
+  fundamental-twins similarity graph (`build_similarity_features.py`), lead-lag network
+  (`build_leadlag_features.py`), walk-forward ridge combiner (`build_combiner.py` —
+  the DAILY score table `combiner_scores_daily` is the live prediction surface; the
+  monthly variant tested DEAD), and Neo4j write-back of SIMILAR_TO/LEADS edges +
+  combiner ranks (`write_graph_discoveries.py`). The PIT re-test validated the graph
+  spillover family (twohop nw_t 4.4, bank gap 4.5); the daily combiner is the strongest
+  registered signal (IC 0.057, NW-t 10.7 — a stated ceiling, components selected
+  in-sample 2026-06).
 - **Validation discipline:** detectors D1–D10 → `dislocation_daily` + the nightly brief
   (`Data/dislocations/brief_YYYY_MM_DD.md`); hypothesis/thesis JSONL ledgers in `ledgers/`
   (git-tracked, append-only); skeptic harness `scripts/harness/evaluate_signal.py` with PIT
@@ -635,7 +646,7 @@ python scripts/monthly_update.py --skip-bloomberg
 | `Phase1_Data_Collection_Plan.md` | Comprehensive PRD with all 22 sources + database design |
 | `Data/processed/run_history.json` | Metadata log of last 24 runs (success/failure per source) |
 | `Data/logs/` | Timestamped logs from each run |
-| `scripts/loop/loop_daily_job.py` | Alpha-Hunting Loop nightly orchestrator (27 steps) |
+| `scripts/loop/loop_daily_job.py` | Alpha-Hunting Loop nightly orchestrator (32 steps) |
 | `scripts/loop/build_dislocations.py` | Detectors D1–D10 + the nightly brief |
 | `Data/loop/asado_loop.duckdb` | Loop database (separate from the rebuilt main DB) |
 | `Data/dislocations/brief_YYYY_MM_DD.md` | The nightly dislocation brief (Layer 2 reading list) |
@@ -645,6 +656,6 @@ python scripts/monthly_update.py --skip-bloomberg
 ---
 
 **Last Updated:** 2026-06-12  
-**Architecture:** 34-country macro universe, 26 free sources + World Bank commodities + 28 Bloomberg variables, hybrid DuckDB + Neo4j, plus the Alpha-Hunting Loop (separate loop DB, 27-step nightly job)  
+**Architecture:** 34-country macro universe, 26 free sources + World Bank commodities + 28 Bloomberg variables, hybrid DuckDB + Neo4j, plus the Alpha-Hunting Loop (separate loop DB, 32-step nightly job + graph machine)  
 **Total Data:** `unified_panel` 17.4M rows / 2,022 variables; `feature_panel` 31.6M rows / 3,048 variables; daily tables restored; DB size ~3.6 GB  
 **Monthly update cycle:** ~8-12 minutes

@@ -242,3 +242,65 @@ loop section + key-files rows), README (27-step job list), AGENTS.md, this file.
 ---
 SESSION END: 2026-06-12 08:57 PDT | Agent: Cursor (Fable 5)
 ---
+
+---
+SESSION START: 2026-06-12 13:30 PDT | Agent: Cursor (Fable 5)
+---
+
+## Session: The Graph Machine — PIT edges, new graph surfaces, the combiner
+
+### What Happened
+Arjun asked how much of Neo4j's power we were actually using (answer: ~25% — three edge
+types feeding seven features, current-weights only), then said "build ALL" of the
+enhancements. Built in one session, everything registered through the harness:
+
+1. **PIT edge vintages** (`scripts/loop/collect_pit_edges.py`, monthly_update step 4b):
+   trade 27 annual vintages 1999-2025 (IMF IMTS returns all years; the old collector kept
+   only the latest), bank 108 quarterly vintages (BIS LBS startPeriod=1999), holder 25
+   annual vintages (warehouse imf_pip). Publication lags +4m/+4m/+9m → `graph_edge_vintages`.
+2. **PIT graph features** (`build_graph_features_pit.py` → `graph_features_pit_daily`,
+   GRAPHP_*): PIT versions of all v1 features + Katz 3-hop, PageRank hub gap, spectral
+   trade-bloc gap.
+3. **Fundamental twins** (`build_similarity_features.py`): top-5 cosine twins from ~41
+   month-end fundamental _CS factors → `similarity_features_daily` + `similarity_twins`.
+4. **Lead-lag network** (`build_leadlag_features.py`): monthly lag-1 cross-corr edges
+   (≥0.15) → `leadlag_features_daily` + `leadlag_edges`. U.S. complex dominates as leader.
+5. **Ridge combiner** (`build_combiner.py`): walk-forward (Jan refits, 60m burn-in).
+   Monthly version DEAD. Daily version (6 market-derived survivors, next-5d target) is the
+   strongest signal in the ledger.
+6. **Neo4j write-back** (`write_graph_discoveries.py`): SIMILAR_TO (170) + LEADS (192)
+   edges + Country.combiner_score/rank now live in the graph.
+Nightly loop job: 27 → 32 steps (v1.2). All five builders wired in after load_eco_surprise.
+
+### Scoreboard (all registered trials, specs in config/sweeps/)
+- **PIT re-test validated the graph family**: twohop t=4.4, Katz 4.25, trade-21d 4.1,
+  hub 4.0, bloc 3.2, bank gap ic 0.034 t=4.5 (17 stable countries, 2008+). PIT-vs-current
+  corr 0.988 — v1's result was structure, not lookahead.
+- **Lead-lag**: 5d gap ic 0.057 t=8.5 (16 structural followers). Timezone channel is real
+  but turnover is brutal; DSR negative.
+- **Fundamental twins**: ic 0.028 t=5.6. Brand-new surface, second-strongest single family.
+- **Daily combiner: ic 0.057, NW-t 10.7** (29 countries, 2006+) — WEAK verdict only via
+  family DSR charging; explicitly labeled a CEILING (components selected in-sample this
+  month). Monthly combiner DEAD (month-end sampling discards the days-to-weeks horizon).
+- ETF flow contrarian flip registered + confirmed (t=−2.2). Downgrade drift is an EM
+  phenomenon (EM −2.8%@63d, DM flat); crisis-history edges useless for conditioning
+  (all countries share the same 9-11 global crises).
+
+### Gotchas Learned
+- `infer_publication_lag` gives monthly non-whitelisted sources a 1-month lag — the
+  combiner first tested DEAD-stale until `publication_lag_months: 0` was set in the spec.
+- Sweep dedupe hash excludes start_date/universe; coverage re-specs need new name + --force.
+- Some t2 `_CS` values are ±inf — replace before cosine norms (`NaN <= 0` is False!).
+- BIS reporter coverage GROWS (9 countries 2000 → 21 by 2017): bank-gap universes must be
+  declared on the 17 stable reporters from 2008.
+
+### What To Build Next
+1. Watch the daily combiner forward — it's the live prediction surface
+   (`combiner_scores_daily`, Korea ranked #1 at build time).
+2. Cost model for daily harness mode (every daily DSR is negative at assumed costs;
+   the binding question is netting/holding-period design, e.g. 5d tranches).
+3. D6 predmkt detector still blocked on history accumulation.
+
+---
+SESSION END: 2026-06-12 13:35 PDT | Agent: Cursor (Fable 5)
+---

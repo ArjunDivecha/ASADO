@@ -1,0 +1,32 @@
+# =============================================================================
+# SWEEP SPEC: leadlag_r3_2026_06.yaml
+# =============================================================================
+# Third and FINAL spec of the 5d leader gap (trials: H_044 wrong universe,
+# H_047 17-country universe sat at 94.x% of dates above the gate vs the
+# harness's 95% requirement — Denmark is the thin member). One more trial
+# on the 16-country list that already passed for the 1d version. If this
+# coverage-gates again the signal is shelved as-is; no further re-specs.
+#
+# Run: python scripts/harness/sweep_signals.py --spec config/sweeps/leadlag_r3_2026_06.yaml
+# =============================================================================
+
+sweep_name: leadlag_r3
+family_key: leadlag_2026_06
+archetype: A2
+frequency: daily
+start_date: "2003-01-01"
+author: agent_sweep_2026_06_12
+
+signals:
+  - name: ll_leader_gap_5d_v3
+    table: leadlag_features_daily
+    variable: LL_LEADER_GAP_5D
+    direction: higher_is_better
+    universe: "Australia,ChinaA,ChinaH,Hong Kong,India,Indonesia,Japan,Korea,Malaysia,Netherlands,Philippines,Singapore,Switzerland,Taiwan,Thailand,U.K."
+    mechanism: >
+      Final coverage-corrected test of the weekly leader-follower gap on the
+      sixteen structural follower countries (Denmark dropped as the thin
+      member that kept the seventeen-country spec just under the harness's
+      ninety-five percent coverage requirement): when a country's empirical
+      lead-lag leaders outran it over the trailing five sessions, pending
+      catch-up should lift its relative return over the following days.

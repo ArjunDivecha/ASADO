@@ -1,0 +1,33 @@
+# =============================================================================
+# SWEEP SPEC: etf_flow_contra_2026_06.yaml
+# =============================================================================
+# FLIPPED re-registration of the ETF flow momentum signal (H_20260612_020,
+# registered higher_is_better, came out significant the OTHER way with
+# nw_t = -2.2). This is trial three of the etf_flows_2026_06 family and is
+# charged accordingly; provenance is stated in the mechanism, as the rules
+# require for sign flips discovered in-sample.
+#
+# Run: python scripts/harness/sweep_signals.py --spec config/sweeps/etf_flow_contra_2026_06.yaml
+# =============================================================================
+
+sweep_name: etf_flow_contra
+family_key: etf_flows_2026_06
+archetype: other
+frequency: daily
+start_date: "2011-01-01"
+author: agent_sweep_2026_06_12
+
+signals:
+  - name: etf_flow_21d_contrarian
+    table: etf_flow_signals
+    variable: ETF_FLOW_21D_Z
+    direction: lower_is_better
+    universe: "Australia,Brazil,Canada,Chile,ChinaA,ChinaH,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,NASDAQ,Netherlands,Philippines,Poland,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K.,U.S.,US SmallCap,Vietnam"
+    mechanism: >
+      FLIPPED re-registration of H_20260612_020 (trial three of this family;
+      the momentum direction tested DEAD with significant opposite-sign IC):
+      proposed mechanism for the reversal is that hot trailing creations in
+      single-country ETFs mark retail and allocator chasing after the move
+      has happened, supplying exit liquidity to informed sellers, so
+      stretched inflows precede relative underperformance as the flow
+      pressure unwinds — the classic dumb-money reversal at country level.

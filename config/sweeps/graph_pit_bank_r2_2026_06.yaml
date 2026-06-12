@@ -1,0 +1,35 @@
+# =============================================================================
+# SWEEP SPEC: graph_pit_bank_r2_2026_06.yaml
+# =============================================================================
+# Corrective re-run of the PIT bank gap (H_20260612_034, coverage-gated):
+# BIS reporter coverage GROWS over time (9 countries in 2000 -> 21 by 2017),
+# so the 2001 start failed the gate while showing the strongest IC in the
+# ledger (0.041, nw_t 6.3). Re-specified on the 17 countries with stable
+# PIT coverage since 2008. One new trial charged to graph_trade_gap
+# (family now 15 trials).
+#
+# Run: python scripts/harness/sweep_signals.py --spec config/sweeps/graph_pit_bank_r2_2026_06.yaml
+# =============================================================================
+
+sweep_name: graph_pit_bank_r2
+family_key: graph_trade_gap
+archetype: A2
+frequency: daily
+start_date: "2008-01-01"
+author: agent_sweep_2026_06_12
+
+signals:
+  - name: pit_bank_gap_21d_v2
+    table: graph_features_pit_daily
+    variable: GRAPHP_BANK_NBR_RET_GAP_21D
+    direction: higher_is_better
+    universe: "Australia,Brazil,Canada,Chile,Denmark,France,Germany,Japan,Korea,Mexico,Netherlands,South Africa,Sweden,Switzerland,Taiwan,U.K.,U.S."
+    mechanism: >
+      Re-test of the point-in-time banking-claims neighbor gap on the 17
+      countries whose BIS LBS reporter coverage is stable since 2008 (round
+      one failed the coverage gate on pre-2008 reporter thinness, not on the
+      data): when the countries whose banks hold claims on you rallied over
+      the trailing month, cross-border credit supply into your economy is
+      loosening before your equity market has repriced it, and with
+      publication-lagged quarterly weights a surviving result cannot be
+      attributed to edge lookahead.

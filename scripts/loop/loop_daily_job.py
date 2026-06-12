@@ -18,8 +18,9 @@ OUTPUT FILES:
 - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/logs/loop_daily_launchd.log
   (when run from launchd)
 
-VERSION: 1.1
-LAST UPDATED: 2026-06-12
+VERSION: 1.2
+LAST UPDATED: 2026-06-12 (graph machine: PIT graph features, fundamental
+              twins, lead-lag network, ridge combiner, Neo4j write-back)
 AUTHOR: Arjun Divecha (built by agent session, Alpha-Hunting Loop Phase 2)
 
 DESCRIPTION:
@@ -81,12 +82,25 @@ com.arjundivecha.asado-loop-daily) in this order:
  23. load_eco_surprise    - rebuild loop-DB eco_surprise_monthly +
                             eco_surprise_signals (per-print z, growth/
                             inflation surprise composites)
- 24. build_dislocations   - run all detectors, persist statuses, render brief
+ 24. build_graph_features_pit - point-in-time graph spillover features from
+                            stored edge vintages (PIT bank/trade/twohop gaps,
+                            Katz, hub, bloc; the vintage COLLECTOR
+                            collect_pit_edges.py runs monthly, not here)
+ 25. build_similarity_features - fundamental-twins cosine map (month-end
+                            factor vectors) -> twin-convergence gaps
+ 26. build_leadlag_features - lag-1 cross-correlation network -> leader
+                            gap features (timezone + diffusion channel)
+ 27. build_combiner       - walk-forward ridge composite scores (monthly
+                            table for the record; DAILY table is the live
+                            prediction surface, IC 0.057 / t 10.7 at launch)
+ 28. write_graph_discoveries - push SIMILAR_TO / LEADS edges + combiner
+                            ranks into Neo4j for MCP/browser exploration
+ 29. build_dislocations   - run all detectors, persist statuses, render brief
                             (brief includes the next-30-day catalyst section)
- 25. build_evidence_packs - freeze GDELT headlines for tonight's fired
+ 30. build_evidence_packs - freeze GDELT headlines for tonight's fired
                             dislocations (PRD P4 v1; permanent packs + 14d table)
- 26. ledgers --rebuild    - fold JSONL ledgers into loop-DB tables
- 27. calibration_report   - regenerate current-month calibration report
+ 31. ledgers --rebuild    - fold JSONL ledgers into loop-DB tables
+ 32. calibration_report   - regenerate current-month calibration report
                             (PRD 6.3; PARTIAL-stamped until >= 10 closed theses)
 
 Each step runs in its own subprocess with the house per-source isolation
@@ -174,6 +188,25 @@ STEPS = [
     ("collect_eco_surprise_bbg",
      [CONDA, "run", "-p", BBG_ENV, "python", "scripts/loop/collect_eco_surprise_bbg.py"]),
     ("load_eco_surprise", [PY, "scripts/loop/load_eco_surprise.py"]),
+    # ── The graph machine (2026-06-12 build-out) ──────────────────────────
+    # PIT graph features: full rebuild each night from the stored edge
+    # vintages (graph_edge_vintages; ~5 s). The vintage COLLECTOR
+    # (collect_pit_edges.py) is NOT in the nightly job — trade vintages are
+    # annual and bank/holder quarterly, so it is run from monthly_update or
+    # by hand; the features still move daily because returns move daily.
+    ("build_graph_features_pit", [PY, "scripts/loop/build_graph_features_pit.py"]),
+    # Fundamental twins: month-end factor vectors -> top-5 cosine twins ->
+    # twin-convergence gaps (~10 s full rebuild).
+    ("build_similarity_features", [PY, "scripts/loop/build_similarity_features.py"]),
+    # Lead-lag network: monthly re-estimated lag-1 cross-correlation edges ->
+    # leader gap features (~30 s full rebuild).
+    ("build_leadlag_features", [PY, "scripts/loop/build_leadlag_features.py"]),
+    # Walk-forward ridge combiner (monthly + daily scores, ~10 s). Must run
+    # AFTER the three feature builders and load_etf_flows/load_consensus/
+    # load_eco_surprise, which feed it.
+    ("build_combiner", [PY, "scripts/loop/build_combiner.py"]),
+    # Push discovered SIMILAR_TO / LEADS edges + combiner ranks into Neo4j.
+    ("write_graph_discoveries", [PY, "scripts/loop/write_graph_discoveries.py"]),
     ("build_dislocations", [PY, "scripts/loop/build_dislocations.py"]),
     # Evidence packs MUST run after build_dislocations: they freeze headlines
     # for the countries whose dislocations fired in tonight's run (PRD P4 v1;

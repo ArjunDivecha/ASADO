@@ -616,6 +616,18 @@ def main():
             log_file
         ))
 
+        # Point-in-time edge vintages for the loop's graph machine: refreshes
+        # the historical trade/bank/holder weight archive (new annual trade
+        # vintage each spring, new BIS quarter every ~3 months). The nightly
+        # loop job rebuilds graph FEATURES from this archive but never
+        # re-collects it.
+        results.append(run_step(
+            "Program 4b: PIT bilateral edge vintages (loop graph machine)",
+            "loop/collect_pit_edges.py",
+            [],
+            log_file
+        ))
+
         results.append(run_step(
             "Program 5: Macrostructure Panel (FSI + QPSD + backstop)",
             "collect_macrostructure.py",

@@ -241,7 +241,7 @@ state lives in a **separate DuckDB** — `Data/loop/asado_loop.duckdb` — so mo
 `asado.duckdb` can never destroy it. The main DB is attached read-only as the `asado` schema.
 
 ### Nightly job (launchd, 06:45)
-`scripts/loop/loop_daily_job.py` (`com.arjundivecha.asado-loop-daily`) runs 27 steps, in order
+`scripts/loop/loop_daily_job.py` (`com.arjundivecha.asado-loop-daily`) runs 32 steps, in order
 (each in its own subprocess; one failure never stops the rest, but any failure exits non-zero):
 
 1. `collect_news_bridge.py` — portfolio holdings + 800-ticker ETF closes from the News repo
@@ -283,15 +283,26 @@ state lives in a **separate DuckDB** — `Data/loop/asado_loop.duckdb` — so mo
    ACTUAL_RELEASE vs BN_SURVEY_MEDIAN on ECO release tickers (CPI YoY 31 countries, unemployment,
    GDP, Markit PMI) → `eco_surprise_monthly` + `eco_surprise_signals` (per-print surprise z,
    growth/inflation surprise composites).
-24. `build_dislocations.py` — detectors **D1 D2 D3 D4 D5 D7 D8 D9 D10** → `dislocation_daily` +
+24. `build_graph_features_pit.py` — **point-in-time graph features** (see "The graph machine"
+   below): PIT trade/bank/twohop/holder gaps + Katz, hub-amplified and trade-bloc features from
+   the stored edge vintages → `graph_features_pit_daily`.
+25. `build_similarity_features.py` — **fundamental-twins map**: month-end factor vectors →
+   top-5 cosine twins → twin-convergence gaps → `similarity_features_daily` + `similarity_twins`.
+26. `build_leadlag_features.py` — **lead-lag network**: monthly lag-1 cross-correlation edges →
+   leader-gap features → `leadlag_features_daily` + `leadlag_edges`.
+27. `build_combiner.py` — **walk-forward ridge combiner** → `combiner_scores` (monthly, tested
+   DEAD, kept for the record) + `combiner_scores_daily` (the live prediction surface).
+28. `write_graph_discoveries.py` — pushes `SIMILAR_TO` / `LEADS` edges + combiner ranks into
+   Neo4j for MCP/browser exploration.
+29. `build_dislocations.py` — detectors **D1 D2 D3 D4 D5 D7 D8 D9 D10** → `dislocation_daily` +
    the daily brief at `Data/dislocations/brief_YYYY_MM_DD.md` (the Layer 2 reading list; includes
    forward-calendar, market-implied stress, sovereign-curves/ratings/surprises, foreign-flow,
    ETF-positioning and COT context sections). D10 (A10, live 2026-06-11) fires on
    FX-options-vs-equity conflicts: options stress unpriced by equity, or equity stress unconfirmed
    by options. D6 stays blocked until predmkt history accumulates.
-25. `build_evidence_packs.py` — freezes GDELT headlines for tonight's fired dislocations.
-26. `ledgers.py --rebuild` — folds the JSONL ledgers into loop-DB tables.
-27. `calibration_report.py` — regenerates the current-month calibration report (PARTIAL-stamped
+30. `build_evidence_packs.py` — freezes GDELT headlines for tonight's fired dislocations.
+31. `ledgers.py --rebuild` — folds the JSONL ledgers into loop-DB tables.
+32. `calibration_report.py` — regenerates the current-month calibration report (PARTIAL-stamped
    until ≥ 10 closed theses).
 
 A second launchd job (`com.arjundivecha.asado-predmkt-daily`, 06:30) runs
@@ -354,12 +365,55 @@ MCP tools added to the server: `country_news` (live GDELT DOC 2.0 headlines), `r
 Monthly vintage snapshots: `scripts/snapshot_vintages.py` → `Data/vintages/{YYYY_MM}/` (wired into
 `monthly_update.py`).
 
-**Known caveats:** graph features use *current* Neo4j edge weights over the whole backtest window
-(slow-moving, but not point-in-time); daily harness mode is IC-only (no cost model yet); GDELT DOC
-API rate-limits aggressively — `country_news` fails loudly and recovers when the block lifts; D10
-peg-currency rows (Hong Kong, Saudi Arabia) carry a peg note because z-scores off a near-zero vol
-baseline run hot — read them as peg-risk repricing, not magnitude. Bloomberg quota usage for the
-loop's nightly pulls is logged append-only to `Data/work/loop/bbg_quota_log.csv`.
+### The graph machine (added 2026-06-12)
+
+The connection-finding layer built after the graph spillover family produced the strongest
+results in the first systematic pass. Five new builders (all in the nightly job, steps 24-28):
+
+- **Point-in-time edges** (`scripts/loop/collect_pit_edges.py`, run monthly via
+  `monthly_update.py` step 4b): the FULL historical archive of bilateral weights — trade
+  (IMF IMTS, 27 annual vintages 1999-2025), banking (BIS LBS, 108 quarterly vintages),
+  portfolio holders (IMF PIP, 25 annual vintages) — each applied only after a conservative
+  publication lag (trade +4m, bank +4m, holder +9m) → `graph_edge_vintages`. This removed
+  the v1 "current-weights" lookahead caveat.
+- **PIT graph features** (`build_graph_features_pit.py`): PIT versions of all seven v1
+  features plus three new graph algorithms — Katz 3-hop propagation (decay 0.5), PageRank
+  hub amplification, spectral trade blocs (k=4) → `graph_features_pit_daily` (GRAPHP_*).
+- **Fundamental twins** (`build_similarity_features.py`): each month-end, countries become
+  vectors of ~41 normalized fundamental factors (NO return/technical factors); top-5 cosine
+  twins applied to the next month → `similarity_features_daily` + `similarity_twins`.
+- **Lead-lag network** (`build_leadlag_features.py`): monthly re-estimated lag-1
+  cross-correlation network (corr ≥ 0.15, ≥ 150 overlapping days; U.S. complex dominates as
+  leader, exactly as timezone mechanics predict) → `leadlag_features_daily` + `leadlag_edges`.
+- **Ridge combiner** (`build_combiner.py`): walk-forward ridge (expanding window, January
+  refits, 60m burn-in) over the harness survivors → `combiner_scores` (monthly) +
+  `combiner_scores_daily` (daily, 6 market-derived features, next-5d target).
+- **Neo4j write-back** (`write_graph_discoveries.py`): latest twins → `SIMILAR_TO` edges
+  (170), lead-lag → `LEADS` edges (192), combiner ranks → `Country.combiner_score/rank`.
+
+**Scoreboard from the 2026-06-12 registration sweeps** (all charged trials, specs in
+`config/sweeps/`): the **PIT re-test validated the whole graph family** — twohop t=4.4,
+Katz t=4.25, trade-gap-21d t=4.1, hub t=4.0, bloc t=3.2, and the banking gap at IC 0.034 /
+t=4.5 on the 17 stable-coverage countries since 2008 (current-weight vs PIT feature
+correlation 0.988: the v1 result was structure, not lookahead). New families:
+fundamental twins IC 0.028 / t=5.6; lead-lag 5d gap IC 0.057 / t=8.5 on the 16 structural
+follower countries (1d version t=6.4 — both heavily timezone-channel, costs bite at this
+turnover, DSR strongly negative everywhere). The **monthly combiner tested DEAD** (IC 0.017,
+t=1.1 — month-end sampling throws away the days-to-weeks horizon where the components live);
+the **daily combiner is the strongest signal in the ledger: IC 0.057, NW-t 10.7** on the 29
+fully-covered countries since 2006 (verdict WEAK only because the deflated Sharpe charges the
+whole family's trial count, and because the component list was itself selected in-sample this
+month — the honest read is "ceiling, verify forward"). Conditioned event studies: the
+downgrade drift is an **EM phenomenon** (EM −0.9%@5d t=−2.0, −2.8%@63d; DM flat) and
+splits by regime (high-VIX downgrades hit immediately, low-VIX drift slowly).
+
+**Known caveats:** v1 `graph_features_daily` still uses *current* Neo4j edge weights (kept for
+continuity; the PIT table is the analytical surface); daily harness mode is IC-only (no cost
+model yet); GDELT DOC API rate-limits aggressively — `country_news` fails loudly and recovers
+when the block lifts; D10 peg-currency rows (Hong Kong, Saudi Arabia) carry a peg note because
+z-scores off a near-zero vol baseline run hot — read them as peg-risk repricing, not magnitude.
+Bloomberg quota usage for the loop's nightly pulls is logged append-only to
+`Data/work/loop/bbg_quota_log.csv`.
 
 ---
 

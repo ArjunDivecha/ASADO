@@ -1,0 +1,46 @@
+# =============================================================================
+# SWEEP SPEC: similarity_2026_06.yaml
+# =============================================================================
+# First tests of the fundamental-twins similarity graph (build_similarity_
+# features.py): each month-end, countries become vectors of ~41 normalized
+# fundamental factors (valuation/macro/rates/fx/commodity/risk/size/vol; NO
+# return or technical factors), cosine similarity picks each country's top-5
+# twins, and the twin map applies to the following month (PIT). This
+# activates the warehouse's largest idle connection surface (the factor-
+# exposure profile behind 72 percent of Neo4j's edges). Two trials, new
+# family.
+#
+# Run: python scripts/harness/sweep_signals.py --spec config/sweeps/similarity_2026_06.yaml
+# =============================================================================
+
+sweep_name: fund_similarity
+family_key: fund_similarity_2026_06
+archetype: A2
+frequency: daily
+start_date: "2001-01-01"
+author: agent_sweep_2026_06_12
+
+signals:
+  - name: sim_nbr_gap_21d
+    table: similarity_features_daily
+    variable: SIM_NBR_RET_GAP_21D
+    direction: higher_is_better
+    mechanism: >
+      Countries with near-identical fundamental profiles are exposed to the
+      same macro forces, so their returns should co-move; when a country's
+      five nearest fundamental twins have outperformed it over the trailing
+      month, the shared driver has been priced into the twins but not yet
+      into the laggard, which should converge upward over the following
+      weeks — pairs-trading logic generalized to a similarity graph.
+
+  - name: sim_nbr_gap_63d
+    table: similarity_features_daily
+    variable: SIM_NBR_RET_GAP_63D
+    direction: higher_is_better
+    mechanism: >
+      Quarterly-window version of the twin convergence read: a full quarter
+      of divergence from your fundamental look-alikes is less likely to be
+      microstructure noise and more likely an unpriced gap in how a shared
+      macro driver was incorporated, at the cost of a staler signal; tested
+      separately because the horizon trade-off is a genuine empirical
+      question, not a free parameter to optimize after the fact.

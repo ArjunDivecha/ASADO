@@ -1,0 +1,49 @@
+# =============================================================================
+# SWEEP SPEC: leadlag_r2_2026_06.yaml
+# =============================================================================
+# Corrective re-runs of the lead-lag signals (H_20260612_044/045): round 1
+# failed the coverage gate because countries with no inbound leader edge
+# (chiefly the U.S. complex, which leads but is rarely led) are NaN by
+# construction — the followers' universe is structurally Asia + Europe.
+# Round 1 ICs were the largest ever recorded here (nw_t 11.3 / 7.4), which
+# is expected for the timezone channel; the question these re-runs answer
+# is whether anything SURVIVES THE COST MODEL at daily turnover. Two new
+# trials charged to leadlag_2026_06 (family now 4).
+#
+# Run: python scripts/harness/sweep_signals.py --spec config/sweeps/leadlag_r2_2026_06.yaml
+# =============================================================================
+
+sweep_name: leadlag_r2
+family_key: leadlag_2026_06
+archetype: A2
+frequency: daily
+start_date: "2003-01-01"
+author: agent_sweep_2026_06_12
+
+signals:
+  - name: ll_leader_gap_5d_v2
+    table: leadlag_features_daily
+    variable: LL_LEADER_GAP_5D
+    direction: higher_is_better
+    universe: "Australia,ChinaA,ChinaH,Denmark,Hong Kong,India,Indonesia,Japan,Korea,Malaysia,Netherlands,Philippines,Singapore,Switzerland,Taiwan,Thailand,U.K."
+    mechanism: >
+      Re-test of the weekly leader-follower convergence gap on the 17
+      countries that structurally HAVE leaders (Asia and Europe; the U.S.
+      complex leads but is not led, so it cannot be in the follower
+      universe): when a country's empirical leaders outran it over the
+      trailing five sessions the diffusion chain says catch-up is pending,
+      and the five-day window smooths single-day timezone mechanics into
+      the slower information-propagation component.
+
+  - name: ll_leader_ret_1d_v2
+    table: leadlag_features_daily
+    variable: LL_LEADER_RET_1D
+    direction: higher_is_better
+    universe: "Australia,ChinaA,ChinaH,Hong Kong,India,Indonesia,Japan,Korea,Malaysia,Netherlands,Philippines,Singapore,Switzerland,Taiwan,Thailand,U.K."
+    mechanism: >
+      Re-test of the one-day leader signal on the 16 structural follower
+      countries: leaders' same-day moves — timezone sequencing plus genuine
+      information diffusion through the dominant market — are incorporated
+      by followers only at their next session; this is the purest, highest
+      turnover form of the effect, registered to measure how much of the
+      enormous gross IC the cost model destroys.

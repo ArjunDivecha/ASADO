@@ -1,0 +1,94 @@
+# =============================================================================
+# SWEEP SPEC: combiner_2026_06.yaml
+# =============================================================================
+# The prediction layer: walk-forward ridge composite (build_combiner.py)
+# over the seven signals that survived the June 2026 harness passes.
+# One trial, new family.
+# HONESTY NOTE: ridge fits are walk-forward (expanding window, January
+# refits, 60m burn-in) but the FEATURE LIST was selected on the full
+# 2008-2026 sample during this month's sweeps, so this backtest inherits
+# component-selection bias. Its verdict is a ceiling, not an estimate;
+# the genuine test is forward performance from the registration date.
+#
+# Run: python scripts/harness/sweep_signals.py --spec config/sweeps/combiner_2026_06.yaml
+# =============================================================================
+
+sweep_name: combiner
+family_key: ml_combiner_2026_06
+archetype: other
+frequency: monthly
+# 2006-2011 score months carry 26-31 countries (consensus / eco-surprise /
+# ETF features only phase in then), below the 28-of-34 coverage gate; the
+# walk-forward scores reach full coverage from 2012.
+start_date: "2012-01-01"
+author: agent_sweep_2026_06_12
+
+signals:
+  # trial 1 (combiner_ridge_v1) was mis-specified: the harness's lag
+  # inference applied a 1-month publication lag to a signal that is fully
+  # market-derived and known at month-end, testing it one month stale
+  # (IC collapsed to ~0 - and incidentally proving the embargo machinery
+  # works). v2 states lag 0 explicitly. Family now 2 trials.
+  # trial 2 (v1_lag0) fixed the lag but kept the 2006 start, where early
+  # score months carry only 26-31 countries -> coverage gate. trial 3 moves
+  # the start to 2012 (full coverage). Family now 3 trials.
+  - name: combiner_ridge_v1_2012
+    table: combiner_scores
+    variable: COMBINER_RIDGE_V1
+    direction: higher_is_better
+    publication_lag_months: 0
+    mechanism: >
+      Walk-forward ridge regression combining the seven harness survivors
+      (PIT bank-claims gap, two-hop and Katz trade propagation, fundamental
+      twins gap, CPI consensus revision momentum, flipped inflation
+      surprise, contrarian ETF flows) into one next-month country score;
+      each component carries genuine and partially independent information
+      channels, so a shrinkage-weighted blend should rank countries better
+      and more stably than any single channel, acknowledging that the
+      component list itself was selected in-sample this month and the
+      backtest is therefore a ceiling.
+
+  # trial 4: the DAILY model. The monthly combiner tested DEAD (IC 0.017,
+  # t 1.08 from 2012) for a structural reason: every strong component lives
+  # at a ~5-21 trading-day horizon, and month-end resampling samples the
+  # gaps after much of the convergence has already happened. The daily
+  # model uses only the daily market-derived survivors (PIT bank / twohop /
+  # Katz gaps, fundamental-twins gap, lead-lag 5d gap, contrarian ETF flow),
+  # trained walk-forward on next-5d demeaned returns with yearly refits.
+  - name: combiner_ridge_daily_v1
+    table: combiner_scores_daily
+    variable: COMBINER_RIDGE_DAILY_V1
+    direction: higher_is_better
+    frequency: daily
+    start_date: "2006-01-01"
+    mechanism: >
+      Daily walk-forward ridge blend of the six daily market-derived harness
+      survivors; the components carry partially independent diffusion
+      channels (credit supply, supply chains, fundamental twins, lead-lag
+      sequencing, flow reversal) all operating at the days-to-weeks horizon,
+      so a shrinkage blend sampled daily should rank countries better and
+      more stably than any single channel — and unlike the monthly model it
+      does not throw away the horizon where the information actually decays;
+      the component list was selected in-sample this month, so this backtest
+      remains a ceiling pending forward verification.
+
+  # trial 5: trial 4 showed IC 0.056 / t 10.5 but failed the full-universe
+  # coverage gate (graph + leadlag components structurally exclude the
+  # NASDAQ / US SmallCap sleeves and Taiwan/Saudi drop early). Final spec
+  # on the 29 countries with stable score coverage since 2006.
+  - name: combiner_ridge_daily_v1_u29
+    table: combiner_scores_daily
+    variable: COMBINER_RIDGE_DAILY_V1
+    direction: higher_is_better
+    frequency: daily
+    start_date: "2006-01-01"
+    universe: "Australia,Brazil,Canada,Chile,ChinaA,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,Netherlands,Philippines,Poland,Singapore,South Africa,Spain,Sweden,Switzerland,Thailand,Turkey,U.K.,U.S.,Vietnam"
+    mechanism: >
+      Coverage-corrected final test of the daily ridge blend on the
+      twenty-nine countries every component actually covers: six daily
+      market-derived survivors spanning credit supply, supply-chain
+      diffusion, fundamental twins, lead-lag sequencing and flow reversal,
+      blended walk-forward with yearly refits and scored daily at the
+      days-to-weeks horizon where those channels decay; the component list
+      was selected in-sample this month, so the verdict is a ceiling
+      pending forward verification.

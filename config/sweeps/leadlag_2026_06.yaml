@@ -1,0 +1,43 @@
+# =============================================================================
+# SWEEP SPEC: leadlag_2026_06.yaml
+# =============================================================================
+# First tests of the lead-lag market network (build_leadlag_features.py):
+# monthly re-estimated lag-1 cross-correlation network on trailing 252d
+# daily returns (corr >= 0.15, >= 150 overlapping days), edge map applied
+# to the following month — PIT by construction. The network is dominated by
+# U.S. leaders, as timezone mechanics predict. Two trials, new family.
+#
+# Run: python scripts/harness/sweep_signals.py --spec config/sweeps/leadlag_2026_06.yaml
+# =============================================================================
+
+sweep_name: leadlag
+family_key: leadlag_2026_06
+archetype: A2
+frequency: daily
+start_date: "2001-06-01"
+author: agent_sweep_2026_06_12
+
+signals:
+  - name: ll_leader_ret_1d
+    table: leadlag_features_daily
+    variable: LL_LEADER_RET_1D
+    direction: higher_is_better
+    mechanism: >
+      Countries that historically lead a follower at one-day lag — partly
+      timezone sequencing where New York closes after Asia, partly genuine
+      information diffusion through the dominant market — have already moved
+      today, and the follower incorporates that move only at its next
+      session, so the leader-weighted same-day return should predict the
+      follower's next-day relative return; a next-open implementation
+      captures the timezone leg legitimately.
+
+  - name: ll_leader_gap_5d
+    table: leadlag_features_daily
+    variable: LL_LEADER_GAP_5D
+    direction: higher_is_better
+    mechanism: >
+      Weekly version of the leader-follower read: when a country's empirical
+      leaders have outrun it over the trailing five sessions the diffusion
+      chain says the follower has pending catch-up, smoothing out single-day
+      timezone mechanics and isolating the slower information-propagation
+      component of the lead-lag network.

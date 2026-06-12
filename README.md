@@ -311,6 +311,26 @@ sweeps Kalshi + Polymarket for new candidates to curate.
   level; auto-marked daily; Brier calibration accumulates as theses resolve. Paper by default.
 - PIT unit tests: `tests/loop/test_harness_pit.py` (alignment, lookahead canaries, NW-t, DSR).
 
+### Analysis tools (added 2026-06-12)
+- **Batch sweep runner** (`scripts/harness/sweep_signals.py`): reads a YAML spec
+  (`config/sweeps/*.yaml`), pre-registers each signal as a hypothesis (mechanism text is
+  mandatory), runs the harness, and writes a sweep summary (JSON + xlsx) to
+  `Data/loop/harness_runs/sweeps/`. Every entry is a trial charged against its family —
+  re-specs and flipped re-registrations included. First family swept:
+  `bbg_skill_2026_06` (15 trials across the six new Bloomberg layers; see
+  `config/sweeps/new_bbg_layers_2026_06.yaml` and `..._round2_...yaml`).
+- **Event-study engine** (`scripts/loop/event_study.py`): cross-event CARs on T2 country
+  returns around discrete events with market-adjusted abnormal returns, bootstrap CIs,
+  next_day/next_month anchoring, and PDF/xlsx/JSON outputs to `Data/loop/event_studies/`.
+  Presets: `rating_downgrade`, `rating_upgrade`, `cds_inversion`, `growth_hot`,
+  `growth_cold`, `inflation_hot`, `dislocation` (filterable by detector), `event_log`
+  (curated registry), or arbitrary `--events-sql`. First verified finding: sovereign
+  rating downgrades → −0.7% abnormal return in 5 trading days (t≈−2.0, 73 events since
+  2008), drifting to −2.1% at 63 days.
+- **Daily portfolio backtests** were already in harness v2 (`backtest_daily`); the harness
+  now also scales its coverage gate and top-N proportionally when a sub-universe is
+  declared (e.g. the 26-country FX-options universe).
+
 MCP tools added to the server: `country_news` (live GDELT DOC 2.0 headlines), `register_hypothesis`,
 `evaluate_signal`, `open_thesis`.
 

@@ -41,9 +41,10 @@ can cheat even accidentally:
     default by observed frequency: monthly 1, quarterly 3, annual 12).
  3. RANK IC by horizon with Newey-West t-stats (overlap-corrected) and a
     year-by-year IC table.
- 4. PORTFOLIOS (monthly only): top-7 long-only vs the equal-weight-34
-    baseline and top7-minus-bottom7 long-short, at 10/25/50 bps one-way
-    costs + 50 bps/yr short borrow, with turnover reported.
+ 4. PORTFOLIOS (monthly AND daily since v2): top-7 long-only vs the
+    equal-weight-34 baseline and top7-minus-bottom7 long-short, at 10/25/50
+    bps one-way costs + 50 bps/yr short borrow, with turnover reported.
+    Daily uses overlapping tranches — see the DAILY FREQUENCY note below.
  5. SUB-PERIOD STABILITY: 2008-12 / 2013-17 / 2018-22 / 2023-now.
  6. DEFLATED SHARPE: the long-short Sharpe is compared to the expected
     maximum Sharpe from N trials of pure noise, where N = the hypothesis
@@ -240,6 +241,7 @@ def backtest_monthly(
     n_top: int = 7,
     cost_bps_cases: tuple[int, ...] = (10, 25, 50),
     borrow_bps_yr: float = 50.0,
+    min_cross_section: int = 14,
 ) -> dict[str, Any]:
     """Top-N long-only vs equal-weight baseline + top-minus-bottom LS.
 
@@ -257,7 +259,7 @@ def backtest_monthly(
     prev_bot: set[str] = set()
     for dt in dates:
         g = df[df["date"] == dt]
-        if len(g) < 14:
+        if len(g) < min_cross_section:
             continue
         g = g.sort_values("score", ascending=False)
         top = set(g.head(n_top)["country"])
@@ -347,6 +349,7 @@ def backtest_daily(
     n_top: int = 7,
     cost_bps_cases: tuple[int, ...] = (10, 25, 50),
     borrow_bps_yr: float = 50.0,
+    min_cross_section: int = 14,
 ) -> dict[str, Any]:
     """Overlapping-tranche daily portfolio (Jegadeesh-Titman).
 
@@ -362,7 +365,7 @@ def backtest_daily(
     """
     sign = 1.0 if direction == "higher_is_better" else -1.0
     score = (sign * signal_panel).dropna(how="all")
-    rank_dates = [d for d in score.index if score.loc[d].notna().sum() >= 14]
+    rank_dates = [d for d in score.index if score.loc[d].notna().sum() >= min_cross_section]
     if len(rank_dates) < 5 * hold_days:
         return {"error": "insufficient rank dates", "n_dates": int(len(rank_dates))}
 
@@ -682,8 +685,17 @@ def evaluate_signal(
                 aligned_primary = aligned
 
         # ── Coverage gates ──────────────────────────────────────────────
+        # Full 34-country universe keeps the PRD's absolute 28-country gate.
+        # Explicit sub-universes (e.g. the 18 CDS countries) get the same
+        # gate PROPORTIONALLY (>= 80% of the stated universe, floor 10) —
+        # otherwise structurally-narrow layers could never be evaluated.
+        # The sub-universe is recorded in the result so nobody mistakes an
+        # 18-country WATCH for a 34-country WATCH.
+        min_cov = 28 if len(countries) >= 34 else max(10, int(np.ceil(0.8 * len(countries))))
+        n_top = 7 if len(countries) >= 34 else max(3, len(countries) // 3)
+        min_xs = max(10, 2 * n_top)
         cov = aligned_primary.groupby("date")["country"].nunique() if aligned_primary is not None else pd.Series(dtype=float)
-        coverage_fail = bool(len(cov) == 0 or (cov >= 28).mean() < 0.95)
+        coverage_fail = bool(len(cov) == 0 or (cov >= min_cov).mean() < 0.95)
         history_fail = bool(len(cov) < (60 if frequency == "monthly" else 252))
 
         # ── Portfolios + deflated Sharpe (monthly AND daily, v2) ────────
@@ -693,7 +705,8 @@ def evaluate_signal(
         if not coverage_fail and not history_fail:
             if frequency == "monthly":
                 aligned_1m = align_monthly(signal, returns, lag, 1)
-                portfolio = backtest_monthly(aligned_1m, direction)
+                portfolio = backtest_monthly(aligned_1m, direction, n_top=n_top,
+                                             min_cross_section=min_xs)
                 periods = 12
             else:
                 sig_panel = signal.pivot_table(index="date", columns="country", values="value").sort_index()
@@ -701,7 +714,8 @@ def evaluate_signal(
                 # restrict to real cross-section dates (>=10 countries traded)
                 ret_panel = ret_panel[ret_panel.notna().sum(axis=1) >= 10]
                 hold_days = int(signal_spec.get("hold_days", horizons[0]))
-                portfolio = backtest_daily(sig_panel, ret_panel, direction, hold_days=hold_days)
+                portfolio = backtest_daily(sig_panel, ret_panel, direction, hold_days=hold_days,
+                                           n_top=n_top, min_cross_section=min_xs)
                 periods = 252
             if "_subperiods_src" in portfolio:
                 subperiods = subperiod_table(portfolio.pop("_subperiods_src"), periods)
@@ -745,10 +759,13 @@ def evaluate_signal(
             "frequency": frequency,
             "horizons": horizons,
             "universe_n": len(countries),
+            "universe": "t2_34" if len(countries) >= 34 else sorted(countries),
             "start_date": start_date,
             "coverage": {
                 "median_countries_per_date": float(cov.median()) if len(cov) else 0,
-                "pct_dates_with_28plus": round(float((cov >= 28).mean()), 3) if len(cov) else 0.0,
+                "min_countries_gate": min_cov,
+                "n_top_portfolio": n_top,
+                "pct_dates_above_gate": round(float((cov >= min_cov).mean()), 3) if len(cov) else 0.0,
                 "n_dates": int(len(cov)),
             },
             "ic": ic_block,
@@ -840,6 +857,9 @@ def main() -> int:
     parser.add_argument("--direction", required=True, choices=["higher_is_better", "lower_is_better"])
     parser.add_argument("--frequency", default="monthly", choices=["monthly", "daily"])
     parser.add_argument("--start", default="2008-01-01")
+    parser.add_argument("--universe", default="t2_34",
+                        help="'t2_34' or a comma-separated list of exact T2 names "
+                             "(sub-universes scale the coverage gate and portfolio width).")
     args = parser.parse_args()
 
     spec = {"table": args.table, "variable": args.variable}
@@ -851,6 +871,7 @@ def main() -> int:
         direction=args.direction,
         frequency=args.frequency,
         start_date=args.start,
+        universe=args.universe,
     )
     print(json.dumps({k: v for k, v in result.items() if k not in ("ic",)}, indent=2, default=str)[:3000])
     print("\nIC block:")

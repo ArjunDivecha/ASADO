@@ -1,0 +1,131 @@
+# =============================================================================
+# SWEEP SPEC: new_bbg_layers_2026_06.yaml
+# =============================================================================
+# Pre-registered harness sweep over the six Bloomberg data layers added
+# 2026-06-12 (docs/BBG_SKILL_ENHANCEMENTS_2026_06_12.md). Every entry below
+# is a TRIAL charged against family `bbg_skill_2026_06` — the deflated
+# Sharpe of any single winner is computed against the count of ALL of them.
+#
+# Mechanisms were written BEFORE any harness results were seen (the
+# cds_slope entry's mechanism cites the 2026-06-12 event study as motivating
+# prior evidence — that provenance is stated rather than hidden).
+#
+# Run:  python scripts/harness/sweep_signals.py --spec config/sweeps/new_bbg_layers_2026_06.yaml
+# =============================================================================
+
+sweep_name: new_bbg_layers
+family_key: bbg_skill_2026_06
+archetype: A4
+frequency: daily
+start_date: "2008-01-01"
+author: agent_sweep_2026_06_12
+
+signals:
+  - name: fx_carry_level
+    table: market_implied_daily
+    variable: FX_CARRY_3M_PCT
+    direction: higher_is_better
+    universe: "Australia,Brazil,Canada,Chile,ChinaA,ChinaH,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,Netherlands,Philippines,Poland,Saudi Arabia,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K."
+    mechanism: >
+      Classic carry-premium mechanism applied to country equities: countries whose
+      currencies price high forward-implied carry versus USD offer compensation for
+      devaluation and sudden-stop risk; in normal regimes that risk premium is
+      harvested, so high-carry countries should outperform low-carry countries
+      cross-sectionally over the next weeks, with known crash risk in risk-off
+      episodes that the sub-period table should expose.
+
+  - name: fx_carry_z
+    table: market_implied_signals
+    variable: FX_CARRY_Z252
+    direction: higher_is_better
+    universe: "Australia,Brazil,Canada,Chile,ChinaA,ChinaH,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,Netherlands,Philippines,Poland,Saudi Arabia,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K."
+    mechanism: >
+      Change-in-carry variant of the carry hypothesis: a carry level that is high
+      versus the country's own trailing year means forwards have recently moved to
+      price more depreciation or higher local rates; if that move overshoots actual
+      macro deterioration, the country's equity market earns an elevated risk premium
+      afterwards, so a high carry z-score should predict relative outperformance.
+
+  - name: fx_vol_term_z
+    table: market_implied_signals
+    variable: FX_VOL_TERM_Z252
+    direction: lower_is_better
+    mechanism: >
+      The one-week minus three-month implied vol slope inverts positive only when the
+      options market prices an imminent event; countries whose near-term vol is
+      unusually elevated versus their own history face event risk that equity prices
+      have historically been slow to fully discount, so a stretched positive term
+      slope should predict near-term underperformance and a calm slope outperformance.
+
+  - name: fx_bf25_z
+    table: market_implied_signals
+    variable: FX_BF25_Z252
+    direction: lower_is_better
+    mechanism: >
+      The 25-delta butterfly measures the premium paid for BOTH tails of the currency
+      distribution; a butterfly rich versus its own trailing year means the options
+      market is buying crash-and-spike protection, which historically precedes
+      realized currency stress, and currency stress passes through to equity
+      underperformance in the following weeks for that country.
+
+  - name: fx_rr25_z
+    table: market_implied_signals
+    variable: FX_RR25_Z252
+    direction: lower_is_better
+    mechanism: >
+      The 25-delta risk reversal is the cleanest daily price of devaluation fear; a
+      risk reversal stretched versus its own trailing year means crash protection is
+      being bid, and if equity prices have not yet reflected that repricing the
+      country should underperform over the following days to weeks, which is exactly
+      the disagreement detector D10 trades on and is here tested as a standalone rank.
+
+  - name: cds_slope_z
+    table: sovereign_signals
+    variable: SOV_CDS_SLOPE_Z252
+    direction: lower_is_better
+    universe: "Australia,Brazil,Chile,ChinaA,ChinaH,France,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,Philippines,Saudi Arabia,South Africa,Spain,Thailand,Turkey"
+    mechanism: >
+      Distress-risk premium mechanism: a CDS curve flat or inverted versus its own
+      history marks a country priced for imminent trouble, and the distressed-asset
+      literature plus our 2026-06-12 cds_inversion event study (post-onset equity
+      outperformance of roughly four percent over a quarter) suggest such pricing
+      overshoots, so LOW slope z should predict relative equity outperformance as
+      the panic premium decays.
+
+  - name: sov_2s10s_z
+    table: sovereign_signals
+    variable: SOV_2S10S_Z252
+    direction: higher_is_better
+    universe: "Australia,Brazil,Canada,ChinaA,ChinaH,Denmark,France,Germany,India,Indonesia,Italy,Japan,Korea,Mexico,NASDAQ,Netherlands,Poland,Singapore,South Africa,Spain,Sweden,Switzerland,Thailand,Turkey,U.K.,U.S.,US SmallCap"
+    mechanism: >
+      A government curve steep versus its own trailing year reflects easing
+      expectations or recovering growth pricing while a flat or inverted curve
+      reflects tightening into slowdown; the recession-predictor literature says
+      equity markets under-react to curve information at the country level, so a
+      high 2s10s z-score should predict relative outperformance over weeks to months.
+
+  - name: eco_growth_surprise_z
+    table: eco_surprise_signals
+    variable: ECO_GROWTH_SURPRISE_Z
+    direction: higher_is_better
+    frequency: monthly
+    universe: "Australia,Brazil,Canada,Chile,ChinaA,ChinaH,France,Germany,Hong Kong,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,NASDAQ,Netherlands,Poland,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,U.K.,U.S.,US SmallCap"
+    mechanism: >
+      Post-announcement drift mechanism at the macro level: when a country's growth
+      data (GDP, PMI, falling unemployment) beats the economist survey median, the
+      full implication for earnings and policy is incorporated only gradually, so a
+      positive composite growth surprise should predict continued relative equity
+      outperformance over the following one to three months, the macro analogue of
+      post-earnings-announcement drift.
+
+  - name: eco_infl_surprise_z
+    table: eco_surprise_signals
+    variable: ECO_INFL_SURPRISE_Z
+    direction: lower_is_better
+    frequency: monthly
+    mechanism: >
+      Hot inflation surprises force monetary policy tighter than the market had
+      priced and compress equity multiples with a lag; cool surprises do the
+      reverse, so a country printing inflation above the survey median should
+      underperform peers over the following months while a country printing below
+      should outperform, making LOW inflation surprise z the favorable rank.

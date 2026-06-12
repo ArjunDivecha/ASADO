@@ -1,0 +1,104 @@
+# =============================================================================
+# SWEEP SPEC: new_bbg_layers_round2_2026_06.yaml
+# =============================================================================
+# Round 2 of the bbg_skill_2026_06 family (round 1: new_bbg_layers_2026_06.yaml,
+# H_20260612_001..009). Round 1 taught us, honestly:
+#   - Six specs failed the COVERAGE gate because the declared universes were
+#     wider than the data (FX options surfaces exist for ~29 countries with 26
+#     stable since 2008; daily 2s10s is stable for 20; the growth-surprise
+#     composite is stable for 14; 1Y CDS is too thin to rank AT ALL - median
+#     5-11 countries/date - so cds_slope gets NO re-run and stays event-study-only).
+#   - eco_infl_surprise_z was DEAD in the registered direction but carried
+#     nw_t = +2.99 the OTHER way; the flipped hypothesis is re-registered
+#     below WITH ITS PROVENANCE STATED (this is trial #2 of that idea and the
+#     deflated Sharpe charges the whole family for it).
+# Every entry below is a NEW trial against the family. Universes are the
+# stable-coverage country lists computed from the data on 2026-06-12.
+#
+# Run: python scripts/harness/sweep_signals.py --spec config/sweeps/new_bbg_layers_round2_2026_06.yaml
+# =============================================================================
+
+sweep_name: new_bbg_layers_r2
+family_key: bbg_skill_2026_06
+archetype: A4
+frequency: daily
+start_date: "2008-01-01"
+author: agent_sweep_2026_06_12
+
+signals:
+  - name: fx_vol_term_z_v2
+    table: market_implied_signals
+    variable: FX_VOL_TERM_Z252
+    direction: lower_is_better
+    universe: "Australia,Brazil,Canada,Chile,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,Netherlands,Philippines,Poland,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K."
+    mechanism: >
+      Re-test of H_20260612_003 on the 26 countries whose options surfaces have
+      stable history since 2008 (round 1 failed the coverage gate from a
+      mis-declared 34-country universe, not from the data): a 1W-minus-3M implied
+      vol slope stretched positive means the options market prices an imminent
+      event, and equities historically under-discount that near-term event risk,
+      so calm term slopes should outperform stretched ones.
+
+  - name: fx_bf25_z_v2
+    table: market_implied_signals
+    variable: FX_BF25_Z252
+    direction: lower_is_better
+    universe: "Australia,Brazil,Canada,Chile,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,Netherlands,Philippines,Poland,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K."
+    mechanism: >
+      Re-test of H_20260612_004 on the stable 26-country options universe (round 1
+      coverage-gated by a mis-declared universe while showing IC t-stat near 2.6):
+      a 25-delta butterfly rich versus its own trailing year means both currency
+      tails are being bought, which precedes realized currency stress that passes
+      through to country equity underperformance over the following weeks.
+
+  - name: fx_rr25_z_v2
+    table: market_implied_signals
+    variable: FX_RR25_Z252
+    direction: lower_is_better
+    universe: "Australia,Brazil,Canada,Chile,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,Netherlands,Philippines,Poland,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K."
+    mechanism: >
+      Re-test of H_20260612_005 on the stable 26-country options universe after the
+      round 1 coverage gate: a risk reversal stretched versus its own trailing year
+      means devaluation protection is being bid, and where equity prices have not
+      yet repriced that fear the country should underperform peers over the
+      following days to weeks, the standalone-rank version of detector D10.
+
+  - name: sov_2s10s_z_v2
+    table: sovereign_signals
+    variable: SOV_2S10S_Z252
+    direction: higher_is_better
+    universe: "Australia,Canada,Denmark,France,Germany,Indonesia,Italy,Japan,Korea,Mexico,NASDAQ,Netherlands,Poland,Singapore,Spain,Sweden,Switzerland,U.K.,U.S.,US SmallCap"
+    mechanism: >
+      Re-test of H_20260612_007 on the 20 countries with stable daily 2Y and 10Y
+      generics since 2008 (round 1 missed the coverage gate at 94 percent on a
+      27-country declaration while showing IC t-stat near 2.7): a government curve
+      steep versus its own trailing year reflects easing or recovery expectations
+      that country equity markets incorporate only gradually, so high 2s10s z
+      should predict relative outperformance over weeks to months.
+
+  - name: eco_growth_surprise_z_v2
+    table: eco_surprise_signals
+    variable: ECO_GROWTH_SURPRISE_Z
+    direction: higher_is_better
+    frequency: monthly
+    universe: "Australia,Canada,Chile,Hong Kong,Italy,Japan,Korea,NASDAQ,Poland,Switzerland,Taiwan,U.K.,U.S.,US SmallCap"
+    mechanism: >
+      Re-test of H_20260612_008 on the 14 countries whose composite growth surprise
+      has stable monthly coverage since 2008: when growth data beats the economist
+      survey median the earnings and policy implications are priced only gradually,
+      so positive composite growth surprises should predict continued relative
+      outperformance over one to three months, macro post-announcement drift.
+
+  - name: eco_infl_reflation_z
+    table: eco_surprise_signals
+    variable: ECO_INFL_SURPRISE_Z
+    direction: higher_is_better
+    frequency: monthly
+    mechanism: >
+      FLIPPED re-registration of H_20260612_009, which was DEAD as registered but
+      carried IC t-stat of plus 2.99 in the opposite direction - this is trial two
+      of the idea and is charged to the family accordingly. Proposed mechanism for
+      the reversal: at the country level upside inflation surprises are dominated
+      by demand strength and commodity-terms-of-trade booms (reflation), which lift
+      nominal earnings and equity returns over the following months, outweighing
+      the discount-rate drag that the original disinflation hypothesis assumed.

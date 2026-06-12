@@ -14,6 +14,8 @@ INPUT FILES:
   graph_features_daily (D2), etf_prices_daily + etf_t2_map (D9),
   portfolio_holdings_daily (D8), thesis_ledger via ledgers module (D8),
   tot_trade_shares (D1, from build_tot_shares.py),
+  market_implied_daily + market_implied_signals (D10 + brief stress section,
+  from collect_market_implied_bbg.py / load_market_implied.py),
   dislocation_daily (previous runs, for status/persistence).
 - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/regime/results/regime_tags.parquet
   Latest regime tag attached to every row as context (context only - regime
@@ -28,8 +30,8 @@ OUTPUT FILES:
   The daily brief: <= 100 rows, new-first then by |severity|. This file is
   what gets fed to the Layer 2 reasoning session.
 
-VERSION: 1.1
-LAST UPDATED: 2026-06-10
+VERSION: 1.2
+LAST UPDATED: 2026-06-11
 AUTHOR: Arjun Divecha (built by agent session, Alpha-Hunting Loop Phase 2)
 
 DESCRIPTION:
@@ -62,10 +64,14 @@ v1.1 changes (2026-06-10):
    narrower. (Root cause of the original t2_levels_daily staleness - the
    full-sample winsorize freeze - was fixed in build_t2_master_daily v1.1.)
 
-DETECTORS LIVE: D1 D2 D3 D4 D5 D7 D8 D9.
+DETECTORS LIVE: D1 D2 D3 D4 D5 D7 D8 D9 D10.
   D3 went live 2026-06-11 (A3 revision momentum, v1): WEO vintage backfill
   2008+ via collect_weo_vintages.py gives every revision its own z-history;
   D4 v2 same date: daily 5Y CDS leg + direct-pull 10Y (sovereign_daily).
+  D10 went live 2026-06-11 (A10 FX options vs equity, v1): 25D risk-reversal
+  and implied-vol z's from the market-implied stress layer vs own-equity
+  trading-day return z's; two conflict shapes (options stress unpriced by
+  equity / equity stress unconfirmed by options).
 BLOCKED (insufficient accumulated data, reported in the brief):
   D6 prediction-market disagreement (predmkt history accumulating from 2026-06-10)
 
@@ -135,6 +141,17 @@ D1_COMMODITY_MAX_AGE_D = 60   # Pink Sheet is monthly, published early next mont
 D3_REVISION_MAX_AGE_D = 120   # WEO vintage counts as live news for ~4 months
 D4_LEVEL_MAX_AGE_D = 7        # FX/10Y series silent > 7 calendar days = stale
 D9_ETF_MAX_AGE_D = 7
+
+# D10: FX options market vs equity (market_implied_* tables, loop DB)
+NO_FX_OPTIONS = {"U.S.", "NASDAQ", "US SmallCap",   # USD numeraire, no pair
+                 "Denmark", "Vietnam"}              # no liquid vol surface
+PEG_FX_OPTIONS = {"Hong Kong", "Saudi Arabia"}      # included: options price peg risk
+D10_MAX_AGE_D = 7         # surface silent > 7 calendar days = stale
+D10_RR_Z_MIN = 2.0        # 25D risk-reversal z trigger (crash-protection bid)
+D10_IV_Z_MIN = 2.5        # 1M ATM implied-vol z trigger
+D10_EQ_QUIET_MAX = 0.75   # |21d equity z| below this = "price has not resolved"
+D10_EQ_STRESS_MIN = -1.5  # 5d equity z at/below this = equity stress leg
+D10_OPT_QUIET_MAX = 0.5   # RR and vol z at/below this = options see nothing
 
 
 def log(msg: str) -> None:
@@ -744,6 +761,109 @@ def d9_index_vs_etf(con, ret_piv: pd.DataFrame, run_date: pd.Timestamp) -> list[
     return rows
 
 
+def d10_fx_options_vs_equity(con, ret5: pd.DataFrame, ret21: pd.DataFrame,
+                             run_date: pd.Timestamp) -> list[dict]:
+    """A10 v1 (2026-06-11): FX OPTIONS market vs equity disagreement.
+
+    Inputs are the market-implied stress layer (loop DB, from
+    collect_market_implied_bbg.py / load_market_implied.py): 25-delta 1M
+    risk reversals (sign-normalized: positive = options premium on
+    LOCAL-currency depreciation) and 1M ATM implied vol, with their
+    precomputed trailing-252d z's (market_implied_signals).
+
+    Two conflict shapes:
+      fx_options_stress_unpriced_by_equity — options market paying up for
+        crash protection (RR z >= 2 or implied-vol z >= 2.5) while the
+        country's own equity has NOT resolved over 21 trading days
+        (|eq21 z| <= 0.75). The options market sees something equities
+        haven't priced.
+      equity_stress_unconfirmed_by_fx_options — equity selling off hard
+        (5d z <= -1.5) while RR and vol z are both quiet (<= 0.5). The
+        FX options market does not confirm the equity stress: local-only
+        story or potential overreaction.
+
+    Hong Kong / Saudi Arabia are INCLUDED (unlike D4's spot-FX leg): a
+    near-zero peg surface waking up is exactly peg/devaluation risk getting
+    priced — but rows carry a peg note because z's off a near-zero baseline
+    run hot. U.S./NASDAQ/US SmallCap (USD numeraire) and Denmark/Vietnam
+    (no liquid surface) are structural skips."""
+    rows: list[dict] = []
+
+    def piv(table: str, variable: str) -> pd.DataFrame:
+        p = pivot_var(con, table, variable, qualified=False)
+        return p[p.index <= run_date]
+
+    try:
+        rr_z_p = piv("market_implied_signals", "FX_RR25_Z252")
+        iv_z_p = piv("market_implied_signals", "FX_IMPVOL_Z252")
+        rr_p = piv("market_implied_daily", "FX_RR25_1M_PCT")
+        iv_p = piv("market_implied_daily", "FX_IMPVOL_1M_PCT")
+    except Exception as exc:
+        return [degraded_row("D10", "A10", "market_implied", {"ALL": str(exc)},
+                             "market_implied tables unavailable - run load_market_implied.py")]
+    if rr_p.empty:
+        return [degraded_row("D10", "A10", "market_implied", {"ALL": "no_rows"},
+                             "market_implied_daily empty - run collect_market_implied_bbg.py")]
+
+    stale: dict[str, str] = {}
+    for c in T2_UNIVERSE:
+        if c in NO_FX_OPTIONS:
+            continue
+        rr = rr_p[c].dropna() if c in rr_p.columns else pd.Series(dtype=float)
+        if rr.empty:
+            stale[c] = "no_observations"
+            continue
+        if (run_date - rr.index[-1]).days > D10_MAX_AGE_D:
+            stale[c] = f"last_obs={rr.index[-1].date()}"
+            continue
+
+        def last(p: pd.DataFrame) -> float:
+            s = p[c].dropna() if c in p.columns else pd.Series(dtype=float)
+            return float(s.iloc[-1]) if len(s) else np.nan
+
+        rr_z, iv_z = last(rr_z_p), last(iv_z_p)
+        rr_lvl, iv_lvl = last(rr_p), last(iv_p)
+        eq5_z = zscore_last(ret5[c]) if c in ret5.columns else np.nan
+        eq21_z = zscore_last(ret21[c]) if c in ret21.columns else np.nan
+
+        opt_stress = max(rr_z if not np.isnan(rr_z) else -np.inf,
+                         iv_z if not np.isnan(iv_z) else -np.inf)
+        conflict = severity = None
+        if ((not np.isnan(rr_z) and rr_z >= D10_RR_Z_MIN)
+                or (not np.isnan(iv_z) and iv_z >= D10_IV_Z_MIN)) \
+                and not np.isnan(eq21_z) and abs(eq21_z) <= D10_EQ_QUIET_MAX:
+            conflict = "fx_options_stress_unpriced_by_equity"
+            severity = round(float(opt_stress), 2)
+        elif (not np.isnan(eq5_z) and eq5_z <= D10_EQ_STRESS_MIN
+                and not np.isnan(rr_z) and rr_z <= D10_OPT_QUIET_MAX
+                and not np.isnan(iv_z) and iv_z <= D10_OPT_QUIET_MAX):
+            conflict = "equity_stress_unconfirmed_by_fx_options"
+            severity = round(float(eq5_z), 2)
+        if conflict is None:
+            continue
+        comp = {
+            "rr25_1m": round(rr_lvl, 2) if not np.isnan(rr_lvl) else None,
+            "rr25_z252": round(rr_z, 2) if not np.isnan(rr_z) else None,
+            "impvol_1m_pct": round(iv_lvl, 2) if not np.isnan(iv_lvl) else None,
+            "impvol_z252": round(iv_z, 2) if not np.isnan(iv_z) else None,
+            "equity_5d_z": round(eq5_z, 2) if not np.isnan(eq5_z) else None,
+            "equity_21d_z": round(eq21_z, 2) if not np.isnan(eq21_z) else None,
+            "conflict": conflict,
+            "note": "+RR = depreciation premium; z's from market_implied_signals (252d, shifted baseline)",
+        }
+        if c in PEG_FX_OPTIONS:
+            comp["peg_note"] = ("pegged currency: surface z's run hot off a near-zero "
+                                "baseline - read as peg-risk repricing, not magnitude")
+        rows.append({
+            "detector": "D10", "archetype": "A10", "entity": c,
+            "direction": "flag", "severity": severity, "components": comp,
+        })
+    if stale:
+        rows.append(degraded_row("D10", "A10", "market_implied", stale,
+                                 "FX options surface stale/missing for these countries"))
+    return rows
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Engine: persistence, status, resolution, brief
 # ─────────────────────────────────────────────────────────────────────────────
@@ -778,6 +898,7 @@ def run(as_of: Optional[str] = None) -> int:
             ("D7", lambda: d7_factor_crowding(con)),
             ("D8", lambda: d8_stewardship(con, ret21)),
             ("D9", lambda: d9_index_vs_etf(con, ret_piv, run_date)),
+            ("D10", lambda: d10_fx_options_vs_equity(con, ret5, ret21, run_date)),
         ]:
             got = fn()
             n_degraded = sum(1 for r in got if r["archetype"] == "degraded")
@@ -906,7 +1027,7 @@ def write_brief(con, df: pd.DataFrame, run_date: pd.Timestamp, regime: str) -> N
         f"# Dislocation brief — {run_date.date()}",
         "",
         f"- Regime context: **{regime}** (context only; no mechanical overlay — H3 failed)",
-        f"- Rows: {len(df)} | detectors live: D1 D2 D3 D4 D5 D7 D8 D9 (D3 WEO revisions v1 + D4 daily-CDS v2 since 2026-06-11) | blocked: D6 (predmkt accumulating since 2026-06-10)",
+        f"- Rows: {len(df)} | detectors live: D1 D2 D3 D4 D5 D7 D8 D9 D10 (D10 FX-options-vs-equity v1 since 2026-06-11) | blocked: D6 (predmkt accumulating since 2026-06-10)",
         "- Read me: severity = z vs own 3y history. `flag` = informational, not directional. D5 is a LOOK trigger, never a trade signal. DEGRADED rows = inputs stale/missing, scan ran narrower than designed.",
         "",
     ]
@@ -934,6 +1055,7 @@ def write_brief(con, df: pd.DataFrame, run_date: pd.Timestamp, regime: str) -> N
             for r in resolved.itertuples():
                 lines.append(f"- {r.detector} {r.entity} ({r.direction}) after {r.days_active}d: **{r.resolution_note}**")
     lines += _calendar_section(con, run_date)
+    lines += _market_implied_section(con, run_date)
     lines += _flows_section(con, run_date)
     lines += _etf_positioning_section(con, run_date)
     lines += _cot_section(con, run_date)
@@ -1085,6 +1207,111 @@ def _etf_positioning_section(con, run_date: pd.Timestamp) -> list[str]:
                 lines.append(f"- **{r.country}** ({r.etf}): SI {r.si_pct:.1f}% of shares out, z={r.si_z:+.1f}")
     except Exception as exc:
         lines += ["", f"Short interest UNAVAILABLE ({exc})"]
+    return lines
+
+
+def _market_implied_section(con, run_date: pd.Timestamp) -> list[str]:
+    """Market-implied stress snapshot from market_implied_daily/_signals
+    (loop DB; Bloomberg FX options, vol/credit dashboard, futures curves).
+
+    Context only, not a detector (yet): a global risk dashboard line plus
+    the currencies whose 1M implied vol or 25-delta risk reversal is
+    stretched (|252d z| >= 2) and futures curves in unusual shape. RR is
+    sign-normalized upstream: positive = options market paying premium for
+    LOCAL-currency depreciation. Missing table reported, not swallowed.
+    """
+    try:
+        sig = con.execute(
+            """
+            SELECT s.country, s.variable, s.value
+            FROM market_implied_signals s
+            JOIN (SELECT country, variable, MAX(date) AS d
+                  FROM market_implied_signals
+                  WHERE date <= CAST(? AS DATE)
+                  GROUP BY 1, 2) m
+              ON s.country = m.country AND s.variable = m.variable AND s.date = m.d
+            """,
+            [str(run_date.date())],
+        ).fetchdf()
+        raw = con.execute(
+            """
+            SELECT r.country, r.variable, r.value, r.date
+            FROM market_implied_daily r
+            JOIN (SELECT country, variable, MAX(date) AS d
+                  FROM market_implied_daily
+                  WHERE date <= CAST(? AS DATE)
+                  GROUP BY 1, 2) m
+              ON r.country = m.country AND r.variable = m.variable AND r.date = m.d
+            """,
+            [str(run_date.date())],
+        ).fetchdf()
+    except Exception as exc:
+        return ["", "## Market-implied stress (FX options, vol, credit, curves)", "",
+                f"UNAVAILABLE ({exc}) — run scripts/loop/load_market_implied.py"]
+
+    lines = ["", "## Market-implied stress (FX options, vol, credit, curves)", ""]
+    if sig.empty or raw.empty:
+        lines.append("No market-implied data yet.")
+        return lines
+
+    sval = {(r.country, r.variable): r.value for r in sig.itertuples()}
+    rval = {(r.country, r.variable): r.value for r in raw.itertuples()}
+    asof = pd.Timestamp(raw["date"].max()).date()
+    stale = " *(STALE)*" if (run_date.date() - asof).days > 5 else ""
+
+    def _num(d, key):
+        v = d.get(key)
+        return v if v is not None and pd.notna(v) else None
+
+    def _fmt(v, spec):
+        return spec.format(v) if v is not None else "n/a"
+
+    def zfmt(var):
+        return _fmt(_num(sval, ("GLOBAL", var)), "{:+.1f}")
+
+    vix = _num(rval, ("GLOBAL", "RISK_VIX"))
+    term = _num(sval, ("GLOBAL", "RISK_VIX_TERM_RATIO"))
+    move = _num(rval, ("GLOBAL", "RISK_MOVE"))
+    hy = _num(rval, ("GLOBAL", "RISK_HY_OAS"))
+    term_str = (f"{term:.2f}" + (" **INVERTED**" if term < 1 else "")) if term is not None else "n/a"
+    lines.append(
+        f"Global (as of {asof}{stale}): VIX {_fmt(vix, '{:.1f}')} (z={zfmt('RISK_VIX_Z252')}) | "
+        f"VIX3M/VIX {term_str} | MOVE {_fmt(move, '{:.0f}')} (z={zfmt('RISK_MOVE_Z252')}) | "
+        f"HY OAS {_fmt(hy, '{:.2f}')}% (z={zfmt('RISK_HY_OAS_Z252')}) | "
+        f"DXY z={zfmt('RISK_DXY_Z252')}"
+    )
+
+    fx_countries = {c for (c, v), z in sval.items()
+                    if v in ("FX_RR25_Z252", "FX_IMPVOL_Z252")
+                    and pd.notna(z) and abs(z) >= 2.0}
+    if fx_countries:
+        lines.append("")
+        lines.append("Stretched currencies (|252d z| >= 2; +RR = depreciation premium):")
+
+        def worst_z(c):
+            zs = [abs(z) for v in ("FX_RR25_Z252", "FX_IMPVOL_Z252")
+                  if (z := _num(sval, (c, v))) is not None]
+            return max(zs) if zs else 0.0
+
+        for c in sorted(fx_countries, key=lambda c: -worst_z(c)):
+            rr, rrz = _num(rval, (c, "FX_RR25_1M_PCT")), _num(sval, (c, "FX_RR25_Z252"))
+            iv, ivz = _num(rval, (c, "FX_IMPVOL_1M_PCT")), _num(sval, (c, "FX_IMPVOL_Z252"))
+            lines.append(
+                f"- **{c}**: RR {_fmt(rr, '{:+.2f}')} (z={_fmt(rrz, '{:+.1f}')}) | "
+                f"impvol {_fmt(iv, '{:.1f}')}% (z={_fmt(ivz, '{:+.1f}')})")
+    else:
+        lines.append("No stretched currency surfaces (|252d z| >= 2).")
+
+    curves = [(v.replace("CMD_", "").replace("_CURVE_Z252", ""), z)
+              for (c, v), z in sval.items()
+              if c == "GLOBAL" and v.endswith("_CURVE_Z252") and pd.notna(z) and abs(z) >= 2.0]
+    if curves:
+        lines.append("")
+        lines.append("Futures curves in unusual shape (|252d z| >= 2; + = backwardation):")
+        names = {"CL": "WTI", "CO": "Brent", "HG": "Copper", "GC": "Gold", "NG": "NatGas"}
+        for root, z in sorted(curves, key=lambda x: -abs(x[1])):
+            pct = _num(sval, ("GLOBAL", f"CMD_{root}_CURVE_PCT"))
+            lines.append(f"- **{names.get(root, root)}**: front/2nd {_fmt(pct, '{:+.1f}')}% (z={z:+.1f})")
     return lines
 
 

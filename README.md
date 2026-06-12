@@ -241,20 +241,49 @@ state lives in a **separate DuckDB** — `Data/loop/asado_loop.duckdb` — so mo
 `asado.duckdb` can never destroy it. The main DB is attached read-only as the `asado` schema.
 
 ### Nightly job (launchd, 06:45)
-`scripts/loop/loop_daily_job.py` (`com.arjundivecha.asado-loop-daily`) runs, in order:
-1. `collect_news_bridge.py` — accumulates portfolio holdings + 800-ticker ETF closes from the News repo
+`scripts/loop/loop_daily_job.py` (`com.arjundivecha.asado-loop-daily`) runs 23 steps, in order
+(each in its own subprocess; one failure never stops the rest, but any failure exits non-zero):
+
+1. `collect_news_bridge.py` — portfolio holdings + 800-ticker ETF closes from the News repo
    (`portfolio_holdings_daily`, `portfolio_summary_daily`, `etf_prices_daily`, `etf_t2_map`).
 2. `ledgers.py --mark` — auto-marks open theses from T2 daily returns; closes on invalidation/expiry.
 3. `build_country_returns.py` — refreshes `country_returns_monthly` (canonical marking surface).
-4. `build_graph_features.py` — Neo4j edges × T2 returns → `graph_features_daily`
+4. `build_tot_shares.py` — Comtrade commodity trade shares for D1 (slow-moving, fetch-failure-safe).
+5. `build_graph_features.py` — Neo4j edges × T2 returns → `graph_features_daily`
    (trade/banking neighbor-return gaps, holder stress, two-hop propagation; 2008→present).
-5. `build_dislocations.py` — detectors D2/D4/D5/D7/D8/D9 → `dislocation_daily` +
-   the daily brief at `Data/dislocations/brief_YYYY_MM_DD.md` (the Layer 2 reading list).
-6. `ledgers.py --rebuild` — folds the JSONL ledgers into loop-DB tables.
+6. `build_forward_calendar.py` — curated forward catalysts (CB decisions, elections, index reviews).
+7-8. `collect_foreign_flows_bbg.py` + `collect_foreign_flows.py` — Bloomberg exchange-sourced foreign
+   equity flows (KR/TW/TH/PH/ID) + NSDL India → `foreign_flows_daily`.
+9-10. `collect_sovereign_daily_bbg.py` + `load_sovereign_daily.py` — daily 5Y CDS (20 countries) +
+   direct-pull 10Y yields (32) → `sovereign_daily` (the D4 v2 cross-asset legs).
+11. `build_valuation_block.py` — month-end CAPE/PB/DY/EY/ERP + 10y percentiles → `valuation_monthly`.
+12. `collect_weo_vintages.py` — IMF WEO vintage surface → `weo_vintages` / `weo_revisions` (D3 input).
+13-14. `collect_etf_flows_bbg.py` + `load_etf_flows.py` — country-ETF shares-out/NAV/AUM →
+   `etf_flows` + `etf_flow_signals` (positioning/crowding layer).
+15-16. `collect_consensus_bbg.py` + `load_consensus.py` — Bloomberg ECFC consensus GDP/CPI forecast
+   history → `consensus_daily` + `consensus_revisions`.
+17. `collect_cot.py` — CFTC COT speculator positioning, 12 commodity futures (keyless Socrata).
+18-19. `collect_market_implied_bbg.py` + `load_market_implied.py` — **market-implied stress layer**:
+   FX 1M ATM implied vol + 25-delta risk reversals for 24 T2 currency pairs (29 countries, incl. the
+   HKD/SAR peg surfaces), VIX/VIX3M/MOVE/HY-IG-OAS/DXY/BBDXY dashboard, and CL/CO/HG/GC/NG 1st+2nd
+   futures generics (2006+) → `market_implied_daily` + `market_implied_signals` (252d z-scores, VIX
+   term-structure ratio, curve shape). RR is sign-normalized: **positive = options premium on
+   local-currency depreciation**. See `docs/MARKET_IMPLIED_EXTENSION_STATUS.md`.
+20. `build_dislocations.py` — detectors **D1 D2 D3 D4 D5 D7 D8 D9 D10** → `dislocation_daily` +
+   the daily brief at `Data/dislocations/brief_YYYY_MM_DD.md` (the Layer 2 reading list; includes
+   forward-calendar, market-implied stress, foreign-flow, ETF-positioning and COT context sections).
+   D10 (A10, live 2026-06-11) fires on FX-options-vs-equity conflicts: options stress unpriced by
+   equity, or equity stress unconfirmed by options. D6 stays blocked until predmkt history accumulates.
+21. `build_evidence_packs.py` — freezes GDELT headlines for tonight's fired dislocations.
+22. `ledgers.py --rebuild` — folds the JSONL ledgers into loop-DB tables.
+23. `calibration_report.py` — regenerates the current-month calibration report (PARTIAL-stamped
+   until ≥ 10 closed theses).
 
 A second launchd job (`com.arjundivecha.asado-predmkt-daily`, 06:30) runs
 `scripts/predmkt_daily_job.py`: restore-from-archive → collect prediction markets → re-archive to
-`Data/loop/predmkt_archive/` (rebuild-proof).
+`Data/loop/predmkt_archive/` (rebuild-proof). The curated registry (`config/predmkt_curated.yaml`)
+was expanded to 152 live markets on 2026-06-11; `scripts/loop/discover_predmkt_candidates.py`
+sweeps Kalshi + Polymarket for new candidates to curate.
 
 ### Validation discipline (the skeptic)
 - **Hypothesis ledger** (`ledgers/hypothesis_ledger.jsonl`, git-tracked): mechanism written **before**
@@ -273,10 +302,12 @@ MCP tools added to the server: `country_news` (live GDELT DOC 2.0 headlines), `r
 Monthly vintage snapshots: `scripts/snapshot_vintages.py` → `Data/vintages/{YYYY_MM}/` (wired into
 `monthly_update.py`).
 
-**Known v1 caveats:** graph features use *current* Neo4j edge weights over the whole backtest window
-(slow-moving, but not point-in-time); daily harness mode is IC-only (no cost model yet); D4 needs the
-`t2_levels_daily` staleness issue resolved (REER last changed 2026-04-30); GDELT DOC API rate-limits
-aggressively — `country_news` fails loudly and recovers when the block lifts.
+**Known caveats:** graph features use *current* Neo4j edge weights over the whole backtest window
+(slow-moving, but not point-in-time); daily harness mode is IC-only (no cost model yet); GDELT DOC
+API rate-limits aggressively — `country_news` fails loudly and recovers when the block lifts; D10
+peg-currency rows (Hong Kong, Saudi Arabia) carry a peg note because z-scores off a near-zero vol
+baseline run hot — read them as peg-risk repricing, not magnitude. Bloomberg quota usage for the
+loop's nightly pulls is logged append-only to `Data/work/loop/bbg_quota_log.csv`.
 
 ---
 

@@ -22,8 +22,8 @@ OUTPUT FILES:
 - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/ledgers/hypothesis_ledger.jsonl
   Verdict event appended automatically (never by hand).
 
-VERSION: 2.0
-LAST UPDATED: 2026-06-10
+VERSION: 2.1
+LAST UPDATED: 2026-06-12
 AUTHOR: Arjun Divecha (built by agent session, Alpha-Hunting Loop Phase 1/2)
 
 DESCRIPTION:
@@ -79,6 +79,18 @@ DAILY FREQUENCY (v2, 2026-06-10): daily runs now get the FULL gate set.
     overstated; treat archived v1 daily runs accordingly).
 The IC-only path (portfolios_skipped=true) survives only as a fallback when
 the portfolio block errors (e.g. too few dates), and says so in gate_notes.
+
+COST / HOLDING-PERIOD MODEL (v2.1, 2026-06-12): two additions, both
+diagnostic (verdict gates unchanged, still keyed to the registered hold):
+ f. HOLD-PERIOD GRID: every daily run is re-costed at 1d / 5d / 21d
+    tranched holds (`hold_period_grid` in the result JSON) so a signal
+    killed by 1d-rebalance turnover can show whether a slower
+    implementation of the SAME ranks survives. Promotion to a slower hold
+    requires registering a new spec with hold_days set explicitly.
+ g. BREAKEVEN COST: `breakeven_cost_bps_ls` = the one-way cost (bps) at
+    which the mean net LS return crosses zero, given the strategy's own
+    turnover (monthly and daily). Negative = loses money even free.
+    Cost cases now include a 5 bps leg (liquid-futures/DM-ETF case).
 
 DEPENDENCIES:
 - duckdb, pandas, numpy, scipy (project venv)
@@ -239,7 +251,7 @@ def backtest_monthly(
     aligned_1m: pd.DataFrame,
     direction: str,
     n_top: int = 7,
-    cost_bps_cases: tuple[int, ...] = (10, 25, 50),
+    cost_bps_cases: tuple[int, ...] = (5, 10, 25, 50),
     borrow_bps_yr: float = 50.0,
     min_cross_section: int = 14,
 ) -> dict[str, Any]:
@@ -283,6 +295,9 @@ def backtest_monthly(
         "start": str(pd.Timestamp(bt["date"].min()).date()),
         "end": str(pd.Timestamp(bt["date"].max()).date()),
         "avg_turnover_top_oneway": round(float(bt["turnover_top"].mean()), 4),
+        "avg_turnover_ls_oneway": round(float(bt["turnover_ls"].mean()), 4),
+        "breakeven_cost_bps_ls": _breakeven_bps(
+            bt["ret_top"] - bt["ret_bot"], bt["turnover_ls"], borrow_m),
         "gross": {
             "top_ann_return": _ann_ret(bt["ret_top"]),
             "ew_ann_return": _ann_ret(bt["ret_ew"]),
@@ -309,6 +324,18 @@ def backtest_monthly(
     )
     result["_subperiods_src"] = bt
     return result
+
+
+def _breakeven_bps(ls_gross: pd.Series, turnover_ls: pd.Series,
+                   borrow_per_period: float) -> Optional[float]:
+    """One-way cost (bps) at which the mean net LS return hits zero:
+    mean(gross) - mean(turnover_ls) * 2c - borrow = 0. Negative values mean
+    the strategy loses money even at zero cost."""
+    mean_gross = float(ls_gross.mean())
+    mean_to = float(turnover_ls.mean())
+    if mean_to <= 0:
+        return None
+    return round((mean_gross - borrow_per_period) / (2 * mean_to) * 10000, 1)
 
 
 def _ann_ret(r: pd.Series, periods: int = 12) -> float:
@@ -347,7 +374,7 @@ def backtest_daily(
     direction: str,
     hold_days: int,
     n_top: int = 7,
-    cost_bps_cases: tuple[int, ...] = (10, 25, 50),
+    cost_bps_cases: tuple[int, ...] = (5, 10, 25, 50),
     borrow_bps_yr: float = 50.0,
     min_cross_section: int = 14,
 ) -> dict[str, Any]:
@@ -433,6 +460,9 @@ def backtest_daily(
         "start": str(pd.Timestamp(bt["date"].min()).date()),
         "end": str(pd.Timestamp(bt["date"].max()).date()),
         "avg_daily_turnover_top_oneway": round(float(bt["turnover_top"].mean()), 5),
+        "avg_daily_turnover_ls_oneway": round(float(bt["turnover_ls"].mean()), 5),
+        "breakeven_cost_bps_ls": _breakeven_bps(
+            bt["ret_top"] - bt["ret_bot"], bt["turnover_ls"], borrow_d),
         "gross": {
             "top_ann_return": _ann_ret(bt["ret_top"], 252),
             "ew_ann_return": _ann_ret(bt["ret_ew"], 252),
@@ -459,6 +489,23 @@ def backtest_daily(
     )
     result["_subperiods_src"] = bt
     return result
+
+
+HOLD_GRID_DAYS = (1, 5, 21)
+
+
+def _compact_hold(res: dict[str, Any]) -> dict[str, Any]:
+    """Compact one-line summary of a backtest_daily result for the hold grid."""
+    if "error" in res:
+        return {"error": res["error"]}
+    net = res.get("net", {})
+    return {
+        "avg_daily_turnover_ls_oneway": res.get("avg_daily_turnover_ls_oneway"),
+        "breakeven_cost_bps_ls": res.get("breakeven_cost_bps_ls"),
+        "gross_ls_sharpe": res.get("gross", {}).get("ls_sharpe"),
+        "net_ls_sharpe": {bps: net.get(bps, {}).get("ls_sharpe") for bps in net},
+        "net_top_excess_25bps": net.get("25bps", {}).get("top_excess_ann_return"),
+    }
 
 
 def expected_max_sharpe(n_trials: int, n_obs: int) -> float:
@@ -702,6 +749,7 @@ def evaluate_signal(
         portfolio: dict[str, Any] = {}
         subperiods: dict[str, Any] = {}
         dsr: dict[str, Any] = {}
+        hold_grid: dict[str, Any] = {}
         if not coverage_fail and not history_fail:
             if frequency == "monthly":
                 aligned_1m = align_monthly(signal, returns, lag, 1)
@@ -717,6 +765,18 @@ def evaluate_signal(
                 portfolio = backtest_daily(sig_panel, ret_panel, direction, hold_days=hold_days,
                                            n_top=n_top, min_cross_section=min_xs)
                 periods = 252
+                # Hold-period grid: same signal at 1d/5d/21d tranched holds.
+                # Diagnostic only - verdict stays keyed to the registered hold.
+                hold_grid: dict[str, Any] = {}
+                for h in HOLD_GRID_DAYS:
+                    if h == hold_days:
+                        res_h = portfolio
+                    else:
+                        res_h = backtest_daily(sig_panel, ret_panel, direction, hold_days=h,
+                                               n_top=n_top, min_cross_section=min_xs)
+                        res_h.pop("_subperiods_src", None)
+                        res_h.pop("_ls_net25_series", None)
+                    hold_grid[f"hold_{h}d"] = _compact_hold(res_h)
             if "_subperiods_src" in portfolio:
                 subperiods = subperiod_table(portfolio.pop("_subperiods_src"), periods)
                 ls_series = portfolio.pop("_ls_net25_series")
@@ -770,6 +830,7 @@ def evaluate_signal(
             },
             "ic": ic_block,
             "portfolio": portfolio,
+            "hold_period_grid": hold_grid,
             "subperiods": subperiods,
             "deflated_sharpe_block": dsr,
             "portfolios_skipped": portfolios_skipped,

@@ -316,7 +316,9 @@ sweeps Kalshi + Polymarket for new candidates to curate.
   results; every registration counts a trial against its family for the deflated Sharpe.
 - **Harness** (`scripts/harness/evaluate_signal.py`, MCP `evaluate_signal`): PIT embargo inside the
   harness, rank IC + Newey–West t, top-7 vs EW with costs, sub-periods, deflated Sharpe vs family
-  trial count. Forward-return variables (`1MRet` etc.) are hard-blacklisted as signals.
+  trial count. v2.1 (2026-06-12) adds a 1d/5d/21d hold-period grid, breakeven cost (bps), and a
+  5 bps cost case for daily runs — see "The cost / holding-period model" below.
+  Forward-return variables (`1MRet` etc.) are hard-blacklisted as signals.
   Results → `Data/loop/harness_runs/` + `harness_results` table; verdicts auto-attach to the ledger.
 - **Thesis ledger** (`ledgers/thesis_ledger.jsonl`): frozen entry thesis + probability + invalidation
   level; auto-marked daily; Brier calibration accumulates as theses resolve. Paper by default.
@@ -407,9 +409,32 @@ month — the honest read is "ceiling, verify forward"). Conditioned event studi
 downgrade drift is an **EM phenomenon** (EM −0.9%@5d t=−2.0, −2.8%@63d; DM flat) and
 splits by regime (high-VIX downgrades hit immediately, low-VIX drift slowly).
 
+### The cost / holding-period model (harness v2.1, 2026-06-12)
+
+The answer to "do any daily signals survive costs?". `evaluate_signal.py` v2.1 adds, for every
+daily run: a **hold-period grid** (the same daily ranks re-costed at 1d / 5d / 21d tranched
+holds, `hold_period_grid` in the result JSON), a **breakeven cost** (`breakeven_cost_bps_ls` =
+the one-way bps at which mean net LS return crosses zero given the strategy's own turnover),
+and a **5 bps cost case** (liquid-futures / DM-ETF execution). Verdict gates are unchanged —
+still keyed to the registered hold at net-25bps; the grid is a design diagnostic. All 29
+verdicted daily hypotheses were re-measured in place (same hypothesis IDs, zero new trials).
+
+**The quantified answer** (`Data/loop/harness_runs/cost_model_summary_2026_06_12.xlsx`):
+nothing survives 25 bps one-way — that conclusion stands. But at **10 bps**, 4 signals clear
+net LS Sharpe > 0.3: the daily ridge combiner (breakeven 14.2 bps, net Sharpe 0.99 @10bps /
+2.15 @5bps at a 1-day hold), the PIT banking-claims neighbor gap (13.1 bps breakeven), and the
+fundamental-twins + bank-gap 63d variants (~14 bps). At **5 bps** twelve signals clear the bar.
+Two structural findings: the strong daily signals **decay fast** — gross Sharpe falls faster
+with longer holds than turnover savings compensate, so 1-day holds win net for the top family
+(slower 21d holds only rescue slow signals like SOV_2S10S, breakeven 15.8 bps); and the
+implementation channel decides everything — these are futures/cheap-DM-ETF strategies, not
+EM-ETF strategies. The graph family's economics: breakevens cluster at 8-14 bps, i.e. real but
+thin edges that only an efficient execution stack can monetize.
+
 **Known caveats:** v1 `graph_features_daily` still uses *current* Neo4j edge weights (kept for
-continuity; the PIT table is the analytical surface); daily harness mode is IC-only (no cost
-model yet); GDELT DOC API rate-limits aggressively — `country_news` fails loudly and recovers
+continuity; the PIT table is the analytical surface); the headline DSR for daily signals is
+still computed at net-25bps on the registered hold — conservative by construction (see the
+hold-period grid for the 5/10 bps economics); GDELT DOC API rate-limits aggressively — `country_news` fails loudly and recovers
 when the block lifts; D10 peg-currency rows (Hong Kong, Saudi Arabia) carry a peg note because
 z-scores off a near-zero vol baseline run hot — read them as peg-risk repricing, not magnitude.
 Bloomberg quota usage for the loop's nightly pulls is logged append-only to

@@ -151,8 +151,12 @@ skeptically, and track theses with calibration discipline.
 - **Validation discipline:** detectors D1–D10 → `dislocation_daily` + the nightly brief
   (`Data/dislocations/brief_YYYY_MM_DD.md`); hypothesis/thesis JSONL ledgers in `ledgers/`
   (git-tracked, append-only); skeptic harness `scripts/harness/evaluate_signal.py` with PIT
-  embargo, Newey–West t, deflated Sharpe. Forward-return variables (`1MRet` etc.) are
-  hard-blacklisted as signals — they are optimizer TARGETS, not trailing momentum.
+  embargo, Newey–West t, deflated Sharpe; v2.1 (2026-06-12) adds a 1d/5d/21d hold-period
+  grid + breakeven cost (bps) per daily run — net-of-cost picture: nothing survives 25 bps
+  one-way, 4 signals (led by the daily combiner, breakeven 14 bps) clear at 10 bps, 12 at
+  5 bps (`Data/loop/harness_runs/cost_model_summary_2026_06_12.xlsx`). Forward-return
+  variables (`1MRet` etc.) are hard-blacklisted as signals — they are optimizer TARGETS,
+  not trailing momentum.
 - **Key docs:** `docs/MARKET_IMPLIED_EXTENSION_STATUS.md`,
   `docs/BBG_SKILL_ENHANCEMENTS_2026_06_12.md`, `docs/PREDMKT_EXTENSION_STATUS.md`,
   `docs/USER_FIX_LIST.md` (running list of user-side fixes), and AGENTS.md (the most

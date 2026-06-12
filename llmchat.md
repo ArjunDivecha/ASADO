@@ -304,3 +304,44 @@ Nightly loop job: 27 → 32 steps (v1.2). All five builders wired in after load_
 ---
 SESSION END: 2026-06-12 13:35 PDT | Agent: Cursor (Fable 5)
 ---
+
+## Session: Cost / Holding-Period Model (harness v2.1) — the net-of-cost answer
+
+### What Happened
+- `scripts/harness/evaluate_signal.py` → v2.1. Three additions, all diagnostic
+  (verdict gates unchanged, still net-25bps at the registered hold):
+  1. `hold_period_grid`: every daily run re-costs the SAME ranks at 1d/5d/21d
+     tranched holds (compact per-hold summary in the result JSON).
+  2. `breakeven_cost_bps_ls`: one-way bps where mean net LS return crosses zero,
+     given the strategy's own turnover (monthly + daily).
+  3. 5 bps cost case added (liquid futures / DM ETF execution leg).
+- All 29 verdicted daily hypotheses re-measured IN PLACE: `evaluate_signal` called
+  directly with the existing hypothesis_id + the stored run params from each result
+  JSON. Re-verdict events append to the ledger; fold keeps latest; ZERO new
+  registrations, so family trial counts (and DSR penalties) are untouched.
+  IMPORTANT: `sweep_signals.py --force` is NOT the tool for this — it registers a
+  brand-new hypothesis (a new charged trial). One duplicate (H_20260612_055,
+  leadlag) was created learning that; it's harmless (conservative) but don't repeat.
+
+### The Answer (Data/loop/harness_runs/cost_model_summary_2026_06_12.xlsx)
+- At 25 bps one-way: NOTHING survives. The earlier conclusion stands.
+- At 10 bps: 4 signals clear net LS Sharpe > 0.3 — daily ridge combiner
+  (breakeven 14.2 bps, net Sharpe 0.99 @10 / 2.15 @5, 1d hold), GRAPHP bank
+  neighbor gap (13.1), SIM twins 63d (14.1), GRAPH bank 63d (13.7).
+- At 5 bps: 12 of 30 signals clear.
+- Structural: the strong daily signals DECAY FAST — gross Sharpe falls faster with
+  hold length than turnover savings compensate, so 1-day holds win net for the top
+  family. Slow holds (21d) only rescue slow signals (SOV_2S10S breakeven 15.8 bps).
+- Implication: graph-family edges are real but thin (breakevens 8–14 bps one-way).
+  This is a futures / cheap-DM-ETF implementation, not an EM-ETF one.
+
+### What To Build Next
+1. Forward-verify the daily combiner (live surface `combiner_scores_daily`).
+2. If implementation gets serious: per-country cost table (DM futures ~2-5 bps vs
+   EM ETF 15-40 bps) instead of flat cases — the harness takes cost cases as a
+   parameter already.
+3. D6 predmkt detector still blocked on history accumulation.
+
+---
+SESSION END: 2026-06-12 14:15 PDT | Agent: Cursor (Fable 5)
+---

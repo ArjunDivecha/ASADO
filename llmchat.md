@@ -171,3 +171,74 @@ Important gotcha: `setup_duckdb.py` recreates `Data/asado.duckdb`. Any narrow up
 ---
 SESSION END: 2026-05-16 23:56 PDT | Agent: Codex
 ---
+
+---
+SESSION START: 2026-06-12 08:55 PDT | Agent: Cursor (Fable 5)
+---
+
+### Session Summary
+Catch-up entry: the last llmchat block (2026-05-16) predates the entire **Alpha-Hunting
+Loop** era. Everything below is the state of play as of 2026-06-12 so Claude Code / Codex
+can start cold. Latest commit: `95384d4` (six new Bloomberg data layers).
+
+### Decisions Made
+- **Alpha-Hunting Loop built (June 2026, `PRD_Alpha_Hunting_Loop.md`):** daily dislocation
+  engine on top of the warehouse. Detectors D1–D10 find subsystem disagreements →
+  `dislocation_daily` + nightly brief `Data/dislocations/brief_YYYY_MM_DD.md`; hypotheses/
+  theses live in append-only JSONL ledgers (`ledgers/`, git-tracked); skeptic harness
+  `scripts/harness/evaluate_signal.py` (PIT embargo, NW-t, deflated Sharpe) gates promotion.
+- **Loop DB is separate:** `Data/loop/asado_loop.duckdb`. `setup_duckdb.py` DELETES and
+  recreates the main `Data/asado.duckdb` — never put persistent tables there.
+- **Bloomberg collectors use the conda/venv split:** `scripts/loop/collect_*_bbg.py` run
+  under the OpusBloomberg conda env (absolute conda path — launchd PATH has no
+  /opt/homebrew/bin) and write parquet only; paired `load_*.py` run in the project venv.
+- **2026-06-11: monthly Bloomberg ticker map fully re-audited** (Saudi `GSAB*` was South
+  African data for years; many dead EM generics → `GT[CCY]*Y Govt` + `YLD_YTM_MID`).
+  T2 "10Yr Bond" sheet USD-override bug also fixed. See `docs/USER_FIX_LIST.md` (all done).
+- **2026-06-12 (commit `95384d4`): six new Bloomberg layers** mined from the rebuilt
+  bloomberg-skill: (1) FX vol 1W/3M tenors + 25Δ butterflies + vol term slope;
+  (2) 1Y CDS → CDS curve slope (inversion = imminent-distress); (3) daily 2s10s;
+  (4) **BQL historical sovereign ratings** — first BQL collector, `issuerof()` on CDS-contract
+  anchors, S&P/Moody's/Fitch monthly 2015+, 33 countries, `sov_rating_changes` event table;
+  (5) 3M forward/NDF-implied carry (PX_LAST on `[ROOT]3M Curncy` is the OUTRIGHT);
+  (6) economic surprise layer (ACTUAL_RELEASE vs BN_SURVEY_MEDIAN, CPI/UNEMP/GDP/PMI,
+  growth+inflation surprise composites). Full doc: `docs/BBG_SKILL_ENHANCEMENTS_2026_06_12.md`.
+
+### Architecture / Design
+- Nightly cadence: predmkt launchd 06:30 → `daily_update.py` (~07:30, T2+GDELT+daily panels,
+  chains the loop as its final stage) → loop launchd safety net 11:30. Loop job =
+  `scripts/loop/loop_daily_job.py`, **27 steps** (README "Nightly job" has the list).
+- Loop data layers live: foreign flows, sovereign daily (CDS 5Y/1Y, yields 10Y/2Y →
+  `sovereign_signals`), valuation, WEO vintages, ETF flows/short interest, ECFC consensus,
+  COT, market-implied stress (`market_implied_signals`), sov ratings, eco surprises,
+  graph features, prediction markets (152 curated markets).
+- Returns are the outcome source of truth: `country_returns_monthly` for marking;
+  `1MRet`-style variables are FORWARD optimizer targets — hard-blacklisted as signals.
+
+### What To Build Next
+1. D6 (predmkt detector) stays blocked until prediction-market history accumulates.
+2. Run new signals (carry z, CDS slope, rating changes, surprise composites) through the
+   harness as registered hypotheses — none have been formally evaluated yet.
+3. Watch today's 11:30 loop safety-net run: Thursday's run failed on bare `conda` (fixed
+   14:39 Thu in `ecf1da7` + plist PATH; launchd confirmed reloaded). NightWatch's Fri-morning
+   FAIL was that stale Thursday log; Friday-morning chained loop ran all 27 steps clean.
+
+### Constraints & Gotchas
+- FAIL IS FAIL: no silent fallbacks; collectors abort on unit-error-scale bad prints.
+- Exact T2 country names; first-of-month dates for monthly panels; tidy long format.
+- BQL needs raw blpapi + `clientContext.appName="EXCEL"`; response messageType IS `result`.
+- AGENTS.md carries the densest operational gotchas (ticker quirks, dead tickers, API
+  endpoints); the bloomberg-skill `references/` (lessons.md, proven-tickers.md) is the
+  cross-repo ticker knowledge base — both were updated through 2026-06-12.
+- Heavy data dirs are gitignored (`T2 Daily Update/`, `Data/loop/`); ledgers + briefs ARE
+  committed. `.cursor/hooks/state/` stays out of commits.
+
+### Context for Next Session
+Recent commits: `95384d4` six Bloomberg layers; `ad93459` T2 10Y bond fix; `5490378`
+market-implied layer + D10; `4b99853` ticker-map re-audit + predmkt expansion; `ecf1da7`
+overnight reliability + loop P7–P11 collectors. Docs refreshed today: CLAUDE.md (now has a
+loop section + key-files rows), README (27-step job list), AGENTS.md, this file.
+
+---
+SESSION END: 2026-06-12 08:57 PDT | Agent: Cursor (Fable 5)
+---

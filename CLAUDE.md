@@ -111,6 +111,42 @@ This ensures **no data loss** even if multiple sources are temporarily unavailab
 
 **Cycle protection (matters for any new collector or builder):** the MCP and `db_bridge` both read from views like `feature_panel` and `unified_panel`. Optimizer outputs ingested by `collect_optimizer_returns.py` (factor_returns, factor_top20_membership, country_factor_attribution) are deliberately NOT unioned into those views — that's a structural guarantee against the optimizer-input/output cycle. If you find yourself adding `factor_returns` to `unified_panel` or `feature_panel`, stop and revisit — `Step Zero Build Econ.py` and `Step Zero Build GDELT.py` rely on the cycle being broken.
 
+### The Alpha-Hunting Loop (Layer 1) — Daily Dislocation Engine
+
+Built June 2026 on top of the warehouse (`PRD_Alpha_Hunting_Loop.md`). The loop's premise:
+find places where subsystems disagree (dislocations), generate hypotheses, validate them
+skeptically, and track theses with calibration discipline.
+
+- **Separate database:** `Data/loop/asado_loop.duckdb`. NEVER create persistent tables in
+  `Data/asado.duckdb` — `setup_duckdb.py` deletes and recreates it on every rebuild. The
+  main DB is attached read-only as the `asado` schema.
+- **Code lives in `scripts/loop/`**, parquet intermediates in `Data/work/loop/`,
+  durable artifacts in `Data/loop/`.
+- **Nightly job:** `scripts/loop/loop_daily_job.py` — 27 steps (see README "Nightly job"
+  for the full list). Runs as the final stage of `daily_update.py` (~07:30) plus a launchd
+  safety net at 11:30 (`com.arjundivecha.asado-loop-daily`). Prediction markets run
+  separately at 06:30. One step failing never stops the rest; any failure exits non-zero.
+- **Bloomberg steps use the conda/venv split:** `collect_*_bbg.py` scripts run under the
+  OpusBloomberg conda env (invoked via absolute conda path — launchd's PATH has no
+  /opt/homebrew/bin) and write parquet only; paired `load_*.py` scripts run in the project
+  venv and rebuild loop-DB tables idempotently. All BBG collectors append to the quota log
+  `Data/work/loop/bbg_quota_log.csv`.
+- **Data layers (collector → tables):** foreign flows, sovereign daily (5Y/1Y CDS +
+  10Y/2Y yields → `sovereign_signals` curve slopes), valuation block, WEO vintages,
+  ETF flows/short interest, ECFC consensus revisions, COT, market-implied stress
+  (FX vol surfaces 1W/1M/3M + RR + butterflies + 3M forward carry, VIX/MOVE/OAS dashboard,
+  commodity curves), BQL sovereign rating history (`sov_rating_changes` events),
+  economic surprises (`eco_surprise_signals`), graph features, prediction markets.
+- **Validation discipline:** detectors D1–D10 → `dislocation_daily` + the nightly brief
+  (`Data/dislocations/brief_YYYY_MM_DD.md`); hypothesis/thesis JSONL ledgers in `ledgers/`
+  (git-tracked, append-only); skeptic harness `scripts/harness/evaluate_signal.py` with PIT
+  embargo, Newey–West t, deflated Sharpe. Forward-return variables (`1MRet` etc.) are
+  hard-blacklisted as signals — they are optimizer TARGETS, not trailing momentum.
+- **Key docs:** `docs/MARKET_IMPLIED_EXTENSION_STATUS.md`,
+  `docs/BBG_SKILL_ENHANCEMENTS_2026_06_12.md`, `docs/PREDMKT_EXTENSION_STATUS.md`,
+  `docs/USER_FIX_LIST.md` (running list of user-side fixes), and AGENTS.md (the most
+  current operational gotchas — read it).
+
 ---
 
 ## Common Commands
@@ -599,10 +635,16 @@ python scripts/monthly_update.py --skip-bloomberg
 | `Phase1_Data_Collection_Plan.md` | Comprehensive PRD with all 22 sources + database design |
 | `Data/processed/run_history.json` | Metadata log of last 24 runs (success/failure per source) |
 | `Data/logs/` | Timestamped logs from each run |
+| `scripts/loop/loop_daily_job.py` | Alpha-Hunting Loop nightly orchestrator (27 steps) |
+| `scripts/loop/build_dislocations.py` | Detectors D1–D10 + the nightly brief |
+| `Data/loop/asado_loop.duckdb` | Loop database (separate from the rebuilt main DB) |
+| `Data/dislocations/brief_YYYY_MM_DD.md` | The nightly dislocation brief (Layer 2 reading list) |
+| `llmchat.md` | Cross-agent context log (append-only) — read for state of play |
+| `AGENTS.md` | Most current operational gotchas and learned facts |
 
 ---
 
-**Last Updated:** 2026-05-16  
-**Architecture:** 34-country macro universe, 26 free sources + World Bank commodities + 28 Bloomberg variables, hybrid DuckDB + Neo4j  
+**Last Updated:** 2026-06-12  
+**Architecture:** 34-country macro universe, 26 free sources + World Bank commodities + 28 Bloomberg variables, hybrid DuckDB + Neo4j, plus the Alpha-Hunting Loop (separate loop DB, 27-step nightly job)  
 **Total Data:** `unified_panel` 17.4M rows / 2,022 variables; `feature_panel` 31.6M rows / 3,048 variables; daily tables restored; DB size ~3.6 GB  
 **Monthly update cycle:** ~8-12 minutes

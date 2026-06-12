@@ -32,6 +32,32 @@ python scripts/monthly_update.py        # full monthly: collect → DuckDB → n
 python scripts/daily_update.py          # daily metronome: T2 + GDELT factors & returns
 ```
 
+### Cold start for a new agent (read this first)
+
+If you just picked up this repo, do these five things in order before touching code:
+
+1. **Read the docs in this order:** `README.md` (this file), `CLAUDE.md`
+   (coding conventions), `AGENTS.md` (learned facts), `docs/README.md`
+   (documentation index: canonical specs vs. generated reports vs. historical
+   snapshots), and `llmchat.md` (recent session history).
+2. **Activate the venv:** `source venv/bin/activate`. Bloomberg-only scripts run
+   under the OpusBloomberg conda env; everything else uses this venv.
+3. **Check services:** `brew services list | grep neo4j` must show `started` for
+   any graph operation. Bloomberg Terminal must be logged in on the Parallels
+   Windows VM for live Bloomberg pulls.
+4. **Run the smoke tests:** `python -m pytest tests/loop/test_harness_pit.py -q`
+   should pass. For a full health check:
+   `python scripts/setup_duckdb.py --check && python scripts/setup_neo4j.py --check`.
+5. **Verify the loop DB exists:** `Data/loop/asado_loop.duckdb` is where loop
+   signals, returns, and harness results live. It is gitignored but essential.
+   If it's missing, run `scripts/loop/loop_daily_job.py` (or the full
+   `daily_update.py`) after the main DB is built.
+
+**Never create persistent tables in `Data/asado.duckdb`** — `setup_duckdb.py`
+deletes and recreates it. Loop data lives in `Data/loop/asado_loop.duckdb` and
+parquet intermediates under `Data/work/loop/`. For the full source-of-truth map,
+see `docs/README.md`.
+
 | Command | What it does | Runtime |
 |---|---|---|
 | `monthly_update.py` | All collectors, both Bloomberg pulls, warehouse + normalized + daily panels + optimizer returns + Neo4j + embeddings + schema | ~12–18 min |

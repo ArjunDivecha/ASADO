@@ -345,3 +345,41 @@ SESSION END: 2026-06-12 13:35 PDT | Agent: Cursor (Fable 5)
 ---
 SESSION END: 2026-06-12 14:15 PDT | Agent: Cursor (Fable 5)
 ---
+
+## Session: Documentation cold-start hardening
+
+### What Happened
+- User asked whether the docs are clear enough for a cold Claude Code / Codex pickup.
+- Audit found: very close, but three gaps worth fixing:
+  1. No single index distinguishing canonical specs, generated reports, and
+     historical snapshots in `docs/`.
+  2. No explicit "first 5 minutes" checklist in the main README.
+  3. Stale-looking top-level docs (`DATABASE_AUDIT_2026_06_09.md`, daily reports,
+     morning/eod reports) could be mistaken for current specs.
+
+### Fixes
+- Created `docs/README.md` — canonical index with freshness flags:
+  - **Start here:** README, CLAUDE.md, AGENTS.md, llmchat.md.
+  - **Canonical specs:** PRD_Alpha_Hunting_Loop.md, extension status docs, etc.
+  - **Generated reference:** factor_reference.md, VARIABLE_DICTIONARY.md.
+  - **Historical snapshots:** all `*_YYYY_MM_DD.md` audit/report files.
+- Added "Cold start for a new agent" section to main `README.md` (right under
+  Quick start): read order, venv, service checks, smoke tests, loop DB location,
+  and the `asado.duckdb` deletion warning.
+- This entry and the docs files are committed/pushed.
+
+### Gotchas Learned
+- `Data/asado.duckdb` is rebuilt from scratch by `setup_duckdb.py` — never treat
+  it as a place for persistent loop tables. Loop persistence is
+  `Data/loop/asado_loop.duckdb` + parquet intermediates under `Data/work/loop/`.
+- `docs/` mix specs and point-in-time reports; always check the filename date.
+
+### What To Build Next
+1. Forward-verify the daily combiner.
+2. Per-country execution cost table if the strategy moves from research to
+   implementation.
+3. D6 predmkt detector still blocked on history accumulation.
+
+---
+SESSION END: 2026-06-12 15:55 PDT | Agent: Cursor (Fable 5)
+---

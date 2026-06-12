@@ -1,6 +1,6 @@
 # ASADO Factor Reference
 
-_Generated: 2026-06-10 20:35:49_
+_Generated: 2026-06-11 15:29:02_
 _Source of truth: `Data/cache/query_assistant/` — refreshed by `scripts/build_schema_registry.py` on every monthly update._
 
 This document is intended to be read end-to-end by an AI agent (or human) who needs to understand exactly what the ASADO warehouse contains, what each surface means, and how to compose queries against it. Keep prose minimal; lean on tables.
@@ -13,8 +13,8 @@ Authoritative companion docs:
 ## At a glance
 
 - **DuckDB tables / views:** 40
-- **Distinct variables in `feature_panel` catalog:** 738
-  - Raw: 244 · `_CS` cross-sectional: 235 · `_TS` time-series: 259
+- **Distinct variables in `feature_panel` catalog:** 744
+  - Raw: 247 · `_CS` cross-sectional: 238 · `_TS` time-series: 259
 - **Neo4j node labels:** 7
 - **Neo4j relationship types:** 9
 - **Country universe:** 43 (T2 names)
@@ -26,41 +26,41 @@ Every analytical surface in `Data/asado.duckdb`. The `t2_master`/`t2_raw` tables
 | Table | Type | Rows | Date range | Description |
 | --- | --- | --- | --- | --- |
 | `bilateral_portfolio_matrix` | BASE TABLE | 56,870 | 1997-12-01 → 2026-03-01 | Historical portfolio ownership matrix combining IMF PIP annual benchmarks and the U.S. TIC supplement. Common instrument_type values include equity_fund_shares, debt_long, debt_short, equity, debt_long_govt, and debt_… |
-| `bloomberg_factors` | BASE TABLE | 98,969 | 1975-12-01 → 2026-06-01 | Bloomberg market-implied, macro, and ETF passive-flow data collected via OpusBloomberg. |
+| `bloomberg_factors` | BASE TABLE | 105,307 | 1975-12-01 → 2026-06-01 | Bloomberg market-implied, macro, and ETF passive-flow data collected via OpusBloomberg. |
 | `commodity_panel` | VIEW | 436,196 | 1960-01-01 → 2026-05-01 | GLOBAL commodity series (date x series, NOT country-keyed): level/MOM/YOY/3M/12M-return/vol/z per World Bank Pink Sheet commodity. Join to country returns on date as explanatory context. (Replaces the deprecated count… |
 | `country_factor_attribution` | VIEW | 726,353 | 2000-02-01 → 2026-05-01 | View joining factor_top20_membership ⨝ factor_returns on (date, factor, source). Columns: (date, country, factor, weight, factor_return, contribution, source). contribution = weight × factor_return is the country's mo… |
 | `country_reference` | BASE TABLE | 40 | — | Canonical ISO-to-ASADO country mapping surface. Use this to join bilateral tables that store reporter_iso3/counterpart_iso3 onto ASADO factor surfaces that use country names. |
-| `daily_calendar` | BASE TABLE | 328,372 | 2000-01-01 → 2026-06-10 |  |
+| `daily_calendar` | BASE TABLE | 328,406 | 2000-01-01 → 2026-06-11 |  |
 | `demographics_dip` | BASE TABLE | 20,026 | 1950-12-01 → 2100-12-01 |  |
 | `event_log` | BASE TABLE | 146 | — |  |
 | `extended_factors` | BASE TABLE | 115,224 | 1990-12-01 → 2026-06-01 | Extended country dataset built from additional free sources. |
 | `external_factors` | BASE TABLE | 137,322 | 1985-01-01 → 2026-05-01 | Free-source external macro, risk, and structural data. |
 | `factor_returns` | BASE TABLE | 106,036 | 2000-02-01 → 2026-05-01 | Monthly net returns of top-20%-of-countries portfolios per factor, sourced from the Econ / T2 Style / GDELT optimizer pipelines. Tidy long format with columns (date, factor, value, source). Factor names retain their _… |
-| `factor_returns_daily` | BASE TABLE | 1,318,892 | 1999-12-31 → 2026-06-10 |  |
+| `factor_returns_daily` | BASE TABLE | 1,318,998 | 1999-12-31 → 2026-06-11 |  |
 | `factor_top20_membership` | BASE TABLE | 744,154 | 2000-02-01 → 2026-07-01 | Sparse country-level membership in each factor's top-20% bucket per month. Columns: (date, country, factor, weight, source). weight = 1/N within the bucket (equal-weight); rows are present only when the country is in … |
-| `feature_panel` | VIEW | 3,526,055 | 1950-12-01 → 2100-12-01 | Query-facing union of unified_panel (raw warehouse) plus normalized_panel for analytics, assistants, and feature discovery. |
+| `feature_panel` | VIEW | 3,544,376 | 1950-12-01 → 2100-12-01 | Query-facing union of unified_panel (raw warehouse) plus normalized_panel for analytics, assistants, and feature discovery. |
 | `gdelt_factors_daily` | BASE TABLE | 10,167,428 | 2015-06-24 → 2026-06-09 |  |
 | `gdelt_panel` | BASE TABLE | 414,188 | 2015-09-01 → 2026-07-01 | Country-level GDELT-derived media, tone, and risk signals. |
-| `gdelt_raw_daily` | BASE TABLE | 967,364 | 2015-02-18T00:00:00 → 2026-06-09T00:00:00 |  |
+| `gdelt_raw_daily` | BASE TABLE | 967,837 | 2015-02-18T00:00:00 → 2026-06-11T00:00:00 |  |
 | `imf_factors` | BASE TABLE | 132,010 | 1980-12-01 → 2031-12-01 | IMF datasets normalized into the ASADO tidy panel shape. |
 | `macrostructure_factors` | BASE TABLE | 96,120 | 1995-03-01 → 2026-06-01 | Macrostructure panel spanning bank fragility, debt structure, institutional depth, sticky-capital proxies, and transparent derived signals. |
-| `normalized_panel` | BASE TABLE | 958,883 | 1950-12-01 → 2100-12-01 | Canonical ASADO-generated normalized factors. Contains _CS same-date cross-sectional z-scores and _TS rolling time-series z-scores for eligible raw source variables. |
-| `predmkt_country_spillover` | BASE TABLE | 49 | — | Hand-curated market-to-country spillover edges with elasticity, channel taxonomy, and confidence level. Used for off-universe entity bridge and country composites. |
-| `predmkt_daily` | BASE TABLE | 16 | — | Prediction-market daily snapshots from curated Kalshi and Polymarket markets. One row per (snapshot_date, platform, market_id, outcome_id) with probability, book fields, liquidity metrics, stale flag, and resolution s… |
-| `predmkt_market_meta` | BASE TABLE | 10 | — | Prediction-market metadata registry keyed by (platform, market_id). Includes ASADO category tags, resolution clarity, and contract windows. |
-| `predmkt_outcome_meta` | BASE TABLE | 20 | — | Outcome-level metadata keyed by (platform, market_id, outcome_id), including labels and scalar thresholds for distribution-style contracts. |
+| `normalized_panel` | BASE TABLE | 970,866 | 1950-12-01 → 2100-12-01 | Canonical ASADO-generated normalized factors. Contains _CS same-date cross-sectional z-scores and _TS rolling time-series z-scores for eligible raw source variables. |
+| `predmkt_country_spillover` | BASE TABLE | 503 | — | Hand-curated market-to-country spillover edges with elasticity, channel taxonomy, and confidence level. Used for off-universe entity bridge and country composites. |
+| `predmkt_daily` | BASE TABLE | 284 | — | Prediction-market daily snapshots from curated Kalshi and Polymarket markets. One row per (snapshot_date, platform, market_id, outcome_id) with probability, book fields, liquidity metrics, stale flag, and resolution s… |
+| `predmkt_market_meta` | BASE TABLE | 142 | — | Prediction-market metadata registry keyed by (platform, market_id). Includes ASADO category tags, resolution clarity, and contract windows. |
+| `predmkt_outcome_meta` | BASE TABLE | 284 | — | Outcome-level metadata keyed by (platform, market_id, outcome_id), including labels and scalar thresholds for distribution-style contracts. |
 | `predmkt_resolutions` | BASE TABLE | 0 | — | Resolved-market calibration archive: realized outcome and probabilities captured 24h/1h before resolution. |
-| `predmkt_signals_daily` | BASE TABLE | 32 | — | Derived prediction-market composite signals by date (and optionally country), including confidence scores and constituent market trace. |
-| `t2_factors_daily` | BASE TABLE | 35,614,660 | 2000-01-01 → 2026-06-10 |  |
+| `predmkt_signals_daily` | BASE TABLE | 52 | — | Derived prediction-market composite signals by date (and optionally country), including confidence scores and constituent market trace. |
+| `t2_factors_daily` | BASE TABLE | 35,618,298 | 2000-01-01 → 2026-06-11 |  |
 | `t2_factors_monthly_from_daily` | VIEW | 1,147,821 | 2000-01-01T00:00:00 → 2026-06-01T00:00:00 |  |
-| `t2_levels_daily` | BASE TABLE | 15,344,540 | 2000-01-01 → 2026-06-10 |  |
+| `t2_levels_daily` | BASE TABLE | 15,346,104 | 2000-01-01 → 2026-06-11 |  |
 | `t2_master` | BASE TABLE | 1,078,310 | 2000-02-01 → 2026-06-01 | Original T2 monthly factor panel. |
 | `t2_raw` | BASE TABLE | 475,003 | 2000-02-01 → 2026-06-01 | Raw T2 factor levels from the authoritative T2 Master workbook. |
-| `unified_panel` | VIEW | 2,567,172 | 1950-12-01 → 2100-12-01 | Unified analytic view across all ASADO factor tables. |
+| `unified_panel` | VIEW | 2,573,510 | 1950-12-01 → 2100-12-01 | Unified analytic view across all ASADO factor tables. |
 | `variable_meta` | BASE TABLE | 286 | — |  |
-| `variable_registry` | BASE TABLE | 1,434 | — |  |
-| `variable_registry_facts` | BASE TABLE | 1,624 | — |  |
-| `variable_registry_full` | VIEW | 1,624 | — |  |
+| `variable_registry` | BASE TABLE | 1,440 | — |  |
+| `variable_registry_facts` | BASE TABLE | 1,630 | — |  |
+| `variable_registry_full` | VIEW | 1,630 | — |  |
 | `wb_commodity_features` | BASE TABLE | 436,196 | 1960-01-01 → 2026-05-01 | Derived trailing commodity features such as level, MOM, YOY, 3M/12M return, volatility, and z-score, keyed by series_code and feature. |
 | `wb_commodity_indices` | BASE TABLE | 12,752 | 1960-01-01 → 2026-05-01 | Canonical World Bank Pink Sheet monthly commodity price indices, 2010=100, keyed by index_code. |
 | `wb_commodity_meta` | BASE TABLE | 87 | — |  |
@@ -514,27 +514,30 @@ Variables in this section are listed at the *raw* level (no `_CS`/`_TS` suffix).
 
 ### `bloomberg`
 
-**Total variables:** 28
+**Total variables:** 31
 
 | Variable | Source | Frequency | Countries | Date range | Norm | Sparse | Forecast |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `BBG_Breakeven_10Y` | bloomberg | monthly | 6 | 2000-01-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
-| `BBG_CDS_5Y` | bloomberg | monthly | 15 | 2000-10-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `BBG_CDS_5Y` | bloomberg | monthly | 20 | 2000-10-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
 | `BBG_Debt_GDP_Ratio` | bloomberg | monthly | 1 | 2011-03-01T00:00:00 → 2026-03-01T00:00:00 | raw | ✓ |  |
 | `BBG_ECFC_CPI` | bloomberg | monthly | 21 | 2010-01-01T00:00:00 → 2026-05-01T00:00:00 | raw |  | ✓ |
 | `BBG_ECFC_GDP` | bloomberg | monthly | 29 | 2010-12-01T00:00:00 → 2025-12-01T00:00:00 | raw |  | ✓ |
-| `BBG_Govt_Bond_10Y` | bloomberg | monthly | 25 | 2000-01-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
-| `BBG_Govt_Bond_2Y` | bloomberg | monthly | 24 | 2000-01-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `BBG_Govt_Bond_10Y` | bloomberg | monthly | 32 | 2000-01-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `BBG_Govt_Bond_2Y` | bloomberg | monthly | 26 | 2000-01-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
 | `BBG_Govt_Bond_30Y` | bloomberg | monthly | 17 | 2000-01-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
-| `BBG_Govt_Bond_5Y` | bloomberg | monthly | 25 | 2000-01-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
-| `BBG_M2_YoY` | bloomberg | monthly | 13 | 2000-01-01T00:00:00 → 2026-04-01T00:00:00 | raw |  |  |
-| `BBG_MIPD_5Y` | bloomberg | monthly | 15 | 2000-10-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `BBG_Govt_Bond_5Y` | bloomberg | monthly | 29 | 2000-01-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `BBG_M2_YoY` | bloomberg | monthly | 13 | 2000-01-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `BBG_MIPD_5Y` | bloomberg | monthly | 20 | 2000-10-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
 | `BBG_OIS_10Y` | bloomberg | monthly | 17 | 2000-01-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
 | `BBG_PMI_Manufacturing` | bloomberg | monthly | 23 | 2023-06-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
 | `BBG_PMI_Services` | bloomberg | monthly | 13 | 2020-10-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `BBG_Rating_Fitch_LC` | bloomberg | monthly | 32 | 2026-06-01T00:00:00 → 2026-06-01T00:00:00 | raw |  |  |
+| `BBG_Rating_SP_FC` | bloomberg | monthly | 31 | 2026-06-01T00:00:00 → 2026-06-01T00:00:00 | raw |  |  |
+| `BBG_Rating_SP_LC` | bloomberg | monthly | 31 | 2026-06-01T00:00:00 → 2026-06-01T00:00:00 | raw |  |  |
 | `BBG_WIRP_ImpliedRate` | bloomberg | monthly | 25 | 2000-01-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
-| `BBG_Yield_Curve_10Y2Y` | bloomberg | monthly | 23 | 2000-01-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
-| `BBG_ZSpread_OIS_10Y` | bloomberg | monthly | 16 | 2000-01-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `BBG_Yield_Curve_10Y2Y` | bloomberg | monthly | 26 | 2000-01-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
+| `BBG_ZSpread_OIS_10Y` | bloomberg | monthly | 17 | 2000-01-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
 | `MS_Country_ETF_AUM_USD` | bloomberg | monthly | 34 | 2015-01-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
 | `MS_Country_ETF_NetFlow_USD` | bloomberg | monthly | 34 | 2015-01-01T00:00:00 → 2026-05-01T00:00:00 | raw |  |  |
 | `MS_ETF_Creation_Fee_USD` | bloomberg | monthly | 34 | 2026-06-01T00:00:00 → 2026-06-01T00:00:00 | raw |  |  |
@@ -581,20 +584,20 @@ Variables in this section are listed at the *raw* level (no `_CS`/`_TS` suffix).
 
 | Variable | Source | Frequency | Countries | Date range | Norm | Sparse | Forecast |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `cpi_nowcast_core_next` | predmkt_signal | daily | 1 | 2026-06-10T00:00:00 → 2026-06-10T00:00:00 | raw | ✓ |  |
-| `cpi_nowcast_yoy_next` | predmkt_signal | daily | 1 | 2026-06-10T00:00:00 → 2026-06-10T00:00:00 | raw | ✓ |  |
-| `fed_cut_count_expectation` | predmkt_signal | daily | 1 | 2026-06-10T00:00:00 → 2026-06-10T00:00:00 | raw | ✓ |  |
-| `fed_decision_distribution_next` | predmkt_signal | daily | 1 | 2026-06-10T00:00:00 → 2026-06-10T00:00:00 | raw | ✓ |  |
-| `hormuz_disruption_prob_90d` | predmkt_signal | daily | 1 | 2026-06-10T00:00:00 → 2026-06-10T00:00:00 | raw | ✓ |  |
-| `oil_shock_prob_30d` | predmkt_signal | daily | 1 | 2026-06-10T00:00:00 → 2026-06-10T00:00:00 | raw | ✓ |  |
-| `predmkt_country_opportunity_composite` | predmkt_signal | daily | 9 | 2026-06-10T00:00:00 → 2026-06-10T00:00:00 | raw |  |  |
-| `predmkt_country_risk_composite` | predmkt_signal | daily | 9 | 2026-06-10T00:00:00 → 2026-06-10T00:00:00 | raw |  |  |
-| `recession_prob_12m` | predmkt_signal | daily | 1 | 2026-06-10T00:00:00 → 2026-06-10T00:00:00 | raw | ✓ |  |
-| `regional_conflict_premium_eastern_europe` | predmkt_signal | daily | 1 | 2026-06-10T00:00:00 → 2026-06-10T00:00:00 | raw | ✓ |  |
-| `regional_conflict_premium_middle_east` | predmkt_signal | daily | 1 | 2026-06-10T00:00:00 → 2026-06-10T00:00:00 | raw | ✓ |  |
-| `regional_conflict_premium_pacific` | predmkt_signal | daily | 1 | 2026-06-10T00:00:00 → 2026-06-10T00:00:00 | raw | ✓ |  |
-| `tariff_intensity_by_country` | predmkt_signal | daily | 3 | 2026-06-10T00:00:00 → 2026-06-10T00:00:00 | raw |  |  |
-| `unemployment_nowcast_next` | predmkt_signal | daily | 1 | 2026-06-10T00:00:00 → 2026-06-10T00:00:00 | raw | ✓ |  |
+| `cpi_nowcast_core_next` | predmkt_signal | daily | 1 | 2026-06-11T00:00:00 → 2026-06-11T00:00:00 | raw | ✓ |  |
+| `cpi_nowcast_yoy_next` | predmkt_signal | daily | 1 | 2026-06-11T00:00:00 → 2026-06-11T00:00:00 | raw | ✓ |  |
+| `fed_cut_count_expectation` | predmkt_signal | daily | 1 | 2026-06-11T00:00:00 → 2026-06-11T00:00:00 | raw | ✓ |  |
+| `fed_decision_distribution_next` | predmkt_signal | daily | 1 | 2026-06-11T00:00:00 → 2026-06-11T00:00:00 | raw | ✓ |  |
+| `hormuz_disruption_prob_90d` | predmkt_signal | daily | 1 | 2026-06-11T00:00:00 → 2026-06-11T00:00:00 | raw | ✓ |  |
+| `oil_shock_prob_30d` | predmkt_signal | daily | 1 | 2026-06-11T00:00:00 → 2026-06-11T00:00:00 | raw | ✓ |  |
+| `predmkt_country_opportunity_composite` | predmkt_signal | daily | 19 | 2026-06-11T00:00:00 → 2026-06-11T00:00:00 | raw |  |  |
+| `predmkt_country_risk_composite` | predmkt_signal | daily | 19 | 2026-06-11T00:00:00 → 2026-06-11T00:00:00 | raw |  |  |
+| `recession_prob_12m` | predmkt_signal | daily | 1 | 2026-06-11T00:00:00 → 2026-06-11T00:00:00 | raw | ✓ |  |
+| `regional_conflict_premium_eastern_europe` | predmkt_signal | daily | 1 | 2026-06-11T00:00:00 → 2026-06-11T00:00:00 | raw | ✓ |  |
+| `regional_conflict_premium_middle_east` | predmkt_signal | daily | 1 | 2026-06-11T00:00:00 → 2026-06-11T00:00:00 | raw | ✓ |  |
+| `regional_conflict_premium_pacific` | predmkt_signal | daily | 1 | 2026-06-11T00:00:00 → 2026-06-11T00:00:00 | raw | ✓ |  |
+| `tariff_intensity_by_country` | predmkt_signal | daily | 3 | 2026-06-11T00:00:00 → 2026-06-11T00:00:00 | raw |  |  |
+| `unemployment_nowcast_next` | predmkt_signal | daily | 1 | 2026-06-11T00:00:00 → 2026-06-11T00:00:00 | raw | ✓ |  |
 
 ## Neo4j Knowledge Graph
 
@@ -625,11 +628,14 @@ Tracked T2 universe member with metadata. The graph_role property distinguishes 
 Properties:
 - `currency_code`
 - `dm_em`
+- `embedding_date`
+- `embedding_dims`
 - `graph_role`
 - `iso2`
 - `iso3`
 - `name`
 - `region`
+- `state_embedding`
 - `t2_name`
 
 #### `:CrisisEvent` — 15 nodes
@@ -663,7 +669,7 @@ Properties:
 - `url`
 - `variable_count`
 
-#### `:Factor` — 676 nodes
+#### `:Factor` — 679 nodes
 
 ASADO factor/variable node aligned to the unified panel variable catalog.
 
@@ -703,7 +709,7 @@ Properties:
 | `[:HAS_BANKING_EXPOSURE_TO]` | 584 | Country → Country | Directed bilateral banking claims relationship. |
 | `[:HAS_CENTRAL_BANK]` | 31 | Country → CentralBank | Country linked to its central bank node. |
 | `[:HAS_CRISIS_HISTORY]` | 378 | Country → CrisisEvent | Country linked to historical crisis events. |
-| `[:HAS_FACTOR_EXPOSURE]` | 13,658 | Country → Factor | Latest non-null factor exposure edge per country and variable, built from DuckDB. |
+| `[:HAS_FACTOR_EXPOSURE]` | 13,779 | Country → Factor | Latest non-null factor exposure edge per country and variable, built from DuckDB. |
 | `[:HOLDS_PORTFOLIO]` | 1,960 | Country → Country |  |
 | `[:SUBJECT_TO]` | 31 | Country → SanctionsProgram | Country linked to OFAC/SDN-associated sanctions exposure. This is not a clean sovereign sanctions-target registry. |
 | `[:TRADES_WITH]` | 928 | Country → Country | Directed bilateral trade relationship. |

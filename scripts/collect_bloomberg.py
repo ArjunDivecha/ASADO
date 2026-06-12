@@ -142,43 +142,53 @@ T2_COUNTRIES = [
 
 # Bloomberg country codes differ from ISO — these are the BBG ticker prefixes
 # Each entry: t2_name → { tickers for govt bonds, CDS name, breakeven ticker, etc. }
-# Tickers verified against Bloomberg terminal on 2026-04-12
+# Tickers verified against Bloomberg terminal on 2026-04-12; full re-audit
+# 2026-06-11 (every entry below re-checked via SECURITY_NAME):
+#   - Saudi Arabia's old GSAB5YR/GSAB10YR/GSAB30YR are SOUTH AFRICA's series
+#     (GSAB = generic South African Bond) -> replaced with GTSAR*Y Govt
+#   - Chile CHILE10, Taiwan TAIBON10, Malaysia MALAY*, Thailand THAI*,
+#     Turkey TURKBON*, Philippines PHLGB*, South Africa SAGB10Y all dead
+#   - France/Italy/Poland/Spain EUR CDS and SOAFR CDS dead -> ISDA-2014
+#     USD contracts ([NAME] CDS USD SR 5Y D14 Corp, REPSOU for South Africa)
+# FIELD RULE: "* Govt" generics carry PRICE in PX_LAST — yields must be pulled
+# with YLD_YTM_MID (handled in collect_bond_yields via _bond_field()).
 COUNTRY_TICKERS = {
     # Verified tickers — Bloomberg generic government bond naming convention:
     #   DM: G[CC][tenor] Index  (e.g. GDBR10 for Germany 10Y)
-    #   EM: varies — some use USGG style, some country-specific
-    # CDS: [ISSUER] CDS USD SR 5Y Corp  (ISDA 2014 standard)
+    #   EM: varies — some use USGG style, some country-specific, some only
+    #       exist as GT[CCY][tenor]Y Govt generics (yield via YLD_YTM_MID)
+    # CDS: [ISSUER] CDS USD SR 5Y Corp ([ISSUER] ... D14 Corp post-2014 names)
     # Breakevens: [CC]GGBE10 Index
     "Australia":     {"bond_2y": "GACGB2 Index",   "bond_5y": "GACGB5 Index",   "bond_10y": "GACGB10 Index",   "bond_30y": "GACGB30 Index",  "cds_5y": "AUSTLA CDS USD SR 5Y Corp",   "breakeven_10y": None},
     "Brazil":        {"bond_2y": "GEBR2Y Index",    "bond_5y": "GEBR5Y Index",    "bond_10y": "GEBR10Y Index",   "bond_30y": None,              "cds_5y": "BRAZIL CDS USD SR 5Y Corp",   "breakeven_10y": None},
     "Canada":        {"bond_2y": "GCAN2YR Index",   "bond_5y": "GCAN5YR Index",   "bond_10y": "GCAN10YR Index",  "bond_30y": "GCAN30YR Index",  "cds_5y": None,                           "breakeven_10y": "C90510Y Index"},
-    "Chile":         {"bond_2y": None,               "bond_5y": None,               "bond_10y": "CHILE10 Index",   "bond_30y": None,              "cds_5y": "CHILE CDS USD SR 5Y Corp",    "breakeven_10y": None},
+    "Chile":         {"bond_2y": None,               "bond_5y": None,               "bond_10y": "CLGB10Y Index",   "bond_30y": None,              "cds_5y": "CHILE CDS USD SR 5Y Corp",    "breakeven_10y": None},
     "ChinaA":        {"bond_2y": "GCNY2YR Index",   "bond_5y": "GCNY5YR Index",   "bond_10y": "GCNY10YR Index",  "bond_30y": "GCNY30YR Index",  "cds_5y": "CHINAG CDS USD SR 5Y Corp",   "breakeven_10y": None},
     "ChinaH":        {"bond_2y": "GCNY2YR Index",   "bond_5y": "GCNY5YR Index",   "bond_10y": "GCNY10YR Index",  "bond_30y": "GCNY30YR Index",  "cds_5y": "CHINAG CDS USD SR 5Y Corp",   "breakeven_10y": None},
     "Denmark":       {"bond_2y": "GDGB2YR Index",   "bond_5y": "GDGB5YR Index",   "bond_10y": "GDGB10YR Index",  "bond_30y": None,              "cds_5y": None,                           "breakeven_10y": None},
-    "France":        {"bond_2y": "GFRN2 Index",     "bond_5y": "GFRN5 Index",     "bond_10y": "GFRN10 Index",    "bond_30y": "GFRN30 Index",    "cds_5y": "FRTR CDS EUR SR 5Y Corp",     "breakeven_10y": "JGFR10 Index"},
+    "France":        {"bond_2y": "GFRN2 Index",     "bond_5y": "GFRN5 Index",     "bond_10y": "GFRN10 Index",    "bond_30y": "GFRN30 Index",    "cds_5y": "FRANCE CDS USD SR 5Y D14 Corp", "breakeven_10y": "JGFR10 Index"},
     "Germany":       {"bond_2y": "GDBR2 Index",     "bond_5y": "GDBR5 Index",     "bond_10y": "GDBR10 Index",    "bond_30y": "GDBR30 Index",    "cds_5y": None,                           "breakeven_10y": "DBIBE10 Index"},
     "Hong Kong":     {"bond_2y": None,               "bond_5y": None,               "bond_10y": None,              "bond_30y": None,              "cds_5y": None,                           "breakeven_10y": None},
     "India":         {"bond_2y": "GIND2YR Index",   "bond_5y": "GIND5YR Index",   "bond_10y": "GIND10YR Index",  "bond_30y": None,              "cds_5y": None,                           "breakeven_10y": None},
     "Indonesia":     {"bond_2y": "GIDN2YR Index",   "bond_5y": "GIDN5YR Index",   "bond_10y": "GIDN10YR Index",  "bond_30y": None,              "cds_5y": "INDON CDS USD SR 5Y Corp",    "breakeven_10y": None},
-    "Italy":         {"bond_2y": "GBTPGR2 Index",   "bond_5y": "GBTPGR5 Index",   "bond_10y": "GBTPGR10 Index",  "bond_30y": "GBTPGR30 Index",  "cds_5y": "ITALY CDS EUR SR 5Y Corp",    "breakeven_10y": "ITIBY10 Index"},
+    "Italy":         {"bond_2y": "GBTPGR2 Index",   "bond_5y": "GBTPGR5 Index",   "bond_10y": "GBTPGR10 Index",  "bond_30y": "GBTPGR30 Index",  "cds_5y": "ITALY CDS USD SR 5Y D14 Corp", "breakeven_10y": "ITIBY10 Index"},
     "Japan":         {"bond_2y": "GJGB2 Index",     "bond_5y": "GJGB5 Index",     "bond_10y": "GJGB10 Index",    "bond_30y": "GJGB30 Index",    "cds_5y": "JAPAN CDS USD SR 5Y Corp",    "breakeven_10y": "JYGGBE10 Index"},
     "Korea":         {"bond_2y": "GVSK2YR Index",   "bond_5y": "GVSK5YR Index",   "bond_10y": "GVSK10YR Index",  "bond_30y": "GVSK30YR Index",  "cds_5y": "KOREA CDS USD SR 5Y Corp",    "breakeven_10y": None},
-    "Malaysia":      {"bond_2y": "MALAY2Y Index",   "bond_5y": "MALAY5Y Index",   "bond_10y": "MALAY10Y Index",  "bond_30y": None,              "cds_5y": "MALAYS CDS USD SR 5Y Corp",   "breakeven_10y": None},
+    "Malaysia":      {"bond_2y": None,               "bond_5y": "GTMYR5Y Govt",    "bond_10y": "GTMYR10Y Govt",   "bond_30y": None,              "cds_5y": "MALAYS CDS USD SR 5Y Corp",   "breakeven_10y": None},
     "Mexico":        {"bond_2y": "GMXN02YR Index",  "bond_5y": "GMXN05YR Index",  "bond_10y": "GMXN10YR Index",  "bond_30y": "GMXN30YR Index",  "cds_5y": "MEXICO CDS USD SR 5Y Corp",   "breakeven_10y": None},
     "NASDAQ":        {"bond_2y": "USGG2YR Index",   "bond_5y": "USGG5YR Index",   "bond_10y": "USGG10YR Index",  "bond_30y": "USGG30YR Index",  "cds_5y": None,                           "breakeven_10y": "USGGBE10 Index"},
     "Netherlands":   {"bond_2y": "GNTH2YR Index",   "bond_5y": "GNTH5YR Index",   "bond_10y": "GNTH10YR Index",  "bond_30y": "GNTH30YR Index",  "cds_5y": None,                           "breakeven_10y": None},
-    "Philippines":   {"bond_2y": None,               "bond_5y": "PHLGB5Y Index",   "bond_10y": "PHLGB10Y Index",  "bond_30y": None,              "cds_5y": "PHILIP CDS USD SR 5Y Corp",   "breakeven_10y": None},
-    "Poland":        {"bond_2y": "POGB2YR Index",   "bond_5y": "POGB5YR Index",   "bond_10y": "POGB10YR Index",  "bond_30y": None,              "cds_5y": "POLAND CDS EUR SR 5Y Corp",   "breakeven_10y": None},
-    "Saudi Arabia":  {"bond_2y": None,               "bond_5y": "GSAB5YR Index",   "bond_10y": "GSAB10YR Index",  "bond_30y": "GSAB30YR Index",  "cds_5y": "SAUDI CDS USD SR 5Y Corp",    "breakeven_10y": None},
+    "Philippines":   {"bond_2y": None,               "bond_5y": "GTPHP5Y Govt",    "bond_10y": "GTPHP10Y Govt",   "bond_30y": None,              "cds_5y": "PHILIP CDS USD SR 5Y Corp",   "breakeven_10y": None},
+    "Poland":        {"bond_2y": "POGB2YR Index",   "bond_5y": "POGB5YR Index",   "bond_10y": "POGB10YR Index",  "bond_30y": None,              "cds_5y": "POLAND CDS USD SR 5Y D14 Corp", "breakeven_10y": None},
+    "Saudi Arabia":  {"bond_2y": None,               "bond_5y": "GTSAR5Y Govt",    "bond_10y": "GTSAR10Y Govt",   "bond_30y": "GTSAR30Y Govt",   "cds_5y": "SAUDI CDS USD SR 5Y Corp",    "breakeven_10y": None},
     "Singapore":     {"bond_2y": "MASB2Y Index",    "bond_5y": "MASB5Y Index",    "bond_10y": "MASB10Y Index",   "bond_30y": None,              "cds_5y": None,                           "breakeven_10y": None},
-    "South Africa":  {"bond_2y": "GSAB2YR Index",   "bond_5y": "GSAB5Y Index",    "bond_10y": "SAGB10Y Index",   "bond_30y": None,              "cds_5y": "SOAFR CDS USD SR 5Y Corp",    "breakeven_10y": None},
-    "Spain":         {"bond_2y": "GSPG2YR Index",   "bond_5y": "GSPG5YR Index",   "bond_10y": "GSPG10YR Index",  "bond_30y": "GSPG30YR Index",  "cds_5y": "SPAIN CDS EUR SR 5Y Corp",    "breakeven_10y": None},
+    "South Africa":  {"bond_2y": "GSAB2YR Index",   "bond_5y": "GSAB5Y Index",    "bond_10y": "GSAB10YR Index",  "bond_30y": None,              "cds_5y": "REPSOU CDS USD SR 5Y D14 Corp", "breakeven_10y": None},
+    "Spain":         {"bond_2y": "GSPG2YR Index",   "bond_5y": "GSPG5YR Index",   "bond_10y": "GSPG10YR Index",  "bond_30y": "GSPG30YR Index",  "cds_5y": "SPAIN CDS USD SR 5Y D14 Corp", "breakeven_10y": None},
     "Sweden":        {"bond_2y": "GSGB2YR Index",   "bond_5y": "GSGB5YR Index",   "bond_10y": "GSGB10YR Index",  "bond_30y": None,              "cds_5y": None,                           "breakeven_10y": None},
     "Switzerland":   {"bond_2y": "GSWISS2 Index",   "bond_5y": None,               "bond_10y": "GSWISS10 Index",  "bond_30y": None,              "cds_5y": None,                           "breakeven_10y": None},
-    "Taiwan":        {"bond_2y": None,               "bond_5y": None,               "bond_10y": "TAIBON10 Index",  "bond_30y": None,              "cds_5y": None,                           "breakeven_10y": None},
-    "Thailand":      {"bond_2y": "THAI2Y Index",    "bond_5y": "THAI5Y Index",    "bond_10y": "THAI10Y Index",   "bond_30y": None,              "cds_5y": "THAI CDS USD SR 5Y Corp",     "breakeven_10y": None},
-    "Turkey":        {"bond_2y": "TURKBON2 Index",  "bond_5y": "TURKBON5 Index",  "bond_10y": "TURKBON10 Index", "bond_30y": None,              "cds_5y": "TURKEY CDS USD SR 5Y Corp",   "breakeven_10y": None},
+    "Taiwan":        {"bond_2y": None,               "bond_5y": None,               "bond_10y": "TPGBTW10 Index",  "bond_30y": None,              "cds_5y": None,                           "breakeven_10y": None},
+    "Thailand":      {"bond_2y": "GVTL2YR Index",   "bond_5y": "GVTL5YR Index",   "bond_10y": "GVTL10YR Index",  "bond_30y": None,              "cds_5y": "THAI CDS USD SR 5Y Corp",     "breakeven_10y": None},
+    "Turkey":        {"bond_2y": "GTTRY2Y Govt",    "bond_5y": "GTTRY5Y Govt",    "bond_10y": "GTTRY10Y Govt",   "bond_30y": None,              "cds_5y": "TURKEY CDS USD SR 5Y Corp",   "breakeven_10y": None},
     "U.K.":          {"bond_2y": "GUKG2 Index",     "bond_5y": "GUKG5 Index",     "bond_10y": "GUKG10 Index",    "bond_30y": "GUKG30 Index",    "cds_5y": None,                           "breakeven_10y": "UKGGBE10 Index"},
     "U.S.":          {"bond_2y": "USGG2YR Index",   "bond_5y": "USGG5YR Index",   "bond_10y": "USGG10YR Index",  "bond_30y": "USGG30YR Index",  "cds_5y": None,                           "breakeven_10y": "USGGBE10 Index"},
     "US SmallCap":   {"bond_2y": "USGG2YR Index",   "bond_5y": "USGG5YR Index",   "bond_10y": "USGG10YR Index",  "bond_30y": "USGG30YR Index",  "cds_5y": None,                           "breakeven_10y": "USGGBE10 Index"},
@@ -195,15 +205,30 @@ RATING_FIELDS = {
     "RTG_FITCH_LT_FC_ISSUER_DEFAULT": "BBG_Rating_Fitch_FC",
 }
 
-# Sovereign tickers for ratings — these map T2 country names to a valid Bloomberg
-# security that carries sovereign rating fields. For most countries we use the
-# 10Y generic govt bond; for countries where bond tickers are unavailable we skip.
+# Sovereign tickers for ratings — rating fields (RTG_*) only exist on actual
+# bond securities, NOT on generic yield indices (GACGB10 etc. return nothing —
+# which is why the panel historically had ZERO rating rows). The GT[CCY]10Y
+# Govt generics resolve to a real on-the-run bond and carry live ratings;
+# verified per-country on the Terminal 2026-06-11. Hong Kong / Vietnam have
+# no resolvable GT generic -> skipped (loud in the pull count).
 RATING_TICKER_OVERRIDES = {
-    "ChinaH": "GCNY10YR Index",
-    "NASDAQ":  "USGG10YR Index",
-    "US SmallCap": "USGG10YR Index",
-    "Hong Kong": None,
-    "Vietnam": None,
+    "Australia": "GTAUD10Y Govt", "Brazil": "GTBRL10Y Govt",
+    "Canada": "GTCAD10Y Govt", "Chile": "GTCLP10Y Govt",
+    "ChinaA": "GTCNY10Y Govt", "ChinaH": "GTCNY10Y Govt",
+    "Denmark": "GTDKK10Y Govt", "France": "GTFRF10Y Govt",
+    "Germany": "GTDEM10Y Govt", "Hong Kong": None,
+    "India": "GTINR10Y Govt", "Indonesia": "GTIDR10Y Govt",
+    "Italy": "GTITL10Y Govt", "Japan": "GTJPY10Y Govt",
+    "Korea": "GTKRW10Y Govt", "Malaysia": "GTMYR10Y Govt",
+    "Mexico": "GTMXN10Y Govt", "NASDAQ": "GTUSD10Y Govt",
+    "Netherlands": "GTNLG10Y Govt", "Philippines": "GTPHP10Y Govt",
+    "Poland": "GTPLN10Y Govt", "Saudi Arabia": "GTSAR10Y Govt",
+    "Singapore": "GTSGD10Y Govt", "South Africa": "GTZAR10Y Govt",
+    "Spain": "GTESP10Y Govt", "Sweden": "GTSEK10Y Govt",
+    "Switzerland": "GTCHF10Y Govt", "Taiwan": "GTTWD10Y Govt",
+    "Thailand": "GTTHB10Y Govt", "Turkey": "GTTRY10Y Govt",
+    "U.K.": "GTGBP10Y Govt", "U.S.": "GTUSD10Y Govt",
+    "US SmallCap": "GTUSD10Y Govt", "Vietnam": None,
 }
 
 # ── Phase 2: OIS Swap Rate tickers ───────────────────────────────────────
@@ -584,14 +609,14 @@ def _coerce_float(value: Any) -> Optional[float]:
 
 
 def _hist_to_df(hist_data: list, ticker: str, variable: str,
-                country: str) -> pd.DataFrame:
+                country: str, field: str = "PX_LAST") -> pd.DataFrame:
     """Convert BBG hist() output to a tidy DataFrame row set."""
     if not hist_data:
         return pd.DataFrame()
 
     rows = []
     for point in hist_data:
-        val = point.get("PX_LAST")
+        val = point.get(field)
         if val is None:
             continue
         try:
@@ -842,10 +867,13 @@ def collect_bond_yields(bbg: BBG, force: bool) -> pd.DataFrame:
             if ticker is None:
                 continue
 
+            # "* Govt" generics carry PRICE in PX_LAST; the yield lives in
+            # YLD_YTM_MID (audit 2026-06-11). "* Index" generics are yields.
+            field = "YLD_YTM_MID" if ticker.endswith(" Govt") else "PX_LAST"
             try:
-                hist = bbg.hist(ticker, "PX_LAST", HIST_START, end_date,
+                hist = bbg.hist(ticker, field, HIST_START, end_date,
                                 periodicity="MONTHLY")
-                df = _hist_to_df(hist, ticker, variable_name, country)
+                df = _hist_to_df(hist, ticker, variable_name, country, field=field)
                 if not df.empty:
                     frames.append(df)
                     pulled += 1
@@ -961,14 +989,54 @@ def collect_breakevens(bbg: BBG, force: bool) -> pd.DataFrame:
 # COLLECTOR 4: SOVEREIGN CREDIT RATINGS (SNAPSHOT)
 # =============================================================================
 
+# Letter ratings -> 21-point numeric scale (AAA/Aaa = 21 ... C = 1, D/SD = 0).
+# The panel's tidy schema requires DOUBLE values; raw letters crash the final
+# parquet write (found 2026-06-11). Higher = better credit, so deltas and
+# cross-sections work like any other factor.
+RATING_SCALE = {
+    # S&P / Fitch                     # Moody's
+    "AAA": 21,                        "Aaa": 21,
+    "AA+": 20, "AA": 19, "AA-": 18,   "Aa1": 20, "Aa2": 19, "Aa3": 18,
+    "A+": 17, "A": 16, "A-": 15,      "A1": 17, "A2": 16, "A3": 15,
+    "BBB+": 14, "BBB": 13, "BBB-": 12, "Baa1": 14, "Baa2": 13, "Baa3": 12,
+    "BB+": 11, "BB": 10, "BB-": 9,    "Ba1": 11, "Ba2": 10, "Ba3": 9,
+    "B+": 8, "B": 7, "B-": 6,         "B1": 8, "B2": 7, "B3": 6,
+    "CCC+": 5, "CCC": 4, "CCC-": 3,   "Caa1": 5, "Caa2": 4, "Caa3": 3,
+    "CC": 2, "C": 1,                  "Ca": 2,
+    "D": 0, "SD": 0, "RD": 0,
+}
+
+
+def _rating_to_score(raw: str) -> Optional[float]:
+    """Map a Bloomberg rating string to the 21-point scale.
+
+    Strips common Bloomberg suffixes: 'u' (unsolicited), '*+'/'*-' (watch),
+    '(P)' (provisional), 'e' (expected). Returns None (and the caller logs)
+    for anything unmappable — never a silent guess.
+    """
+    s = str(raw).strip()
+    for token in ("*+", "*-", "(P)", " PRELIM"):
+        s = s.replace(token, "")
+    s = s.strip().rstrip("ue").strip()
+    return float(RATING_SCALE[s]) if s in RATING_SCALE else None
+
+
 def collect_credit_ratings(bbg: BBG, force: bool) -> pd.DataFrame:
-    """Pull current sovereign credit ratings (S&P, Moody's, Fitch)."""
+    """Pull current sovereign credit ratings (S&P, Moody's, Fitch) as
+    numeric 21-point scores (see RATING_SCALE)."""
     logger.info("[4/11] Sovereign Credit Ratings (S&P, Moody's, Fitch) ...")
 
     cache = _cache_path("credit_ratings")
     if _is_cached(cache, force):
         logger.info("  Using cached data")
-        return pd.read_parquet(cache)
+        cached = pd.read_parquet(cache)
+        # Older caches stored raw letters (object OR arrow-string dtype);
+        # convert idempotently on load.
+        if not cached.empty and not pd.api.types.is_numeric_dtype(cached["value"]):
+            cached["value"] = cached["value"].map(_rating_to_score)
+            cached = cached.dropna(subset=["value"])
+            cached["value"] = cached["value"].astype(float)
+        return cached
 
     today = pd.Timestamp.now().normalize()
     today_first = to_monthly_first(pd.Series([today]))[0]
@@ -998,14 +1066,19 @@ def collect_credit_ratings(bbg: BBG, force: bool) -> pd.DataFrame:
 
             for bbg_field, variable_name in RATING_FIELDS.items():
                 val = data.get(bbg_field)
-                if val is not None and val != "":
-                    frames.append({
-                        "date": today_first,
-                        "country": country,
-                        "value": val,
-                        "variable": variable_name,
-                        "source": "bloomberg",
-                    })
+                if val is None or val == "":
+                    continue
+                score = _rating_to_score(val)
+                if score is None:
+                    logger.warning(f"  Unmappable rating {country} {variable_name}: {val!r} — skipped")
+                    continue
+                frames.append({
+                    "date": today_first,
+                    "country": country,
+                    "value": score,
+                    "variable": variable_name,
+                    "source": "bloomberg",
+                })
             pulled += 1
 
         except Exception as e:
@@ -1915,7 +1988,19 @@ def merge_panels(existing: Optional[pd.DataFrame],
     if not parts:
         return existing if existing is not None else pd.DataFrame()
 
-    return pd.concat(parts, ignore_index=True)
+    merged = pd.concat(parts, ignore_index=True)
+
+    # Architecture rule: the panel carries exact T2 names ONLY. The ETF
+    # passive-flow collector can emit non-T2 index constituents (Austria,
+    # Greece, ...) via MSCI weights — drop them loudly, never silently.
+    non_t2 = sorted(set(merged["country"].unique()) - set(T2_COUNTRIES))
+    if non_t2:
+        n_drop = int(merged["country"].isin(non_t2).sum())
+        logger.warning(f"  Dropping {n_drop:,} rows for {len(non_t2)} non-T2 "
+                       f"countries: {', '.join(non_t2)}")
+        merged = merged[merged["country"].isin(T2_COUNTRIES)]
+
+    return merged
 
 
 def create_variable_catalog(panel: pd.DataFrame) -> pd.DataFrame:

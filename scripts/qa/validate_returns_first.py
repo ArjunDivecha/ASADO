@@ -12,8 +12,10 @@ OUTPUT FILES:
 - stdout: machine-readable JSON summary of all checks
 - exit code: 0 if all checks pass, 1 otherwise
 
-VERSION: 1.0
-LAST UPDATED: 2026-05-12
+VERSION: 1.1
+LAST UPDATED: 2026-06-11 (check 7 NULL semantics: both-NULL forward returns
+on the open month uphold the alias; only one-sided NULLs or unequal values
+count as violations)
 
 DESCRIPTION:
 QA regression for the Returns-First Source Of Truth layer (PRD §10 Phase D).
@@ -183,35 +185,40 @@ def run_db_checks(con: duckdb.DuckDBPyConnection) -> List[Dict[str, Any]]:
         },
     ))
 
-    # 7. GDELT 1MRet / 1DRet are aliases of T2 (verify bit-exact identity on overlap)
+    # 7. GDELT 1MRet / 1DRet are aliases of T2 (verify bit-exact identity on overlap).
+    # NULL semantics (fixed 2026-06-11): forward returns are legitimately NULL on
+    # BOTH sides for the still-open month — NULL==NULL upholds the alias. A
+    # violation is one side NULL and the other not, or both present and unequal.
+    alias_violation_sql = """
+        SELECT COUNT(*) AS n_overlap,
+               SUM(CASE WHEN (t2v IS NULL) != (gv IS NULL) THEN 1
+                        WHEN t2v IS NOT NULL AND gv IS NOT NULL
+                             AND ABS(t2v - gv) >= 1e-9 THEN 1
+                        ELSE 0 END) AS n_violation
+        FROM t2 JOIN g USING(date, country)
+        """
     alias_m = con.execute(
         """
         WITH t2 AS (SELECT date, country, value AS t2v FROM feature_panel
                     WHERE source='t2' AND variable='1MRet'),
              g  AS (SELECT date, country, value AS gv FROM feature_panel
                     WHERE source='gdelt' AND variable='1MRet')
-        SELECT COUNT(*) AS n_overlap,
-               SUM(CASE WHEN ABS(t2v - gv) < 1e-9 THEN 1 ELSE 0 END) AS n_match
-        FROM t2 JOIN g USING(date, country)
-        """
+        """ + alias_violation_sql
     ).fetchone()
     alias_d = con.execute(
         """
         WITH t2 AS (SELECT date, country, value AS t2v FROM t2_factors_daily WHERE variable='1DRet'),
              g  AS (SELECT date, country, value AS gv FROM gdelt_factors_daily WHERE variable='1DRet')
-        SELECT COUNT(*) AS n_overlap,
-               SUM(CASE WHEN ABS(t2v - gv) < 1e-9 THEN 1 ELSE 0 END) AS n_match
-        FROM t2 JOIN g USING(date, country)
-        """
+        """ + alias_violation_sql
     ).fetchone()
-    monthly_alias_ok = alias_m[0] > 0 and alias_m[0] == alias_m[1]
-    daily_alias_ok = alias_d[0] > 0 and alias_d[0] == alias_d[1]
+    monthly_alias_ok = alias_m[0] > 0 and int(alias_m[1] or 0) == 0
+    daily_alias_ok = alias_d[0] > 0 and int(alias_d[1] or 0) == 0
     checks.append(_check(
         "GDELT-labeled 1MRet / 1DRet are bit-exact aliases of T2 (no second country return source)",
         monthly_alias_ok and daily_alias_ok,
         {
-            "monthly": {"overlap": int(alias_m[0]), "exact_match": int(alias_m[1] or 0)},
-            "daily": {"overlap": int(alias_d[0]), "exact_match": int(alias_d[1] or 0)},
+            "monthly": {"overlap": int(alias_m[0]), "violations": int(alias_m[1] or 0)},
+            "daily": {"overlap": int(alias_d[0]), "violations": int(alias_d[1] or 0)},
         },
     ))
 

@@ -394,3 +394,2982 @@
       elasticity: 0.25
       channel: em_beta
       confidence: medium
+
+
+# =============================================================================
+# Expansion V2.0 — 2026-06-11 (agent-curated via discover_predmkt_candidates.py)
+# 129-target expansion: Iran/Hormuz complex, Russia-Ukraine, Taiwan/Pacific,
+# CL strike ladders (shock + crash), Fed June/July + cut-count ladder,
+# Kalshi CPI/U3/payrolls/GDP/NBER ladders, T2 country political markets.
+# Sign convention: positive elasticity = YES hurts that country's market.
+# De-escalation markets (peace/ceasefire/normal) carry flipped signs.
+# =============================================================================
+
+- platform: polymarket
+  market_id: '0x5db999fad322cea2914535aae5517060c3f80ad6d8c0231cde2124a434d16846'
+  slug: will-the-us-invade-iran-before-2027
+  asado_category: regional_conflict_me
+  asado_subcategory: will_the_us_invade_iran_before_2027
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized conflict/diplomatic reporting
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: 0.55
+    channel: regional_proximity
+    confidence: high
+  - country: India
+    elasticity: 0.3
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Japan
+    elasticity: 0.25
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Turkey
+    elasticity: 0.2
+    channel: regional_proxy
+    confidence: low
+- platform: polymarket
+  market_id: '0x51a7c8afb7a0e09b8b47643171d90f400de23a176c4ea06f6552d6e53213839c'
+  slug: iran-closes-its-airspace-by-june-30-432-786-462-866-468
+  asado_category: regional_conflict_me
+  asado_subcategory: iran_closes_its_airspace_by_june_30_432_786_462_866_468
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized conflict/diplomatic reporting
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: 0.55
+    channel: regional_proximity
+    confidence: high
+  - country: India
+    elasticity: 0.3
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Japan
+    elasticity: 0.25
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Turkey
+    elasticity: 0.2
+    channel: regional_proxy
+    confidence: low
+- platform: polymarket
+  market_id: '0xd9933a54c518e773050255ea9dba01a71e1a41f49311ed078ae4a6f7e76b1625'
+  slug: iran-closes-its-airspace-by-june-15-219
+  asado_category: regional_conflict_me
+  asado_subcategory: iran_closes_its_airspace_by_june_15_219
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized conflict/diplomatic reporting
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: 0.55
+    channel: regional_proximity
+    confidence: high
+  - country: India
+    elasticity: 0.3
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Japan
+    elasticity: 0.25
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Turkey
+    elasticity: 0.2
+    channel: regional_proxy
+    confidence: low
+- platform: polymarket
+  market_id: '0x0c38dd9305e3205557885183f0730270779e7e426b0ec3e7743f23963b6d6e4a'
+  slug: will-france-uk-or-germany-strike-iran-by-june-30-259
+  asado_category: regional_conflict_me
+  asado_subcategory: will_france_uk_or_germany_strike_iran_by_june_30_259
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized conflict/diplomatic reporting
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: 0.55
+    channel: regional_proximity
+    confidence: high
+  - country: India
+    elasticity: 0.3
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Japan
+    elasticity: 0.25
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Turkey
+    elasticity: 0.2
+    channel: regional_proxy
+    confidence: low
+- platform: polymarket
+  market_id: '0x26ca74d41edc9e3a6643698fbe8eae446377e4579d2f55f505da4ff6a1cf0f66'
+  slug: trump-announces-us-x-iran-ceasefire-over-by-june-30-20260607232556276-219
+  asado_category: regional_conflict_me
+  asado_subcategory: trump_announces_us_x_iran_ceasefire_over_by_june_30_20260607
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized conflict/diplomatic reporting
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: 0.55
+    channel: regional_proximity
+    confidence: high
+  - country: India
+    elasticity: 0.3
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Japan
+    elasticity: 0.25
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Turkey
+    elasticity: 0.2
+    channel: regional_proxy
+    confidence: low
+- platform: polymarket
+  market_id: '0x3fe18d2b6303ee3a7e406aab679dbc0b0f7504dc6b477a31c69c6ffb04e9e11c'
+  slug: israel-strike-on-yemen-by-june-30-2026-285-633-267-857
+  asado_category: regional_conflict_me
+  asado_subcategory: israel_strike_on_yemen_by_june_30_2026_285_633_267_857
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized conflict/diplomatic reporting
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: 0.55
+    channel: regional_proximity
+    confidence: high
+  - country: India
+    elasticity: 0.3
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Japan
+    elasticity: 0.25
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Turkey
+    elasticity: 0.2
+    channel: regional_proxy
+    confidence: low
+- platform: polymarket
+  market_id: '0x8bdeac60c92d3bc494792fd334ca181b0cf70355f23dca4098d558280b554c81'
+  slug: iran-nuke-before-2027
+  asado_category: regional_conflict_me
+  asado_subcategory: iran_nuke_before_2027
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized conflict/diplomatic reporting
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: 0.55
+    channel: regional_proximity
+    confidence: high
+  - country: India
+    elasticity: 0.3
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Japan
+    elasticity: 0.25
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Turkey
+    elasticity: 0.2
+    channel: regional_proxy
+    confidence: low
+- platform: polymarket
+  market_id: '0x17c9dead8bed402d330e2aa5bcfb4d6f7764d3cc60d6508a03be003f4e88e64b'
+  slug: iran-coup-attempt-by-june-30
+  asado_category: regional_conflict_me
+  asado_subcategory: iran_coup_attempt_by_june_30
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized conflict/diplomatic reporting
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: 0.55
+    channel: regional_proximity
+    confidence: high
+  - country: India
+    elasticity: 0.3
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Japan
+    elasticity: 0.25
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Turkey
+    elasticity: 0.2
+    channel: regional_proxy
+    confidence: low
+- platform: polymarket
+  market_id: '0x377e7fe65cf198a7fc4fdae3f2136b74729279267858daaf96718b23bc2a5607'
+  slug: iran-leadership-change-by-december-31-974-976-658-482-568
+  asado_category: regional_conflict_me
+  asado_subcategory: iran_leadership_change_by_december_31_974_976_658_482_568
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized conflict/diplomatic reporting
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: 0.55
+    channel: regional_proximity
+    confidence: high
+  - country: India
+    elasticity: 0.3
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Japan
+    elasticity: 0.25
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Turkey
+    elasticity: 0.2
+    channel: regional_proxy
+    confidence: low
+- platform: polymarket
+  market_id: '0x6114a8a3f9ac214f48a7e20d169f1c7a5c84082cb6f7058ed9fe1137b11fd0e7'
+  slug: us-x-iran-permanent-peace-deal-by-june-30-2026-837-641-896-877-363-892-537-597
+  asado_category: regional_conflict_me
+  asado_subcategory: us_x_iran_permanent_peace_deal_by_june_30_2026_837_641_896_8
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized conflict/diplomatic reporting
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: -0.55
+    channel: regional_proximity
+    confidence: high
+  - country: India
+    elasticity: -0.3
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Japan
+    elasticity: -0.25
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Turkey
+    elasticity: -0.2
+    channel: regional_proxy
+    confidence: low
+- platform: polymarket
+  market_id: '0x20af55ab35186377b81219db6cb8615240cba42cea41731091be9484a5f5b122'
+  slug: us-x-iran-permanent-peace-deal-by-july-31-2026-831-252
+  asado_category: regional_conflict_me
+  asado_subcategory: us_x_iran_permanent_peace_deal_by_july_31_2026_831_252
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized conflict/diplomatic reporting
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: -0.55
+    channel: regional_proximity
+    confidence: high
+  - country: India
+    elasticity: -0.3
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Japan
+    elasticity: -0.25
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Turkey
+    elasticity: -0.2
+    channel: regional_proxy
+    confidence: low
+- platform: polymarket
+  market_id: '0x9769f78cbc95a5ed11895e6064bac471d8fd8f930b260cf581b68d3f58630d27'
+  slug: us-x-iran-permanent-peace-deal-by-december-31-2026-961-587-341-574-555-817
+  asado_category: regional_conflict_me
+  asado_subcategory: us_x_iran_permanent_peace_deal_by_december_31_2026_961_587_3
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized conflict/diplomatic reporting
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: -0.55
+    channel: regional_proximity
+    confidence: high
+  - country: India
+    elasticity: -0.3
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Japan
+    elasticity: -0.25
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Turkey
+    elasticity: -0.2
+    channel: regional_proxy
+    confidence: low
+- platform: polymarket
+  market_id: '0x348cd9adf4f6855f58bd9c6dbf9ff251c4142ef77233a5dc95c65b4b61cd2187'
+  slug: strait-of-hormuz-traffic-returns-to-normal-by-end-of-june
+  asado_category: regional_conflict_me
+  asado_subcategory: strait_of_hormuz_traffic_returns_to_normal_by_end_of_june
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized conflict/diplomatic reporting
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: -0.55
+    channel: regional_proximity
+    confidence: high
+  - country: India
+    elasticity: -0.3
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Japan
+    elasticity: -0.25
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Turkey
+    elasticity: -0.2
+    channel: regional_proxy
+    confidence: low
+- platform: polymarket
+  market_id: '0xb8e6d129a06d0ccb21d7b32eb529ea455eddba3cf29bfa097112202cbdf5bf21'
+  slug: strait-of-hormuz-traffic-returns-to-normal-by-july-31
+  asado_category: regional_conflict_me
+  asado_subcategory: strait_of_hormuz_traffic_returns_to_normal_by_july_31
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized conflict/diplomatic reporting
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: -0.55
+    channel: regional_proximity
+    confidence: high
+  - country: India
+    elasticity: -0.3
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Japan
+    elasticity: -0.25
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Turkey
+    elasticity: -0.2
+    channel: regional_proxy
+    confidence: low
+- platform: polymarket
+  market_id: '0x5c79dfde05559b79a9cb9f7c4187e4d49632dd042572ae676952f812732591cc'
+  slug: strait-of-hormuz-traffic-returns-to-normal-by-december-31
+  asado_category: regional_conflict_me
+  asado_subcategory: strait_of_hormuz_traffic_returns_to_normal_by_december_31
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized conflict/diplomatic reporting
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: -0.55
+    channel: regional_proximity
+    confidence: high
+  - country: India
+    elasticity: -0.3
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Japan
+    elasticity: -0.25
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Turkey
+    elasticity: -0.2
+    channel: regional_proxy
+    confidence: low
+- platform: polymarket
+  market_id: '0xa70fc3695a65833b91b45df6db6015096f3e1471b70352ca411b4209010e7633'
+  slug: us-iran-nuclear-deal-by-june-30
+  asado_category: regional_conflict_me
+  asado_subcategory: us_iran_nuclear_deal_by_june_30
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized conflict/diplomatic reporting
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: -0.55
+    channel: regional_proximity
+    confidence: high
+  - country: India
+    elasticity: -0.3
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Japan
+    elasticity: -0.25
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Turkey
+    elasticity: -0.2
+    channel: regional_proxy
+    confidence: low
+- platform: polymarket
+  market_id: '0x182390641d3b1b47cc64274b9da290efd04221c586651ba190880713da6347d9'
+  slug: us-iran-nuclear-deal-before-2027
+  asado_category: regional_conflict_me
+  asado_subcategory: us_iran_nuclear_deal_before_2027
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized conflict/diplomatic reporting
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: -0.55
+    channel: regional_proximity
+    confidence: high
+  - country: India
+    elasticity: -0.3
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Japan
+    elasticity: -0.25
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Turkey
+    elasticity: -0.2
+    channel: regional_proxy
+    confidence: low
+- platform: polymarket
+  market_id: '0x6cb3ec9e0fb1c258898f648f8b33422f59ba3e8a71aee551449d7cb147bb8ead'
+  slug: iran-agrees-to-surrender-enriched-uranium-stockpile-by-june-30-2026
+  asado_category: regional_conflict_me
+  asado_subcategory: iran_agrees_to_surrender_enriched_uranium_stockpile_by_june
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized conflict/diplomatic reporting
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: -0.55
+    channel: regional_proximity
+    confidence: high
+  - country: India
+    elasticity: -0.3
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Japan
+    elasticity: -0.25
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Turkey
+    elasticity: -0.2
+    channel: regional_proxy
+    confidence: low
+- platform: polymarket
+  market_id: '0x5efa976ebe94080bbda7e45605333ff8f30156cc91604d66c41eb52fd3e25f3e'
+  slug: israel-x-iran-permanent-peace-deal-by-june-30-2026-262
+  asado_category: regional_conflict_me
+  asado_subcategory: israel_x_iran_permanent_peace_deal_by_june_30_2026_262
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized conflict/diplomatic reporting
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: -0.55
+    channel: regional_proximity
+    confidence: high
+  - country: India
+    elasticity: -0.3
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Japan
+    elasticity: -0.25
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Turkey
+    elasticity: -0.2
+    channel: regional_proxy
+    confidence: low
+- platform: polymarket
+  market_id: '0xa48ee32a0cbe5bc1a48844bd14e1691701d3bf8f45f4dd8cb8d1d304561393b6'
+  slug: us-announces-new-iran-agreementceasefire-extension-by-june-30-848-925-757-129-337-165
+  asado_category: regional_conflict_me
+  asado_subcategory: us_announces_new_iran_agreementceasefire_extension_by_june_3
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized conflict/diplomatic reporting
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: -0.55
+    channel: regional_proximity
+    confidence: high
+  - country: India
+    elasticity: -0.3
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Japan
+    elasticity: -0.25
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Turkey
+    elasticity: -0.2
+    channel: regional_proxy
+    confidence: low
+- platform: polymarket
+  market_id: '0x4d0c4865bdecc5f7971dbab47bb6c069d93909dec75bdff52fb766ae6094a6d6'
+  slug: will-donald-trump-announce-that-the-united-states-blockade-of-the-strait-of-hormuz-has-been-lifted-by-june-30-2026-159-962
+  asado_category: regional_conflict_me
+  asado_subcategory: will_donald_trump_announce_that_the_united_states_blockade_o
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized conflict/diplomatic reporting
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: -0.55
+    channel: regional_proximity
+    confidence: high
+  - country: India
+    elasticity: -0.3
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Japan
+    elasticity: -0.25
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Turkey
+    elasticity: -0.2
+    channel: regional_proxy
+    confidence: low
+- platform: polymarket
+  market_id: '0x495e6b49e7397bb4e6f8ce69e246ccb33b744678bd9bf88cbecbd3a113b05423'
+  slug: will-russia-invade-a-nato-country-by-june-30-2026
+  asado_category: regional_conflict_eastern_europe
+  asado_subcategory: will_russia_invade_a_nato_country_by_june_30_2026
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized ceasefire/conflict reporting
+  spillover_countries:
+  - country: Poland
+    elasticity: 0.5
+    channel: regional_proximity
+    confidence: high
+  - country: Germany
+    elasticity: 0.3
+    channel: trade_partner
+    confidence: medium
+  - country: Turkey
+    elasticity: 0.2
+    channel: regional_proxy
+    confidence: medium
+  - country: Sweden
+    elasticity: 0.15
+    channel: regional_proximity
+    confidence: low
+- platform: polymarket
+  market_id: '0xbad704f2ae063322169bf3add805258727ecd3e6c0ad37fc7e6590c993375732'
+  slug: nato-x-russia-military-clash-by-june-30-2026
+  asado_category: regional_conflict_eastern_europe
+  asado_subcategory: nato_x_russia_military_clash_by_june_30_2026
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized ceasefire/conflict reporting
+  spillover_countries:
+  - country: Poland
+    elasticity: 0.5
+    channel: regional_proximity
+    confidence: high
+  - country: Germany
+    elasticity: 0.3
+    channel: trade_partner
+    confidence: medium
+  - country: Turkey
+    elasticity: 0.2
+    channel: regional_proxy
+    confidence: medium
+  - country: Sweden
+    elasticity: 0.15
+    channel: regional_proximity
+    confidence: low
+- platform: polymarket
+  market_id: '0xf2bf04609e7458df56c9bb4b1e051286dea11da1c944bbc1dafbcc6b76904e52'
+  slug: nato-x-russia-military-clash-by-december-31-2026-244
+  asado_category: regional_conflict_eastern_europe
+  asado_subcategory: nato_x_russia_military_clash_by_december_31_2026_244
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized ceasefire/conflict reporting
+  spillover_countries:
+  - country: Poland
+    elasticity: 0.5
+    channel: regional_proximity
+    confidence: high
+  - country: Germany
+    elasticity: 0.3
+    channel: trade_partner
+    confidence: medium
+  - country: Turkey
+    elasticity: 0.2
+    channel: regional_proxy
+    confidence: medium
+  - country: Sweden
+    elasticity: 0.15
+    channel: regional_proximity
+    confidence: low
+- platform: polymarket
+  market_id: '0x51f624dbbf14f9edb575fef1be6f7a303751de70783fa144fce27b957452c803'
+  slug: zelenskyy-out-as-ukraine-president-before-2027
+  asado_category: regional_conflict_eastern_europe
+  asado_subcategory: zelenskyy_out_as_ukraine_president_before_2027
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized ceasefire/conflict reporting
+  spillover_countries:
+  - country: Poland
+    elasticity: 0.5
+    channel: regional_proximity
+    confidence: high
+  - country: Germany
+    elasticity: 0.3
+    channel: trade_partner
+    confidence: medium
+  - country: Turkey
+    elasticity: 0.2
+    channel: regional_proxy
+    confidence: medium
+  - country: Sweden
+    elasticity: 0.15
+    channel: regional_proximity
+    confidence: low
+- platform: polymarket
+  market_id: '0x4167e22670f31e5f93d132f78108f3fae809bd15cadf78983eff096845ed1415'
+  slug: ukraine-signs-peace-deal-with-russia-before-2027
+  asado_category: regional_conflict_eastern_europe
+  asado_subcategory: ukraine_signs_peace_deal_with_russia_before_2027
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized ceasefire/conflict reporting
+  spillover_countries:
+  - country: Poland
+    elasticity: -0.5
+    channel: regional_proximity
+    confidence: high
+  - country: Germany
+    elasticity: -0.3
+    channel: trade_partner
+    confidence: medium
+  - country: Turkey
+    elasticity: -0.2
+    channel: regional_proxy
+    confidence: medium
+  - country: Sweden
+    elasticity: -0.15
+    channel: regional_proximity
+    confidence: low
+- platform: polymarket
+  market_id: '0xa57a027158ce73973cdd13eed901c6e767a1b9e2f88c665dab8757a65b60d203'
+  slug: ukraine-signs-peace-deal-with-russia-by-june-30
+  asado_category: regional_conflict_eastern_europe
+  asado_subcategory: ukraine_signs_peace_deal_with_russia_by_june_30
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized ceasefire/conflict reporting
+  spillover_countries:
+  - country: Poland
+    elasticity: -0.5
+    channel: regional_proximity
+    confidence: high
+  - country: Germany
+    elasticity: -0.3
+    channel: trade_partner
+    confidence: medium
+  - country: Turkey
+    elasticity: -0.2
+    channel: regional_proxy
+    confidence: medium
+  - country: Sweden
+    elasticity: -0.15
+    channel: regional_proximity
+    confidence: low
+- platform: polymarket
+  market_id: '0x5c19f205507ce03ff5f3be08a8090a5969ea6870cc07b902a4ca2e61dfe48fdd'
+  slug: russia-x-ukraine-ceasefire-agreement-by-december-31-2026
+  asado_category: regional_conflict_eastern_europe
+  asado_subcategory: russia_x_ukraine_ceasefire_agreement_by_december_31_2026
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized ceasefire/conflict reporting
+  spillover_countries:
+  - country: Poland
+    elasticity: -0.5
+    channel: regional_proximity
+    confidence: high
+  - country: Germany
+    elasticity: -0.3
+    channel: trade_partner
+    confidence: medium
+  - country: Turkey
+    elasticity: -0.2
+    channel: regional_proxy
+    confidence: medium
+  - country: Sweden
+    elasticity: -0.15
+    channel: regional_proximity
+    confidence: low
+- platform: polymarket
+  market_id: '0x60c6fe27d5b273f54fe30b4003c3b2553acd5f76220d9ea289343d536d6dd9ad'
+  slug: russia-x-ukraine-ceasefire-agreement-by-june-30-2026
+  asado_category: regional_conflict_eastern_europe
+  asado_subcategory: russia_x_ukraine_ceasefire_agreement_by_june_30_2026
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized ceasefire/conflict reporting
+  spillover_countries:
+  - country: Poland
+    elasticity: -0.5
+    channel: regional_proximity
+    confidence: high
+  - country: Germany
+    elasticity: -0.3
+    channel: trade_partner
+    confidence: medium
+  - country: Turkey
+    elasticity: -0.2
+    channel: regional_proxy
+    confidence: medium
+  - country: Sweden
+    elasticity: -0.15
+    channel: regional_proximity
+    confidence: low
+- platform: polymarket
+  market_id: '0xc5ab3fb332af0bebf7ed6df1b1d5e1cc32a91e960c57d7602a5224830cf0084b'
+  slug: will-putin-meet-with-zelenskyy-by-june-30-2026
+  asado_category: regional_conflict_eastern_europe
+  asado_subcategory: will_putin_meet_with_zelenskyy_by_june_30_2026
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized ceasefire/conflict reporting
+  spillover_countries:
+  - country: Poland
+    elasticity: -0.5
+    channel: regional_proximity
+    confidence: high
+  - country: Germany
+    elasticity: -0.3
+    channel: trade_partner
+    confidence: medium
+  - country: Turkey
+    elasticity: -0.2
+    channel: regional_proxy
+    confidence: medium
+  - country: Sweden
+    elasticity: -0.15
+    channel: regional_proximity
+    confidence: low
+- platform: polymarket
+  market_id: '0x9772347ce628f4427ab437333679512aba5a98a4d14ff2a138f99fe7a40ba5fe'
+  slug: ukraine-agrees-not-to-join-nato-by-june-30
+  asado_category: regional_conflict_eastern_europe
+  asado_subcategory: ukraine_agrees_not_to_join_nato_by_june_30
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized ceasefire/conflict reporting
+  spillover_countries:
+  - country: Poland
+    elasticity: -0.5
+    channel: regional_proximity
+    confidence: high
+  - country: Germany
+    elasticity: -0.3
+    channel: trade_partner
+    confidence: medium
+  - country: Turkey
+    elasticity: -0.2
+    channel: regional_proxy
+    confidence: medium
+  - country: Sweden
+    elasticity: -0.15
+    channel: regional_proximity
+    confidence: low
+- platform: polymarket
+  market_id: '0x4c80df6f557bb0b9de08c0301ebdce500dd9bdc58400d9269fb8fab1709ed584'
+  slug: china-x-taiwan-military-clash-before-2027
+  asado_category: regional_conflict_pacific
+  asado_subcategory: china_x_taiwan_military_clash_before_2027
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized military engagement criteria
+  spillover_countries:
+  - country: Taiwan
+    elasticity: 0.8
+    channel: regional_proximity
+    confidence: high
+  - country: ChinaA
+    elasticity: 0.55
+    channel: regional_proximity
+    confidence: high
+  - country: ChinaH
+    elasticity: 0.55
+    channel: regional_proximity
+    confidence: high
+  - country: Korea
+    elasticity: 0.45
+    channel: tech_supply_chain
+    confidence: high
+  - country: Japan
+    elasticity: 0.4
+    channel: regional_proximity
+    confidence: medium
+- platform: polymarket
+  market_id: '0xb215decbedd846168842f6e207f09bd5f50ce51d2191f238887d976ec21b6f66'
+  slug: will-china-blockade-taiwan-by-june-30
+  asado_category: regional_conflict_pacific
+  asado_subcategory: will_china_blockade_taiwan_by_june_30
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized military engagement criteria
+  spillover_countries:
+  - country: Taiwan
+    elasticity: 0.8
+    channel: regional_proximity
+    confidence: high
+  - country: ChinaA
+    elasticity: 0.55
+    channel: regional_proximity
+    confidence: high
+  - country: ChinaH
+    elasticity: 0.55
+    channel: regional_proximity
+    confidence: high
+  - country: Korea
+    elasticity: 0.45
+    channel: tech_supply_chain
+    confidence: high
+  - country: Japan
+    elasticity: 0.4
+    channel: regional_proximity
+    confidence: medium
+- platform: polymarket
+  market_id: '0x5ca616aaa0e1e5df6c38439f8bee4b96bacfe32f8f39cb2f1604c0196548662f'
+  slug: will-china-invade-taiwan-by-september-30-2026
+  asado_category: regional_conflict_pacific
+  asado_subcategory: will_china_invade_taiwan_by_september_30_2026
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized military engagement criteria
+  spillover_countries:
+  - country: Taiwan
+    elasticity: 0.8
+    channel: regional_proximity
+    confidence: high
+  - country: ChinaA
+    elasticity: 0.55
+    channel: regional_proximity
+    confidence: high
+  - country: ChinaH
+    elasticity: 0.55
+    channel: regional_proximity
+    confidence: high
+  - country: Korea
+    elasticity: 0.45
+    channel: tech_supply_chain
+    confidence: high
+  - country: Japan
+    elasticity: 0.4
+    channel: regional_proximity
+    confidence: medium
+- platform: polymarket
+  market_id: '0xe6d5e5da83874cd82c9b651a8a5d4fc541a800a295fb62e85124b4f5a04a4b7d'
+  slug: will-china-invade-taiwan-by-december-31-2027
+  asado_category: regional_conflict_pacific
+  asado_subcategory: will_china_invade_taiwan_by_december_31_2027
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized military engagement criteria
+  spillover_countries:
+  - country: Taiwan
+    elasticity: 0.8
+    channel: regional_proximity
+    confidence: high
+  - country: ChinaA
+    elasticity: 0.55
+    channel: regional_proximity
+    confidence: high
+  - country: ChinaH
+    elasticity: 0.55
+    channel: regional_proximity
+    confidence: high
+  - country: Korea
+    elasticity: 0.45
+    channel: tech_supply_chain
+    confidence: high
+  - country: Japan
+    elasticity: 0.4
+    channel: regional_proximity
+    confidence: medium
+- platform: polymarket
+  market_id: '0xa466e17524bcc473279c4ca86f4f1fb01932946a8204e68f6ca96628f8bf2b5e'
+  slug: china-x-japan-military-clash-before-2027
+  asado_category: regional_conflict_pacific
+  asado_subcategory: china_x_japan_military_clash_before_2027
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized military engagement criteria
+  spillover_countries:
+  - country: Japan
+    elasticity: 0.6
+    channel: regional_proximity
+    confidence: high
+  - country: ChinaA
+    elasticity: 0.4
+    channel: regional_proximity
+    confidence: high
+  - country: ChinaH
+    elasticity: 0.4
+    channel: regional_proximity
+    confidence: high
+  - country: Korea
+    elasticity: 0.25
+    channel: regional_proximity
+    confidence: medium
+- platform: polymarket
+  market_id: '0x7e045734da5d2a0743da450cc5cff8e2c1e1298a9731f7fbadd7c13823c5c79c'
+  slug: china-x-philippines-military-clash-before-2027
+  asado_category: regional_conflict_pacific
+  asado_subcategory: china_x_philippines_military_clash_before_2027
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized military engagement criteria
+  spillover_countries:
+  - country: Philippines
+    elasticity: 0.7
+    channel: regional_proximity
+    confidence: high
+  - country: ChinaA
+    elasticity: 0.3
+    channel: regional_proximity
+    confidence: medium
+  - country: ChinaH
+    elasticity: 0.3
+    channel: regional_proximity
+    confidence: medium
+  - country: Vietnam
+    elasticity: 0.2
+    channel: regional_proximity
+    confidence: medium
+- platform: polymarket
+  market_id: '0x6e6851f2698629795fa06869d961c986221a80cedcba10fbaf0ed220607cdada'
+  slug: china-x-india-military-clash-by-december-31-2026
+  asado_category: regional_conflict_pacific
+  asado_subcategory: china_x_india_military_clash_by_december_31_2026
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized military engagement criteria
+  spillover_countries:
+  - country: India
+    elasticity: 0.6
+    channel: regional_proximity
+    confidence: high
+  - country: ChinaA
+    elasticity: 0.3
+    channel: regional_proximity
+    confidence: medium
+  - country: ChinaH
+    elasticity: 0.3
+    channel: regional_proximity
+    confidence: medium
+- platform: polymarket
+  market_id: '0x844c84a7b6f8dbbdd72a1cf730062026c8c0b5ad6d30c9eb761263477fa283c6'
+  slug: us-x-china-military-clash-before-2027
+  asado_category: regional_conflict_pacific
+  asado_subcategory: us_x_china_military_clash_before_2027
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Recognized military engagement criteria
+  spillover_countries:
+  - country: ChinaA
+    elasticity: 0.7
+    channel: regional_proximity
+    confidence: high
+  - country: ChinaH
+    elasticity: 0.7
+    channel: regional_proximity
+    confidence: high
+  - country: Taiwan
+    elasticity: 0.5
+    channel: regional_proximity
+    confidence: high
+  - country: Korea
+    elasticity: 0.4
+    channel: tech_supply_chain
+    confidence: medium
+  - country: Japan
+    elasticity: 0.35
+    channel: regional_proximity
+    confidence: medium
+- platform: polymarket
+  market_id: '0x5f879a52e5349db7f66d386ca75f1a9bb608fdd6a738a1582681613730b23281'
+  slug: will-crude-oil-cl-hit-high-200-by-end-of-june-677
+  asado_category: oil_shock
+  asado_subcategory: will_crude_oil_cl_hit_high_200_by_end_of_june_677
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: Front-month CL settlement (CME)
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: -0.7
+    channel: oil_export
+    confidence: high
+  - country: India
+    elasticity: 0.5
+    channel: oil_import_dependency
+    confidence: high
+  - country: Japan
+    elasticity: 0.45
+    channel: oil_import_dependency
+    confidence: high
+  - country: Korea
+    elasticity: 0.35
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Thailand
+    elasticity: 0.3
+    channel: oil_import_dependency
+    confidence: medium
+- platform: polymarket
+  market_id: '0x7ae064ed7f3c9f4d201ce007b05b3a23f8e824170981c4d301f07301d554f451'
+  slug: will-crude-oil-cl-hit-high-175-by-end-of-june-456-295
+  asado_category: oil_shock
+  asado_subcategory: will_crude_oil_cl_hit_high_175_by_end_of_june_456_295
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: Front-month CL settlement (CME)
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: -0.7
+    channel: oil_export
+    confidence: high
+  - country: India
+    elasticity: 0.5
+    channel: oil_import_dependency
+    confidence: high
+  - country: Japan
+    elasticity: 0.45
+    channel: oil_import_dependency
+    confidence: high
+  - country: Korea
+    elasticity: 0.35
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Thailand
+    elasticity: 0.3
+    channel: oil_import_dependency
+    confidence: medium
+- platform: polymarket
+  market_id: '0xeda0e0633f131b761cbe6c6e5e16ae347c48d9448a08c5826bfc2c794b63758e'
+  slug: will-crude-oil-cl-hit-high-150-by-end-of-june-788-691
+  asado_category: oil_shock
+  asado_subcategory: will_crude_oil_cl_hit_high_150_by_end_of_june_788_691
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: Front-month CL settlement (CME)
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: -0.7
+    channel: oil_export
+    confidence: high
+  - country: India
+    elasticity: 0.5
+    channel: oil_import_dependency
+    confidence: high
+  - country: Japan
+    elasticity: 0.45
+    channel: oil_import_dependency
+    confidence: high
+  - country: Korea
+    elasticity: 0.35
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Thailand
+    elasticity: 0.3
+    channel: oil_import_dependency
+    confidence: medium
+- platform: polymarket
+  market_id: '0x0443a503a38b90446c8a3826db5ee1323144197ef2b4ed09bcdf545ac104dfcb'
+  slug: will-crude-oil-cl-hit-high-140-by-end-of-june-828-295-574-155
+  asado_category: oil_shock
+  asado_subcategory: will_crude_oil_cl_hit_high_140_by_end_of_june_828_295_574_15
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: Front-month CL settlement (CME)
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: -0.7
+    channel: oil_export
+    confidence: high
+  - country: India
+    elasticity: 0.5
+    channel: oil_import_dependency
+    confidence: high
+  - country: Japan
+    elasticity: 0.45
+    channel: oil_import_dependency
+    confidence: high
+  - country: Korea
+    elasticity: 0.35
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Thailand
+    elasticity: 0.3
+    channel: oil_import_dependency
+    confidence: medium
+- platform: polymarket
+  market_id: '0xa5d0dfc81e6a87faa737df4ca52fae7e18b63d9f7568e364c6c7d8c45fb39e8b'
+  slug: will-crude-oil-cl-hit-high-130-by-end-of-june
+  asado_category: oil_shock
+  asado_subcategory: will_crude_oil_cl_hit_high_130_by_end_of_june
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: Front-month CL settlement (CME)
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: -0.7
+    channel: oil_export
+    confidence: high
+  - country: India
+    elasticity: 0.5
+    channel: oil_import_dependency
+    confidence: high
+  - country: Japan
+    elasticity: 0.45
+    channel: oil_import_dependency
+    confidence: high
+  - country: Korea
+    elasticity: 0.35
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Thailand
+    elasticity: 0.3
+    channel: oil_import_dependency
+    confidence: medium
+- platform: polymarket
+  market_id: '0xba8af64c1b08f322ca7f66f3cfdbdfd50c0eae6fc88d2fcf29c30ceb62682421'
+  slug: will-crude-oil-cl-hit-high-120-by-end-of-june
+  asado_category: oil_shock
+  asado_subcategory: will_crude_oil_cl_hit_high_120_by_end_of_june
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: Front-month CL settlement (CME)
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: -0.7
+    channel: oil_export
+    confidence: high
+  - country: India
+    elasticity: 0.5
+    channel: oil_import_dependency
+    confidence: high
+  - country: Japan
+    elasticity: 0.45
+    channel: oil_import_dependency
+    confidence: high
+  - country: Korea
+    elasticity: 0.35
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Thailand
+    elasticity: 0.3
+    channel: oil_import_dependency
+    confidence: medium
+- platform: polymarket
+  market_id: '0x46f19d5bedd6d601d597d308d86814245974014d8a108395a7690d7a099cacdd'
+  slug: will-crude-oil-cl-hit-high-115-by-end-of-june-217-913-468-473
+  asado_category: oil_shock
+  asado_subcategory: will_crude_oil_cl_hit_high_115_by_end_of_june_217_913_468_47
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: Front-month CL settlement (CME)
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: -0.7
+    channel: oil_export
+    confidence: high
+  - country: India
+    elasticity: 0.5
+    channel: oil_import_dependency
+    confidence: high
+  - country: Japan
+    elasticity: 0.45
+    channel: oil_import_dependency
+    confidence: high
+  - country: Korea
+    elasticity: 0.35
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Thailand
+    elasticity: 0.3
+    channel: oil_import_dependency
+    confidence: medium
+- platform: polymarket
+  market_id: '0x6a18969bc603992de4c5c9d53c2881e1378ac193cdad01e7f932afa7fdc4af3e'
+  slug: will-crude-oil-reach-a-new-all-time-high-by-september-30
+  asado_category: oil_shock
+  asado_subcategory: will_crude_oil_reach_a_new_all_time_high_by_september_30
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: Front-month CL settlement (CME)
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: -0.7
+    channel: oil_export
+    confidence: high
+  - country: India
+    elasticity: 0.5
+    channel: oil_import_dependency
+    confidence: high
+  - country: Japan
+    elasticity: 0.45
+    channel: oil_import_dependency
+    confidence: high
+  - country: Korea
+    elasticity: 0.35
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Thailand
+    elasticity: 0.3
+    channel: oil_import_dependency
+    confidence: medium
+- platform: polymarket
+  market_id: '0xa4c71c6f43ceb1dec4b91e60cf22a4480f0b73683a3ea4aaba812ca20cba17e3'
+  slug: will-crude-oil-cl-hit-low-85-by-end-of-june-644-741-629-163
+  asado_category: oil_crash
+  asado_subcategory: will_crude_oil_cl_hit_low_85_by_end_of_june_644_741_629_163
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: Front-month CL settlement (CME)
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: 0.7
+    channel: oil_export
+    confidence: high
+  - country: India
+    elasticity: -0.5
+    channel: oil_import_dependency
+    confidence: high
+  - country: Japan
+    elasticity: -0.45
+    channel: oil_import_dependency
+    confidence: high
+  - country: Korea
+    elasticity: -0.35
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Thailand
+    elasticity: -0.3
+    channel: oil_import_dependency
+    confidence: medium
+- platform: polymarket
+  market_id: '0xbaf252e7ac957d6636a6916da51892c9f42e59bfbf808bd4d8e16f194694d2b5'
+  slug: will-crude-oil-cl-hit-low-80-by-end-of-june-412-888-131
+  asado_category: oil_crash
+  asado_subcategory: will_crude_oil_cl_hit_low_80_by_end_of_june_412_888_131
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: Front-month CL settlement (CME)
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: 0.7
+    channel: oil_export
+    confidence: high
+  - country: India
+    elasticity: -0.5
+    channel: oil_import_dependency
+    confidence: high
+  - country: Japan
+    elasticity: -0.45
+    channel: oil_import_dependency
+    confidence: high
+  - country: Korea
+    elasticity: -0.35
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Thailand
+    elasticity: -0.3
+    channel: oil_import_dependency
+    confidence: medium
+- platform: polymarket
+  market_id: '0xe3f8272f4957b7dcc492d988e5c7cd6dbb2f4111cd309571514a280938d617f1'
+  slug: will-crude-oil-cl-hit-low-70-by-end-of-june-776-556-989-392-677-842-888-775-665-545-427-841
+  asado_category: oil_crash
+  asado_subcategory: will_crude_oil_cl_hit_low_70_by_end_of_june_776_556_989_392
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: Front-month CL settlement (CME)
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: 0.7
+    channel: oil_export
+    confidence: high
+  - country: India
+    elasticity: -0.5
+    channel: oil_import_dependency
+    confidence: high
+  - country: Japan
+    elasticity: -0.45
+    channel: oil_import_dependency
+    confidence: high
+  - country: Korea
+    elasticity: -0.35
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Thailand
+    elasticity: -0.3
+    channel: oil_import_dependency
+    confidence: medium
+- platform: polymarket
+  market_id: '0x9118beb9f9d8462c85b24f3cfb39ccbd244f723e6b381aaf622c66fdc3dcf178'
+  slug: will-crude-oil-cl-hit-low-55-by-end-of-june-393-181-199
+  asado_category: oil_crash
+  asado_subcategory: will_crude_oil_cl_hit_low_55_by_end_of_june_393_181_199
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: Front-month CL settlement (CME)
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: 0.7
+    channel: oil_export
+    confidence: high
+  - country: India
+    elasticity: -0.5
+    channel: oil_import_dependency
+    confidence: high
+  - country: Japan
+    elasticity: -0.45
+    channel: oil_import_dependency
+    confidence: high
+  - country: Korea
+    elasticity: -0.35
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Thailand
+    elasticity: -0.3
+    channel: oil_import_dependency
+    confidence: medium
+- platform: polymarket
+  market_id: '0x4e4a7df876b0c04f0b8b29b9073eddfbaf5c787192da825ae7ca1031bc8cfd15'
+  slug: will-the-fed-decrease-interest-rates-by-50-bps-after-the-june-2026-meeting
+  asado_category: fed_policy
+  asado_subcategory: will_the_fed_decrease_interest_rates_by_50_bps_after_the_jun
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: FOMC statement
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.3
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: Brazil
+    elasticity: -0.25
+    channel: em_beta
+    confidence: medium
+  - country: Mexico
+    elasticity: -0.2
+    channel: em_beta
+    confidence: medium
+  - country: India
+    elasticity: -0.15
+    channel: em_beta
+    confidence: medium
+- platform: polymarket
+  market_id: '0xdde06286a7b9464d344f410ab0b3d2ebc6469904e72c27fd982f65fdbf78768d'
+  slug: will-the-fed-decrease-interest-rates-by-25-bps-after-the-june-2026-meeting
+  asado_category: fed_policy
+  asado_subcategory: will_the_fed_decrease_interest_rates_by_25_bps_after_the_jun
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: FOMC statement
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.3
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: Brazil
+    elasticity: -0.25
+    channel: em_beta
+    confidence: medium
+  - country: Mexico
+    elasticity: -0.2
+    channel: em_beta
+    confidence: medium
+  - country: India
+    elasticity: -0.15
+    channel: em_beta
+    confidence: medium
+- platform: polymarket
+  market_id: '0x4ede078cae84a5877ac32d7fb48811e5c23549a1904b7df06ff7935c6d79d831'
+  slug: will-the-fed-decrease-interest-rates-by-25-bps-after-the-july-2026-meeting
+  asado_category: fed_policy
+  asado_subcategory: will_the_fed_decrease_interest_rates_by_25_bps_after_the_jul
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: FOMC statement
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.3
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: Brazil
+    elasticity: -0.25
+    channel: em_beta
+    confidence: medium
+  - country: Mexico
+    elasticity: -0.2
+    channel: em_beta
+    confidence: medium
+  - country: India
+    elasticity: -0.15
+    channel: em_beta
+    confidence: medium
+- platform: polymarket
+  market_id: '0xc60022fe066abd6f96c375adb09f38d92c4931f09c10b805354581b4e5465e93'
+  slug: fed-rate-cut-by-december-2026-meeting
+  asado_category: fed_policy
+  asado_subcategory: fed_rate_cut_by_december_2026_meeting
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: FOMC statement
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.3
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: Brazil
+    elasticity: -0.25
+    channel: em_beta
+    confidence: medium
+  - country: Mexico
+    elasticity: -0.2
+    channel: em_beta
+    confidence: medium
+  - country: India
+    elasticity: -0.15
+    channel: em_beta
+    confidence: medium
+- platform: polymarket
+  market_id: '0x5e082f0b57f47a29044aa35b4c5658393122e659d5feae521c06b57cdd7f905c'
+  slug: will-1-fed-rate-cut-happen-in-2026
+  asado_category: fed_policy
+  asado_subcategory: will_1_fed_rate_cut_happen_in_2026
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: FOMC statement
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.3
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: Brazil
+    elasticity: -0.25
+    channel: em_beta
+    confidence: medium
+  - country: Mexico
+    elasticity: -0.2
+    channel: em_beta
+    confidence: medium
+  - country: India
+    elasticity: -0.15
+    channel: em_beta
+    confidence: medium
+- platform: polymarket
+  market_id: '0xe0d9f508a249e0070db06eb7d1e1fb17eb23c963f6fb722c4c3f81e23240c1cd'
+  slug: will-2-fed-rate-cuts-happen-in-2026
+  asado_category: fed_policy
+  asado_subcategory: will_2_fed_rate_cuts_happen_in_2026
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: FOMC statement
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.3
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: Brazil
+    elasticity: -0.25
+    channel: em_beta
+    confidence: medium
+  - country: Mexico
+    elasticity: -0.2
+    channel: em_beta
+    confidence: medium
+  - country: India
+    elasticity: -0.15
+    channel: em_beta
+    confidence: medium
+- platform: polymarket
+  market_id: '0x8d4966e84ae80f24b2e14643fdd45364e354229e11e2c17903b4b1763cfbe67c'
+  slug: will-3-fed-rate-cuts-happen-in-2026
+  asado_category: fed_policy
+  asado_subcategory: will_3_fed_rate_cuts_happen_in_2026
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: FOMC statement
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.3
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: Brazil
+    elasticity: -0.25
+    channel: em_beta
+    confidence: medium
+  - country: Mexico
+    elasticity: -0.2
+    channel: em_beta
+    confidence: medium
+  - country: India
+    elasticity: -0.15
+    channel: em_beta
+    confidence: medium
+- platform: polymarket
+  market_id: '0xaece8d6062d3e3eb9845b32441a4ab06eb2ef332c0228bc6a36add450647c7c4'
+  slug: will-4-fed-rate-cuts-happen-in-2026
+  asado_category: fed_policy
+  asado_subcategory: will_4_fed_rate_cuts_happen_in_2026
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: FOMC statement
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.3
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: Brazil
+    elasticity: -0.25
+    channel: em_beta
+    confidence: medium
+  - country: Mexico
+    elasticity: -0.2
+    channel: em_beta
+    confidence: medium
+  - country: India
+    elasticity: -0.15
+    channel: em_beta
+    confidence: medium
+- platform: polymarket
+  market_id: '0x7ee722a07e0f84405f1267bc1c84eb95bd6348454453abf445618e778af8fd18'
+  slug: will-5-fed-rate-cuts-happen-in-2026
+  asado_category: fed_policy
+  asado_subcategory: will_5_fed_rate_cuts_happen_in_2026
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: FOMC statement
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.3
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: Brazil
+    elasticity: -0.25
+    channel: em_beta
+    confidence: medium
+  - country: Mexico
+    elasticity: -0.2
+    channel: em_beta
+    confidence: medium
+  - country: India
+    elasticity: -0.15
+    channel: em_beta
+    confidence: medium
+- platform: polymarket
+  market_id: '0x4914bfdd892a48c341b5e0f41ec10475a815f2277273110b16f95e21084bfe75'
+  slug: will-6-fed-rate-cuts-happen-in-2026
+  asado_category: fed_policy
+  asado_subcategory: will_6_fed_rate_cuts_happen_in_2026
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: FOMC statement
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.3
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: Brazil
+    elasticity: -0.25
+    channel: em_beta
+    confidence: medium
+  - country: Mexico
+    elasticity: -0.2
+    channel: em_beta
+    confidence: medium
+  - country: India
+    elasticity: -0.15
+    channel: em_beta
+    confidence: medium
+- platform: polymarket
+  market_id: '0xb01e70a56199a6d5467f47a2b94e75e7c7218c128c8d0b8beb6dafed2f0d15c2'
+  slug: will-the-fed-increase-interest-rates-by-50-bps-after-the-june-2026-meeting
+  asado_category: fed_policy
+  asado_subcategory: will_the_fed_increase_interest_rates_by_50_bps_after_the_jun
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: FOMC statement
+  spillover_countries:
+  - country: U.S.
+    elasticity: 0.3
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: 0.4
+    channel: usd_beta
+    confidence: high
+  - country: Brazil
+    elasticity: 0.25
+    channel: em_beta
+    confidence: medium
+  - country: Mexico
+    elasticity: 0.2
+    channel: em_beta
+    confidence: medium
+  - country: India
+    elasticity: 0.15
+    channel: em_beta
+    confidence: medium
+- platform: polymarket
+  market_id: '0xa7cb4135c6d9c36da0e343874dd5b455de739c6d1b9f9f5583dd9320aacf5db2'
+  slug: will-the-fed-increase-interest-rates-by-25-bps-after-the-june-2026-meeting
+  asado_category: fed_policy
+  asado_subcategory: will_the_fed_increase_interest_rates_by_25_bps_after_the_jun
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: FOMC statement
+  spillover_countries:
+  - country: U.S.
+    elasticity: 0.3
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: 0.4
+    channel: usd_beta
+    confidence: high
+  - country: Brazil
+    elasticity: 0.25
+    channel: em_beta
+    confidence: medium
+  - country: Mexico
+    elasticity: 0.2
+    channel: em_beta
+    confidence: medium
+  - country: India
+    elasticity: 0.15
+    channel: em_beta
+    confidence: medium
+- platform: polymarket
+  market_id: '0xb5c0abeecb5502e6e8d83155c27819174d8317af3c425c3afc5a8c45257a3793'
+  slug: will-the-fed-increase-interest-rates-by-25-bps-after-the-july-2026-meeting
+  asado_category: fed_policy
+  asado_subcategory: will_the_fed_increase_interest_rates_by_25_bps_after_the_jul
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: FOMC statement
+  spillover_countries:
+  - country: U.S.
+    elasticity: 0.3
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: 0.4
+    channel: usd_beta
+    confidence: high
+  - country: Brazil
+    elasticity: 0.25
+    channel: em_beta
+    confidence: medium
+  - country: Mexico
+    elasticity: 0.2
+    channel: em_beta
+    confidence: medium
+  - country: India
+    elasticity: 0.15
+    channel: em_beta
+    confidence: medium
+- platform: polymarket
+  market_id: '0x80b3af88cb991980e8da1ce86b9794a0957f96ec98c29319dd7ba65e9744d82b'
+  slug: fed-rate-hike-in-2026
+  asado_category: fed_policy
+  asado_subcategory: fed_rate_hike_in_2026
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: FOMC statement
+  spillover_countries:
+  - country: U.S.
+    elasticity: 0.3
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: 0.4
+    channel: usd_beta
+    confidence: high
+  - country: Brazil
+    elasticity: 0.25
+    channel: em_beta
+    confidence: medium
+  - country: Mexico
+    elasticity: 0.2
+    channel: em_beta
+    confidence: medium
+  - country: India
+    elasticity: 0.15
+    channel: em_beta
+    confidence: medium
+- platform: polymarket
+  market_id: '0xd4e77ba6f29fc093509d24f508631abd445ecf506bbdc9c4c80e60256a318527'
+  slug: will-no-fed-rate-cuts-happen-in-2026
+  asado_category: fed_policy
+  asado_subcategory: will_no_fed_rate_cuts_happen_in_2026
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: FOMC statement
+  spillover_countries:
+  - country: U.S.
+    elasticity: 0.3
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: 0.4
+    channel: usd_beta
+    confidence: high
+  - country: Brazil
+    elasticity: 0.25
+    channel: em_beta
+    confidence: medium
+  - country: Mexico
+    elasticity: 0.2
+    channel: em_beta
+    confidence: medium
+  - country: India
+    elasticity: 0.15
+    channel: em_beta
+    confidence: medium
+- platform: polymarket
+  market_id: '0x8bf1c1536ecb1c08fe13c6b71e8ab1f58bf3461c4cb79f5f1679f869a06aef86'
+  slug: will-there-be-no-change-in-fed-interest-rates-after-the-july-2026-meeting
+  asado_category: fed_policy
+  asado_subcategory: will_there_be_no_change_in_fed_interest_rates_after_the_july
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: FOMC statement
+  spillover_countries:
+  - country: U.S.
+    elasticity: 0.3
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: 0.4
+    channel: usd_beta
+    confidence: high
+  - country: Brazil
+    elasticity: 0.25
+    channel: em_beta
+    confidence: medium
+  - country: Mexico
+    elasticity: 0.2
+    channel: em_beta
+    confidence: medium
+  - country: India
+    elasticity: 0.15
+    channel: em_beta
+    confidence: medium
+- platform: polymarket
+  market_id: '0xd175952df3f4312096d408a699c922af54d31b17b8d22afb35e8f09016053de9'
+  slug: bank-of-japan-increases-interest-rates-by-50-bps-after-the-june-2026-meeting
+  asado_category: boj_policy
+  asado_subcategory: bank_of_japan_increases_interest_rates_by_50_bps_after_the_j
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BOJ statement
+  spillover_countries:
+  - country: Japan
+    elasticity: 0.4
+    channel: safe_haven
+    confidence: medium
+- platform: polymarket
+  market_id: '0x86fa2351e7a9469fd8bcd9a28ad5e300a59c3764747ad1eb7d6248546efbabfd'
+  slug: will-jimmie-kesson-be-the-next-prime-minister-of-sweden
+  asado_category: country_election
+  asado_subcategory: will_jimmie_kesson_be_the_next_prime_minister_of_sweden
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: Riksdag government formation
+  spillover_countries:
+  - country: Sweden
+    elasticity: 0.3
+    channel: regional_proxy
+    confidence: medium
+- platform: polymarket
+  market_id: '0xa39535caf2ce2c47dfbdc64c3cef9a00b7599a24c34b4091caed34df27094639'
+  slug: will-the-sweden-democrats-sd-win-the-most-seats-in-the-2026-swedish-parliamentary-election
+  asado_category: country_election
+  asado_subcategory: will_the_sweden_democrats_sd_win_the_most_seats_in_the_2026
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: Official Swedish election result
+  spillover_countries:
+  - country: Sweden
+    elasticity: 0.3
+    channel: regional_proxy
+    confidence: medium
+- platform: polymarket
+  market_id: '0xa5b2b9d0e333d50db759139a364c01af812a3db60e5c653b9f959b6ef5d7139e'
+  slug: will-ebba-busch-be-the-next-prime-minister-of-sweden
+  asado_category: country_election
+  asado_subcategory: will_ebba_busch_be_the_next_prime_minister_of_sweden
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: Riksdag government formation
+  spillover_countries:
+  - country: Sweden
+    elasticity: 0.15
+    channel: regional_proxy
+    confidence: low
+- platform: polymarket
+  market_id: '0x56f429da08529abec24c531b7accf689d84e68096c4983d375ff37f316f46dae'
+  slug: pedro-snchez-out-as-pm-of-spain-by-june-30-2026
+  asado_category: country_election
+  asado_subcategory: pedro_snchez_out_as_pm_of_spain_by_june_30_2026
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: Official announcement
+  spillover_countries:
+  - country: Spain
+    elasticity: 0.3
+    channel: regional_proxy
+    confidence: medium
+- platform: polymarket
+  market_id: '0x890f9b8de730479549e95027f26aad5ce89ecc4a42a6fd6316d0b0aec9a5aad1'
+  slug: pedro-snchez-out-as-pm-of-spain-by-december-31-2026
+  asado_category: country_election
+  asado_subcategory: pedro_snchez_out_as_pm_of_spain_by_december_31_2026
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: Official announcement
+  spillover_countries:
+  - country: Spain
+    elasticity: 0.25
+    channel: regional_proxy
+    confidence: medium
+- platform: polymarket
+  market_id: '0x176e84015b1cc54d470836ef1d8a60753e17fa232d9b55e9aa8dde580d03f436'
+  slug: friedrich-merz-out-as-chancellor-of-germany-before-2027
+  asado_category: country_election
+  asado_subcategory: friedrich_merz_out_as_chancellor_of_germany_before_2027
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: Official announcement
+  spillover_countries:
+  - country: Germany
+    elasticity: 0.35
+    channel: regional_proxy
+    confidence: medium
+- platform: polymarket
+  market_id: '0x7b22caeed454d3c7dbd07b83d8255c74e1482c4f958b4ba4dd0c27b864cd47a2'
+  slug: will-luiz-incio-lula-da-silva-qualify-for-brazils-presidential-runoff
+  asado_category: country_election
+  asado_subcategory: will_luiz_incio_lula_da_silva_qualify_for_brazils_presidenti
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: Official TSE result
+  spillover_countries:
+  - country: Brazil
+    elasticity: 0.2
+    channel: regional_proxy
+    confidence: low
+- platform: polymarket
+  market_id: '0x5649a937907e0db6814f3fcbfa68e9f78a700d8c0e38ce652a572d97e205640d'
+  slug: claudia-sheinbaum-out-as-president-of-mexico-by-june-30-791
+  asado_category: country_election
+  asado_subcategory: claudia_sheinbaum_out_as_president_of_mexico_by_june_30_791
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: Official announcement
+  spillover_countries:
+  - country: Mexico
+    elasticity: 0.4
+    channel: regional_proxy
+    confidence: medium
+- platform: polymarket
+  market_id: '0xda2c94b13cfb01655e69e1ad2c914666a328f316355afd0ac09d2cb4b42edf36'
+  slug: will-turkey-schedule-early-presidential-elections-in-2026
+  asado_category: country_election
+  asado_subcategory: will_turkey_schedule_early_presidential_elections_in_2026
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: Official YSK announcement
+  spillover_countries:
+  - country: Turkey
+    elasticity: 0.35
+    channel: regional_proxy
+    confidence: medium
+- platform: polymarket
+  market_id: '0x4ab00a29b7f3d12114932a728eca136a00685176808ee001f0f375e6f0abb071'
+  slug: will-chinas-2026-annual-gdp-growth-yy-be-between-4pt0-and-5pt0
+  asado_category: china_policy
+  asado_subcategory: will_chinas_2026_annual_gdp_growth_yy_be_between_4pt0_and_5p
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: NBS annual GDP release
+  spillover_countries:
+  - country: ChinaA
+    elasticity: -0.3
+    channel: regional_proxy
+    confidence: medium
+  - country: ChinaH
+    elasticity: -0.3
+    channel: regional_proxy
+    confidence: medium
+  - country: Australia
+    elasticity: -0.15
+    channel: commodity_export
+    confidence: low
+- platform: polymarket
+  market_id: '0x639d8b6161b0f21aa3bbefc68223b09572d14228e903809b706c84443e8067ff'
+  slug: will-trump-agree-to-iranian-oil-sanction-relief-by-june-30
+  asado_category: sanctions
+  asado_subcategory: will_trump_agree_to_iranian_oil_sanction_relief_by_june_30
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: Official sanctions announcements
+  spillover_countries:
+  - country: Saudi Arabia
+    elasticity: 0.25
+    channel: oil_export
+    confidence: medium
+  - country: India
+    elasticity: -0.2
+    channel: oil_import_dependency
+    confidence: medium
+  - country: Japan
+    elasticity: -0.15
+    channel: oil_import_dependency
+    confidence: low
+- platform: polymarket
+  market_id: '0xa792f029046f2c926ee81c7d9802c21a4a651d33cf7e1bf991ba800ae002f59f'
+  slug: will-inflation-reach-more-than-5-in-2026-282-763
+  asado_category: cpi
+  asado_subcategory: will_inflation_reach_more_than_5_in_2026_282_763
+  contract_type: binary
+  resolution_clarity: medium
+  resolution_source: BLS CPI releases
+  spillover_countries:
+  - country: U.S.
+    elasticity: 0.4
+    channel: usd_beta
+    confidence: medium
+  - country: NASDAQ
+    elasticity: 0.5
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXFEDDECISION-26JUL-H26
+  asado_category: fed_policy
+  asado_subcategory: fed_decision_h26
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: FOMC statement
+  spillover_countries:
+  - country: U.S.
+    elasticity: 0.3
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: 0.4
+    channel: usd_beta
+    confidence: high
+  - country: Brazil
+    elasticity: 0.25
+    channel: em_beta
+    confidence: medium
+  - country: Mexico
+    elasticity: 0.2
+    channel: em_beta
+    confidence: medium
+  - country: India
+    elasticity: 0.15
+    channel: em_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXFEDDECISION-26JUL-H25
+  asado_category: fed_policy
+  asado_subcategory: fed_decision_h25
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: FOMC statement
+  spillover_countries:
+  - country: U.S.
+    elasticity: 0.3
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: 0.4
+    channel: usd_beta
+    confidence: high
+  - country: Brazil
+    elasticity: 0.25
+    channel: em_beta
+    confidence: medium
+  - country: Mexico
+    elasticity: 0.2
+    channel: em_beta
+    confidence: medium
+  - country: India
+    elasticity: 0.15
+    channel: em_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXFEDDECISION-26JUL-H0
+  asado_category: fed_policy
+  asado_subcategory: fed_decision_h0
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: FOMC statement
+  spillover_countries:
+  - country: U.S.
+    elasticity: 0.3
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: 0.4
+    channel: usd_beta
+    confidence: high
+  - country: Brazil
+    elasticity: 0.25
+    channel: em_beta
+    confidence: medium
+  - country: Mexico
+    elasticity: 0.2
+    channel: em_beta
+    confidence: medium
+  - country: India
+    elasticity: 0.15
+    channel: em_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXFEDDECISION-26JUL-C26
+  asado_category: fed_policy
+  asado_subcategory: fed_decision_c26
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: FOMC statement
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.3
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: Brazil
+    elasticity: -0.25
+    channel: em_beta
+    confidence: medium
+  - country: Mexico
+    elasticity: -0.2
+    channel: em_beta
+    confidence: medium
+  - country: India
+    elasticity: -0.15
+    channel: em_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXFEDDECISION-26JUL-C25
+  asado_category: fed_policy
+  asado_subcategory: fed_decision_c25
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: FOMC statement
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.3
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: Brazil
+    elasticity: -0.25
+    channel: em_beta
+    confidence: medium
+  - country: Mexico
+    elasticity: -0.2
+    channel: em_beta
+    confidence: medium
+  - country: India
+    elasticity: -0.15
+    channel: em_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXFEDDECISION-26JUN-H26
+  asado_category: fed_policy
+  asado_subcategory: fed_decision_h26
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: FOMC statement
+  spillover_countries:
+  - country: U.S.
+    elasticity: 0.3
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: 0.4
+    channel: usd_beta
+    confidence: high
+  - country: Brazil
+    elasticity: 0.25
+    channel: em_beta
+    confidence: medium
+  - country: Mexico
+    elasticity: 0.2
+    channel: em_beta
+    confidence: medium
+  - country: India
+    elasticity: 0.15
+    channel: em_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXFED-26JUN-T5.25
+  asado_category: fed_policy
+  asado_subcategory: fed_target_t5p25
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: FOMC statement
+  spillover_countries:
+  - country: U.S.
+    elasticity: 0.25
+    channel: usd_beta
+    confidence: medium
+  - country: NASDAQ
+    elasticity: 0.35
+    channel: usd_beta
+    confidence: medium
+  - country: Brazil
+    elasticity: 0.2
+    channel: em_beta
+    confidence: low
+- platform: kalshi
+  market_id: KXFED-26JUN-T5.00
+  asado_category: fed_policy
+  asado_subcategory: fed_target_t5p00
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: FOMC statement
+  spillover_countries:
+  - country: U.S.
+    elasticity: 0.25
+    channel: usd_beta
+    confidence: medium
+  - country: NASDAQ
+    elasticity: 0.35
+    channel: usd_beta
+    confidence: medium
+  - country: Brazil
+    elasticity: 0.2
+    channel: em_beta
+    confidence: low
+- platform: kalshi
+  market_id: KXFED-26JUN-T4.75
+  asado_category: fed_policy
+  asado_subcategory: fed_target_t4p75
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: FOMC statement
+  spillover_countries:
+  - country: U.S.
+    elasticity: 0.25
+    channel: usd_beta
+    confidence: medium
+  - country: NASDAQ
+    elasticity: 0.35
+    channel: usd_beta
+    confidence: medium
+  - country: Brazil
+    elasticity: 0.2
+    channel: em_beta
+    confidence: low
+- platform: kalshi
+  market_id: KXFED-26JUN-T4.50
+  asado_category: fed_policy
+  asado_subcategory: fed_target_t4p50
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: FOMC statement
+  spillover_countries:
+  - country: U.S.
+    elasticity: 0.25
+    channel: usd_beta
+    confidence: medium
+  - country: NASDAQ
+    elasticity: 0.35
+    channel: usd_beta
+    confidence: medium
+  - country: Brazil
+    elasticity: 0.2
+    channel: em_beta
+    confidence: low
+- platform: kalshi
+  market_id: KXFED-26JUN-T4.25
+  asado_category: fed_policy
+  asado_subcategory: fed_target_t4p25
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: FOMC statement
+  spillover_countries:
+  - country: U.S.
+    elasticity: 0.25
+    channel: usd_beta
+    confidence: medium
+  - country: NASDAQ
+    elasticity: 0.35
+    channel: usd_beta
+    confidence: medium
+  - country: Brazil
+    elasticity: 0.2
+    channel: em_beta
+    confidence: low
+- platform: kalshi
+  market_id: KXFED-26JUN-T4.00
+  asado_category: fed_policy
+  asado_subcategory: fed_target_t4p00
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: FOMC statement
+  spillover_countries:
+  - country: U.S.
+    elasticity: 0.25
+    channel: usd_beta
+    confidence: medium
+  - country: NASDAQ
+    elasticity: 0.35
+    channel: usd_beta
+    confidence: medium
+  - country: Brazil
+    elasticity: 0.2
+    channel: em_beta
+    confidence: low
+- platform: kalshi
+  market_id: KXCPI-26JUN-T-0.3
+  asado_category: cpi
+  asado_subcategory: cpi_mom_0p3
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS CPI release
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.5
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXCPI-26JUN-T-0.2
+  asado_category: cpi
+  asado_subcategory: cpi_mom_0p2
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS CPI release
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.5
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXCPI-26JUL-T0.5
+  asado_category: cpi
+  asado_subcategory: cpi_mom_t0p5
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS CPI release
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.5
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXCPI-26JUL-T0.4
+  asado_category: cpi
+  asado_subcategory: cpi_mom_t0p4
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS CPI release
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.5
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXCPI-26JUL-T0.3
+  asado_category: cpi
+  asado_subcategory: cpi_mom_t0p3
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS CPI release
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.5
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXCPI-26JUL-T0.2
+  asado_category: cpi
+  asado_subcategory: cpi_mom_t0p2
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS CPI release
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.5
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXCPI-26JUL-T0.1
+  asado_category: cpi
+  asado_subcategory: cpi_mom_t0p1
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS CPI release
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.5
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXCPI-26JUL-T-0.1
+  asado_category: cpi
+  asado_subcategory: cpi_mom_0p1
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS CPI release
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.5
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXCPIYOY-26JUL-T5.0
+  asado_category: cpi
+  asado_subcategory: cpi_yoy_t5p0
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS CPI release
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.5
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXCPIYOY-26JUL-T4.9
+  asado_category: cpi
+  asado_subcategory: cpi_yoy_t4p9
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS CPI release
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.5
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXCPIYOY-26JUL-T4.8
+  asado_category: cpi
+  asado_subcategory: cpi_yoy_t4p8
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS CPI release
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.5
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXCPIYOY-26JUL-T4.7
+  asado_category: cpi
+  asado_subcategory: cpi_yoy_t4p7
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS CPI release
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.5
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXCPIYOY-26JUL-T4.6
+  asado_category: cpi
+  asado_subcategory: cpi_yoy_t4p6
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS CPI release
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.5
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXCPIYOY-26JUL-T4.5
+  asado_category: cpi
+  asado_subcategory: cpi_yoy_t4p5
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS CPI release
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.5
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXCPIYOY-26JUL-T4.4
+  asado_category: cpi
+  asado_subcategory: cpi_yoy_t4p4
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS CPI release
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.5
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXCPIYOY-26JUL-T4.3
+  asado_category: cpi
+  asado_subcategory: cpi_yoy_t4p3
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS CPI release
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.5
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXCPICOREYOY-26JUL-T3.5
+  asado_category: cpi
+  asado_subcategory: cpi_core_yoy_t3p5
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS CPI release
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.5
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXCPICOREYOY-26JUL-T3.4
+  asado_category: cpi
+  asado_subcategory: cpi_core_yoy_t3p4
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS CPI release
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.5
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXCPICOREYOY-26JUL-T3.3
+  asado_category: cpi
+  asado_subcategory: cpi_core_yoy_t3p3
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS CPI release
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.5
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXCPICOREYOY-26JUL-T3.2
+  asado_category: cpi
+  asado_subcategory: cpi_core_yoy_t3p2
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS CPI release
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.5
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXCPICOREYOY-26JUL-T3.1
+  asado_category: cpi
+  asado_subcategory: cpi_core_yoy_t3p1
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS CPI release
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.5
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXCPICOREYOY-26JUL-T3.0
+  asado_category: cpi
+  asado_subcategory: cpi_core_yoy_t3p0
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS CPI release
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.4
+    channel: usd_beta
+    confidence: high
+  - country: NASDAQ
+    elasticity: -0.5
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXU3-26JUL-T5.0
+  asado_category: unemployment
+  asado_subcategory: unemployment_u3_t5p0
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS Employment Situation
+  spillover_countries:
+  - country: U.S.
+    elasticity: 0.3
+    channel: usd_beta
+    confidence: high
+  - country: US SmallCap
+    elasticity: 0.35
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXU3-26JUL-T4.9
+  asado_category: unemployment
+  asado_subcategory: unemployment_u3_t4p9
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS Employment Situation
+  spillover_countries:
+  - country: U.S.
+    elasticity: 0.3
+    channel: usd_beta
+    confidence: high
+  - country: US SmallCap
+    elasticity: 0.35
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXU3-26JUL-T4.8
+  asado_category: unemployment
+  asado_subcategory: unemployment_u3_t4p8
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS Employment Situation
+  spillover_countries:
+  - country: U.S.
+    elasticity: 0.3
+    channel: usd_beta
+    confidence: high
+  - country: US SmallCap
+    elasticity: 0.35
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXU3-26JUL-T4.7
+  asado_category: unemployment
+  asado_subcategory: unemployment_u3_t4p7
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS Employment Situation
+  spillover_countries:
+  - country: U.S.
+    elasticity: 0.3
+    channel: usd_beta
+    confidence: high
+  - country: US SmallCap
+    elasticity: 0.35
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXU3-26JUL-T4.6
+  asado_category: unemployment
+  asado_subcategory: unemployment_u3_t4p6
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS Employment Situation
+  spillover_countries:
+  - country: U.S.
+    elasticity: 0.3
+    channel: usd_beta
+    confidence: high
+  - country: US SmallCap
+    elasticity: 0.35
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXU3-26JUL-T4.5
+  asado_category: unemployment
+  asado_subcategory: unemployment_u3_t4p5
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS Employment Situation
+  spillover_countries:
+  - country: U.S.
+    elasticity: 0.3
+    channel: usd_beta
+    confidence: high
+  - country: US SmallCap
+    elasticity: 0.35
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXPAYROLLS-26JUL-T90000
+  asado_category: unemployment
+  asado_subcategory: payrolls_t90000
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS Employment Situation
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.25
+    channel: usd_beta
+    confidence: high
+  - country: US SmallCap
+    elasticity: -0.3
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXPAYROLLS-26JUL-T80000
+  asado_category: unemployment
+  asado_subcategory: payrolls_t80000
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS Employment Situation
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.25
+    channel: usd_beta
+    confidence: high
+  - country: US SmallCap
+    elasticity: -0.3
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXPAYROLLS-26JUL-T70000
+  asado_category: unemployment
+  asado_subcategory: payrolls_t70000
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS Employment Situation
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.25
+    channel: usd_beta
+    confidence: high
+  - country: US SmallCap
+    elasticity: -0.3
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXPAYROLLS-26JUL-T60000
+  asado_category: unemployment
+  asado_subcategory: payrolls_t60000
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS Employment Situation
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.25
+    channel: usd_beta
+    confidence: high
+  - country: US SmallCap
+    elasticity: -0.3
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXPAYROLLS-26JUL-T50000
+  asado_category: unemployment
+  asado_subcategory: payrolls_t50000
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS Employment Situation
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.25
+    channel: usd_beta
+    confidence: high
+  - country: US SmallCap
+    elasticity: -0.3
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXPAYROLLS-26JUL-T40000
+  asado_category: unemployment
+  asado_subcategory: payrolls_t40000
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BLS Employment Situation
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.25
+    channel: usd_beta
+    confidence: high
+  - country: US SmallCap
+    elasticity: -0.3
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXGDP-26JUL30-T4.0
+  asado_category: gdp_recession
+  asado_subcategory: gdp_print_t4p0
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BEA GDP release
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.3
+    channel: usd_beta
+    confidence: high
+  - country: US SmallCap
+    elasticity: -0.25
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXGDP-26JUL30-T3.5
+  asado_category: gdp_recession
+  asado_subcategory: gdp_print_t3p5
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BEA GDP release
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.3
+    channel: usd_beta
+    confidence: high
+  - country: US SmallCap
+    elasticity: -0.25
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXGDP-26JUL30-T3.0
+  asado_category: gdp_recession
+  asado_subcategory: gdp_print_t3p0
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BEA GDP release
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.3
+    channel: usd_beta
+    confidence: high
+  - country: US SmallCap
+    elasticity: -0.25
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXGDP-26JUL30-T0.0
+  asado_category: gdp_recession
+  asado_subcategory: gdp_print_t0p0
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BEA GDP release
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.3
+    channel: usd_beta
+    confidence: high
+  - country: US SmallCap
+    elasticity: -0.25
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXGDP-26JUL30-T0.5
+  asado_category: gdp_recession
+  asado_subcategory: gdp_print_t0p5
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BEA GDP release
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.3
+    channel: usd_beta
+    confidence: high
+  - country: US SmallCap
+    elasticity: -0.25
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXGDP-26JUL30-T2.5
+  asado_category: gdp_recession
+  asado_subcategory: gdp_print_t2p5
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: BEA GDP release
+  spillover_countries:
+  - country: U.S.
+    elasticity: -0.3
+    channel: usd_beta
+    confidence: high
+  - country: US SmallCap
+    elasticity: -0.25
+    channel: usd_beta
+    confidence: medium
+- platform: kalshi
+  market_id: KXRECSSNBER-27
+  asado_category: gdp_recession
+  asado_subcategory: recession_nber_27
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: NBER declaration
+  spillover_countries:
+  - country: U.S.
+    elasticity: 0.65
+    channel: usd_beta
+    confidence: high
+  - country: Germany
+    elasticity: 0.3
+    channel: trade_partner
+    confidence: medium
+  - country: Korea
+    elasticity: 0.25
+    channel: tech_supply_chain
+    confidence: medium
+  - country: Japan
+    elasticity: 0.2
+    channel: trade_partner
+    confidence: medium
+- platform: kalshi
+  market_id: KXRECSSNBER-26
+  asado_category: gdp_recession
+  asado_subcategory: recession_nber_26
+  contract_type: binary
+  resolution_clarity: high
+  resolution_source: NBER declaration
+  spillover_countries:
+  - country: U.S.
+    elasticity: 0.65
+    channel: usd_beta
+    confidence: high
+  - country: Germany
+    elasticity: 0.3
+    channel: trade_partner
+    confidence: medium
+  - country: Korea
+    elasticity: 0.25
+    channel: tech_supply_chain
+    confidence: medium
+  - country: Japan
+    elasticity: 0.2
+    channel: trade_partner
+    confidence: medium

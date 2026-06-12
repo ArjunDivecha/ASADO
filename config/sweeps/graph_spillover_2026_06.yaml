@@ -1,0 +1,101 @@
+# =============================================================================
+# SWEEP SPEC: graph_spillover_2026_06.yaml
+# =============================================================================
+# Systematic harness pass over the remaining graph spillover features
+# (loop table graph_features_daily, built from current Neo4j trade/banking/
+# ownership edge weights; daily 2000+). GRAPH_TRADE_NBR_RET_GAP_21D was
+# tested 2026-06-10 (H_20260610_003, WEAK) under family_key graph_trade_gap;
+# this sweep REUSES that family_key so the deflated Sharpe charges all graph
+# trials to one idea family (1 prior + 6 here = 7 trials).
+# KNOWN CAVEAT (README): edge weights are current, not point-in-time —
+# slow-moving, but any WATCH here needs a vintage-edge robustness pass
+# before promotion.
+#
+# Run: python scripts/harness/sweep_signals.py --spec config/sweeps/graph_spillover_2026_06.yaml
+# =============================================================================
+
+sweep_name: graph_spillover
+family_key: graph_trade_gap
+archetype: A2
+frequency: daily
+start_date: "2001-01-01"
+author: agent_sweep_2026_06_12
+
+signals:
+  - name: graph_trade_gap_63d
+    table: graph_features_daily
+    variable: GRAPH_TRADE_NBR_RET_GAP_63D
+    direction: higher_is_better
+    universe: "Australia,Brazil,Canada,Chile,ChinaA,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,Netherlands,Philippines,Poland,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K.,U.S.,Vietnam"
+    mechanism: >
+      Slower-frequency version of the trade-linkage catch-up already found WEAK
+      at 21 days: when a country's trade partners have outperformed it over the
+      trailing quarter, the demand impulse transmitted through export orders has
+      not yet reached its earnings prints, so the laggard should converge upward
+      over the following weeks; the 63-day window trades signal freshness for
+      less noise in the neighbor-return estimate.
+
+  - name: graph_bank_gap_21d
+    table: graph_features_daily
+    variable: GRAPH_BANK_NBR_RET_GAP_21D
+    direction: higher_is_better
+    universe: "Australia,Brazil,Canada,Chile,Denmark,France,Germany,Hong Kong,Italy,Japan,Korea,Mexico,Netherlands,Philippines,South Africa,Spain,Sweden,Switzerland,Taiwan,U.K.,U.S."
+    mechanism: >
+      Banking-claims linkages transmit funding conditions rather than trade
+      demand: when the countries whose banks hold claims on you have rallied
+      over the trailing month, cross-border credit supply into your economy is
+      loosening before your equity market has repriced it, so a positive
+      banking-weighted neighbor return gap should predict relative
+      outperformance as the funding tailwind feeds through.
+
+  - name: graph_bank_gap_63d
+    table: graph_features_daily
+    variable: GRAPH_BANK_NBR_RET_GAP_63D
+    direction: higher_is_better
+    universe: "Australia,Brazil,Canada,Chile,Denmark,France,Germany,Hong Kong,Italy,Japan,Korea,Mexico,Netherlands,Philippines,South Africa,Spain,Sweden,Switzerland,Taiwan,U.K.,U.S."
+    mechanism: >
+      Quarterly-window version of the banking-linkage read: cross-border credit
+      reallocation happens at bank-balance-sheet speed, not daily-trading speed,
+      so a full quarter of creditor-country outperformance is the cleaner
+      indication that funding conditions into the lagging borrower country have
+      genuinely improved, predicting its relative recovery over the following
+      weeks to months.
+
+  - name: graph_twohop_trade_gap
+    table: graph_features_daily
+    variable: GRAPH_TWOHOP_TRADE_GAP_21D
+    direction: higher_is_better
+    universe: "Australia,Brazil,Canada,Chile,ChinaA,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,Netherlands,Philippines,Poland,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K.,U.S.,Vietnam"
+    mechanism: >
+      The two-hop trade gap measures demand building at your customers'
+      customers, one extra step removed from anything local analysts watch:
+      because information diffuses along supply chains with a lag at every hop,
+      strength two hops out should be priced even more slowly than direct
+      partner strength, giving the squared-adjacency-weighted return gap
+      predictive power over the following weeks, the original A2 archetype.
+
+  - name: graph_holder_stress
+    table: graph_features_daily
+    variable: GRAPH_PORT_HOLDER_STRESS_21D
+    direction: higher_is_better
+    universe: "Australia,Brazil,Canada,Chile,ChinaA,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,Netherlands,Philippines,Poland,Saudi Arabia,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K.,U.S.,Vietnam"
+    mechanism: >
+      Fire-sale channel: this feature is the ownership-weighted drawdown of the
+      countries that HOLD your equities (negative means your holders are
+      stressed), and stressed foreign holders liquidate their cross-border
+      positions to meet redemptions at home regardless of local fundamentals,
+      so countries whose holder base is in drawdown should underperform over
+      the following weeks while those with healthy holders outperform.
+
+  - name: graph_nbr_drawdown_count
+    table: graph_features_daily
+    variable: GRAPH_NBR_DRAWDOWN_COUNT
+    direction: lower_is_better
+    universe: "Australia,Brazil,Canada,Chile,ChinaA,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,Netherlands,Philippines,Poland,Saudi Arabia,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K.,U.S.,Vietnam"
+    mechanism: >
+      Contagion breadth read: the trade-share-weighted fraction of a country's
+      partners sitting in deep drawdown measures how much of its external
+      demand base is already impaired, and breadth of partner distress
+      propagates into export orders and sentiment with a lag, so countries
+      surrounded by many drawn-down neighbors should underperform peers whose
+      trade networks are healthy over the following weeks to months.

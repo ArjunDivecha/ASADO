@@ -1,0 +1,49 @@
+# =============================================================================
+# SWEEP SPEC: systematic_round2_2026_06.yaml
+# =============================================================================
+# Corrective re-runs for the three coverage-gated specs from the systematic
+# pass (sweeps of 2026-06-12). Diagnosis: early-window thinness, not
+# structural narrowness - consensus signals cover 33-34 countries from 2013,
+# VAL_EY_PCT covers 30+ from 2005. Same mechanisms as the originals, later
+# start dates, each charged as a NEW trial to its family.
+# NOTE: this file holds two families; the runner takes one family_key per
+# spec, so consensus entries carry it at the top and the valuation entry is
+# in its own section below via a second run (see USAGE).
+#
+# Run: python scripts/harness/sweep_signals.py --spec config/sweeps/systematic_round2_2026_06.yaml
+#      (valuation re-spec lives in valuation_round2_2026_06.yaml)
+# =============================================================================
+
+sweep_name: consensus_r2
+family_key: consensus_ecfc_2026_06
+archetype: A3
+frequency: monthly
+start_date: "2013-01-01"
+author: agent_sweep_2026_06_12
+
+signals:
+  - name: cons_gdp_rev3m_12m_v2
+    table: consensus_signals
+    variable: CONS_GDP_REV3M_12M
+    direction: higher_is_better
+    mechanism: >
+      Re-test of H_20260612_028 from 2013 when the ECFC panel reaches full
+      34-country coverage (round 1 failed the coverage gate on 2008-2012
+      thinness): economist GDP forecasts are revised in persistent runs
+      because analysts anchor on their prior number, so a country whose
+      blended 12-month-ahead consensus growth forecast was upgraded over the
+      trailing quarter should keep being upgraded and outperform peers over
+      the following one to three months.
+
+  - name: cons_cpi_rev3m_12m_v2
+    table: consensus_signals
+    variable: CONS_CPI_REV3M_12M
+    direction: higher_is_better
+    mechanism: >
+      Re-test of H_20260612_029 from 2013 when the ECFC panel reaches full
+      coverage (round 1 coverage-gated on early thinness): read through the
+      reflation lens that the flipped surprise result supports, economists
+      revise country inflation forecasts up mainly when demand and terms of
+      trade strengthen, lifting nominal earnings, so upward CPI consensus
+      revisions should predict relative equity outperformance over following
+      months rather than rate-fear underperformance.

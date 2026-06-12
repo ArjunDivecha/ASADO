@@ -1,0 +1,33 @@
+# =============================================================================
+# SWEEP SPEC: fx_vol_level_2026_06.yaml
+# =============================================================================
+# One remaining untested market-implied signal: the 1M ATM implied vol
+# z-score level (FX_IMPVOL_Z252, in market_implied_signals since the D10
+# stress layer, never harness-tested). Charged to the bbg_skill_2026_06
+# family (trial 16) because it is the same idea family as the other FX
+# options reads tested in rounds 1-2. Universe = the 26 stable options
+# countries.
+#
+# Run: python scripts/harness/sweep_signals.py --spec config/sweeps/fx_vol_level_2026_06.yaml
+# =============================================================================
+
+sweep_name: fx_vol_level
+family_key: bbg_skill_2026_06
+archetype: A4
+frequency: daily
+start_date: "2008-01-01"
+author: agent_sweep_2026_06_12
+
+signals:
+  - name: fx_impvol_z252
+    table: market_implied_signals
+    variable: FX_IMPVOL_Z252
+    direction: lower_is_better
+    universe: "Australia,Brazil,Canada,Chile,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,Netherlands,Philippines,Poland,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K."
+    mechanism: >
+      Currency implied volatility elevated against its own trailing year is the
+      options market pricing macro stress that country equity investors absorb
+      with a lag because the marginal equity holder hedges currency exposure
+      separately: countries with calm currency vol should outperform those
+      whose vol is stretched, the level complement to the term-slope and skew
+      reads already tested in this family.

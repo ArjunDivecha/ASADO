@@ -319,14 +319,31 @@ sweeps Kalshi + Polymarket for new candidates to curate.
   re-specs and flipped re-registrations included. First family swept:
   `bbg_skill_2026_06` (15 trials across the six new Bloomberg layers; see
   `config/sweeps/new_bbg_layers_2026_06.yaml` and `..._round2_...yaml`).
+  The 2026-06-12 systematic pass added 18 more trials over the previously
+  untested loop families (valuation block, ETF flows/short interest, graph
+  spillovers, consensus revision momentum, FX vol level — specs in
+  `config/sweeps/`). Honest scoreboard: graph spillover family produced four
+  WEAK verdicts with the strongest ICs in the warehouse so far
+  (banking-claims neighbor gap nw_t 5.7, two-hop trade gap 4.5 — but graph
+  edges are current-weights, not PIT, so promotion requires a vintage-edge
+  robustness pass); CPI consensus revision momentum WEAK (nw_t 2.3, same
+  reflation direction as the flipped inflation-surprise result); ETF flow
+  momentum significant *against* its registered direction (contrarian,
+  nw_t −2.2, would need a fresh flipped registration to claim); valuation
+  percentiles and short interest DEAD cross-sectionally.
 - **Event-study engine** (`scripts/loop/event_study.py`): cross-event CARs on T2 country
   returns around discrete events with market-adjusted abnormal returns, bootstrap CIs,
   next_day/next_month anchoring, and PDF/xlsx/JSON outputs to `Data/loop/event_studies/`.
   Presets: `rating_downgrade`, `rating_upgrade`, `cds_inversion`, `growth_hot`,
   `growth_cold`, `inflation_hot`, `dislocation` (filterable by detector), `event_log`
-  (curated registry), or arbitrary `--events-sql`. First verified finding: sovereign
-  rating downgrades → −0.7% abnormal return in 5 trading days (t≈−2.0, 73 events since
-  2008), drifting to −2.1% at 63 days.
+  (curated registry), or arbitrary `--events-sql`. Verified findings (2026-06-12):
+  sovereign rating downgrades → −0.7% abnormal return in 5 trading days (t≈−2.0,
+  73 events since 2008), drifting to −2.1% at 63 days; CDS 1Y/5Y curve inversions →
+  −4.5% at 63 days (t≈−2.4, 41 events) — the 1Y CDS layer's payoff is event-conditional,
+  not cross-sectional; rating *upgrades* also drift −2.4% at 63 days (t≈−2.2, hit rate
+  0.31, n=45 — read cautiously); hot/cold growth surprises show no event drift. The
+  `dislocation` preset correctly returns INSUFFICIENT_EVENTS until detector history
+  accumulates a forward window (D1–D10 rows begin 2026-06-09).
 - **Daily portfolio backtests** were already in harness v2 (`backtest_daily`); the harness
   now also scales its coverage gate and top-N proportionally when a sub-universe is
   declared (e.g. the 26-country FX-options universe).

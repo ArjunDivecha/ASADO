@@ -1,0 +1,46 @@
+# =============================================================================
+# SWEEP SPEC: consensus_fxvol_2026_06.yaml
+# =============================================================================
+# Two small families bundled in one sweep file would break per-family trial
+# accounting, so this spec carries ONLY the consensus-revision family
+# (A3 revision momentum, the archetype the PRD flagged as untestable until
+# the ECFC surface existed - it exists now). Signals come from the NEW
+# consensus_signals table (load_consensus.py v1.1): fixed-12-month-horizon
+# blend of 3m revisions, monthly 2008+, 34 countries.
+# FX_IMPVOL_Z252 gets its own one-signal spec (fx_vol_level_2026_06.yaml)
+# because it belongs to the bbg_skill_2026_06 family.
+#
+# Run: python scripts/harness/sweep_signals.py --spec config/sweeps/consensus_fxvol_2026_06.yaml
+# =============================================================================
+
+sweep_name: consensus_revision_momentum
+family_key: consensus_ecfc_2026_06
+archetype: A3
+frequency: monthly
+start_date: "2008-06-01"
+author: agent_sweep_2026_06_12
+
+signals:
+  - name: cons_gdp_rev3m_12m
+    table: consensus_signals
+    variable: CONS_GDP_REV3M_12M
+    direction: higher_is_better
+    mechanism: >
+      Forecast revision momentum, the A3 archetype: economist GDP forecasts
+      are revised in persistent runs because analysts anchor on their prior
+      number and update toward incoming data only partially, so a country
+      whose blended 12-month-ahead consensus growth forecast has been revised
+      up over the trailing quarter should keep receiving upgrades and
+      outperform peers over the following one to three months.
+
+  - name: cons_cpi_rev3m_12m
+    table: consensus_signals
+    variable: CONS_CPI_REV3M_12M
+    direction: higher_is_better
+    mechanism: >
+      Inflation-forecast upgrade momentum read through the reflation lens that
+      the flipped surprise result (H_20260612_015) supports: at the country
+      level, economists revise inflation forecasts up mainly when demand and
+      terms of trade are strengthening, which lifts nominal earnings, so
+      upward CPI consensus revisions over the trailing quarter should predict
+      relative equity outperformance rather than rate-fear underperformance.

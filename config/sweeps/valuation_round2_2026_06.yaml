@@ -1,0 +1,31 @@
+# =============================================================================
+# SWEEP SPEC: valuation_round2_2026_06.yaml
+# =============================================================================
+# Corrective re-run of the raw earnings-yield cross-sectional spec
+# (H_20260612_017, coverage-gated): VAL_EY_PCT covers 30+ of 34 countries
+# from 2005, so the 2001 start was the problem. New trial charged to the
+# valuation family.
+#
+# Run: python scripts/harness/sweep_signals.py --spec config/sweeps/valuation_round2_2026_06.yaml
+# =============================================================================
+
+sweep_name: valuation_r2
+family_key: valuation_2026_06
+archetype: other
+frequency: monthly
+start_date: "2005-06-01"
+author: agent_sweep_2026_06_12
+
+signals:
+  - name: val_ey_level_xs_v2
+    table: valuation_monthly
+    variable: VAL_EY_PCT
+    direction: higher_is_better
+    mechanism: >
+      Re-test of the raw cross-country earnings-yield ranking from mid-2005
+      when coverage reaches 30-plus countries (round 1 failed the coverage
+      gate on pre-2003 thinness while showing IC t-stat near 2): a country
+      offering a higher trailing earnings yield than peers compensates
+      holders for risk that is usually overstated relative to realized
+      fundamentals, so high earnings yield should earn higher relative
+      returns over following months.

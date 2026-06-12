@@ -14,11 +14,18 @@ OUTPUT FILES:
     Table `consensus_daily`     — raw tidy panel (idempotent rebuild).
     Table `consensus_revisions` — month-end revision deltas per
         (country, target_year, variable): value vs 1m and 3m earlier.
+    Table `consensus_signals`   — harness-ready tidy signals
+        (date, country, value, variable, source):
+        CONS_GDP_REV3M_12M / CONS_CPI_REV3M_12M — fixed-12-month-horizon
+        blend of the 3m consensus revision (weight current target year by
+        months remaining in the year, next year by months elapsed), the
+        classic "consensus revision momentum" construction that removes
+        the January target-year rollover discontinuity.
     Lives in the LOOP DB because setup_duckdb.py deletes the main warehouse
     monthly.
 
-VERSION: 1.0
-LAST UPDATED: 2026-06-11
+VERSION: 1.1
+LAST UPDATED: 2026-06-12
 AUTHOR: Arjun Divecha (built by agent session, Alpha-Hunting Loop Phase 3)
 
 DESCRIPTION:
@@ -76,6 +83,29 @@ def derive_revisions(raw: pd.DataFrame) -> pd.DataFrame:
     return pd.concat(frames, ignore_index=True)
 
 
+def derive_signals(revisions: pd.DataFrame) -> pd.DataFrame:
+    """Fixed-12-month-horizon blend of 3m revisions (rollover-free signal).
+
+    At month m (1..12) of year Y the 12-month-ahead forecast horizon spans
+    (12-m)/12 of target year Y and m/12 of target year Y+1, so the blended
+    revision is w*rev(Y) + (1-w)*rev(Y+1) with w = (12-m)/12. Rows where
+    either leg is missing are dropped (no silent single-leg fallback).
+    """
+    rev = revisions.dropna(subset=["rev_3m"]).copy()
+    rev["year"] = rev["date"].dt.year
+    cur = rev[rev["target_year"] == rev["year"]][["date", "country", "variable", "rev_3m"]]
+    nxt = rev[rev["target_year"] == rev["year"] + 1][["date", "country", "variable", "rev_3m"]]
+    merged = cur.merge(nxt, on=["date", "country", "variable"], suffixes=("_cur", "_nxt"))
+    if merged.empty:
+        raise RuntimeError("no blended consensus signals derived — refusing to continue")
+    w = (12 - merged["date"].dt.month) / 12.0
+    merged["value"] = w * merged["rev_3m_cur"] + (1 - w) * merged["rev_3m_nxt"]
+    merged["variable"] = merged["variable"].map(
+        {"CONS_GDP_PCT": "CONS_GDP_REV3M_12M", "CONS_CPI_PCT": "CONS_CPI_REV3M_12M"})
+    merged["source"] = "consensus_ecfc"
+    return merged[["date", "country", "value", "variable", "source"]]
+
+
 def rebuild() -> None:
     if not PANEL_PATH.exists():
         raise FileNotFoundError(f"missing {PANEL_PATH} — run collect_consensus_bbg.py first")
@@ -101,7 +131,15 @@ def rebuild() -> None:
                    consensus, rev_1m, rev_3m
             FROM rev_df
         """)
-        for tbl in ("consensus_daily", "consensus_revisions"):
+        signals = derive_signals(revisions)
+        con.execute("DROP TABLE IF EXISTS consensus_signals")
+        con.register("sig_df", signals)
+        con.execute("""
+            CREATE TABLE consensus_signals AS
+            SELECT CAST(date AS DATE) AS date, country, value, variable, source
+            FROM sig_df
+        """)
+        for tbl in ("consensus_daily", "consensus_revisions", "consensus_signals"):
             n, lo, hi, nc = con.execute(
                 f"SELECT COUNT(*), MIN(date), MAX(date), COUNT(DISTINCT country) FROM {tbl}").fetchone()
             if not n:

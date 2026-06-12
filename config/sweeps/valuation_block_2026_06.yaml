@@ -1,0 +1,74 @@
+# =============================================================================
+# SWEEP SPEC: valuation_block_2026_06.yaml
+# =============================================================================
+# Systematic harness pass over the valuation block (loop table
+# valuation_monthly, built 2026-06: CAPE/EY/ERP/DY/PB levels + 10y within-
+# country percentiles, 34 countries, monthly 2000+). Never formally tested.
+# Four trials, all one family: two within-country percentile reads (CAPE,
+# ERP), one raw cross-sectional level (EY), one income read (DY percentile).
+# Universes are stable-coverage lists computed from the data 2026-06-12
+# (CAPE percentile = 21 countries, ERP percentile = 26; EY/DY are full 34).
+#
+# Run: python scripts/harness/sweep_signals.py --spec config/sweeps/valuation_block_2026_06.yaml
+# =============================================================================
+
+sweep_name: valuation_block
+family_key: valuation_2026_06
+archetype: other
+frequency: monthly
+start_date: "2003-01-01"
+author: agent_sweep_2026_06_12
+
+signals:
+  - name: val_cape_pctile_10y
+    table: valuation_monthly
+    variable: VAL_CAPE_PCTILE_10Y
+    direction: lower_is_better
+    universe: "Australia,Canada,ChinaA,ChinaH,Denmark,France,Germany,Hong Kong,Italy,Japan,Korea,Mexico,NASDAQ,Netherlands,Philippines,Singapore,South Africa,Switzerland,Taiwan,U.S.,US SmallCap"
+    mechanism: >
+      Classic country-level mean reversion in cyclically adjusted multiples:
+      when a market trades in the cheap tail of its own ten-year CAPE range,
+      pessimism about its earnings cycle is usually overdone and subsequent
+      multi-month relative returns are above average, while markets in their
+      expensive tail give the reverse, so low CAPE percentile should rank
+      countries positively for forward returns.
+
+  - name: val_ey_level_xs
+    table: valuation_monthly
+    variable: VAL_EY_PCT
+    direction: higher_is_better
+    start_date: "2001-01-01"
+    mechanism: >
+      Raw cross-country earnings-yield ranking, the bluntest value read: a
+      country whose equity market offers a higher trailing earnings yield than
+      peers compensates holders for risk that is usually overstated relative to
+      realized fundamentals, so high earnings yield countries should earn higher
+      relative returns over the following months despite persistent structural
+      multiple differences across markets working against the raw comparison.
+
+  - name: val_erp_pctile_10y
+    table: valuation_monthly
+    variable: VAL_ERP_PCT_PCTILE_10Y
+    direction: higher_is_better
+    start_date: "2008-06-01"
+    universe: "Brazil,Canada,ChinaA,ChinaH,Denmark,France,Germany,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,NASDAQ,Netherlands,Poland,Singapore,South Africa,Spain,Sweden,Switzerland,Thailand,Turkey,U.K.,U.S.,US SmallCap"
+    mechanism: >
+      The equity risk premium percentile corrects the valuation read for each
+      country's own rate environment: when the gap between earnings yield and
+      the local ten-year government yield sits high in its ten-year range,
+      equities are cheap relative to the domestic bond alternative and local
+      allocators rotate in over subsequent months, so a high ERP percentile
+      should predict relative outperformance better than unadjusted multiples.
+
+  - name: val_dy_pctile_10y
+    table: valuation_monthly
+    variable: VAL_DY_PCT_PCTILE_10Y
+    direction: higher_is_better
+    start_date: "2008-06-01"
+    mechanism: >
+      Dividend yield in the high tail of a country's own ten-year range marks
+      capitulation pricing in the most cash-flow-anchored valuation measure:
+      dividends are stickier than earnings, so an elevated dividend yield
+      percentile usually reflects price decline rather than payout growth, and
+      such markets historically recover relative to peers over the following
+      months as the income cushion attracts flows.

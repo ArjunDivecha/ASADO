@@ -1,0 +1,45 @@
+# =============================================================================
+# SWEEP SPEC: etf_flows_2026_06.yaml
+# =============================================================================
+# Systematic harness pass over the ETF passive-flow / positioning layer
+# (loop table etf_flow_signals, 34 country ETFs mapped to T2, daily 2010+;
+# short interest is semi-monthly FINRA prints, 29 stable countries). Never
+# formally tested. Two trials: flow momentum and short-interest positioning.
+# Z-scores in this table are shifted (point-in-time safe by construction).
+#
+# Run: python scripts/harness/sweep_signals.py --spec config/sweeps/etf_flows_2026_06.yaml
+# =============================================================================
+
+sweep_name: etf_flows
+family_key: etf_flows_2026_06
+archetype: other
+frequency: daily
+start_date: "2011-01-01"
+author: agent_sweep_2026_06_12
+
+signals:
+  - name: etf_flow_21d_z
+    table: etf_flow_signals
+    variable: ETF_FLOW_21D_Z
+    direction: higher_is_better
+    universe: "Australia,Brazil,Canada,Chile,ChinaA,ChinaH,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,NASDAQ,Netherlands,Philippines,Poland,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K.,U.S.,US SmallCap,Vietnam"
+    mechanism: >
+      Passive flows are persistent and exert price pressure that is absorbed
+      only gradually: a country ETF whose trailing 21-day net creations run
+      hot versus its own history signals an allocation shift still underway,
+      and because index flows arrive in installments rather than all at once
+      the country should continue to outperform peers over the following
+      days to weeks before the pressure fades or reverts.
+
+  - name: etf_short_pct_z
+    table: etf_flow_signals
+    variable: ETF_SHORT_PCT_Z
+    direction: lower_is_better
+    universe: "Australia,Brazil,Canada,ChinaA,ChinaH,France,Germany,Hong Kong,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,NASDAQ,Netherlands,Philippines,Poland,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K.,U.S.,US SmallCap"
+    mechanism: >
+      Short interest in single-country ETFs is the cleanest observable bearish
+      country positioning available at this frequency, and the equity-lending
+      literature finds elevated shorting predicts underperformance because
+      shorts are on average informed: a short-interest ratio stretched versus
+      the country's own two-year history should therefore precede relative
+      underperformance over the following weeks rather than a squeeze.

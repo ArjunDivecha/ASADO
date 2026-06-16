@@ -1090,21 +1090,26 @@ def _jst_tail_context_section(con, run_date: pd.Timestamp) -> list[str]:
     else:
         note = ""
 
-    deep = sorted(((c, d) for c, d in dds.items() if d <= -0.20), key=lambda x: x[1])
+    # In-scope DMs first (JST calibrates them directly), then EM names that only
+    # get the DM distribution as an analogy; deepest drawdown first within each.
+    deep = [(c, d) for c, d in dds.items() if d <= -0.20]
+    deep.sort(key=lambda x: (not jst_calib.is_jst_dm(x[0]), x[1]))
     lines = list(header)
     lines.append("Read: forward-3y **real** equity return distribution conditional on the "
                  "current drawdown bucket, calibrated on 150y of DM crises. Context only — "
-                 "no overlay on severity or sizing.")
+                 "no overlay on severity or sizing. **EM-analogy** rows apply the DM tail to a "
+                 "country JST does not cover (read directionally, not as a same-market estimate).")
     lines.append("")
     if deep:
-        lines.append("| country | trail. drawdown | JST bucket | fwd3y median | p10 | P(neg) |")
-        lines.append("|---|---|---|---|---|---|")
+        lines.append("| country | scope | trail. drawdown | JST bucket | fwd3y median | p10 | P(neg) |")
+        lines.append("|---|---|---|---|---|---|---|")
         for c, dd in deep:
             dist = jst_calib.lookup_by_drawdown("equity", dd, horizon=3)
             if not dist:
                 continue
+            scope = "DM" if jst_calib.is_jst_dm(c) else "EM-analogy"
             lines.append(
-                f"| {c} | {dd:.0%} | {dist['state']} | {dist['median']:.1%} | "
+                f"| {c} | {scope} | {dd:.0%} | {dist['state']} | {dist['median']:.1%} | "
                 f"{dist['p10']:.1%} | {dist['prob_neg']:.0%} |"
             )
     else:

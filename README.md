@@ -267,7 +267,7 @@ state lives in a **separate DuckDB** — `Data/loop/asado_loop.duckdb` — so mo
 `asado.duckdb` can never destroy it. The main DB is attached read-only as the `asado` schema.
 
 ### Nightly job (launchd, 06:45)
-`scripts/loop/loop_daily_job.py` (`com.arjundivecha.asado-loop-daily`) runs 32 steps, in order
+`scripts/loop/loop_daily_job.py` (`com.arjundivecha.asado-loop-daily`) runs 33 steps, in order
 (each in its own subprocess; one failure never stops the rest, but any failure exits non-zero):
 
 1. `collect_news_bridge.py` — portfolio holdings + 800-ticker ETF closes from the News repo
@@ -330,6 +330,10 @@ state lives in a **separate DuckDB** — `Data/loop/asado_loop.duckdb` — so mo
 31. `ledgers.py --rebuild` — folds the JSONL ledgers into loop-DB tables.
 32. `calibration_report.py` — regenerates the current-month calibration report (PARTIAL-stamped
    until ≥ 10 closed theses).
+33. `build_jst_risk_report.py` — dated JST long-cycle tail-risk report (xlsx + PDF) in
+   `Data/loop/risk_reports/`: per-country current drawdown → JST 1870-2020 bucket → forward
+   real-equity tail (the once-in-a-century p10 the modern sample can't see). Read-only; DM names
+   are in-scope, EM names carry a DM-analogy label.
 
 A second launchd job (`com.arjundivecha.asado-predmkt-daily`, 06:30) runs
 `scripts/predmkt_daily_job.py`: restore-from-archive → collect prediction markets → re-archive to

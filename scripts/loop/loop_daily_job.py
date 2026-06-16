@@ -102,6 +102,8 @@ com.arjundivecha.asado-loop-daily) in this order:
  31. ledgers --rebuild    - fold JSONL ledgers into loop-DB tables
  32. calibration_report   - regenerate current-month calibration report
                             (PRD 6.3; PARTIAL-stamped until >= 10 closed theses)
+ 33. build_jst_risk_report - dated JST long-cycle tail-risk report (xlsx + PDF)
+                            in Data/loop/risk_reports/ (read-only; context only)
 
 Each step runs in its own subprocess with the house per-source isolation
 pattern: one failing step does not stop the rest, but ANY failure makes the
@@ -217,6 +219,11 @@ STEPS = [
     # nightly from the folded ledgers; stamps itself PARTIAL until >= 10
     # closed theses exist (Phase 4 gate). Must run AFTER fold_ledgers.
     ("calibration_report", [PY, "scripts/loop/calibration_report.py"]),
+    # JST long-cycle tail-risk report (read-only): per-country current drawdown
+    # -> JST 1870-2020 bucket -> forward real-equity tail (the once-in-a-century
+    # p10 the modern sample can't see). Dated xlsx + PDF in Data/loop/risk_reports/.
+    # Pure reporting (no warehouse writes, no signal) — safe as the final step.
+    ("build_jst_risk_report", [PY, "scripts/loop/build_jst_risk_report.py"]),
 ]
 
 

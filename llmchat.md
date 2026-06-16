@@ -454,3 +454,56 @@ Commit 3fd66e8 on main holds all of it. Source: macrohistory.net/database (CC).
 ---
 SESSION END: 2026-06-15 20:30 PDT | Agent: Claude Code (Fable 5)
 ---
+
+---
+SESSION START: 2026-06-16 | Agent: Claude Code (Fable 5)
+---
+
+### Session Summary
+Did the two "use the JST corpus" items from the readiness review (the JST corpus
+landed 2026-06-15, commit 3fd66e8; verified live: jst_macrohistory 83,725 rows
+1870-2020, 13 DMs, 0 leak into unified_panel). Plumbing was ready; it was
+context-only and applied DM tails to EM names unlabeled, and the brief section
+had never rendered in a real brief (latest brief was 06-12, predates JST).
+
+### What Was Built
+1. **EM-analogy labeling (item 2).** Added `JST_DM_COUNTRIES` (the 13 in-scope
+   DMs = collect_jst_macrohistory.JST_TO_T2.values()) + `is_jst_dm()` to the live
+   accessor `regime/calib/jst_calib.py`. `build_dislocations.py::_jst_tail_context_section`
+   now tags each deep-drawdown row `DM` vs `EM-analogy`, sorts DMs first. Verified
+   render: Denmark=DM leads; Indonesia/ChinaA/ChinaH=EM-analogy.
+2. **JST tail-risk report (item 3).** New read-only `scripts/loop/build_jst_risk_report.py`
+   → dated `Data/loop/risk_reports/jst_tail_risk_YYYY_MM_DD.{xlsx,pdf}` (filename =
+   DATA AS-OF / last returns date, not wall-clock). xlsx: 3 sheets (Country Tail Risk
+   all 34 deepest-first w/ fwd1/3/5y real-equity median+p10+p90+P(neg)+n; full
+   state×asset×horizon JST grid; Notes/Methodology w/ caveats + banking-crisis ref).
+   pdf: light-mode forward-3y tail fan (p10–median–p90), DM blue / EM-analogy orange.
+   Wired as nightly loop **step 33** (read-only, final, after calibration_report);
+   ran clean via orchestrator `--only`.
+
+### Verified / Caveats
+- First real run: as-of 2026-06-12, 34 countries, 4 in >=20% drawdown
+  (Indonesia -50%, Denmark -45%, ChinaA -22%, ChinaH -21%). Drawdowns sanity-checked
+  (Denmark = Novo Nordisk collapse, real).
+- Live drawdown is NOMINAL vs JST REAL; tail cells overlapping-window (n_obs overstates
+  N, clean count = 65 banking crises); EM rows are DM-analogy. All baked into the report
+  Notes sheet + brief note. Still CONTEXT ONLY — must clear evaluate_signal before it
+  influences any trade/severity (the deferred "let it influence sizing" item is untouched).
+- Docs synced: nightly job 32 -> 33 steps in README (step list + count), CLAUDE.md (3
+  refs), loop_daily_job.py docstring; AGENTS.md got a new JST-usage fact line.
+
+### What To Build Next (unchanged from the readiness review)
+1. Let JST tail tables actually influence sizing/severity — register as a harness
+   hypothesis (tail prior / drawdown-bucket scaling), not a bolt-on.
+2. The deferred HMM/Markov regime fit on the 150y corpus (regime-for-RISK layer).
+3. Operational: latest brief on disk is 06-12 — confirm the nightly loop is running
+   (Monday 06-15 brief absent); the JST brief section + step 33 will first appear on
+   the next successful loop run.
+
+### Not Done (by design)
+- No git commit (left for Arjun). Pre-existing uncommitted files untouched
+  (.cursor/hooks/state/, brief_2026_06_12.md, thesis_ledger.jsonl, PRD_Triptych_*).
+
+---
+SESSION END: 2026-06-16 | Agent: Claude Code (Fable 5)
+---

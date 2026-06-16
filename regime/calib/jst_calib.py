@@ -47,6 +47,27 @@ from typing import Optional
 
 CALIB_JSON = Path(__file__).resolve().parent / "jst_bearbottom_conditional_returns.json"
 
+# The 13 in-universe developed markets JST actually calibrates (T2 names) —
+# i.e. scripts/collect_jst_macrohistory.JST_TO_T2.values(). Defined here in the
+# live accessor layer so every consumer can split an in-scope DM (a same-market
+# estimate) from any other T2 country, for which the JST distribution is only a
+# DM ANALOGY. Static by design: JST R6 is a static historical release.
+JST_DM_COUNTRIES = frozenset({
+    "Australia", "Canada", "Denmark", "France", "Germany", "Italy", "Japan",
+    "Netherlands", "Spain", "Sweden", "Switzerland", "U.K.", "U.S.",
+})
+
+
+def is_jst_dm(country: str) -> bool:
+    """True if `country` is one of the 13 DMs JST calibrates directly (in-scope).
+
+    For any other T2 country (the EMs, plus the NASDAQ / US SmallCap sleeves)
+    the JST conditional distribution is a developed-market ANALOGY, not a
+    same-market estimate — callers should label such rows accordingly.
+    """
+    return country in JST_DM_COUNTRIES
+
+
 @lru_cache(maxsize=1)
 def _tables() -> dict:
     if not CALIB_JSON.exists():

@@ -1060,8 +1060,61 @@ def write_brief(con, df: pd.DataFrame, run_date: pd.Timestamp, regime: str) -> N
     lines += _flows_section(con, run_date)
     lines += _etf_positioning_section(con, run_date)
     lines += _cot_section(con, run_date)
+    lines += _jst_tail_context_section(con, run_date)
     path.write_text("\n".join(lines) + "\n")
     log(f"brief: {path}")
+
+
+def _jst_tail_context_section(con, run_date: pd.Timestamp) -> list[str]:
+    """Long-cycle tail context from the JST 1870-2020 calibration (read-only).
+
+    For any in-universe country currently in a >=20% equity drawdown, print the
+    JST-calibrated forward-3y real-equity return distribution for that drawdown
+    bucket — the once-in-a-century tail the modern (~2000+) sample cannot show.
+    Pure context: it does NOT change any detector severity or trade sizing.
+    Degrades gracefully if the calibration file or returns panel is absent.
+    """
+    header = ["", "## Long-cycle tail context (JST 1870-2020, 13 DMs)", ""]
+    try:
+        from regime.calib import jst_calib
+    except Exception as exc:
+        return header + [f"UNAVAILABLE ({exc}) — run scripts/calibrate_jst_bearbottom.py"]
+    if not jst_calib._tables():
+        return header + ["UNAVAILABLE — run scripts/calibrate_jst_bearbottom.py first."]
+
+    try:
+        dds = jst_calib.country_drawdowns(returns_panel(con))
+    except Exception as exc:
+        dds = {}
+        note = f" (per-country drawdown unavailable: {exc.__class__.__name__})"
+    else:
+        note = ""
+
+    deep = sorted(((c, d) for c, d in dds.items() if d <= -0.20), key=lambda x: x[1])
+    lines = list(header)
+    lines.append("Read: forward-3y **real** equity return distribution conditional on the "
+                 "current drawdown bucket, calibrated on 150y of DM crises. Context only — "
+                 "no overlay on severity or sizing.")
+    lines.append("")
+    if deep:
+        lines.append("| country | trail. drawdown | JST bucket | fwd3y median | p10 | P(neg) |")
+        lines.append("|---|---|---|---|---|---|")
+        for c, dd in deep:
+            dist = jst_calib.lookup_by_drawdown("equity", dd, horizon=3)
+            if not dist:
+                continue
+            lines.append(
+                f"| {c} | {dd:.0%} | {dist['state']} | {dist['median']:.1%} | "
+                f"{dist['p10']:.1%} | {dist['prob_neg']:.0%} |"
+            )
+    else:
+        lines.append(f"No in-universe country in a >=20% drawdown today{note}. "
+                     "Standing reference — deepest-bucket (dd<=-35%) forward-3y real equity:")
+        ref = jst_calib.forward_distribution("equity", "dd_35_plus", 3)
+        if ref:
+            lines.append(f"  median {ref['median']:.1%}, p10 {ref['p10']:.1%}, "
+                         f"P(neg) {ref['prob_neg']:.0%} (n={ref['n_obs']}).")
+    return lines
 
 
 def _calendar_section(con, run_date: pd.Timestamp) -> list[str]:

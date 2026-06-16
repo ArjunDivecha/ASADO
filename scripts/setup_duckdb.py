@@ -142,6 +142,11 @@ IMF_PQ = DATA_DIR / "processed" / "imf_factors_panel.parquet"
 MACROSTRUCTURE_PQ = DATA_DIR / "processed" / "macrostructure_panel.parquet"
 BILATERAL_PORTFOLIO_PQ = DATA_DIR / "processed" / "bilateral_portfolio_matrix.parquet"
 BLOOMBERG_PQ = DATA_DIR / "processed" / "bloomberg_factors_panel.parquet"
+# JST Macrohistory: ISOLATED annual long-cycle calibration corpus (1870-2020,
+# 13 in-universe DMs). Loaded to its own table jst_macrohistory; intentionally
+# NOT in unified_panel / feature_panel and NOT forward-filled to monthly (same
+# rule as the deprecated wb_commodity_factor_panel). See collect_jst_macrohistory.py.
+JST_MACROHISTORY_PQ = DATA_DIR / "processed" / "jst_macrohistory_panel.parquet"
 FACTOR_RETURNS_PQ = DATA_DIR / "processed" / "factor_returns_panel.parquet"
 FACTOR_TOP20_MEMBERSHIP_PQ = DATA_DIR / "processed" / "factor_top20_membership_panel.parquet"
 WB_COMMODITY_PRICES_PQ = DATA_DIR / "processed" / "wb_commodity_prices.parquet"
@@ -394,6 +399,40 @@ def load_parquet_table(con: duckdb.DuckDBPyConnection, table_name: str,
     vars_count = con.execute(f"SELECT COUNT(DISTINCT variable) FROM {table_name}").fetchone()[0]
     countries = con.execute(f"SELECT COUNT(DISTINCT country) FROM {table_name}").fetchone()[0]
     print(f"  {table_name}: {count:,} rows, {vars_count} variables, {countries} countries")
+    return count
+
+
+def load_jst_macrohistory(con: duckdb.DuckDBPyConnection) -> int:
+    """Load the JST Macrohistory annual corpus into its OWN isolated table.
+
+    Deliberately NOT routed through load_parquet_table (its schema keeps the
+    extra year + iso3 columns) and NOT added to unified_panel. JST is annual
+    1870-2020 calibration history; unioning it into the monthly factor surface
+    or forward-filling it would tile static history across modern months and
+    create degenerate _CS variants (the wb_commodity_factor_panel mistake).
+    Downstream calibration (calibrate_jst_bearbottom.py) reads this offline.
+    """
+    print("Loading JST Macrohistory (isolated annual calibration corpus) ...")
+    con.execute("DROP TABLE IF EXISTS jst_macrohistory")
+    con.execute(f"""
+        CREATE TABLE jst_macrohistory AS
+        SELECT
+            CAST(date AS DATE) AS date,
+            CAST(year AS INTEGER) AS year,
+            country,
+            iso3,
+            variable,
+            CAST(value AS DOUBLE) AS value,
+            source
+        FROM read_parquet('{JST_MACROHISTORY_PQ}')
+    """)
+    con.execute("CREATE INDEX IF NOT EXISTS idx_jst_country_year ON jst_macrohistory(country, year)")
+    con.execute("CREATE INDEX IF NOT EXISTS idx_jst_variable ON jst_macrohistory(variable)")
+    count = con.execute("SELECT COUNT(*) FROM jst_macrohistory").fetchone()[0]
+    v = con.execute("SELECT COUNT(DISTINCT variable) FROM jst_macrohistory").fetchone()[0]
+    c = con.execute("SELECT COUNT(DISTINCT country) FROM jst_macrohistory").fetchone()[0]
+    print(f"  jst_macrohistory: {count:,} rows, {v} variables, {c} countries "
+          f"(annual 1870-2020; NOT in unified_panel)")
     return count
 
 
@@ -1074,6 +1113,11 @@ def main():
     print()
     total += load_wb_commodity_tables(con)
     print()
+    # JST Macrohistory: isolated annual calibration corpus (optional — only if
+    # collect_jst_macrohistory.py has been run). Never part of unified_panel.
+    if JST_MACROHISTORY_PQ.exists():
+        total += load_jst_macrohistory(con)
+        print()
     if BILATERAL_PORTFOLIO_PQ.exists():
         total += load_bilateral_portfolio_table(con)
     else:

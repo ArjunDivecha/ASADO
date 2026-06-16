@@ -29,6 +29,7 @@ when you need to understand the history behind a design choice.
 | `BBG_SKILL_ENHANCEMENTS_2026_06_12.md` | What the 2026-06-12 Bloomberg skill-mining batch added. | Snapshot; still current unless another batch lands. |
 | `WB_COMMODITY_EXTENSION_STATUS.md` | World Bank Pink Sheet commodity integration. | Manual. |
 | `DAILY_EXTENSION_STATUS.md` | T2/GDELT daily extension tables and build process. | Manual. |
+| `JST_MACROHISTORY_CALIBRATION.md` | JST Macrohistory (1870-2020) as an ISOLATED long-cycle calibration corpus + bear-bottom conditional-return tables. Not a factor feed; never in unified_panel. | Manual; update when JST releases or the calibration changes. |
 | `LOCAL_CLAUDE_MCP_SETUP.md` | How to wire the ASADO MCP server into Claude Desktop. | Manual. |
 | `USER_FIX_LIST.md` | Running list of user-side fixes / known upstream bugs. Agent should NOT fix these without explicit approval. | Append-only. |
 

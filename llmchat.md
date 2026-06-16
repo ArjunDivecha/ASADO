@@ -383,3 +383,74 @@ SESSION END: 2026-06-12 14:15 PDT | Agent: Cursor (Fable 5)
 ---
 SESSION END: 2026-06-12 15:55 PDT | Agent: Cursor (Fable 5)
 ---
+
+---
+SESSION START: 2026-06-15 20:00 PDT | Agent: Claude Code (Fable 5, run from the Memory workspace)
+---
+
+### Session Summary
+Integrated the Jordà-Schularick-Taylor (JST) Macrohistory Database (R6, 1870-2020,
+annual, 18 advanced economies) into ASADO as a long-cycle CALIBRATION CORPUS, to
+close the once-in-a-century tail / regime-calibration gap (the modern ~2000+ sample
+has only ~3 crises). NOTE: this work was done from a Claude Code session whose
+working directory is the *Memory* workspace, not ASADO — so it will not appear as
+an "ASADO session" anywhere; this llmchat entry is the handoff. All code was
+committed to ASADO main (commit 3fd66e8) and pushed.
+
+### Decisions Made
+- JST is a CALIBRATION CORPUS, not a factor feed. It is annual and ends 2020. It
+  loads into its OWN DuckDB table `jst_macrohistory` and is NEVER unioned into
+  `unified_panel`/`feature_panel` and NEVER forward-filled to monthly (the
+  deprecated `wb_commodity_factor_panel` mistake). Verified 0 jst rows in
+  unified_panel.
+- Scope = the 13 JST countries that are in the tradable 34-universe (AU, CA, DK,
+  FR, DE, IT, JP, NL, ES, SE, CH, U.K., U.S.). Dropped the 5 JST-only DMs
+  (Belgium, Finland, Ireland, Norway, Portugal). 65 banking-crisis onsets — ample.
+- Explicit JST->T2 country map (USA -> 'U.S.', NOT the iso3-ambiguous
+  'US SmallCap'/'NASDAQ').
+- Rule-based regime tagger left UNCHANGED; JST is additive (priors/tail tables).
+- A real HMM fit on JST is DEFERRED by decision (corpus makes it estimable later).
+- Brief integration is read-only CONTEXT — no overlay on detector severity or
+  trade sizing.
+
+### Architecture / Design
+- `scripts/collect_jst_macrohistory.py` — static ingest (NOT nightly; R6 is a
+  static release; `--refresh-download` re-pulls). Raw xlsx in `Data/raw/jst/`
+  (gitignored), tidy annual parquet `Data/processed/jst_macrohistory_panel.parquet`
+  (gitignored). Regenerate both with one run of this script.
+- `scripts/calibrate_jst_bearbottom.py` — real (CPI-deflated) forward 1/3/5y
+  return distributions conditional on drawdown buckets / banking-crisis onset /
+  post-crisis. Outputs `regime/calib/jst_bearbottom_conditional_returns.{parquet,json}`
+  + `jst_calibration_report.md`.
+- `scripts/setup_duckdb.py` — `load_jst_macrohistory()` isolated table loader
+  (runs automatically if the panel parquet exists; never in unified_panel).
+- `regime/calib/jst_calib.py` — read-only accessor: drawdown -> JST bucket ->
+  forward-return distribution. The live layer reads THIS, never the raw 150y panel.
+- `scripts/loop/build_dislocations.py` — new `_jst_tail_context_section()` adds a
+  "Long-cycle tail context" block to the daily brief: deep-drawdown countries
+  annotated with their JST forward-3y real-equity distribution. Current cyclical
+  drawdown uses a trailing ~5y peak (not the all-time peak).
+- Full design doc: `docs/JST_MACROHISTORY_CALIBRATION.md`.
+
+### What To Build Next
+1. Let the JST tail tables actually INFLUENCE sizing/severity (a real behavior
+   change — design carefully; currently context-only).
+2. The deferred HMM/Markov regime model fit on the 150y JST corpus.
+3. (Optional) pooled robustness overlay adding the 5 JST-only DMs if any tail cell
+   ever goes thin (none currently — min episodes per crisis cell = 65).
+
+### Constraints & Gotchas
+- Re-running the pipeline needs the JST data regenerated: `Data/raw/jst/` and
+  `Data/processed/jst_macrohistory_panel.parquet` are gitignored — run
+  `venv/bin/python scripts/collect_jst_macrohistory.py` then
+  `venv/bin/python scripts/calibrate_jst_bearbottom.py` after a fresh clone.
+- Live drawdown in the brief is NOMINAL (no live CPI deflation) and the JST
+  distribution is a DM tail reference applied as context even to EM names —
+  fine for context, not a trade signal.
+
+### Context for Next Session
+Commit 3fd66e8 on main holds all of it. Source: macrohistory.net/database (CC).
+
+---
+SESSION END: 2026-06-15 20:30 PDT | Agent: Claude Code (Fable 5)
+---

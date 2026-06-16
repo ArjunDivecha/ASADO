@@ -14,6 +14,7 @@
 ## Learned Workspace Facts
 
 - ASADO workspace root: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO`; 34-country T2 universe defined in `config/country_mapping.json`; git remote https://github.com/ArjunDivecha/ASADO.
+- JST Macrohistory (1870-2020) is an ISOLATED long-cycle calibration corpus, NOT a factor feed: table `jst_macrohistory` only, never unioned into `unified_panel`/`feature_panel`, never forward-filled to monthly (same rule as the deprecated `wb_commodity_factor_panel`). Ingest `scripts/collect_jst_macrohistory.py` (static, not nightly); calibrate `scripts/calibrate_jst_bearbottom.py`; live read-only accessor `regime/calib/jst_calib.py`; surfaced as context in the dislocation brief. `Data/raw/jst/` + `Data/processed/jst_macrohistory_panel.parquet` are gitignored — regenerate by running the collector. See `docs/JST_MACROHISTORY_CALIBRATION.md`.
 - T2/GDELT inputs are now internalized (no external Fuzzy/Excel steps): `scripts/setup_duckdb.py` reads `Data/work/t2/Normalized_T2_MasterCSV.csv`, `Data/work/t2/T2 Master.xlsx`, and `Data/work/gdelt/GDELT_Factors_MasterCSV.csv`; all pipeline intermediates live under `Data/work/{t2,gdelt,econ,t2_daily,gdelt_daily}`.
 - Phase 1 external data specs, paths, and indicator definitions live in `CLAUDE_CODE_BRIEF.md` and `PRD_Phase1_Program1_External_Data.md` in this repo.
 - Credentials: FRED and EIA keys are expected in the project `.env` file; Kalshi API credentials (key id + RSA private key) live in `/Users/arjundivecha/Dropbox/AAA Backup/.env.txt` for optional `build_predmkt_panel.py` auth.

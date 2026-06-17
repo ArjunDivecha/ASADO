@@ -1,0 +1,291 @@
+# =============================================================================
+# FILE: config/governance_contract.yaml
+# =============================================================================
+#
+# INPUT FILES: none (this file IS the source of truth).
+# CONSUMED BY:
+#   - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/loop/run_manifest.py
+#     (A1: derives per-step expected outputs -> Data/loop/governance/run_manifest.json)
+#   - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/loop/build_governance_scorecard.py
+#     (A8, future: reads `scorecard_dimensions` below — NOT a separate hand list —
+#      so the run-manifest expectations and the scorecard dimensions cannot drift)
+#
+# VERSION: 1.0
+# LAST UPDATED: 2026-06-17
+# AUTHOR: Arjun Divecha (built by agent session, Governance Layer PRD v1.2, item A1)
+#
+# DESCRIPTION:
+# The SINGLE source-controlled list of (a) every nightly loop step and the
+# concrete output it must produce, and (b) the governance scorecard dimensions.
+# A generator (run_manifest.py) turns the `steps` block into the run manifest's
+# per-step expectations; A8's scorecard reads `scorecard_dimensions`. Because
+# both come from this one file, the two trust lists cannot drift (the v1.2
+# fix to GPT review finding #2). This file is a GIT-TRACKED TRUST ROOT: A8's
+# config guard reds the scorecard if it is uncommitted/dirty.
+#
+# STALENESS MODEL (verified during A1 recon):
+#   expected_outputs[].kind:
+#     file          -> a real file path; staleness checked on its mtime.
+#     loop_db_table -> a table in Data/loop/asado_loop.duckdb; checked for
+#                      EXISTENCE + non-empty only (the shared DB file's mtime
+#                      advances on every write, so file-mtime cannot tell which
+#                      step refreshed — table existence is the honest v1 check).
+#   staleness (file only): mtime | existence
+#     mtime     -> the file MUST have been rewritten this run (mtime advanced
+#                  past the step's started_ts). Use only for genuinely
+#                  daily-rewritten outputs (brief, combiner, graph/twin/leadlag
+#                  features, country returns, calibration, JST report).
+#     existence -> file must exist + be non-empty, but is NOT required to be
+#                  rewritten nightly (gated/monthly/cached outputs: tot_shares
+#                  7d gate, WEO 24h cache, month-end blocks, BBG parquets).
+#   optional: true -> a skip / exit-2 (PARTIAL) for this step is NOT a hard
+#                     fail (Bloomberg-down nights, GDELT rate-limit, etc.).
+#   governance: true -> this step is itself a governance checkpoint (A3/A5/A6
+#                       etc. live inside it).
+# =============================================================================
+
+schema_version: 1
+contract_version: "1.0"
+
+# Step names MUST match scripts/loop/loop_daily_job.py STEPS exactly.
+steps:
+  - name: collect_news_bridge
+    governance: false
+    optional: true
+    expected_outputs:
+      - {kind: loop_db_table, table: portfolio_holdings_daily}
+
+  - name: mark_theses
+    governance: false
+    optional: false
+    expected_outputs:
+      - {kind: loop_db_table, table: thesis_marks}
+
+  - name: build_country_returns
+    governance: false
+    optional: false
+    expected_outputs:
+      - {kind: file, path_template: "Data/loop/country_returns_monthly.parquet", staleness: mtime}
+
+  - name: build_tot_shares
+    governance: false
+    optional: true          # 7-day freshness gate: parquet not rewritten nightly
+    expected_outputs:
+      - {kind: loop_db_table, table: tot_trade_shares}
+
+  - name: build_graph_features
+    governance: false
+    optional: false
+    expected_outputs:
+      - {kind: file, path_template: "Data/loop/graph_features_daily.parquet", staleness: mtime}
+
+  - name: build_forward_calendar
+    governance: false
+    optional: false
+    expected_outputs:
+      - {kind: loop_db_table, table: forward_calendar}
+
+  - name: collect_foreign_flows_bbg
+    governance: false
+    optional: true
+    expected_outputs:
+      - {kind: file, path_template: "Data/work/loop/foreign_flows.parquet", staleness: existence}
+
+  - name: collect_foreign_flows
+    governance: false
+    optional: false
+    expected_outputs:
+      - {kind: loop_db_table, table: foreign_flows_daily}
+
+  - name: collect_sovereign_daily_bbg
+    governance: false
+    optional: true
+    expected_outputs:
+      - {kind: file, path_template: "Data/work/loop/sovereign_daily.parquet", staleness: existence}
+
+  - name: load_sovereign_daily
+    governance: false
+    optional: false
+    expected_outputs:
+      - {kind: loop_db_table, table: sovereign_signals}
+
+  - name: build_valuation_block
+    governance: false
+    optional: false
+    expected_outputs:
+      - {kind: loop_db_table, table: valuation_monthly}
+
+  - name: collect_weo_vintages
+    governance: false
+    optional: true          # 24h cache: vintages not re-fetched nightly
+    expected_outputs:
+      - {kind: loop_db_table, table: weo_vintages}
+
+  - name: collect_etf_flows_bbg
+    governance: false
+    optional: true
+    expected_outputs:
+      - {kind: file, path_template: "Data/work/loop/etf_flows.parquet", staleness: existence}
+
+  - name: load_etf_flows
+    governance: false
+    optional: false
+    expected_outputs:
+      - {kind: loop_db_table, table: etf_flow_signals}
+
+  - name: collect_consensus_bbg
+    governance: false
+    optional: true
+    expected_outputs:
+      - {kind: file, path_template: "Data/work/loop/consensus_daily.parquet", staleness: existence}
+
+  - name: load_consensus
+    governance: false
+    optional: false
+    expected_outputs:
+      - {kind: loop_db_table, table: consensus_signals}
+
+  - name: collect_cot
+    governance: false
+    optional: true
+    expected_outputs:
+      - {kind: loop_db_table, table: cot_signals}
+
+  - name: collect_market_implied_bbg
+    governance: false
+    optional: true
+    expected_outputs:
+      - {kind: file, path_template: "Data/work/loop/market_implied_daily.parquet", staleness: existence}
+
+  - name: load_market_implied
+    governance: false
+    optional: false
+    expected_outputs:
+      - {kind: loop_db_table, table: market_implied_signals}
+
+  - name: collect_sov_ratings_bql
+    governance: false
+    optional: true
+    expected_outputs:
+      - {kind: file, path_template: "Data/work/loop/sov_ratings_monthly.parquet", staleness: existence}
+
+  - name: load_sov_ratings
+    governance: false
+    optional: false
+    expected_outputs:
+      - {kind: loop_db_table, table: sov_rating_changes}
+
+  - name: collect_eco_surprise_bbg
+    governance: false
+    optional: true
+    expected_outputs:
+      - {kind: file, path_template: "Data/work/loop/eco_surprise_monthly.parquet", staleness: existence}
+
+  - name: load_eco_surprise
+    governance: false
+    optional: false
+    expected_outputs:
+      - {kind: loop_db_table, table: eco_surprise_signals}
+
+  - name: build_graph_features_pit
+    governance: false
+    optional: false
+    expected_outputs:
+      - {kind: file, path_template: "Data/loop/graph_features_pit_daily.parquet", staleness: mtime}
+
+  - name: build_similarity_features
+    governance: false
+    optional: false
+    expected_outputs:
+      - {kind: file, path_template: "Data/loop/similarity_features_daily.parquet", staleness: mtime}
+
+  - name: build_leadlag_features
+    governance: false
+    optional: false
+    expected_outputs:
+      - {kind: file, path_template: "Data/loop/leadlag_features_daily.parquet", staleness: mtime}
+
+  - name: build_combiner
+    governance: false
+    optional: false
+    expected_outputs:
+      - {kind: file, path_template: "Data/loop/combiner_scores_daily.parquet", staleness: mtime}
+
+  - name: write_graph_discoveries
+    governance: false
+    optional: true          # Neo4j must be up; no file output (rc-only)
+    expected_outputs: []
+
+  - name: build_dislocations
+    governance: false        # the engine; A6/A7 checkpoints are added inside it
+    optional: false
+    expected_outputs:
+      # The brief is dated by the DATA AS-OF date (latest return date), which
+      # lags wall-clock — so glob the newest brief and require IT to be rewritten
+      # this run, not a today-dated file (which would false-fail a good run).
+      - {kind: file, glob: "Data/dislocations/brief_*.md", staleness: mtime}
+      - {kind: loop_db_table, table: dislocation_daily}
+
+  - name: build_evidence_packs
+    governance: false
+    optional: true          # GDELT rate-limit -> exit 2 PARTIAL by design
+    expected_outputs: []
+
+  - name: fold_ledgers
+    governance: true         # A3 ledger integrity lives here
+    optional: false
+    expected_outputs:
+      - {kind: loop_db_table, table: hypothesis_ledger}
+      - {kind: loop_db_table, table: thesis_ledger}
+
+  - name: calibration_report
+    governance: true         # A5 by-model slice, calibration-as-governance
+    optional: false
+    expected_outputs:
+      - {kind: file, path_template: "Data/loop/calibration/calibration_{date:%Y_%m}.md", staleness: mtime}
+
+  - name: build_jst_risk_report
+    governance: false
+    optional: false
+    expected_outputs:
+      # Also DATA-AS-OF dated (filename = last returns date, not wall-clock).
+      - {kind: file, glob: "Data/loop/risk_reports/jst_tail_risk_*.xlsx", staleness: mtime}
+
+# -----------------------------------------------------------------------------
+# Scorecard dimensions (A8 reads THIS list, not a separate hand list).
+# A1 only declares them; A8 computes red/amber/green per dimension and writes
+# governance_scorecard.json. severity = the colour a FAILED dimension takes.
+# `owner_item` = the PRD Phase-A item that implements the check.
+# `amber_by_design` = the dimension can never be green in Phase A (partial by
+# construction, e.g. A7 cross_source_minimal until the Phase-C full sweep).
+# -----------------------------------------------------------------------------
+scorecard_dimensions:
+  - name: run_manifest
+    owner_item: A1
+    severity: red
+    description: "No nightly step is fail/stale/missing-output in run_manifest.json."
+  - name: liveness
+    owner_item: A2
+    severity: red
+    description: "Loop ran, exited 0, today's brief is present AND committed."
+  - name: ledger_integrity
+    owner_item: A3
+    severity: red
+    description: "fold raises on unknown events; retired/rejected never read as live; counts conserve."
+  - name: family_registry
+    owner_item: A5
+    severity: red
+    description: "Every family_key is canonical; primary_horizon frozen; migration diff balances."
+  - name: pit_lag_proof
+    owner_item: A6
+    severity: red
+    description: "No daily signal resolves publication_lag=0 without a valid pit_proof."
+  - name: cross_source_minimal
+    owner_item: A7
+    severity: amber
+    amber_by_design: true
+    description: "Sentinels + D11-lite pass; coverage of critical mapped series reported (amber until Phase-C full sweep)."
+  - name: config_guard
+    owner_item: A8
+    severity: red
+    description: "All trust-root YAMLs committed (repo not dirty on config/); contract hash stamped."

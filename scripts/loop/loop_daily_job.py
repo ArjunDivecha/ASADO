@@ -17,6 +17,9 @@ OUTPUT FILES:
   (the daily brief for the Layer 2 reasoning session)
 - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/logs/loop_daily_launchd.log
   (when run from launchd)
+- /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/governance/run_manifest.json
+  (A1 governance run manifest: per-step ok/fail/stale/partial/skipped + the
+  governance-contract hash; written fail-soft after the STEPS loop)
 
 VERSION: 1.2
 LAST UPDATED: 2026-06-12 (graph machine: PIT graph features, fundamental
@@ -129,6 +132,7 @@ from datetime import datetime
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(BASE_DIR))  # so `from scripts.loop import run_manifest` resolves
 PY = str(BASE_DIR / "venv" / "bin" / "python")
 BBG_ENV = "/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg/.venv"
 # Absolute conda path: under launchd the default PATH has no /opt/homebrew/bin,
@@ -239,8 +243,10 @@ def main() -> int:
 
     failures = []
     warnings = []
+    records = []  # per-step status for the governance run manifest (A1)
     for name, cmd in steps:
         print(f"\n{'─' * 60}\n{datetime.now().strftime('%H:%M:%S')} STEP: {name}\n{'─' * 60}", flush=True)
+        started_ts = datetime.now().isoformat(timespec="seconds")
         try:
             res = subprocess.run(cmd, cwd=str(BASE_DIR))
             rc = res.returncode
@@ -249,6 +255,8 @@ def main() -> int:
             # STEP loudly, never kill the whole job silently (2026-06-11 bug).
             rc = 127
             print(f"!!! STEP BINARY MISSING: {name}: {exc}", flush=True)
+        ended_ts = datetime.now().isoformat(timespec="seconds")
+        records.append({"name": name, "rc": rc, "started_ts": started_ts, "ended_ts": ended_ts})
         if rc == 2:
             # Exit 2 = PARTIAL: the step kept its completed work and the missing
             # part self-heals next run (e.g. evidence packs hit GDELT's rate
@@ -258,6 +266,18 @@ def main() -> int:
         elif rc != 0:
             failures.append(name)
             print(f"!!! STEP FAILED: {name} (exit {rc}) - continuing with remaining steps", flush=True)
+
+    # Governance run manifest (A1): observability only. FAIL-SOFT — a manifest
+    # bug must never change this job's exit code (A2/A8 are the fail-loud
+    # readers that turn its contents into a hard gate).
+    try:
+        from scripts.loop import run_manifest
+        m = run_manifest.write_manifest(records)
+        if not m["overall_ok"]:
+            print(f"run_manifest: NOT OK — fail={m['fail_steps']} stale={m['stale_steps']}"
+                  + (f" unknown={m['unknown_steps']}" if m["unknown_steps"] else ""), flush=True)
+    except Exception as exc:  # noqa: BLE001
+        print(f"!!! run_manifest write failed (non-fatal): {exc}", flush=True)
 
     print(f"\n{'=' * 60}")
     if failures:

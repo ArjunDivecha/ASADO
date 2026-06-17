@@ -17,8 +17,16 @@ OUTPUT FILES:
 - The two JSONL files above (append-only; nothing is ever rewritten or deleted).
 - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/asado_loop.duckdb
   Folded current-state tables rebuilt from the event logs on demand:
-    hypothesis_ledger  - one row per hypothesis, latest state
-    thesis_ledger      - one row per thesis, latest state
+    hypothesis_ledger  - one row per hypothesis, latest state. Carries both the
+                         raw `verdict` and `effective_verdict` (NULL once the
+                         hypothesis is retired/rejected so a naive verdict query
+                         cannot resurrect a killed hypothesis — A3).
+    live_signals       - VIEW: hypothesis_ledger WHERE status NOT IN
+                         ('retired','rejected'). The canonical "what is live"
+                         surface (A3).
+    thesis_ledger      - one row per thesis, latest state. `outcome_label` maps
+                         a review-kill (killed_review) to 'void' (no Brier) so
+                         the loser-prune path is auditable, never silently null.
     thesis_marks       - one row per (thesis, mark date)
 
 VERSION: 1.0
@@ -86,6 +94,33 @@ THESIS_PATH = LEDGER_DIR / "thesis_ledger.jsonl"
 
 VALID_ARCHETYPES = {"A1", "A2", "A3", "A4", "A5", "A6", "A7", "other"}
 VALID_DIRECTIONS = {"long", "short"}
+
+# A3 — ledger integrity (FAIL-IS-FAIL on the reader). The fold refuses to
+# silently drop an event type it does not understand.
+HYP_EVENTS = {"hyp_register", "hyp_verdict", "hyp_status"}
+THESIS_EVENTS = {"thesis_open", "thesis_mark", "thesis_close", "thesis_review"}
+# A hypothesis in one of these statuses is retired/rejected: its verdict must
+# NOT read as "live" (the H_20260610_001 bug — a retired 12MRet look-ahead
+# still folded to verdict='WATCH', so a `WHERE verdict='WATCH'` query
+# resurrected it). The canonical "what is live" surface is the live_signals view.
+TERMINAL_HYP_STATUSES = {"retired", "rejected"}
+
+
+def effective_verdict(status: Optional[str], verdict: Optional[str]) -> Optional[str]:
+    """The verdict a consumer should trust: NULL once retired/rejected so a
+    naive verdict query cannot resurrect a killed hypothesis. The raw verdict
+    stays in the ledger events (and family_trial_count's in-memory fold), so
+    deflated-Sharpe trial accounting is unaffected."""
+    return None if status in TERMINAL_HYP_STATUSES else verdict
+
+
+def _outcome_label(status: Optional[str]) -> Optional[str]:
+    """Auditable close label. killed_review -> 'void' (review-killed, no Brier)
+    so the loser-prune path is visibly NOT a mechanical close, never silently
+    null. Open theses (no close) have no label."""
+    if status in ("killed_review", "void"):
+        return "void"
+    return status  # hit / miss / invalidated / expired / None(open)
 
 
 # ── low-level event I/O ─────────────────────────────────────────────────────
@@ -207,17 +242,24 @@ def family_trial_count(family_key: str) -> int:
     return max(1, int(round(count)))
 
 
-def fold_hypotheses() -> dict[str, dict[str, Any]]:
+def fold_hypotheses(events: Optional[list[dict[str, Any]]] = None) -> dict[str, dict[str, Any]]:
+    if events is None:
+        events = _read_events(HYP_PATH)
     state: dict[str, dict[str, Any]] = {}
-    for e in _read_events(HYP_PATH):
+    for e in events:
+        ev = e.get("event")
+        if ev not in HYP_EVENTS:
+            raise ValueError(
+                f"unknown hypothesis event type {ev!r} (FAIL-IS-FAIL: the ledger "
+                f"reader refuses to silently drop events it does not understand)")
         hid = e.get("hypothesis_id")
-        if e["event"] == "hyp_register":
+        if ev == "hyp_register":
             state[hid] = {k: v for k, v in e.items() if k != "event"}
-        elif e["event"] == "hyp_verdict" and hid in state:
+        elif ev == "hyp_verdict" and hid in state:
             state[hid]["verdict"] = e["verdict"]
             state[hid]["verdict_json"] = e["verdict_json"]
             state[hid]["status"] = e["status"]
-        elif e["event"] == "hyp_status" and hid in state:
+        elif ev == "hyp_status" and hid in state:
             state[hid]["status"] = e["status"]
     return state
 
@@ -268,20 +310,37 @@ def open_thesis(
     return thesis_id
 
 
-def fold_theses() -> dict[str, dict[str, Any]]:
+def fold_theses(events: Optional[list[dict[str, Any]]] = None) -> dict[str, dict[str, Any]]:
+    if events is None:
+        events = _read_events(THESIS_PATH)
     state: dict[str, dict[str, Any]] = {}
-    for e in _read_events(THESIS_PATH):
+    for e in events:
+        ev = e.get("event")
+        if ev not in THESIS_EVENTS:
+            raise ValueError(
+                f"unknown thesis event type {ev!r} (FAIL-IS-FAIL: the ledger "
+                f"reader refuses to silently drop events it does not understand)")
         tid = e.get("thesis_id")
-        if e["event"] == "thesis_open":
+        if ev == "thesis_open":
             state[tid] = {k: v for k, v in e.items() if k != "event"}
             state[tid]["marks"] = []
-        elif e["event"] == "thesis_mark" and tid in state:
+            state[tid]["reviews"] = []
+        elif ev == "thesis_mark" and tid in state:
             state[tid]["marks"].append({
                 "mark_date": e["mark_date"],
                 "cum_return": e["cum_return"],
                 "days_open": e["days_open"],
             })
-        elif e["event"] == "thesis_close" and tid in state:
+        elif ev == "thesis_review" and tid in state:
+            # Hand-written review note (agree/kill). Previously DROPPED silently
+            # — folding it keeps the reasoning trail attached to the thesis.
+            state[tid]["reviews"].append({
+                "review_date": e.get("review_date"),
+                "reviewer": e.get("reviewer"),
+                "verdict": e.get("verdict"),
+                "note": e.get("note", ""),
+            })
+        elif ev == "thesis_close" and tid in state:
             state[tid].update({
                 "status": e["status"],
                 "close_date": e["close_date"],
@@ -289,6 +348,7 @@ def fold_theses() -> dict[str, dict[str, Any]]:
                 "outcome": e["outcome"],
                 "brier_contribution": e["brier_contribution"],
                 "close_note": e.get("close_note", ""),
+                "outcome_label": _outcome_label(e["status"]),
             })
     return state
 
@@ -389,6 +449,7 @@ def rebuild_duckdb_tables() -> None:
             "trial_index": h["trial_index"],
             "status": h["status"],
             "verdict": h.get("verdict"),
+            "effective_verdict": effective_verdict(h["status"], h.get("verdict")),
             "verdict_json": json.dumps(h.get("verdict_json")) if h.get("verdict_json") else None,
         })
 
@@ -412,6 +473,7 @@ def rebuild_duckdb_tables() -> None:
             "close_date": t.get("close_date"),
             "realized_return": t.get("realized_return"),
             "outcome": t.get("outcome"),
+            "outcome_label": t.get("outcome_label"),
             "brier_contribution": t.get("brier_contribution"),
         })
         for m in t["marks"]:
@@ -423,13 +485,14 @@ def rebuild_duckdb_tables() -> None:
             ("hypothesis_ledger", hyp_rows,
              "hypothesis_id VARCHAR, created_ts VARCHAR, author VARCHAR, archetype VARCHAR, "
              "family_key VARCHAR, mechanism_text VARCHAR, signal_spec_json VARCHAR, "
-             "signal_spec_hash VARCHAR, trial_index INT, status VARCHAR, verdict VARCHAR, verdict_json VARCHAR"),
+             "signal_spec_hash VARCHAR, trial_index INT, status VARCHAR, verdict VARCHAR, "
+             "effective_verdict VARCHAR, verdict_json VARCHAR"),
             ("thesis_ledger", thesis_rows,
              "thesis_id VARCHAR, opened_ts VARCHAR, author VARCHAR, paper BOOLEAN, entity VARCHAR, "
              "direction VARCHAR, horizon_days INT, entry_thesis_text VARCHAR, probability DOUBLE, "
              "invalidation_level DOUBLE, catalyst VARCHAR, source_dislocation_id VARCHAR, "
              "open_date VARCHAR, status VARCHAR, close_date VARCHAR, realized_return DOUBLE, "
-             "outcome DOUBLE, brier_contribution DOUBLE"),
+             "outcome DOUBLE, outcome_label VARCHAR, brier_contribution DOUBLE"),
             ("thesis_marks", mark_rows,
              "thesis_id VARCHAR, mark_date VARCHAR, cum_return DOUBLE, days_open INT"),
         ]:
@@ -439,6 +502,13 @@ def rebuild_duckdb_tables() -> None:
                 con.execute(f"CREATE TABLE {name} AS SELECT * FROM df")
             else:
                 con.execute(f"CREATE TABLE {name} ({empty_cols})")
+        # A3: canonical "what is live" surface. A consumer keying on this view
+        # (instead of raw `verdict`) can never resurrect a retired/rejected
+        # hypothesis — e.g. H_20260610_001, the retired 12MRet look-ahead that
+        # still folds to verdict='WATCH'.
+        con.execute(
+            "CREATE OR REPLACE VIEW live_signals AS "
+            "SELECT * FROM hypothesis_ledger WHERE status NOT IN ('retired', 'rejected')")
     finally:
         con.close()
 

@@ -89,6 +89,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from scripts.loop.loopdb import LEDGER_DIR, T2_UNIVERSE, loop_connection
+from scripts.loop.family_registry import resolve_family, UnclassifiedVariableError
 
 HYP_PATH = LEDGER_DIR / "hypothesis_ledger.jsonl"
 THESIS_PATH = LEDGER_DIR / "thesis_ledger.jsonl"
@@ -181,11 +182,17 @@ def register_hypothesis(
     mechanism_text: str,
     signal_spec: dict[str, Any],
     author: str = "agent",
+    primary_horizon: Optional[int] = None,
 ) -> str:
     """Pre-register a hypothesis. Returns hypothesis_id.
 
     mechanism_text must be written BEFORE any results are seen - the sha256
     of (spec + mechanism) is the pre-registration proof.
+
+    A5: the canonical family (which sets the deflated-Sharpe N) is derived from
+    the signal VARIABLE via config/family_registry.yaml, not the caller's
+    free-text family_key — and an unclassifiable variable RAISES. primary_horizon
+    is frozen here so the verdict's gating horizon cannot be reordered later.
     """
     if archetype not in VALID_ARCHETYPES:
         raise ValueError(f"archetype must be one of {sorted(VALID_ARCHETYPES)}")
@@ -193,6 +200,8 @@ def register_hypothesis(
         raise ValueError("mechanism_text must be a real paragraph (>= 15 words), written before results")
     if not family_key:
         raise ValueError("family_key required - it drives trial accounting")
+    # A5: classify by variable (raises UnclassifiedVariableError if unknown).
+    canonical_family = resolve_family(signal_spec.get("variable", ""))
 
     trial_index = 1 + sum(
         1 for e in _read_events(HYP_PATH)
@@ -210,6 +219,8 @@ def register_hypothesis(
         **_session_stamp(),
         "archetype": archetype,
         "family_key": family_key,
+        "canonical_family": canonical_family,
+        "primary_horizon": primary_horizon,
         "mechanism_text": mechanism_text,
         "signal_spec": signal_spec,
         "signal_spec_hash": spec_hash,
@@ -244,17 +255,33 @@ def get_hypothesis(hypothesis_id: str) -> Optional[dict[str, Any]]:
     return state.get(hypothesis_id)
 
 
-def family_trial_count(family_key: str) -> int:
-    """Trials charged against a family (full trials + half for INSUFFICIENT_*)."""
-    count = 0.0
-    folded = fold_hypotheses()
-    for h in folded.values():
-        if h["family_key"] != family_key:
-            continue
-        verdict = h.get("verdict")
-        if verdict is None:
-            continue  # registered but not yet tested - no charge yet
-        count += 0.5 if str(verdict).startswith("INSUFFICIENT") else 1.0
+def _trial_charge(hyp: dict[str, Any]) -> float:
+    """Deflated-Sharpe trial charge: 1.0 tested, 0.5 INSUFFICIENT_*, 0 untested."""
+    verdict = hyp.get("verdict")
+    if verdict is None:
+        return 0.0
+    return 0.5 if str(verdict).startswith("INSUFFICIENT") else 1.0
+
+
+def canonical_family_of(hyp: dict[str, Any]) -> str:
+    """The canonical family a hypothesis is charged against (A5). Variable-
+    derived via config/family_registry.yaml; falls back to the raw family_key
+    only for a legacy hypothesis whose variable is unclassifiable, so counting
+    never crashes."""
+    var = (hyp.get("signal_spec") or {}).get("variable", "")
+    try:
+        return resolve_family(var)
+    except UnclassifiedVariableError:
+        return hyp.get("family_key", "unclassified")
+
+
+def family_trial_count(family: str) -> int:
+    """Trials charged against a CANONICAL family (A5 — `family` is a canonical
+    family name from canonical_family_of, NOT a free-text family_key). This is
+    what makes the deflated-Sharpe N honest: it cannot be shrunk by splitting a
+    mechanism across family_keys nor inflated by pooling distinct mechanisms."""
+    count = sum(_trial_charge(h) for h in fold_hypotheses().values()
+                if canonical_family_of(h) == family)
     return max(1, int(round(count)))
 
 

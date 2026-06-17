@@ -1,0 +1,74 @@
+# =============================================================================
+# FILE: config/family_registry.yaml
+# =============================================================================
+#
+# CONSUMED BY: scripts/loop/family_registry.py (resolve_family), via
+#   scripts/loop/ledgers.py (register_hypothesis, family_trial_count) and
+#   scripts/harness/evaluate_signal.py (the deflated-Sharpe trial count N).
+#
+# VERSION: 1.0
+# LAST UPDATED: 2026-06-17
+# AUTHOR: Arjun Divecha (built by agent session, Governance Layer PRD v1.2, item A5)
+#
+# DESCRIPTION:
+# The CANONICAL research families. The family a hypothesis belongs to — and
+# therefore the deflated-Sharpe trial count N it is charged against — is
+# determined by its SIGNAL VARIABLE (a variable-prefix match), NOT by a
+# free-text family_key an agent picks. This closes the gameable-N hole: trials
+# can no longer be split into small easy-bar families nor pooled into one.
+#
+# register_hypothesis() RAISES if a variable matches no family (every new
+# mechanism must be deliberately classified here — a trust-root edit). This
+# file is GIT-TRACKED; A8's config guard reds the scorecard if it is dirty.
+#
+# Migration intent (verified against the live ledger 2026-06-17):
+#   - network_spillover COLLAPSES the previously-split graph_trade_gap (N=15),
+#     leadlag_2026_06 (N=6) and fund_similarity_2026_06 (N=2) — all the same
+#     "neighbour returns propagate before the endpoint reprices" mechanism, so
+#     they share one honest, larger N.
+#   - bbg_skill_2026_06 (N=16) SPLITS into eco_surprise / fx_implied / sov_curve
+#     — three genuinely distinct mechanisms that were wrongly pooled.
+#
+# Matching: a variable is assigned to the family with the longest matching
+# `variable_prefixes` entry (case-sensitive startswith). Prefixes must stay
+# mutually unambiguous.
+# =============================================================================
+
+version: "1.0"
+
+families:
+  network_spillover:
+    description: "Graph / lead-lag / fundamental-twin spillover gaps: a neighbour's return moves before the endpoint reprices."
+    variable_prefixes: ["GRAPH", "LL_", "SIM_"]   # GRAPH covers GRAPH* and GRAPHP*
+
+  eco_surprise:
+    description: "Economic-release actual-vs-survey surprises (CPI/GDP/PMI/unemployment composites)."
+    variable_prefixes: ["ECO_"]
+
+  fx_implied:
+    description: "FX options-implied stress: implied vol, 25D risk reversals, butterflies, vol term structure, forward carry."
+    variable_prefixes: ["FX_"]
+
+  sov_curve:
+    description: "Sovereign curve shape: CDS slope (5Y-1Y) and govt 2s10s."
+    variable_prefixes: ["SOV_"]
+
+  valuation:
+    description: "Valuation percentiles: CAPE / DY / ERP / EY own-decile percentiles."
+    variable_prefixes: ["VAL_"]
+
+  ml_combiner:
+    description: "Walk-forward ridge combiner composite scores (daily + monthly)."
+    variable_prefixes: ["COMBINER_"]
+
+  consensus_revisions:
+    description: "ECFC consensus GDP/CPI forecast revision momentum."
+    variable_prefixes: ["CONS_"]
+
+  etf_positioning:
+    description: "ETF share-count flows and short-interest positioning."
+    variable_prefixes: ["ETF_"]
+
+  momentum_sanity:
+    description: "Trailing-momentum sanity checks AND the forward-return look-ahead canary (12MRet)."
+    variable_prefixes: ["12-1MTR", "120DTR", "12MRet", "1MRet", "3MRet", "6MRet"]

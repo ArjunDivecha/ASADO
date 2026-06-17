@@ -124,7 +124,8 @@ from scipy import stats as sstats
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from scripts.loop.ledgers import attach_verdict, family_trial_count, get_hypothesis
+from scripts.loop.ledgers import (attach_verdict, canonical_family_of,
+                                  family_trial_count, get_hypothesis)
 from scripts.loop.loopdb import LOOP_DIR, T2_UNIVERSE, daily_country_returns, loop_connection
 
 RUNS_DIR = LOOP_DIR / "harness_runs"
@@ -703,8 +704,8 @@ def evaluate_signal(
 
         # ── IC block per horizon ────────────────────────────────────────
         ic_block = {}
-        primary_label = None
-        aligned_primary = None
+        aligned_by_label: dict[str, Any] = {}
+        first_label = None
         for h in horizons:
             if frequency == "monthly":
                 aligned = align_monthly(signal, returns, lag, h)
@@ -727,9 +728,23 @@ def evaluate_signal(
                 "pct_positive_years": round(pct_pos, 3) if pct_pos is not None else None,
                 "yearly_ic": yearly,
             }
-            if primary_label is None:
-                primary_label = label
-                aligned_primary = aligned
+            aligned_by_label[label] = aligned
+            if first_label is None:
+                first_label = label
+
+        # A5: the verdict's gating horizon is FROZEN at registration, not just
+        # horizons[0] (which an agent could reorder to pick the best NW-t).
+        primary_label = first_label
+        reg_primary = hyp.get("primary_horizon")
+        if reg_primary is not None:
+            reg_label = f"{int(reg_primary)}m" if frequency == "monthly" else f"{int(reg_primary)}d"
+            if reg_label in ic_block:
+                primary_label = reg_label
+            else:
+                raise ValueError(
+                    f"registered primary_horizon {reg_primary} not among evaluated horizons "
+                    f"{list(ic_block)} for {hypothesis_id}")
+        aligned_primary = aligned_by_label[primary_label]
 
         # ── Coverage gates ──────────────────────────────────────────────
         # Full 34-country universe keeps the PRD's absolute 28-country gate.
@@ -780,7 +795,7 @@ def evaluate_signal(
             if "_subperiods_src" in portfolio:
                 subperiods = subperiod_table(portfolio.pop("_subperiods_src"), periods)
                 ls_series = portfolio.pop("_ls_net25_series")
-                dsr = deflated_sharpe_block(ls_series, family_trial_count(hyp["family_key"]),
+                dsr = deflated_sharpe_block(ls_series, family_trial_count(canonical_family_of(hyp)),
                                             periods_per_year=periods)
             else:
                 portfolio.pop("_ls_net25_series", None)
@@ -811,6 +826,8 @@ def evaluate_signal(
         result = {
             "hypothesis_id": hypothesis_id,
             "family_key": hyp["family_key"],
+            "canonical_family": canonical_family_of(hyp),
+            "primary_label": primary_label,
             "run_ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "signal_spec": signal_spec,
             "resolved_source": source,

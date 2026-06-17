@@ -1,6 +1,6 @@
 # ASADO Documentation Index
 
-Last updated: 2026-06-12
+Last updated: 2026-06-17
 
 This file tells Claude Code / Codex / any agent which docs are canonical specs,
 which are generated reports, and which are historical snapshots — so you don't
@@ -30,6 +30,7 @@ when you need to understand the history behind a design choice.
 | `WB_COMMODITY_EXTENSION_STATUS.md` | World Bank Pink Sheet commodity integration. | Manual. |
 | `DAILY_EXTENSION_STATUS.md` | T2/GDELT daily extension tables and build process. | Manual. |
 | `JST_MACROHISTORY_CALIBRATION.md` | JST Macrohistory (1870-2020) as an ISOLATED long-cycle calibration corpus + bear-bottom conditional-return tables. Not a factor feed; never in unified_panel. | Manual; update when JST releases or the calibration changes. |
+| `SPECTRAL_DIAGNOSTICS.md` | Spectral-theory diagnostics (source conditions, Marchenko–Pastur edges, effective rank) for IC-plateau triage and covariance noise floors. Methods spec; pairs with `diagnostics/spectral.py`. | Manual; update when the diagnostics or implementation change. |
 | `LOCAL_CLAUDE_MCP_SETUP.md` | How to wire the ASADO MCP server into Claude Desktop. | Manual. |
 | `USER_FIX_LIST.md` | Running list of user-side fixes / known upstream bugs. Agent should NOT fix these without explicit approval. | Append-only. |
 
@@ -66,3 +67,4 @@ date in the filename and may be stale.
 - `Data/loop/calibration/calibration_YYYY_MM.xlsx` — Brier calibration report.
 
 These live under `Data/` (gitignored) and must be read from disk, not git.
+

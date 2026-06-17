@@ -153,7 +153,8 @@ def build_report(df: pd.DataFrame) -> tuple[list[str], dict[str, pd.DataFrame]]:
         ]
         for title, col in [("By archetype", "archetype"), ("By horizon", "horizon_bucket"),
                            ("By direction", "direction"), ("By regime at open", "regime_at_open"),
-                           ("By author (overrides are calibration data too)", "author")]:
+                           ("By author (overrides are calibration data too)", "author"),
+                           ("By model (which model do I trust to size up?)", "model_id")]:
             t = _slice_table(closed, col)
             if t.empty:
                 continue

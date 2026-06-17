@@ -78,6 +78,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import sys
 from datetime import date, datetime
 from pathlib import Path
@@ -121,6 +122,20 @@ def _outcome_label(status: Optional[str]) -> Optional[str]:
     if status in ("killed_review", "void"):
         return "void"
     return status  # hit / miss / invalidated / expired / None(open)
+
+
+def _session_stamp() -> dict[str, str]:
+    """Who produced this entry. Stamped at register/open and IRREVERSIBLE — an
+    unstamped entry is permanently un-attributable by model (A4). Under a
+    rotating-frontier-model labor model, 'which model do I trust to size up?'
+    is the most decision-relevant calibration axis. Agent sessions export
+    ASADO_MODEL_ID / ASADO_MODEL_VERSION / ASADO_SESSION_ID; absent that,
+    'unknown' (never a silent blank)."""
+    return {
+        "model_id": os.environ.get("ASADO_MODEL_ID", "unknown"),
+        "model_version": os.environ.get("ASADO_MODEL_VERSION", "unknown"),
+        "session_id": os.environ.get("ASADO_SESSION_ID", "unknown"),
+    }
 
 
 # ── low-level event I/O ─────────────────────────────────────────────────────
@@ -192,6 +207,7 @@ def register_hypothesis(
         "event": "hyp_register",
         "hypothesis_id": hypothesis_id,
         "author": author,
+        **_session_stamp(),
         "archetype": archetype,
         "family_key": family_key,
         "mechanism_text": mechanism_text,
@@ -295,6 +311,7 @@ def open_thesis(
         "event": "thesis_open",
         "thesis_id": thesis_id,
         "author": author,
+        **_session_stamp(),
         "paper": paper,
         "entity": entity,
         "direction": direction,
@@ -441,6 +458,9 @@ def rebuild_duckdb_tables() -> None:
             "hypothesis_id": h["hypothesis_id"],
             "created_ts": h["ts"],
             "author": h["author"],
+            "model_id": h.get("model_id") or "unknown_pre_20260617",
+            "model_version": h.get("model_version") or "unknown_pre_20260617",
+            "session_id": h.get("session_id") or "unknown_pre_20260617",
             "archetype": h["archetype"],
             "family_key": h["family_key"],
             "mechanism_text": h["mechanism_text"],
@@ -459,6 +479,9 @@ def rebuild_duckdb_tables() -> None:
             "thesis_id": t["thesis_id"],
             "opened_ts": t["ts"],
             "author": t["author"],
+            "model_id": t.get("model_id") or "unknown_pre_20260617",
+            "model_version": t.get("model_version") or "unknown_pre_20260617",
+            "session_id": t.get("session_id") or "unknown_pre_20260617",
             "paper": t.get("paper", True),
             "entity": t["entity"],
             "direction": t["direction"],
@@ -483,12 +506,14 @@ def rebuild_duckdb_tables() -> None:
     try:
         for name, rows, empty_cols in [
             ("hypothesis_ledger", hyp_rows,
-             "hypothesis_id VARCHAR, created_ts VARCHAR, author VARCHAR, archetype VARCHAR, "
+             "hypothesis_id VARCHAR, created_ts VARCHAR, author VARCHAR, "
+             "model_id VARCHAR, model_version VARCHAR, session_id VARCHAR, archetype VARCHAR, "
              "family_key VARCHAR, mechanism_text VARCHAR, signal_spec_json VARCHAR, "
              "signal_spec_hash VARCHAR, trial_index INT, status VARCHAR, verdict VARCHAR, "
              "effective_verdict VARCHAR, verdict_json VARCHAR"),
             ("thesis_ledger", thesis_rows,
-             "thesis_id VARCHAR, opened_ts VARCHAR, author VARCHAR, paper BOOLEAN, entity VARCHAR, "
+             "thesis_id VARCHAR, opened_ts VARCHAR, author VARCHAR, "
+             "model_id VARCHAR, model_version VARCHAR, session_id VARCHAR, paper BOOLEAN, entity VARCHAR, "
              "direction VARCHAR, horizon_days INT, entry_thesis_text VARCHAR, probability DOUBLE, "
              "invalidation_level DOUBLE, catalyst VARCHAR, source_dislocation_id VARCHAR, "
              "open_date VARCHAR, status VARCHAR, close_date VARCHAR, realized_return DOUBLE, "

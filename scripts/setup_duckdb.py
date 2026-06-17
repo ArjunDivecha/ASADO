@@ -147,6 +147,13 @@ BLOOMBERG_PQ = DATA_DIR / "processed" / "bloomberg_factors_panel.parquet"
 # NOT in unified_panel / feature_panel and NOT forward-filled to monthly (same
 # rule as the deprecated wb_commodity_factor_panel). See collect_jst_macrohistory.py.
 JST_MACROHISTORY_PQ = DATA_DIR / "processed" / "jst_macrohistory_panel.parquet"
+# Ken French factors: ISOLATED, REGION-KEYED benchmark/explanatory corpus (8
+# FF regions, monthly+daily). Loaded to its own table ff_factors; intentionally
+# NOT in unified_panel / feature_panel and NOT broadcast to the 34 countries
+# (same rule as JST / the deprecated wb_commodity_factor_panel). The
+# country->region link lives in config/ff_region_map.json and is applied
+# on-the-fly by scripts/harness/ff_spanning.py. See collect_ff_factors.py.
+FF_FACTORS_PQ = DATA_DIR / "processed" / "ff_factors_panel.parquet"
 FACTOR_RETURNS_PQ = DATA_DIR / "processed" / "factor_returns_panel.parquet"
 FACTOR_TOP20_MEMBERSHIP_PQ = DATA_DIR / "processed" / "factor_top20_membership_panel.parquet"
 WB_COMMODITY_PRICES_PQ = DATA_DIR / "processed" / "wb_commodity_prices.parquet"
@@ -433,6 +440,42 @@ def load_jst_macrohistory(con: duckdb.DuckDBPyConnection) -> int:
     c = con.execute("SELECT COUNT(DISTINCT country) FROM jst_macrohistory").fetchone()[0]
     print(f"  jst_macrohistory: {count:,} rows, {v} variables, {c} countries "
           f"(annual 1870-2020; NOT in unified_panel)")
+    return count
+
+
+def load_ff_factors(con: duckdb.DuckDBPyConnection) -> int:
+    """Load the Ken French factor returns into their OWN isolated table.
+
+    Deliberately NOT routed through load_parquet_table (its schema keeps the
+    extra region/frequency/currency/units columns and is REGION-keyed, not
+    country-keyed) and NOT added to unified_panel. FF factors are 8 regional
+    style-factor series (Mkt_RF/SMB/HML/RMW/CMA/RF/WML), monthly+daily; they
+    are the benchmark the skeptic harness regresses signal P&L against
+    (ff_spanning.py). Broadcasting them to the 34 countries would manufacture
+    degenerate _CS cross-sections (the wb_commodity_factor_panel mistake).
+    """
+    print("Loading Ken French factors (isolated regional benchmark corpus) ...")
+    con.execute("DROP TABLE IF EXISTS ff_factors")
+    con.execute(f"""
+        CREATE TABLE ff_factors AS
+        SELECT
+            CAST(date AS DATE)        AS date,
+            region,
+            frequency,
+            currency,
+            variable,
+            CAST(value AS DOUBLE)     AS value,
+            units,
+            source
+        FROM read_parquet('{FF_FACTORS_PQ}')
+    """)
+    con.execute("CREATE INDEX IF NOT EXISTS idx_ff_region_freq ON ff_factors(region, frequency)")
+    con.execute("CREATE INDEX IF NOT EXISTS idx_ff_variable ON ff_factors(variable)")
+    count = con.execute("SELECT COUNT(*) FROM ff_factors").fetchone()[0]
+    r = con.execute("SELECT COUNT(DISTINCT region) FROM ff_factors").fetchone()[0]
+    v = con.execute("SELECT COUNT(DISTINCT variable) FROM ff_factors").fetchone()[0]
+    print(f"  ff_factors: {count:,} rows, {r} regions, {v} variables "
+          f"(monthly+daily; NOT in unified_panel)")
     return count
 
 
@@ -1117,6 +1160,11 @@ def main():
     # collect_jst_macrohistory.py has been run). Never part of unified_panel.
     if JST_MACROHISTORY_PQ.exists():
         total += load_jst_macrohistory(con)
+        print()
+    # Ken French factors: isolated regional benchmark corpus (optional — only
+    # if collect_ff_factors.py has been run). Never part of unified_panel.
+    if FF_FACTORS_PQ.exists():
+        total += load_ff_factors(con)
         print()
     if BILATERAL_PORTFOLIO_PQ.exists():
         total += load_bilateral_portfolio_table(con)

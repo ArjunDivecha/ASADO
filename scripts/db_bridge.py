@@ -79,6 +79,7 @@ class AsadoDB:
         self._neo4j_driver = GraphDatabase.driver(neo4j_uri, auth=(neo4j_user, neo4j_pass))
         self._neo4j_driver.verify_connectivity()
         self._factor_surface_name: Optional[str] = None
+        self._ff_region_map: Optional[Dict[str, Any]] = None
 
     def _factor_surface(self) -> str:
         """Return the default factor-query surface, preferring feature_panel when present."""
@@ -230,6 +231,88 @@ class AsadoDB:
             AND value IS NOT NULL
             ORDER BY value DESC
         """).fetchdf()
+
+    def ff_region_of(self, country: str) -> Optional[str]:
+        """Map an ASADO T2 country to its Ken French regional factor bundle.
+
+        Reads config/ff_region_map.json (written by collect_ff_factors.py).
+        Returns the FF region name (e.g. 'Emerging', 'Europe', 'US') or None
+        if the country has no mapping. Use this to pick the right regional
+        bundle when style-spanning a country's returns.
+        """
+        if getattr(self, "_ff_region_map", None) is None:
+            import json
+            path = BASE_DIR / "config" / "ff_region_map.json"
+            self._ff_region_map = (
+                json.loads(path.read_text()).get("country_to_region", {})
+                if path.exists() else {}
+            )
+        entry = self._ff_region_map.get(country)
+        return entry["region"] if entry else None
+
+    def ff_factor_series(self, region: Optional[str] = None,
+                         country: Optional[str] = None,
+                         variables: Optional[List[str]] = None,
+                         frequency: str = "monthly",
+                         start_date: Optional[str] = None,
+                         end_date: Optional[str] = None,
+                         units: str = "percent",
+                         wide: bool = False) -> pd.DataFrame:
+        """Pull Ken French style-factor returns from the isolated ff_factors table.
+
+        FF factors are the benchmark for style-spanning regressions (see
+        scripts/harness/ff_spanning.py): regress a candidate signal's long-short
+        P&L on these to test whether its alpha is just regional value / size /
+        momentum / quality / market beta.
+
+        Args:
+            region: FF region ('US','Developed','Developed_ex_US','North_America',
+                    'Europe','Japan','Asia_Pacific_ex_Japan','Emerging'). Mutually
+                    exclusive with `country`.
+            country: ASADO T2 country name; mapped to its FF region via
+                     ff_region_of(). Ignored if `region` is given.
+            variables: subset of ['Mkt_RF','SMB','HML','RMW','CMA','RF','WML'];
+                       None = all.
+            frequency: 'monthly' or 'daily' (Emerging has monthly only).
+            start_date / end_date: optional 'YYYY-MM-DD' bounds.
+            units: 'percent' (raw, as published) or 'decimal' (value/100, for
+                   return math). Default 'percent' mirrors the stored table.
+            wide: if True, pivot to one column per variable indexed by date.
+
+        Returns:
+            Long DataFrame (date, region, frequency, variable, value, units) or,
+            if wide=True, a date-indexed wide frame.
+        """
+        if region is None:
+            if country is None:
+                raise ValueError("ff_factor_series needs either region or country")
+            region = self.ff_region_of(country)
+            if region is None:
+                raise ValueError(f"No FF region mapping for country {country!r}")
+
+        clauses = [f"region = '{region}'", f"frequency = '{frequency}'"]
+        if variables:
+            vlist = ",".join(f"'{v}'" for v in variables)
+            clauses.append(f"variable IN ({vlist})")
+        if start_date:
+            clauses.append(f"date >= '{start_date}'")
+        if end_date:
+            clauses.append(f"date <= '{end_date}'")
+        where = " AND ".join(clauses)
+        df = self._duck.execute(f"""
+            SELECT date, region, frequency, variable, value, units
+            FROM ff_factors WHERE {where} ORDER BY variable, date
+        """).fetchdf()
+
+        if units == "decimal":
+            df["value"] = df["value"] / 100.0
+            df["units"] = "decimal"
+        elif units != "percent":
+            raise ValueError("units must be 'percent' or 'decimal'")
+
+        if wide:
+            return df.pivot(index="date", columns="variable", values="value")
+        return df
 
     def refresh_factor_edges(self):
         """

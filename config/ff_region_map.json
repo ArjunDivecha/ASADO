@@ -1,0 +1,202 @@
+{
+  "_description": "ASADO T2 country -> Ken French regional factor bundle. Applied on-the-fly at regression time (ff_spanning.py); NEVER materialised into ff_factors rows.",
+  "_generated_by": "scripts/collect_ff_factors.py",
+  "regions": [
+    "US",
+    "Developed",
+    "Developed_ex_US",
+    "North_America",
+    "Europe",
+    "Japan",
+    "Asia_Pacific_ex_Japan",
+    "Emerging"
+  ],
+  "region_meta": {
+    "US": {
+      "description": "United States (CRSP)",
+      "has_daily": true,
+      "fivef_start": "196307",
+      "mom_start": "192611"
+    },
+    "Developed": {
+      "description": "Developed markets (23 countries)",
+      "has_daily": true,
+      "fivef_start": "199007",
+      "mom_start": "199011"
+    },
+    "Developed_ex_US": {
+      "description": "Developed ex US",
+      "has_daily": true,
+      "fivef_start": "199007",
+      "mom_start": "199011"
+    },
+    "North_America": {
+      "description": "US + Canada",
+      "has_daily": true,
+      "fivef_start": "199007",
+      "mom_start": "199011"
+    },
+    "Europe": {
+      "description": "Developed Europe",
+      "has_daily": true,
+      "fivef_start": "199007",
+      "mom_start": "199011"
+    },
+    "Japan": {
+      "description": "Japan",
+      "has_daily": true,
+      "fivef_start": "199007",
+      "mom_start": "199011"
+    },
+    "Asia_Pacific_ex_Japan": {
+      "description": "Developed Asia-Pacific ex Japan",
+      "has_daily": true,
+      "fivef_start": "199007",
+      "mom_start": "199011"
+    },
+    "Emerging": {
+      "description": "Emerging markets",
+      "has_daily": false,
+      "fivef_start": "198907",
+      "mom_start": "199001"
+    }
+  },
+  "country_to_region": {
+    "Australia": {
+      "region": "Asia_Pacific_ex_Japan",
+      "confidence": "exact"
+    },
+    "Brazil": {
+      "region": "Emerging",
+      "confidence": "exact"
+    },
+    "Canada": {
+      "region": "North_America",
+      "confidence": "exact"
+    },
+    "Chile": {
+      "region": "Emerging",
+      "confidence": "exact"
+    },
+    "ChinaA": {
+      "region": "Emerging",
+      "confidence": "exact"
+    },
+    "ChinaH": {
+      "region": "Emerging",
+      "confidence": "exact"
+    },
+    "Denmark": {
+      "region": "Europe",
+      "confidence": "exact"
+    },
+    "France": {
+      "region": "Europe",
+      "confidence": "exact"
+    },
+    "Germany": {
+      "region": "Europe",
+      "confidence": "exact"
+    },
+    "Hong Kong": {
+      "region": "Asia_Pacific_ex_Japan",
+      "confidence": "exact"
+    },
+    "India": {
+      "region": "Emerging",
+      "confidence": "exact"
+    },
+    "Indonesia": {
+      "region": "Emerging",
+      "confidence": "exact"
+    },
+    "Italy": {
+      "region": "Europe",
+      "confidence": "exact"
+    },
+    "Japan": {
+      "region": "Japan",
+      "confidence": "exact"
+    },
+    "Korea": {
+      "region": "Emerging",
+      "confidence": "exact"
+    },
+    "Malaysia": {
+      "region": "Emerging",
+      "confidence": "exact"
+    },
+    "Mexico": {
+      "region": "Emerging",
+      "confidence": "exact"
+    },
+    "NASDAQ": {
+      "region": "US",
+      "confidence": "exact"
+    },
+    "Netherlands": {
+      "region": "Europe",
+      "confidence": "exact"
+    },
+    "Philippines": {
+      "region": "Emerging",
+      "confidence": "exact"
+    },
+    "Poland": {
+      "region": "Emerging",
+      "confidence": "exact"
+    },
+    "Saudi Arabia": {
+      "region": "Emerging",
+      "confidence": "proxy"
+    },
+    "Singapore": {
+      "region": "Asia_Pacific_ex_Japan",
+      "confidence": "exact"
+    },
+    "South Africa": {
+      "region": "Emerging",
+      "confidence": "exact"
+    },
+    "Spain": {
+      "region": "Europe",
+      "confidence": "exact"
+    },
+    "Sweden": {
+      "region": "Europe",
+      "confidence": "exact"
+    },
+    "Switzerland": {
+      "region": "Europe",
+      "confidence": "exact"
+    },
+    "Taiwan": {
+      "region": "Emerging",
+      "confidence": "exact"
+    },
+    "Thailand": {
+      "region": "Emerging",
+      "confidence": "exact"
+    },
+    "Turkey": {
+      "region": "Emerging",
+      "confidence": "exact"
+    },
+    "U.K.": {
+      "region": "Europe",
+      "confidence": "exact"
+    },
+    "U.S.": {
+      "region": "US",
+      "confidence": "exact"
+    },
+    "US SmallCap": {
+      "region": "US",
+      "confidence": "exact"
+    },
+    "Vietnam": {
+      "region": "Emerging",
+      "confidence": "proxy"
+    }
+  }
+}

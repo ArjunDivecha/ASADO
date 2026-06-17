@@ -157,6 +157,16 @@ skeptically, and track theses with calibration discipline.
   5 bps (`Data/loop/harness_runs/cost_model_summary_2026_06_12.xlsx`). Forward-return
   variables (`1MRet` etc.) are hard-blacklisted as signals — they are optimizer TARGETS,
   not trailing momentum.
+- **Style spanning (Ken French, 2026-06-17):** `collect_ff_factors.py` loads the
+  Fama-French 5 factors + momentum + RF for 8 FF regions (US 1926/63+, six developed
+  regions 1990+, Emerging 1989+; monthly+daily, USD) into the isolated `ff_factors`
+  table. `scripts/harness/ff_spanning.py` regresses any return series (a candidate
+  signal's long-short P&L, or a country's own return) on its regional FF bundle and
+  reports the alpha with a Newey–West HAC t-stat — the test of whether a signal is
+  genuine orthogonal alpha or just repackaged value/size/momentum/quality/market beta.
+  FF factors are REGIONAL (8 series), never broadcast to the 34 countries; the
+  country→region link is `config/ff_region_map.json`, applied on the fly at regression
+  time. Sanity-checked: ASADO's `U.S.` return spans the FF US market at β≈1.0, R²≈1.0.
 - **Key docs:** `docs/MARKET_IMPLIED_EXTENSION_STATUS.md`,
   `docs/BBG_SKILL_ENHANCEMENTS_2026_06_12.md`, `docs/PREDMKT_EXTENSION_STATUS.md`,
   `docs/USER_FIX_LIST.md` (running list of user-side fixes), and AGENTS.md (the most
@@ -489,6 +499,7 @@ Core surfaces all use tidy schema: `(date DATE, country VARCHAR, value DOUBLE, v
 | `daily_calendar` | 327K | Monthly | Per-country trading day calendar |
 | `predmkt_daily` / `predmkt_*` | small daily tables | Daily | Curated prediction-market probabilities, metadata, spillovers, and composites |
 | `event_log` | 146 | Monthly/ad hoc | Curated dated event registry for event-window studies |
+| `ff_factors` | 540K | Monthly | Ken French style factors (Mkt_RF/SMB/HML/RMW/CMA/RF/WML) for 8 FF regions, monthly+daily. **Isolated benchmark** — region-keyed, NOT country-tiled, NOT in unified/feature_panel. Used by the harness for style-spanning (see `scripts/harness/ff_spanning.py`). |
 
 **Vector index:**
 - `countryStateIndex` (Neo4j) — 34-dimensional cosine similarity on Country.state_embedding

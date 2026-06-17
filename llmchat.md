@@ -507,3 +507,42 @@ had never rendered in a real brief (latest brief was 06-12, predates JST).
 ---
 SESSION END: 2026-06-16 | Agent: Claude Code (Fable 5)
 ---
+
+## 2026-06-17 — Ken French style factors + spanning harness
+
+**Goal (Arjun):** "Is Ken French data useful to ASADO? Yes — build the collector
+and the hooks to the system knowing what's there and how to use it."
+
+**What was built (all tested end-to-end against live French files):**
+- `scripts/collect_ff_factors.py` — downloads 30 FF zips (HEAD-verified manifest),
+  parses → `Data/processed/ff_factors_panel.parquet`. FF 5 factors + momentum + RF
+  for 8 FF regions, monthly+daily, USD, **percent** units. 539,920 rows; US to
+  1926/63, six developed regions to 1990, Emerging monthly-only to 1989 (NO daily
+  Emerging file exists — 404). Per-dataset try/except + 24h raw cache + backup.
+- Design decision: FF is an **isolated, region-keyed benchmark** — NOT a return
+  source, NOT broadcast to the 34 countries, NEVER unioned into unified/feature_panel
+  (same rule as JST / deprecated wb_commodity_factor_panel). Country→region join is
+  `config/ff_region_map.json`, applied on the fly at regression time.
+- `setup_duckdb.load_ff_factors` (isolated table `ff_factors`, mirrors load_jst_macrohistory)
+  + main() wiring; confirmed 0 rows leak into unified_panel.
+- `monthly_update.py` Stage 1 "Program 5c" + `--skip-ff` flag.
+- `scripts/harness/ff_spanning.py` — THE usage hook. Regresses any return series on a
+  regional FF model (capm/ff3/carhart/ff5/ff5_mom) → alpha + Newey–West HAC t (Bartlett
+  kernel = evaluate_signal.nw_tstat), betas, R². CLI `--country`, programmatic
+  `style_spanning()`, `span_country_returns()`. Connects directly to DuckDB (no Neo4j dep).
+- `db_bridge.ff_factor_series()` + `ff_region_of()`.
+- Schema registry + `docs/factor_reference.md` regenerated (ff_factors auto-documented,
+  line 42). README / CLAUDE.md / AGENTS.md updated.
+
+**Validation (real, not simulated):** US country return spans FF US market β≈0.99,
+R²≈0.996, α≈0 (t=−1.47) — perfect units/alignment sanity check. Brazil→Emerging
+β=1.26 large-cap+value tilt; Germany→Europe β=1.17; Japan flagged UNSPANNED
+(t=−5.53, persistent ETF-vs-factor gap). Daily path: US daily Mkt_RF spans US daily
+ff5_mom at β=1.0, R²=1.0. `--check`/`--dry-run` verified.
+
+**Live state:** `ff_factors` materialized into `Data/asado.duckdb` directly (idempotent;
+next full `setup_duckdb.py` reproduces it). No git commit (left for Arjun).
+
+---
+SESSION END: 2026-06-17 | Agent: Claude Code (Opus 4.8 1M)
+---

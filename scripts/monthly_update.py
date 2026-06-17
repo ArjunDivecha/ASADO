@@ -18,6 +18,7 @@ OUTPUT FILES:
 - Data/processed/factor_returns_panel.parquet     (via collect_optimizer_returns.py)
 - Data/processed/factor_top20_membership_panel.parquet (via collect_optimizer_returns.py)
 - Data/processed/wb_commodity_*.parquet          (via collect_wb_commodity_prices.py)
+- Data/processed/ff_factors_panel.parquet         (via collect_ff_factors.py)
 - Data/processed/bloomberg_factors_panel.parquet  (via collect_bloomberg.py)
 - Data/processed/gdelt_deep_panel.parquet         (via collect_gdelt_deep.py)
 - Data/asado.duckdb                               (via setup_duckdb.py)
@@ -452,6 +453,8 @@ def main():
                              "new days from data.gdeltproject.org (offline / testing).")
     parser.add_argument("--skip-wb-commodity", action="store_true",
                         help="Skip World Bank commodity collection and preserve prior processed files")
+    parser.add_argument("--skip-ff", action="store_true",
+                        help="Skip Ken French factor collection and preserve prior processed file")
     parser.add_argument("--commodity-only", action="store_true",
                         help="Run World Bank commodity collector plus DuckDB/schema refresh only")
     parser.add_argument("--collectors-only", action="store_true",
@@ -634,6 +637,20 @@ def main():
             collector_flags,
             log_file
         ))
+
+        # Program 5c: Ken French factors — isolated regional style-factor
+        # benchmark (Mkt/SMB/HML/RMW/CMA/RF/WML for 8 FF regions, monthly+daily).
+        # Used by the skeptic harness for style-spanning regressions; NOT
+        # broadcast into unified_panel/feature_panel.
+        if not args.skip_ff:
+            results.append(run_step(
+                "Program 5c: Ken French style factors (regional benchmark)",
+                "collect_ff_factors.py",
+                collector_flags,
+                log_file
+            ))
+        else:
+            print("\n  (Ken French factor collection skipped via --skip-ff)")
 
         if not args.skip_bloomberg:
             bbg_env = '/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg/.venv'

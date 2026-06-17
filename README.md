@@ -167,6 +167,19 @@ Commodities are **global series** — one value per date, not tied to a country.
 > (`wb_commodity_factor_panel`). That tiling is **deprecated** — it inflated the variable count and
 > produced degenerate cross-sectional variants. Join `commodity_panel` to returns **on `date`**.
 
+### Style-factor benchmark (Ken French — NOT country-tiled)
+`ff_factors` holds the Fama-French **5 factors + momentum + RF** (`Mkt_RF, SMB, HML, RMW, CMA,
+RF, WML`) for **8 FF regions** (US, Developed, Developed_ex_US, North_America, Europe, Japan,
+Asia_Pacific_ex_Japan, Emerging), **monthly + daily**, USD, values in **percent**. US history
+runs to 1926/1963, the developed regions to 1990, Emerging (monthly only) to 1989.
+
+These are a **benchmark/explanatory** surface, not a return source — the question they answer is
+"is a signal's P&L genuine alpha, or just repackaged value/size/momentum/quality/market beta?"
+Like commodities, they are **isolated** (region-keyed, 8 series) and **never broadcast** to the
+34 countries or unioned into `feature_panel`/`unified_panel`. The country→region link lives in
+`config/ff_region_map.json` and is applied **on the fly** at regression time. Built by
+`scripts/collect_ff_factors.py`; the spanning tool is `scripts/harness/ff_spanning.py` (below).
+
 ### Auxiliary
 `bilateral_portfolio_matrix` (reporter–counterparty ownership), `predmkt_*` (Kalshi/Polymarket
 snapshots + spillovers + composites), `event_log` (curated dated events), `variable_meta`
@@ -228,6 +241,7 @@ with AsadoDB() as db:
     records  = db.query_graph("MATCH (c:Country)-[:HAS_CRISIS_HISTORY]->(e) RETURN c.t2_name, e.name")
     profile  = db.country_profile("Turkey")           # factors + all graph relationships
     snapshot = db.factor_snapshot("BIS_Credit_GDP_Gap")
+    ff       = db.ff_factor_series(country="Brazil", frequency="monthly", wide=True)  # → Emerging FF bundle
     similar  = db.query_graph("""MATCH (c:Country {t2_name:'Turkey'})
         CALL db.index.vector.queryNodes('countryStateIndex',6,c.state_embedding)
         YIELD node,score WHERE node<>c RETURN node.t2_name AS country, score ORDER BY score DESC""")
@@ -390,6 +404,16 @@ sweeps Kalshi + Polymarket for new candidates to curate.
 - **Daily portfolio backtests** were already in harness v2 (`backtest_daily`); the harness
   now also scales its coverage gate and top-N proportionally when a sub-universe is
   declared (e.g. the 26-country FX-options universe).
+- **Ken French style-spanning** (`scripts/harness/ff_spanning.py`, added 2026-06-17):
+  regresses any return series on a regional Fama-French factor model
+  (`capm`/`ff3`/`carhart`/`ff5`/`ff5_mom`) and reports the **alpha with a Newey–West HAC
+  t-stat**, every factor beta, and R². The complement to IC/Sharpe: a signal whose raw
+  Sharpe looks good but whose spanning alpha is insignificant is a known style tilt, not
+  new alpha. Country→region via `config/ff_region_map.json` (Brazil→Emerging, Germany→
+  Europe, U.S.→US, …). CLI: `python scripts/harness/ff_spanning.py --country Brazil
+  --model ff5_mom`; programmatic: `style_spanning(ls_returns, country="Brazil")`. Data is
+  the isolated `ff_factors` table (8 FF regions, monthly+daily). Use `subtract_rf=False`
+  for a self-financing long-short P&L, `True` for a long-only total return.
 
 MCP tools added to the server: `country_news` (live GDELT DOC 2.0 headlines), `register_hypothesis`,
 `evaluate_signal`, `open_thesis`.

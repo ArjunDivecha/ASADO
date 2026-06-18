@@ -1,0 +1,47 @@
+# =============================================================================
+# FILE: config/cross_source.yaml
+# =============================================================================
+#
+# CONSUMED BY: scripts/loop/check_cross_source.py (A7 — cross_source_minimal).
+#
+# VERSION: 1.0
+# LAST UPDATED: 2026-06-17
+# AUTHOR: Arjun Divecha (built by agent session, Governance Layer PRD v1.2, item A7)
+#
+# DESCRIPTION:
+# A7 — the GSAB defense (minimal, partial-by-design). The GSAB10YR swap fed
+# South Africa's sovereign data into Saudi Arabia's series and passed
+# freshness/volume/schema/range — it was visible ONLY as a broken cross-source
+# relationship. This config drives two checks:
+#   1. SENTINELS — human-curated exact point-in-time anchors. A mismatch is a
+#      HARD STOP (silent corruption / restatement). CURATE THESE: each is a
+#      value you have verified is correct.
+#   2. PAIRS — semantically-equivalent redundant series from two independent
+#      sources that must agree. A large per-country discrepancy = a series
+#      tracking the wrong entity (the GSAB shape) -> reds the scorecard.
+#
+# The cross_source_minimal scorecard dimension is AMBER BY DESIGN (it covers a
+# few critical series, not all ~1,400 variables) and never renders green in
+# Phase A; coverage_fraction is reported. The full distribution sweep +
+# nearest-neighbour-flip is Phase C. This file is a GIT-TRACKED trust-root.
+# =============================================================================
+
+version: "1.0"
+
+# Hand-verified known-good anchors. Mismatch = HARD STOP. (Curate / extend.)
+sentinels:
+  - {db: loop, table: sovereign_daily, variable: SOV_10Y_YIELD_PCT, country: Australia, date: "2026-06-17", expected: 4.767, tol: 0.05}
+  - {db: loop, table: sovereign_daily, variable: SOV_10Y_YIELD_PCT, country: Canada,    date: "2026-06-17", expected: 3.385, tol: 0.05}
+
+# Semantically-equivalent redundant series that must agree (the GSAB detector).
+pairs:
+  - name: sov10y_loop_vs_bbg
+    description: "Country 10Y govt yield: loop daily collector vs monthly Bloomberg collector."
+    a: {db: loop,  table: sovereign_daily,   variable: SOV_10Y_YIELD_PCT}
+    b: {db: asado, table: bloomberg_factors, variable: BBG_Govt_Bond_10Y}
+    threshold_abs: 2.0      # pct points; per-country median recent |a-b| beyond this = breach
+    recent_months: 6
+
+# Denominator for coverage (amber until the Phase-C full sweep). One 10Y series
+# per sovereign we would ideally cross-check.
+critical_series_count: 32

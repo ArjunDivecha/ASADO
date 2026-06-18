@@ -226,6 +226,12 @@ steps:
       - {kind: file, glob: "Data/dislocations/brief_*.md", staleness: mtime}
       - {kind: loop_db_table, table: dislocation_daily}
 
+  - name: check_cross_source
+    governance: true         # A7 GSAB defense: sentinels + cross-source pairs
+    optional: false
+    expected_outputs:
+      - {kind: file, path_template: "Data/loop/governance/cross_source_status.json", staleness: mtime}
+
   - name: build_evidence_packs
     governance: false
     optional: true          # GDELT rate-limit -> exit 2 PARTIAL by design

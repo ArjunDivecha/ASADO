@@ -214,6 +214,9 @@ STEPS = [
     # Push discovered SIMILAR_TO / LEADS edges + combiner ranks into Neo4j.
     ("write_graph_discoveries", [PY, "scripts/loop/write_graph_discoveries.py"]),
     ("build_dislocations", [PY, "scripts/loop/build_dislocations.py"]),
+    # Cross-source consistency (A7 — the GSAB defense): sentinels (hard stop)
+    # + redundant-pair agreement. Exits non-zero only on a sentinel mismatch.
+    ("check_cross_source", [PY, "scripts/loop/check_cross_source.py"]),
     # Evidence packs MUST run after build_dislocations: they freeze headlines
     # for the countries whose dislocations fired in tonight's run (PRD P4 v1;
     # capped at 12 GDELT pulls, D8 excluded).
@@ -229,6 +232,26 @@ STEPS = [
     # Pure reporting (no warehouse writes, no signal) — safe as the final step.
     ("build_jst_risk_report", [PY, "scripts/loop/build_jst_risk_report.py"]),
 ]
+
+
+def _auto_commit_brief() -> None:
+    """A2: path-scoped auto-commit of the newest brief so it is durably tracked
+    (the 06-15/06-16 briefs sat uncommitted because nothing committed them).
+    Path-scoped — never `git add -A`; fail-soft."""
+    brief_dir = BASE_DIR / "Data" / "dislocations"
+    try:
+        briefs = sorted(brief_dir.glob("brief_*.md"), key=lambda p: p.stat().st_mtime)
+        if not briefs:
+            return
+        newest = str(briefs[-1])
+        subprocess.run(["git", "add", "--", newest], cwd=str(BASE_DIR))
+        if subprocess.run(["git", "diff", "--cached", "--quiet", "--", newest],
+                          cwd=str(BASE_DIR)).returncode != 0:
+            subprocess.run(["git", "commit", "-q", "-m",
+                            f"Auto-commit nightly brief {briefs[-1].name}", "--", newest],
+                           cwd=str(BASE_DIR))
+    except Exception as exc:  # noqa: BLE001
+        print(f"!!! brief auto-commit failed (non-fatal): {exc}", flush=True)
 
 
 def main() -> int:
@@ -278,6 +301,18 @@ def main() -> int:
                   + (f" unknown={m['unknown_steps']}" if m["unknown_steps"] else ""), flush=True)
     except Exception as exc:  # noqa: BLE001
         print(f"!!! run_manifest write failed (non-fatal): {exc}", flush=True)
+
+    # Governance tail (A2 + A8): auto-commit the brief so it is durably tracked,
+    # then heartbeat (pushes on trouble) and the scorecard the CoS agent reads.
+    # All fail-soft — none of this changes the job's exit code.
+    rc_final = 1 if failures else 0
+    _auto_commit_brief()
+    for gov_cmd, label in (([PY, "scripts/loop/heartbeat.py", "--exit-code", str(rc_final)], "heartbeat"),
+                           ([PY, "scripts/loop/build_governance_scorecard.py"], "scorecard")):
+        try:
+            subprocess.run(gov_cmd, cwd=str(BASE_DIR))
+        except Exception as exc:  # noqa: BLE001
+            print(f"!!! governance {label} failed (non-fatal): {exc}", flush=True)
 
     print(f"\n{'=' * 60}")
     if failures:

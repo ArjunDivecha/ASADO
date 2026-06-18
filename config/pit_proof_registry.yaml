@@ -1,0 +1,47 @@
+# =============================================================================
+# FILE: config/pit_proof_registry.yaml
+# =============================================================================
+#
+# CONSUMED BY: scripts/harness/evaluate_signal.py (daily_publication_lag_days).
+#
+# VERSION: 1.0
+# LAST UPDATED: 2026-06-17
+# AUTHOR: Arjun Divecha (built by agent session, Governance Layer PRD v1.2, item A6)
+#
+# DESCRIPTION:
+# A6 — the PIT-proof registry. A DAILY signal variable earns a publication lag
+# of 0 trading days ONLY by a PASSING proof entry here. Absent / stale /
+# failing -> it falls back (FAIL-CLOSED) to the conservative default
+# (CONSERVATIVE_DAILY_LAG_DAYS = 1 trading day). This replaces the old blanket
+# `if frequency == "daily": return 0`, which silently granted the entire daily
+# signal surface same-day knowledge it had not earned.
+#
+# A pit_proof is a GOVERNANCE OBJECT, not just a flag:
+#   proof_type        : how the value is known PIT (e.g. market_close_eod,
+#                       point_in_time_vintage, news_timestamped)
+#   entitled_lag_days : the lag the proof justifies (0 = same-day usable)
+#   owning_test_id    : the test that DEMONSTRATES the PIT claim; if it is not
+#                       green the proof is not trusted
+#   last_passing_commit: stamped when owning_test_id last passed (audit trail)
+#   status            : passing | unproven | stale  (only 'passing' grants the lag)
+#
+# Sources in evaluate_signal.ZERO_LAG_SOURCES (t2, gdelt, graph, *_optimizer)
+# are PIT by construction and do NOT need an entry — they resolve to 0 by source.
+#
+# This file is GIT-TRACKED (trust-root); A8's config guard reds the scorecard
+# if it is uncommitted/dirty. It ships with NO unbacked lag-0 claims: every
+# daily variable not covered by a passing proof gets the conservative lag.
+# =============================================================================
+
+version: "1.0"
+
+# entitled_lag_days granted ONLY when status == passing AND owning_test_id green.
+proofs: {}
+
+# Example of the shape a real proof takes (kept commented until its test exists):
+#  COMBINER_RIDGE_DAILY_V1:
+#    proof_type: nightly_batch         # score for date t is computed the night
+#    entitled_lag_days: 1              # AFTER t -> known t+1, so lag 1 not 0
+#    owning_test_id: tests/loop/test_pit_lag.py::test_combiner_known_next_day
+#    last_passing_commit: ""
+#    status: unproven

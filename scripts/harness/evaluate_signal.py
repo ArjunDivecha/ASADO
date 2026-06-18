@@ -120,6 +120,7 @@ from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
+import yaml
 from scipy import stats as sstats
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
@@ -639,12 +640,52 @@ def load_signal(con, signal_spec: dict[str, Any], universe: list[str], start_dat
     return df.sort_values(["date", "country"]).reset_index(drop=True), str(src)
 
 
+# A6 — PIT-lag governance. A daily signal earns lag 0 ONLY via a passing proof
+# in config/pit_proof_registry.yaml; otherwise it FAILS CLOSED to this default.
+CONSERVATIVE_DAILY_LAG_DAYS = 1
+PIT_REGISTRY_PATH = Path(__file__).resolve().parent.parent.parent / "config" / "pit_proof_registry.yaml"
+_PIT_REGISTRY: Optional[dict] = None
+
+
+def _load_pit_registry(path: Path = PIT_REGISTRY_PATH) -> dict:
+    global _PIT_REGISTRY
+    if path == PIT_REGISTRY_PATH and _PIT_REGISTRY is not None:
+        return _PIT_REGISTRY
+    data = yaml.safe_load(path.read_text()) if path.exists() else {}
+    data = data or {}
+    if path == PIT_REGISTRY_PATH:
+        _PIT_REGISTRY = data
+    return data
+
+
+def daily_publication_lag_days(variable: str, source: str,
+                               signal_spec: Optional[dict[str, Any]] = None,
+                               registry: Optional[dict] = None) -> int:
+    """A6 — per-variable daily publication lag (trading days). Replaces the old
+    blanket `daily -> 0`. PIT by source -> 0; an explicit signal_spec override
+    wins; a PASSING pit_proof grants its entitled lag; everything else FAILS
+    CLOSED to the conservative default (a daily signal does not get same-day
+    knowledge it hasn't proven)."""
+    if signal_spec and signal_spec.get("publication_lag_days") is not None:
+        return int(signal_spec["publication_lag_days"])
+    if source in ZERO_LAG_SOURCES:
+        return 0
+    reg = registry if registry is not None else _load_pit_registry()
+    proof = (reg.get("proofs") or {}).get(variable)
+    if proof and proof.get("status") == "passing":
+        return int(proof.get("entitled_lag_days", 0))
+    return CONSERVATIVE_DAILY_LAG_DAYS
+
+
 def infer_publication_lag(df: pd.DataFrame, source: str, frequency: str) -> int:
-    """Conservative publication-lag default (months). Market-derived = 0."""
+    """Conservative MONTHLY publication-lag default (months). Market-derived = 0.
+    (Daily lag is governed separately by daily_publication_lag_days — A6.)"""
     if source in ZERO_LAG_SOURCES:
         return 0
     if frequency == "daily":
-        return 0  # daily signal tables in scope are market/news-derived
+        # Kept for back-compat callers; the daily path now uses
+        # daily_publication_lag_days() for the real per-variable embargo.
+        return 0
     # infer native frequency from median gap between observations per country
     gaps = (
         df.sort_values(["country", "date"]).groupby("country")["date"].diff().dt.days.dropna()
@@ -691,6 +732,10 @@ def evaluate_signal(
         signal, source = load_signal(con, signal_spec, countries, start_date, frequency)
         lag = signal_spec.get("publication_lag_months")
         lag = infer_publication_lag(signal, source, frequency) if lag is None else int(lag)
+        # A6: per-variable daily publication embargo (trading days). Replaces the
+        # old blanket daily=0; an unproven daily variable fails closed to 1 day.
+        lag_days = (daily_publication_lag_days(signal_spec.get("variable", ""), source, signal_spec)
+                    if frequency == "daily" else 0)
 
         if frequency == "monthly":
             returns = con.execute(
@@ -711,7 +756,7 @@ def evaluate_signal(
                 aligned = align_monthly(signal, returns, lag, h)
                 label = f"{h}m"
             else:
-                aligned = align_daily(signal, returns, h)
+                aligned = align_daily(signal, returns, h, lag_days)
                 label = f"{h}d"
             ic = rank_ic_series(aligned)
             yearly = yearly_ic_table(ic)
@@ -773,6 +818,8 @@ def evaluate_signal(
                 periods = 12
             else:
                 sig_panel = signal.pivot_table(index="date", columns="country", values="value").sort_index()
+                if lag_days:
+                    sig_panel = sig_panel.shift(lag_days)  # A6: embargo the portfolio path too
                 ret_panel = returns.pivot_table(index="date", columns="country", values="return_1m").sort_index()
                 # restrict to real cross-section dates (>=10 countries traded)
                 ret_panel = ret_panel[ret_panel.notna().sum(axis=1) >= 10]
@@ -832,6 +879,7 @@ def evaluate_signal(
             "signal_spec": signal_spec,
             "resolved_source": source,
             "publication_lag_months": lag,
+            "publication_lag_days": lag_days,
             "direction": direction,
             "frequency": frequency,
             "horizons": horizons,
@@ -895,10 +943,13 @@ def evaluate_signal(
     return result
 
 
-def align_daily(signal: pd.DataFrame, returns: pd.DataFrame, horizon_days: int) -> pd.DataFrame:
-    """Daily alignment: signal on trading day t predicts the compounded
-    return over the NEXT horizon_days trading days (t+1 ... t+h), per
-    country's own trading calendar. Lag 0 (market/news-derived daily data)."""
+def align_daily(signal: pd.DataFrame, returns: pd.DataFrame, horizon_days: int,
+                lag_days: int = 0) -> pd.DataFrame:
+    """Daily alignment: signal on trading day t predicts the compounded return
+    over t+lag_days+1 ... t+lag_days+horizon_days, per country's own trading
+    calendar. lag_days (A6) is the publication embargo: a signal not known
+    until t+lag_days cannot predict anything before t+lag_days+1. lag_days=0
+    reproduces the prior behaviour (t+1 ... t+h)."""
     ret = returns.sort_values(["country", "date"]).copy()
     ret["log1p"] = np.log1p(ret["return_1m"])
     out_frames = []
@@ -913,11 +964,12 @@ def align_daily(signal: pd.DataFrame, returns: pd.DataFrame, horizon_days: int) 
         valid = ~pd.isna(p)
         p = p[valid].astype(int)
         sig_v = sig_c.iloc[np.flatnonzero(valid)]
-        end = p + horizon_days
+        start = p + lag_days            # embargo: window opens after the lag
+        end = p + lag_days + horizon_days
         ok = end < len(g)
-        p, end = p[ok], end[ok]
+        start, end = start[ok], end[ok]
         sig_v = sig_v.iloc[np.flatnonzero(ok)]
-        fwd = np.expm1(cum.values[end] - cum.values[p])
+        fwd = np.expm1(cum.values[end] - cum.values[start])
         f = sig_v[["date", "country", "value"]].copy()
         f["fwd_return"] = fwd
         out_frames.append(f)

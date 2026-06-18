@@ -38,10 +38,15 @@ single `governance_scorecard.json` the Chief-of-Staff agent will read; today it 
 - **Scripts:** `scripts/loop/{run_manifest,heartbeat,build_governance_scorecard,check_cross_source,family_registry,family_migration}.py`; edits to `loop_daily_job.py`, `ledgers.py`, `calibration_report.py`, `scripts/harness/evaluate_signal.py`
 - **Runtime (gitignored under `Data/loop/governance/`):** `run_manifest.json`, `heartbeat.json`, `governance_scorecard.json`, `cross_source_status.json`, `family_migration_diff.json`
 
-## Deliberately deferred (flagged, not silently dropped)
-1. **A5 in-place re-verdict** — re-run the harness on the ~50 tested hypotheses under the corrected N (recommended: analytical recompute from each stored result's Sharpe + new N, after A8). Structural fix already makes N honest going forward; the migration diff documents the change.
-2. **A7 live BBG ticker NAME/country re-resolution** — needs the OpusBloomberg env at runtime; the existing-source pair check already catches the GSAB class.
-3. **A6 deep graph_pit edge-vintage canary** — the embargo + fail-closed proof mechanism is in; a dedicated "weight at t uses only vintages < t" test is a follow-up.
+## Pre-B0 loose ends — RESOLVED
+- **A5 in-place re-verdict — DONE (analytical, 0 flips).** `reverdict_under_canonical_n.py` recomputed all 40 tested hypotheses under the corrected canonical N (isolating the N change; reuses the real `decide_verdict`). **No verdict flips** — every tested hypothesis already failed the deflated-Sharpe gate (DSR negative across the board), so the honest-N fix changes nothing retroactively; it matters for future marginal hypotheses. No ledger writes needed; documented in `Data/loop/governance/reverdict_under_canonical_n.json`.
+- **Governance wiring smoke — PASSED.** The full tail (check_cross_source → manifest → auto-commit → heartbeat → scorecard) runs clean via the orchestrator; scorecard AMBER.
+- **A2 watchdog plist — CREATED** (`com.arjundivecha.asado-loop-heartbeat.plist`, runs `heartbeat.py --watchdog` at 12:45). Staged in repo with install instructions; NOT installed (the agent does not touch `~/Library/LaunchAgents`).
+
+## Follow-ups (NOT B0 blockers)
+1. **A7 live BBG ticker NAME/country re-resolution** — needs the OpusBloomberg env/live terminal; the existing-source pair check already catches the GSAB class.
+2. **A6 deep graph_pit edge-vintage canary** — validates a Phase-2 build's PIT correctness (the embargo + fail-closed proof mechanism is already in + tested); a dedicated "weight at t uses only vintages < t" test is a hardening follow-up.
+3. **Install the watchdog plist** + let one real nightly run produce a live scorecard (final acceptance; happens via launchd).
 
 ## Next — Phase B0 (the Chief-of-Staff status skill)
 Now that the substrate is honest and the scorecard exists, B0 is a **separate Claude Code skill** (status-mode only) whose allow-list reads ONLY `Data/loop/governance/` artifacts + the rendered brief + `live_signals`/calibration — it explains status, leads with red/amber, says UNKNOWN/STALE on missing surfaces, and never adjudicates. Then B1 (research, gated on the exploration/intent logs) and Phase C.

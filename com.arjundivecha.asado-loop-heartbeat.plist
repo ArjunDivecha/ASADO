@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!--
+    ASADO Governance Layer (A2) — loop liveness WATCHDOG.
+    Runs ~1 hour after the 11:30 nightly loop. heartbeat.py --watchdog checks
+    Data/loop/governance/heartbeat.json: if it is missing or its as_of is stale
+    (> ~2h), the loop itself never ran (the silent-death case an in-process
+    heartbeat cannot catch) -> it fires an iMessage push. This is the listener
+    the nightly log never had.
+
+    INSTALL (the agent does NOT modify ~/Library/LaunchAgents — your call):
+      cp "com.arjundivecha.asado-loop-heartbeat.plist" ~/Library/LaunchAgents/
+      launchctl load ~/Library/LaunchAgents/com.arjundivecha.asado-loop-heartbeat.plist
+    Logs to ASADO/Data/logs/loop_heartbeat_launchd.log
+    -->
+    <key>Label</key>
+    <string>com.arjundivecha.asado-loop-heartbeat</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/venv/bin/python</string>
+        <string>/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/loop/heartbeat.py</string>
+        <string>--watchdog</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO</string>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>12</integer>
+        <key>Minute</key>
+        <integer>45</integer>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/logs/loop_heartbeat_launchd.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/logs/loop_heartbeat_launchd.log</string>
+
+    <key>RunAtLoad</key>
+    <false/>
+</dict>
+</plist>

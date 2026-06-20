@@ -29,9 +29,18 @@
 version: "1.0"
 
 # Hand-verified known-good anchors. Mismatch = HARD STOP. (Curate / extend.)
+#
+# recent_days: look back this many days for the most recent value (default 60).
+#   Using the most recent value rather than an exact date means sentinel checks
+#   remain valid after the anchor date passes and survive BBG-down nights.
+# tol: ±pct pts. Wide enough (2.0) to survive normal yield moves while still
+#   catching GSAB-style swaps (SA 10Y ~11% would breach Australia's anchor of
+#   ~4.7 by 6+ pts). Tighten only when you have a redundant cross-check pair.
 sentinels:
-  - {db: loop, table: sovereign_daily, variable: SOV_10Y_YIELD_PCT, country: Australia, date: "2026-06-17", expected: 4.767, tol: 0.05}
-  - {db: loop, table: sovereign_daily, variable: SOV_10Y_YIELD_PCT, country: Canada,    date: "2026-06-17", expected: 3.385, tol: 0.05}
+  - {db: loop, table: sovereign_daily, variable: SOV_10Y_YIELD_PCT, country: Australia,
+     expected: 4.767, tol: 2.0, recent_days: 60}
+  - {db: loop, table: sovereign_daily, variable: SOV_10Y_YIELD_PCT, country: Canada,
+     expected: 3.385, tol: 2.0, recent_days: 60}
 
 # Semantically-equivalent redundant series that must agree (the GSAB detector).
 pairs:

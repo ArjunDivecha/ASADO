@@ -95,16 +95,29 @@ def run_checks(config: Optional[dict] = None) -> dict:
     con = loop_connection(read_only=True)
     try:
         # ── Sentinels (hard) ──────────────────────────────────────────────
+        # Query for the MOST RECENT value within `recent_days` rather than
+        # an exact date, so stale sentinel dates don't false-trip. If no data
+        # in window: log a warning and skip (can't verify) — BBG may have been
+        # down. A large mismatch vs expected (GSAB-style swap) is a HARD STOP.
         sentinel_breaches = []
         for s in cfg.get("sentinels", []):
             qual = s["table"] if s["db"] == "loop" else f"asado.{s['table']}"
+            recent_days = int(s.get("recent_days", 60))
             row = con.execute(
-                f"SELECT value FROM {qual} WHERE variable=? AND country=? AND date=CAST(? AS DATE)",
-                [s["variable"], s["country"], s["date"]]).fetchone()
+                f"""SELECT value FROM {qual}
+                    WHERE variable=? AND country=?
+                    AND date >= CURRENT_DATE - INTERVAL {recent_days} DAY
+                    ORDER BY date DESC LIMIT 1""",
+                [s["variable"], s["country"]]).fetchone()
             got = None if row is None else row[0]
-            if got is None or abs(float(got) - float(s["expected"])) > float(s["tol"]):
-                sentinel_breaches.append({**{k: s[k] for k in ("table", "variable", "country", "date", "expected")},
-                                          "got": (None if got is None else round(float(got), 4))})
+            if got is None:
+                print(f"  SENTINEL SKIP: no data for {s['country']} {s['variable']} "
+                      f"in last {recent_days}d — cannot verify (BBG may be down)", flush=True)
+                continue
+            if abs(float(got) - float(s["expected"])) > float(s["tol"]):
+                sentinel_breaches.append(
+                    {**{k: s[k] for k in ("table", "variable", "country", "expected")},
+                     "got": round(float(got), 4)})
 
         # ── Cross-source pairs (soft: red the scorecard, no crash) ────────
         pair_results = []

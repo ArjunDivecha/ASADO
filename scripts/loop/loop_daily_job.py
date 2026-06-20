@@ -128,8 +128,11 @@ import argparse
 import shutil
 import subprocess
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
+
+import yaml
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(BASE_DIR))  # so `from scripts.loop import run_manifest` resolves
@@ -244,7 +247,11 @@ def _auto_commit_brief() -> None:
         if not briefs:
             return
         newest = str(briefs[-1])
-        subprocess.run(["git", "add", "--", newest], cwd=str(BASE_DIR))
+        r = subprocess.run(["git", "add", "--", newest], cwd=str(BASE_DIR),
+                           capture_output=True)
+        if r.returncode != 0:
+            print(f"!!! brief auto-commit: git add failed: {r.stderr.decode().strip()}", flush=True)
+            return
         if subprocess.run(["git", "diff", "--cached", "--quiet", "--", newest],
                           cwd=str(BASE_DIR)).returncode != 0:
             subprocess.run(["git", "commit", "-q", "-m",
@@ -252,6 +259,40 @@ def _auto_commit_brief() -> None:
                            cwd=str(BASE_DIR))
     except Exception as exc:  # noqa: BLE001
         print(f"!!! brief auto-commit failed (non-fatal): {exc}", flush=True)
+
+
+def _load_optional_steps() -> set[str]:
+    """Read optional=true step names from governance_contract.yaml. Fail-soft."""
+    try:
+        contract_path = BASE_DIR / "config" / "governance_contract.yaml"
+        contract = yaml.safe_load(contract_path.read_text())
+        return {s["name"] for s in contract.get("steps", []) if s.get("optional")}
+    except Exception as exc:  # noqa: BLE001
+        print(f"!!! could not load governance_contract.yaml optional flags: {exc}", flush=True)
+        return set()
+
+
+def _run_step(name: str, cmd: list[str], max_attempts: int = 2) -> int:
+    """Run a step subprocess with up to max_attempts tries (retry on exit 1).
+    Returns the final return code. Exit 2 (PARTIAL) is never retried."""
+    for attempt in range(max_attempts):
+        try:
+            rc = subprocess.run(cmd, cwd=str(BASE_DIR)).returncode
+        except FileNotFoundError as exc:
+            # Missing binary — fail immediately, no retry (won't self-heal).
+            print(f"!!! STEP BINARY MISSING: {name}: {exc}", flush=True)
+            return 127
+        except OSError as exc:
+            print(f"!!! STEP OS ERROR: {name}: {exc}", flush=True)
+            rc = 1
+        if rc == 0 or rc == 2:
+            return rc
+        if attempt + 1 < max_attempts:
+            wait = 2 ** (attempt + 1) * 5  # 10s, 20s, ...
+            print(f"--- RETRY: {name} exited {rc} (attempt {attempt + 1}/{max_attempts}), "
+                  f"waiting {wait}s ...", flush=True)
+            time.sleep(wait)
+    return rc
 
 
 def main() -> int:
@@ -264,29 +305,36 @@ def main() -> int:
         print(f"No step named {args.only!r}. Steps: {[n for n, _ in STEPS]}")
         return 2
 
+    # Honour optional=true from the governance contract: a failing optional step
+    # is a warning (exit 2 equivalent), not a hard failure that red-lights the loop.
+    optional_steps = _load_optional_steps()
+    if optional_steps:
+        print(f"Optional steps (failures treated as warnings): {sorted(optional_steps)}", flush=True)
+
     failures = []
     warnings = []
     records = []  # per-step status for the governance run manifest (A1)
     for name, cmd in steps:
         print(f"\n{'─' * 60}\n{datetime.now().strftime('%H:%M:%S')} STEP: {name}\n{'─' * 60}", flush=True)
         started_ts = datetime.now().isoformat(timespec="seconds")
-        try:
-            res = subprocess.run(cmd, cwd=str(BASE_DIR))
-            rc = res.returncode
-        except FileNotFoundError as exc:
-            # A missing binary (e.g. conda not on launchd's PATH) must fail the
-            # STEP loudly, never kill the whole job silently (2026-06-11 bug).
-            rc = 127
-            print(f"!!! STEP BINARY MISSING: {name}: {exc}", flush=True)
+        rc = _run_step(name, cmd)
         ended_ts = datetime.now().isoformat(timespec="seconds")
         records.append({"name": name, "rc": rc, "started_ts": started_ts, "ended_ts": ended_ts})
-        if rc == 2:
+        if rc == 0:
+            pass  # success
+        elif rc == 2:
             # Exit 2 = PARTIAL: the step kept its completed work and the missing
             # part self-heals next run (e.g. evidence packs hit GDELT's rate
             # limit after writing some packs). Warn, don't fail the job.
             warnings.append(name)
             print(f"~~~ STEP PARTIAL: {name} (exit 2) - recorded as warning", flush=True)
-        elif rc != 0:
+        elif name in optional_steps:
+            # Optional step failed: same treatment as PARTIAL — warn but don't
+            # kill the loop. The governance contract explicitly marks these steps
+            # as non-critical (Bloomberg-down, Neo4j-down, GDELT rate-limit, etc.).
+            warnings.append(name)
+            print(f"~~~ OPTIONAL STEP FAILED: {name} (exit {rc}) - treated as warning", flush=True)
+        else:
             failures.append(name)
             print(f"!!! STEP FAILED: {name} (exit {rc}) - continuing with remaining steps", flush=True)
 

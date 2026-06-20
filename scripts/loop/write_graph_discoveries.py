@@ -151,6 +151,10 @@ def write() -> int:
 
 
 def check() -> int:
+    if not _neo4j_reachable():
+        log("WARNING: Neo4j bolt port unreachable — cannot run check (PARTIAL)")
+        return 2
+
     from neo4j import GraphDatabase
 
     drv = GraphDatabase.driver(NEO4J_URI, auth=NEO4J_AUTH)

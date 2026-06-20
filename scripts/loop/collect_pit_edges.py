@@ -65,6 +65,8 @@ from __future__ import annotations
 
 import argparse
 import io
+import json
+import socket
 import sys
 import time
 from datetime import datetime
@@ -93,22 +95,41 @@ def log(msg: str) -> None:
     print(f"{datetime.now().strftime('%H:%M:%S')} [pit_edges] {msg}", flush=True)
 
 
-def iso3_to_t2_map() -> dict[str, str]:
-    """Sovereign-proxy iso3 -> t2_name from Neo4j, restricted to the T2 universe."""
-    from neo4j import GraphDatabase
-
-    drv = GraphDatabase.driver(NEO4J_URI, auth=NEO4J_AUTH)
+def _neo4j_reachable(host: str = "localhost", port: int = 7687, timeout: float = 3.0) -> bool:
     try:
-        with drv.session() as s:
-            rows = s.run(
-                "MATCH (c:Country) WHERE c.graph_role <> 'market_sleeve' "
-                "RETURN c.iso3 AS iso3, c.t2_name AS t2"
-            ).data()
-    finally:
-        drv.close()
-    mapping = {r["iso3"]: r["t2"] for r in rows if r["t2"] in T2_UNIVERSE}
+        with socket.create_connection((host, port), timeout=timeout):
+            return True
+    except OSError:
+        return False
+
+
+def _iso3_to_t2_from_config() -> dict[str, str]:
+    """Fallback iso3->t2_name from country_mapping.json when Neo4j is unreachable."""
+    cfg = json.loads((BASE_DIR / "config" / "country_mapping.json").read_text())
+    return {v["iso3"]: k for k, v in cfg["countries"].items()
+            if v.get("iso3") and k in T2_UNIVERSE}
+
+
+def iso3_to_t2_map() -> dict[str, str]:
+    """Sovereign-proxy iso3 -> t2_name. Tries Neo4j first; falls back to
+    country_mapping.json so the collector can run without Neo4j up."""
+    if not _neo4j_reachable():
+        log("WARNING: Neo4j bolt unreachable — using country_mapping.json fallback for iso3->t2")
+        mapping = _iso3_to_t2_from_config()
+    else:
+        from neo4j import GraphDatabase
+        drv = GraphDatabase.driver(NEO4J_URI, auth=NEO4J_AUTH)
+        try:
+            with drv.session() as s:
+                rows = s.run(
+                    "MATCH (c:Country) WHERE c.graph_role <> 'market_sleeve' "
+                    "RETURN c.iso3 AS iso3, c.t2_name AS t2"
+                ).data()
+        finally:
+            drv.close()
+        mapping = {r["iso3"]: r["t2"] for r in rows if r["t2"] in T2_UNIVERSE}
     if len(mapping) < 25:
-        raise RuntimeError(f"iso3->t2 mapping too small ({len(mapping)}) — Neo4j incomplete?")
+        raise RuntimeError(f"iso3->t2 mapping too small ({len(mapping)}) — config incomplete?")
     return mapping
 
 

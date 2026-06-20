@@ -42,6 +42,7 @@ USAGE:
 from __future__ import annotations
 
 import json
+import time
 from pathlib import Path
 
 import duckdb
@@ -58,15 +59,27 @@ COUNTRY_MAPPING = BASE_DIR / "config" / "country_mapping.json"
 def loop_connection(read_only: bool = False) -> duckdb.DuckDBPyConnection:
     """Open the loop DB with the main warehouse attached read-only as `asado`.
 
-    FAIL-IS-FAIL: if the main warehouse is missing we raise instead of
-    returning a half-usable connection.
+    FAIL-IS-FAIL: if the main warehouse is missing we raise. DuckDB write-lock
+    contention (another script is writing) is handled with up to 4 retries with
+    exponential backoff (2, 4, 8, 16 s) before raising.
     """
     LOOP_DIR.mkdir(parents=True, exist_ok=True)
     if not MAIN_DB.exists():
         raise FileNotFoundError(f"Main ASADO warehouse not found: {MAIN_DB}")
-    con = duckdb.connect(str(LOOP_DB), read_only=read_only)
-    con.execute(f"ATTACH '{MAIN_DB}' AS asado (READ_ONLY)")
-    return con
+    last_exc: Exception = RuntimeError("unreachable")
+    for attempt, wait in enumerate([0, 2, 4, 8, 16]):
+        try:
+            if wait:
+                time.sleep(wait)
+            con = duckdb.connect(str(LOOP_DB), read_only=read_only)
+            con.execute(f"ATTACH '{MAIN_DB}' AS asado (READ_ONLY)")
+            return con
+        except Exception as exc:  # noqa: BLE001
+            last_exc = exc
+            if attempt < 4:
+                print(f"[loopdb] connection attempt {attempt + 1} failed ({exc}); retrying in {[2,4,8,16][attempt]}s",
+                      flush=True)
+    raise last_exc
 
 
 # The canonical 34-country T2 universe (CLAUDE.md). Hardcoded deliberately:

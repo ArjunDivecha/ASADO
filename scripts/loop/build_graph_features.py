@@ -75,9 +75,11 @@ USAGE:
 from __future__ import annotations
 
 import argparse
+import socket
 import sys
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -122,7 +124,18 @@ def fetch_weight_matrix(session, cypher: str, weight_key: str) -> pd.DataFrame:
     return pd.DataFrame(vals, index=w.index, columns=w.columns)
 
 
-def fetch_current_weights() -> dict[str, pd.DataFrame]:
+def _neo4j_reachable(host: str = "localhost", port: int = 7687, timeout: float = 3.0) -> bool:
+    try:
+        with socket.create_connection((host, port), timeout=timeout):
+            return True
+    except OSError:
+        return False
+
+
+def fetch_current_weights() -> Optional[dict[str, pd.DataFrame]]:
+    if not _neo4j_reachable():
+        log("WARNING: Neo4j bolt port unreachable — skipping weight refresh (will use last snapshot)")
+        return None
     from neo4j import GraphDatabase
 
     drv = GraphDatabase.driver(NEO4J_URI, auth=NEO4J_AUTH)
@@ -238,14 +251,31 @@ def build() -> int:
     # ── 1. Current edge weights from Neo4j + snapshot ───────────────────
     log("Fetching edge weights from Neo4j ...")
     current = fetch_current_weights()
-    log(f"edges: trade focal rows={current['trade'].notna().any(axis=1).sum()}, "
-        f"bank={current['bank'].notna().any(axis=1).sum()}, "
-        f"holders={current['holder'].notna().any(axis=1).sum()}")
 
     snap_month = datetime.now().strftime("%Y-%m")
     con = loop_connection()
     try:
-        store_snapshot(con, current, snap_month)
+        if current is not None:
+            log(f"edges: trade focal rows={current['trade'].notna().any(axis=1).sum()}, "
+                f"bank={current['bank'].notna().any(axis=1).sum()}, "
+                f"holders={current['holder'].notna().any(axis=1).sum()}")
+            store_snapshot(con, current, snap_month)
+        else:
+            log(f"Neo4j unavailable — skipping {snap_month} snapshot update, reusing last stored snapshot")
+
+        # Check whether any snapshots exist before trying to load them
+        known = {r[0] for r in con.execute(
+            "SELECT table_name FROM information_schema.tables WHERE table_schema='main'"
+        ).fetchall()}
+        if "graph_edge_snapshots" not in known:
+            n_snaps = 0
+        else:
+            n_snaps = con.execute("SELECT COUNT(*) FROM graph_edge_snapshots").fetchone()[0]
+
+        if n_snaps == 0:
+            log("PARTIAL: Neo4j unreachable and no prior edge snapshots exist — cannot compute features")
+            return 2
+
         snapshots = load_snapshots(con)
     finally:
         con.close()

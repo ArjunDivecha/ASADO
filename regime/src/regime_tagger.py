@@ -67,7 +67,7 @@ def tag_regime(row: pd.Series) -> Tuple[str, List[str]]:
     r3 = (nber == 1) or (sahm == 1)
     if r3:
         fired.append("R3_Recession")
-        return "Crisis", fired
+        return "Recession", fired
 
     # Regime 2: Late-cycle / Tightening
     # Fed tightening + flat/inverted curve + low vol + benign credit

@@ -234,3 +234,406 @@ Transition    0.228723
 2026-05-25 01:00:30,225 - INFO - Factor panel: 558688 rows, 52 factors
 2026-05-25 01:00:32,318 - INFO - H2: 21 / 52 factors significant at FDR 10%
 2026-05-25 01:00:41,816 - INFO - Complete. H1=True H2=True H3=False
+2026-06-21 06:46:35,522 - INFO - === Per-Country Regime Early-Warning Test ===
+2026-06-21 06:46:35,522 - INFO - Mode: full-sample (diagnostic)
+2026-06-21 06:46:35,522 - INFO - Loading factor panel ...
+2026-06-21 06:46:35,673 - INFO - Loading country returns ...
+2026-06-21 06:46:35,716 - INFO - Features (6): ['12-1MTR_CS', 'REER_CS', 'RSI14_CS', 'Best PE _CS', 'Inflation_CS', 'Best ROE_CS']
+2026-06-21 06:46:36,149 - INFO - Feature matrices built for 34 / 34 countries
+2026-06-21 06:46:36,149 - INFO - Feature matrices: 3 countries
+2026-06-21 06:46:36,150 - WARNING - Brazil: only 0 clean rows, skip
+2026-06-21 06:46:36,655 - INFO - Saved ew_signals_fullsample.parquet: 341 rows, 2 countries
+2026-06-21 06:46:36,659 - INFO - GATE 1 PASS | median_persist=0.965 (≥0.75?) | frac_dur_3m=1.00 (≥0.60?)
+2026-06-21 06:46:36,714 - INFO - GATE 2 OK | median |corr(P_adverse, vol6m)| = 0.156 < 0.70
+2026-06-21 06:46:36,714 - INFO - Full-sample mode: Gates 3/4 skipped (in-sample, biased).
+2026-06-21 06:47:10,863 - INFO - === Per-Country Regime Early-Warning Test ===
+2026-06-21 06:47:10,863 - INFO - Mode: full-sample (diagnostic)
+2026-06-21 06:47:10,863 - INFO - Loading factor panel ...
+2026-06-21 06:47:10,906 - INFO - Loading country returns ...
+2026-06-21 06:47:10,931 - INFO - Features (6): ['12-1MTR_CS', 'REER_CS', 'RSI14_CS', 'Best PE _CS', 'Inflation_CS', 'Best ROE_CS']
+2026-06-21 06:47:11,276 - INFO - Feature matrices built for 34 / 34 countries
+2026-06-21 06:47:11,276 - INFO - Feature matrices: 3 countries
+2026-06-21 06:47:11,692 - INFO - Saved ew_signals_fullsample.parquet: 786 rows, 3 countries
+2026-06-21 06:47:11,697 - INFO - GATE 1 PASS | median_persist=0.986 (≥0.75?) | frac_dur_3m=0.67 (≥0.60?)
+2026-06-21 06:47:11,754 - INFO - GATE 2 OK | median |corr(P_adverse, vol6m)| = 0.258 < 0.70
+2026-06-21 06:47:11,754 - INFO - Full-sample mode: Gates 3/4 skipped (in-sample, biased).
+2026-06-21 06:47:19,491 - INFO - === Per-Country Regime Early-Warning Test ===
+2026-06-21 06:47:19,491 - INFO - Mode: walk-forward OOS
+2026-06-21 06:47:19,491 - INFO - Loading factor panel ...
+2026-06-21 06:47:19,533 - INFO - Loading country returns ...
+2026-06-21 06:47:19,557 - INFO - Features (6): ['12-1MTR_CS', 'REER_CS', 'RSI14_CS', 'Best PE _CS', 'Inflation_CS', 'Best ROE_CS']
+2026-06-21 06:47:19,900 - INFO - Feature matrices built for 34 / 34 countries
+2026-06-21 06:47:19,900 - INFO - Feature matrices: 34 countries
+2026-06-21 06:47:20,298 - WARNING - Model is not converging.  Current: -84.56962295026949 is not greater than -84.56955623903205. Delta is -6.671123743728913e-05
+2026-06-21 06:47:20,725 - WARNING - Model is not converging.  Current: -18.117966907889457 is not greater than -18.11792505370325. Delta is -4.18541862075017e-05
+2026-06-21 06:47:20,794 - WARNING - Model is not converging.  Current: -118.81951769159886 is not greater than -118.81412671088532. Delta is -0.0053909807135426036
+2026-06-21 06:47:20,823 - WARNING - Model is not converging.  Current: -125.32207954409104 is not greater than -125.31993191083271. Delta is -0.0021476332583318936
+2026-06-21 06:47:21,503 - WARNING - Model is not converging.  Current: -198.37944412160297 is not greater than -198.37944405413782. Delta is -6.746515168742917e-08
+2026-06-21 06:47:21,551 - WARNING - Model is not converging.  Current: -351.4176412391197 is not greater than -351.4176406493358. Delta is -5.897838946111733e-07
+2026-06-21 06:47:21,780 - WARNING - Model is not converging.  Current: -866.7650643821369 is not greater than -866.7585014345348. Delta is -0.006562947602105851
+2026-06-21 06:47:22,421 - INFO - Canada: 218 OOS months
+2026-06-21 06:47:22,502 - WARNING - Model is not converging.  Current: 29.760017164085156 is not greater than 29.760140554797403. Delta is -0.0001233907122468736
+2026-06-21 06:47:22,977 - WARNING - Model is not converging.  Current: 18.459065902554713 is not greater than 18.479376711433893. Delta is -0.020310808879180797
+2026-06-21 06:47:23,130 - WARNING - Model is not converging.  Current: -124.69985816191435 is not greater than -124.69979210183683. Delta is -6.606007751486231e-05
+2026-06-21 06:47:23,291 - WARNING - Model is not converging.  Current: -229.79797428418325 is not greater than -229.7978236311201. Delta is -0.00015065306314454574
+2026-06-21 06:47:23,632 - WARNING - Model is not converging.  Current: -113.83453744076465 is not greater than -113.83452818311635. Delta is -9.257648301286281e-06
+2026-06-21 06:47:23,919 - WARNING - Model is not converging.  Current: -1527.3464025356209 is not greater than -1527.3463678273604. Delta is -3.470826050033793e-05
+2026-06-21 06:47:24,190 - INFO - ChinaH: 217 OOS months
+2026-06-21 06:47:24,962 - INFO - Denmark: 219 OOS months
+2026-06-21 06:47:25,051 - WARNING - Model is not converging.  Current: -186.85114216562715 is not greater than -186.85114082599156. Delta is -1.3396355882377975e-06
+2026-06-21 06:47:25,215 - WARNING - Model is not converging.  Current: -609.84996619345 is not greater than -609.849925288624. Delta is -4.090482593710476e-05
+2026-06-21 06:47:25,610 - INFO - France: 218 OOS months
+2026-06-21 06:47:26,552 - INFO - Germany: 218 OOS months
+2026-06-21 06:47:26,585 - WARNING - Model is not converging.  Current: -343.64452623650044 is not greater than -343.6440054280633. Delta is -0.0005208084371588484
+2026-06-21 06:47:26,631 - WARNING - Model is not converging.  Current: -501.18641947118266 is not greater than -501.1778764622141. Delta is -0.008543008968558752
+2026-06-21 06:47:26,661 - WARNING - Model is not converging.  Current: -575.6465363726408 is not greater than -575.6157497613982. Delta is -0.030786611242547224
+2026-06-21 06:47:26,770 - WARNING - Model is not converging.  Current: -662.1041143602922 is not greater than -662.1040080722446. Delta is -0.00010628804761836363
+2026-06-21 06:47:26,834 - WARNING - Model is not converging.  Current: -866.9604773476783 is not greater than -866.9604690939761. Delta is -8.253702162619447e-06
+2026-06-21 06:47:27,238 - INFO - Hong Kong: 217 OOS months
+2026-06-21 06:47:27,261 - WARNING - Model is not converging.  Current: -144.57230842949463 is not greater than -144.56582058865814. Delta is -0.006487840836484793
+2026-06-21 06:47:27,271 - WARNING - Model is not converging.  Current: -190.49787600932387 is not greater than -190.49786381639993. Delta is -1.2192923946940937e-05
+2026-06-21 06:47:27,351 - WARNING - Model is not converging.  Current: -215.43268993183875 is not greater than -215.432684496763. Delta is -5.435075763671193e-06
+2026-06-21 06:47:27,393 - WARNING - Model is not converging.  Current: -487.45083050997385 is not greater than -487.4403137227911. Delta is -0.010516787182780263
+2026-06-21 06:47:27,752 - INFO - India: 124 OOS months
+2026-06-21 06:47:27,774 - WARNING - Model is not converging.  Current: 152.17137182557968 is not greater than 152.17147416352282. Delta is -0.00010233794313307953
+2026-06-21 06:47:28,769 - INFO - Indonesia: 217 OOS months
+2026-06-21 06:47:28,893 - WARNING - Model is not converging.  Current: -184.00108453849572 is not greater than -183.99322997163594. Delta is -0.007854566859776924
+2026-06-21 06:47:28,939 - WARNING - Model is not converging.  Current: -275.17949521843803 is not greater than -275.172851408238. Delta is -0.0066438102000461186
+2026-06-21 06:47:29,641 - INFO - Italy: 217 OOS months
+2026-06-21 06:47:30,466 - INFO - Japan: 220 OOS months
+2026-06-21 06:47:31,321 - INFO - Korea: 217 OOS months
+2026-06-21 06:47:31,363 - WARNING - Model is not converging.  Current: 103.85027245941583 is not greater than 103.85029532856964. Delta is -2.2869153809779164e-05
+2026-06-21 06:47:31,372 - WARNING - Model is not converging.  Current: 57.23474990620298 is not greater than 57.28428805319815. Delta is -0.049538146995175225
+2026-06-21 06:47:31,396 - WARNING - Model is not converging.  Current: 33.292345611630765 is not greater than 33.33741581962886. Delta is -0.04507020799809425
+2026-06-21 06:47:31,418 - WARNING - Model is not converging.  Current: -31.21422013334915 is not greater than -31.143447503289345. Delta is -0.07077263005980683
+2026-06-21 06:47:31,486 - WARNING - Model is not converging.  Current: -61.85459252925584 is not greater than -61.81941575201365. Delta is -0.03517677724219226
+2026-06-21 06:47:31,499 - WARNING - Model is not converging.  Current: 24.246371287290426 is not greater than 24.35699770121062. Delta is -0.11062641392019401
+2026-06-21 06:47:31,938 - WARNING - Model is not converging.  Current: -559.2121951873482 is not greater than -559.2120857403161. Delta is -0.00010944703217319329
+2026-06-21 06:47:32,018 - WARNING - Model is not converging.  Current: -135.355756446901 is not greater than -135.35572028505237. Delta is -3.616184864085881e-05
+2026-06-21 06:47:32,094 - WARNING - Model is not converging.  Current: -189.89009551231655 is not greater than -189.89008282301873. Delta is -1.2689297818724299e-05
+2026-06-21 06:47:32,998 - WARNING - Model is not converging.  Current: -255.9064057212921 is not greater than -255.90451641074708. Delta is -0.001889310545010403
+2026-06-21 06:47:33,039 - WARNING - Model is not converging.  Current: -285.82627895017333 is not greater than -285.8254169357059. Delta is -0.0008620144674296171
+2026-06-21 06:47:33,048 - WARNING - Model is not converging.  Current: -424.64205191322014 is not greater than -424.6336338541917. Delta is -0.00841805902842907
+2026-06-21 06:47:33,597 - INFO - NASDAQ: 220 OOS months
+2026-06-21 06:47:34,289 - INFO - Netherlands: 219 OOS months
+2026-06-21 06:47:35,978 - INFO - Poland: 218 OOS months
+2026-06-21 06:47:36,000 - WARNING - Model is not converging.  Current: 24.187286102420742 is not greater than 24.1872904161608. Delta is -4.313740056716142e-06
+2026-06-21 06:47:36,071 - WARNING - Model is not converging.  Current: -152.43462061054564 is not greater than -152.43461269647875. Delta is -7.914066884495696e-06
+2026-06-21 06:47:36,076 - INFO - Saudi Arabia: 43 OOS months
+2026-06-21 06:47:36,650 - WARNING - Model is not converging.  Current: -1395.1739484268774 is not greater than -1395.1734920039714. Delta is -0.00045642290592695645
+2026-06-21 06:47:36,789 - INFO - Singapore: 219 OOS months
+2026-06-21 06:47:37,558 - INFO - South Africa: 220 OOS months
+2026-06-21 06:47:37,953 - WARNING - Model is not converging.  Current: -1121.5634944807025 is not greater than -1121.5184902221179. Delta is -0.04500425858464041
+2026-06-21 06:47:38,055 - WARNING - Model is not converging.  Current: -1321.4445494432268 is not greater than -1321.3931708415666. Delta is -0.051378601660189815
+2026-06-21 06:47:38,282 - INFO - Spain: 208 OOS months
+2026-06-21 06:47:38,361 - WARNING - Model is not converging.  Current: -47.20678534289837 is not greater than -47.13777789604856. Delta is -0.06900744684980964
+2026-06-21 06:47:39,224 - INFO - Sweden: 219 OOS months
+2026-06-21 06:47:39,259 - WARNING - Model is not converging.  Current: -269.6031476843445 is not greater than -269.6031446351913. Delta is -3.049153178835695e-06
+2026-06-21 06:47:40,121 - INFO - Switzerland: 219 OOS months
+2026-06-21 06:47:41,631 - INFO - Thailand: 218 OOS months
+2026-06-21 06:47:41,713 - WARNING - Model is not converging.  Current: 36.85470856705075 is not greater than 36.856326737712294. Delta is -0.0016181706615441271
+2026-06-21 06:47:42,193 - WARNING - Model is not converging.  Current: -1991.8583044619368 is not greater than -1991.8583019116559. Delta is -2.5502808966848534e-06
+2026-06-21 06:47:42,335 - INFO - Turkey: 217 OOS months
+2026-06-21 06:47:43,192 - INFO - U.K.: 219 OOS months
+2026-06-21 06:47:43,411 - WARNING - Model is not converging.  Current: -579.7817688340326 is not greater than -579.7817291970654. Delta is -3.963696724440524e-05
+2026-06-21 06:47:43,825 - INFO - U.S.: 220 OOS months
+2026-06-21 06:47:43,849 - WARNING - Model is not converging.  Current: -67.65923426564271 is not greater than -67.65598559782913. Delta is -0.0032486678135796865
+2026-06-21 06:47:43,872 - WARNING - Model is not converging.  Current: -92.08388323375112 is not greater than -92.07954057680334. Delta is -0.004342656947784462
+2026-06-21 06:47:43,942 - WARNING - Model is not converging.  Current: -396.59460257873906 is not greater than -396.5946010079575. Delta is -1.57078153506518e-06
+2026-06-21 06:47:43,952 - WARNING - Model is not converging.  Current: -604.827378760335 is not greater than -604.8126069902391. Delta is -0.01477177009587649
+2026-06-21 06:47:44,107 - WARNING - Model is not converging.  Current: -848.1183718031144 is not greater than -848.1183414655304. Delta is -3.033758400761144e-05
+2026-06-21 06:47:44,160 - WARNING - Model is not converging.  Current: -897.22508684449 is not greater than -897.2250868270635. Delta is -1.7426486920157913e-08
+2026-06-21 06:47:44,569 - INFO - US SmallCap: 219 OOS months
+2026-06-21 06:47:44,815 - WARNING - Model is not converging.  Current: -970.0011338621723 is not greater than -970.0011321601299. Delta is -1.7020423683788977e-06
+2026-06-21 06:47:44,854 - WARNING - Model is not converging.  Current: -1084.3281808638992 is not greater than -1084.3280867716371. Delta is -9.409226208845212e-05
+2026-06-21 06:47:44,968 - INFO - Vietnam: 136 OOS months
+2026-06-21 06:47:44,977 - INFO - Saved ew_signals.parquet: 5316 rows, 26 countries
+2026-06-21 06:47:44,991 - INFO - GATE 1 PASS | median_persist=0.767 (≥0.75?) | frac_dur_3m=0.69 (≥0.60?)
+2026-06-21 06:47:45,084 - INFO - GATE 2 OK | median |corr(P_adverse, vol6m)| = 0.133 < 0.70
+2026-06-21 06:47:45,240 - INFO - GATE 3 FAIL | sign=7/26 p=0.9953 | med_rho=P:0.053 dP:-0.025 | spread=-1.01%/mo
+2026-06-21 06:47:45,244 - INFO - GATE 3 FAILED — writing results, stopping.
+2026-06-21 06:49:48,748 - INFO - === Per-Country Regime Early-Warning Test ===
+2026-06-21 06:49:48,748 - INFO - Mode: walk-forward OOS
+2026-06-21 06:49:48,748 - INFO - Loading factor panel ...
+2026-06-21 06:49:48,792 - INFO - Loading country returns ...
+2026-06-21 06:49:48,818 - INFO - Features (6): ['12-1MTR_CS', 'REER_CS', 'RSI14_CS', 'Best PE _CS', 'Inflation_CS', 'Best ROE_CS']
+2026-06-21 06:49:49,164 - INFO - Feature matrices built for 34 / 34 countries
+2026-06-21 06:49:49,165 - INFO - Feature matrices: 34 countries
+2026-06-21 06:49:49,552 - WARNING - Model is not converging.  Current: -84.56962295026949 is not greater than -84.56955623903205. Delta is -6.671123743728913e-05
+2026-06-21 06:49:49,978 - WARNING - Model is not converging.  Current: -18.117966907889457 is not greater than -18.11792505370325. Delta is -4.18541862075017e-05
+2026-06-21 06:49:50,046 - WARNING - Model is not converging.  Current: -118.81951769159886 is not greater than -118.81412671088532. Delta is -0.0053909807135426036
+2026-06-21 06:49:50,074 - WARNING - Model is not converging.  Current: -125.32207954409104 is not greater than -125.31993191083271. Delta is -0.0021476332583318936
+2026-06-21 06:49:50,761 - WARNING - Model is not converging.  Current: -198.37944412160297 is not greater than -198.37944405413782. Delta is -6.746515168742917e-08
+2026-06-21 06:49:50,810 - WARNING - Model is not converging.  Current: -351.4176412391197 is not greater than -351.4176406493358. Delta is -5.897838946111733e-07
+2026-06-21 06:49:51,080 - WARNING - Model is not converging.  Current: -866.7650643821369 is not greater than -866.7585014345348. Delta is -0.006562947602105851
+2026-06-21 06:49:51,787 - INFO - Canada: 218 OOS months
+2026-06-21 06:49:51,856 - WARNING - Model is not converging.  Current: 29.760017164085156 is not greater than 29.760140554797403. Delta is -0.0001233907122468736
+2026-06-21 06:49:52,347 - WARNING - Model is not converging.  Current: 18.459065902554713 is not greater than 18.479376711433893. Delta is -0.020310808879180797
+2026-06-21 06:49:52,494 - WARNING - Model is not converging.  Current: -124.69985816191435 is not greater than -124.69979210183683. Delta is -6.606007751486231e-05
+2026-06-21 06:49:52,651 - WARNING - Model is not converging.  Current: -229.79797428418325 is not greater than -229.7978236311201. Delta is -0.00015065306314454574
+2026-06-21 06:49:52,965 - WARNING - Model is not converging.  Current: -113.83453744076465 is not greater than -113.83452818311635. Delta is -9.257648301286281e-06
+2026-06-21 06:49:53,262 - WARNING - Model is not converging.  Current: -1527.3464025356209 is not greater than -1527.3463678273604. Delta is -3.470826050033793e-05
+2026-06-21 06:49:53,533 - INFO - ChinaH: 217 OOS months
+2026-06-21 06:49:54,284 - INFO - Denmark: 219 OOS months
+2026-06-21 06:49:54,366 - WARNING - Model is not converging.  Current: -186.85114216562715 is not greater than -186.85114082599156. Delta is -1.3396355882377975e-06
+2026-06-21 06:49:54,519 - WARNING - Model is not converging.  Current: -609.84996619345 is not greater than -609.849925288624. Delta is -4.090482593710476e-05
+2026-06-21 06:49:54,904 - INFO - France: 218 OOS months
+2026-06-21 06:49:55,831 - INFO - Germany: 218 OOS months
+2026-06-21 06:49:55,862 - WARNING - Model is not converging.  Current: -343.64452623650044 is not greater than -343.6440054280633. Delta is -0.0005208084371588484
+2026-06-21 06:49:55,905 - WARNING - Model is not converging.  Current: -501.18641947118266 is not greater than -501.1778764622141. Delta is -0.008543008968558752
+2026-06-21 06:49:55,934 - WARNING - Model is not converging.  Current: -575.6465363726408 is not greater than -575.6157497613982. Delta is -0.030786611242547224
+2026-06-21 06:49:56,039 - WARNING - Model is not converging.  Current: -662.1041143602922 is not greater than -662.1040080722446. Delta is -0.00010628804761836363
+2026-06-21 06:49:56,101 - WARNING - Model is not converging.  Current: -866.9604773476783 is not greater than -866.9604690939761. Delta is -8.253702162619447e-06
+2026-06-21 06:49:56,483 - INFO - Hong Kong: 217 OOS months
+2026-06-21 06:49:56,504 - WARNING - Model is not converging.  Current: -144.57230842949463 is not greater than -144.56582058865814. Delta is -0.006487840836484793
+2026-06-21 06:49:56,513 - WARNING - Model is not converging.  Current: -190.49787600932387 is not greater than -190.49786381639993. Delta is -1.2192923946940937e-05
+2026-06-21 06:49:56,591 - WARNING - Model is not converging.  Current: -215.43268993183875 is not greater than -215.432684496763. Delta is -5.435075763671193e-06
+2026-06-21 06:49:56,629 - WARNING - Model is not converging.  Current: -487.45083050997385 is not greater than -487.4403137227911. Delta is -0.010516787182780263
+2026-06-21 06:49:56,968 - INFO - India: 124 OOS months
+2026-06-21 06:49:56,989 - WARNING - Model is not converging.  Current: 152.17137182557968 is not greater than 152.17147416352282. Delta is -0.00010233794313307953
+2026-06-21 06:49:57,880 - INFO - Indonesia: 217 OOS months
+2026-06-21 06:49:58,002 - WARNING - Model is not converging.  Current: -184.00108453849572 is not greater than -183.99322997163594. Delta is -0.007854566859776924
+2026-06-21 06:49:58,048 - WARNING - Model is not converging.  Current: -275.17949521843803 is not greater than -275.172851408238. Delta is -0.0066438102000461186
+2026-06-21 06:49:58,782 - INFO - Italy: 217 OOS months
+2026-06-21 06:49:59,606 - INFO - Japan: 220 OOS months
+2026-06-21 06:50:00,451 - INFO - Korea: 217 OOS months
+2026-06-21 06:50:00,475 - WARNING - Model is not converging.  Current: 103.85027245941583 is not greater than 103.85029532856964. Delta is -2.2869153809779164e-05
+2026-06-21 06:50:00,484 - WARNING - Model is not converging.  Current: 57.23474990620298 is not greater than 57.28428805319815. Delta is -0.049538146995175225
+2026-06-21 06:50:00,508 - WARNING - Model is not converging.  Current: 33.292345611630765 is not greater than 33.33741581962886. Delta is -0.04507020799809425
+2026-06-21 06:50:00,532 - WARNING - Model is not converging.  Current: -31.21422013334915 is not greater than -31.143447503289345. Delta is -0.07077263005980683
+2026-06-21 06:50:00,602 - WARNING - Model is not converging.  Current: -61.85459252925584 is not greater than -61.81941575201365. Delta is -0.03517677724219226
+2026-06-21 06:50:00,615 - WARNING - Model is not converging.  Current: 24.246371287290426 is not greater than 24.35699770121062. Delta is -0.11062641392019401
+2026-06-21 06:50:01,068 - WARNING - Model is not converging.  Current: -559.2121951873482 is not greater than -559.2120857403161. Delta is -0.00010944703217319329
+2026-06-21 06:50:01,147 - WARNING - Model is not converging.  Current: -135.355756446901 is not greater than -135.35572028505237. Delta is -3.616184864085881e-05
+2026-06-21 06:50:01,223 - WARNING - Model is not converging.  Current: -189.89009551231655 is not greater than -189.89008282301873. Delta is -1.2689297818724299e-05
+2026-06-21 06:50:02,141 - WARNING - Model is not converging.  Current: -255.9064057212921 is not greater than -255.90451641074708. Delta is -0.001889310545010403
+2026-06-21 06:50:02,183 - WARNING - Model is not converging.  Current: -285.82627895017333 is not greater than -285.8254169357059. Delta is -0.0008620144674296171
+2026-06-21 06:50:02,193 - WARNING - Model is not converging.  Current: -424.64205191322014 is not greater than -424.6336338541917. Delta is -0.00841805902842907
+2026-06-21 06:50:02,756 - INFO - NASDAQ: 220 OOS months
+2026-06-21 06:50:03,462 - INFO - Netherlands: 219 OOS months
+2026-06-21 06:50:05,121 - INFO - Poland: 218 OOS months
+2026-06-21 06:50:05,143 - WARNING - Model is not converging.  Current: 24.187286102420742 is not greater than 24.1872904161608. Delta is -4.313740056716142e-06
+2026-06-21 06:50:05,215 - WARNING - Model is not converging.  Current: -152.43462061054564 is not greater than -152.43461269647875. Delta is -7.914066884495696e-06
+2026-06-21 06:50:05,219 - INFO - Saudi Arabia: 43 OOS months
+2026-06-21 06:50:05,815 - WARNING - Model is not converging.  Current: -1395.1739484268774 is not greater than -1395.1734920039714. Delta is -0.00045642290592695645
+2026-06-21 06:50:05,955 - INFO - Singapore: 219 OOS months
+2026-06-21 06:50:06,747 - INFO - South Africa: 220 OOS months
+2026-06-21 06:50:07,133 - WARNING - Model is not converging.  Current: -1121.5634944807025 is not greater than -1121.5184902221179. Delta is -0.04500425858464041
+2026-06-21 06:50:07,230 - WARNING - Model is not converging.  Current: -1321.4445494432268 is not greater than -1321.3931708415666. Delta is -0.051378601660189815
+2026-06-21 06:50:07,455 - INFO - Spain: 208 OOS months
+2026-06-21 06:50:07,521 - WARNING - Model is not converging.  Current: -47.20678534289837 is not greater than -47.13777789604856. Delta is -0.06900744684980964
+2026-06-21 06:50:08,375 - INFO - Sweden: 219 OOS months
+2026-06-21 06:50:08,408 - WARNING - Model is not converging.  Current: -269.6031476843445 is not greater than -269.6031446351913. Delta is -3.049153178835695e-06
+2026-06-21 06:50:09,268 - INFO - Switzerland: 219 OOS months
+2026-06-21 06:50:10,647 - INFO - Thailand: 218 OOS months
+2026-06-21 06:50:10,737 - WARNING - Model is not converging.  Current: 36.85470856705075 is not greater than 36.856326737712294. Delta is -0.0016181706615441271
+2026-06-21 06:50:11,194 - WARNING - Model is not converging.  Current: -1991.8583044619368 is not greater than -1991.8583019116559. Delta is -2.5502808966848534e-06
+2026-06-21 06:50:11,326 - INFO - Turkey: 217 OOS months
+2026-06-21 06:50:12,178 - INFO - U.K.: 219 OOS months
+2026-06-21 06:50:12,377 - WARNING - Model is not converging.  Current: -579.7817688340326 is not greater than -579.7817291970654. Delta is -3.963696724440524e-05
+2026-06-21 06:50:12,805 - INFO - U.S.: 220 OOS months
+2026-06-21 06:50:12,827 - WARNING - Model is not converging.  Current: -67.65923426564271 is not greater than -67.65598559782913. Delta is -0.0032486678135796865
+2026-06-21 06:50:12,849 - WARNING - Model is not converging.  Current: -92.08388323375112 is not greater than -92.07954057680334. Delta is -0.004342656947784462
+2026-06-21 06:50:12,920 - WARNING - Model is not converging.  Current: -396.59460257873906 is not greater than -396.5946010079575. Delta is -1.57078153506518e-06
+2026-06-21 06:50:12,930 - WARNING - Model is not converging.  Current: -604.827378760335 is not greater than -604.8126069902391. Delta is -0.01477177009587649
+2026-06-21 06:50:13,097 - WARNING - Model is not converging.  Current: -848.1183718031144 is not greater than -848.1183414655304. Delta is -3.033758400761144e-05
+2026-06-21 06:50:13,149 - WARNING - Model is not converging.  Current: -897.22508684449 is not greater than -897.2250868270635. Delta is -1.7426486920157913e-08
+2026-06-21 06:50:13,587 - INFO - US SmallCap: 219 OOS months
+2026-06-21 06:50:13,853 - WARNING - Model is not converging.  Current: -970.0011338621723 is not greater than -970.0011321601299. Delta is -1.7020423683788977e-06
+2026-06-21 06:50:13,892 - WARNING - Model is not converging.  Current: -1084.3281808638992 is not greater than -1084.3280867716371. Delta is -9.409226208845212e-05
+2026-06-21 06:50:14,005 - INFO - Vietnam: 136 OOS months
+2026-06-21 06:50:14,014 - INFO - Saved ew_signals.parquet: 5316 rows, 26 countries
+2026-06-21 06:50:14,029 - INFO - GATE 1 PASS | median_persist=0.767 (≥0.75?) | frac_dur_3m=0.69 (≥0.60?)
+2026-06-21 06:50:14,122 - INFO - GATE 2 OK | median |corr(P_adverse, vol6m)| = 0.133 < 0.70
+2026-06-21 06:50:14,280 - INFO - GATE 3 FAIL | sign=7/26 p=0.9953 | med_rho=P:0.053 dP:-0.025 | spread=-1.01%/mo
+2026-06-21 06:50:14,285 - INFO - GATE 3 FAILED — writing results, stopping.
+2026-06-21 06:51:14,682 - INFO - === Per-Country Regime Early-Warning Test ===
+2026-06-21 06:51:14,683 - INFO - Mode: walk-forward OOS
+2026-06-21 06:51:14,683 - INFO - Loading factor panel ...
+2026-06-21 06:51:14,723 - INFO - Loading country returns ...
+2026-06-21 06:51:14,747 - INFO - Features (6): ['12-1MTR_CS', 'REER_CS', 'RSI14_CS', 'Best PE _CS', 'Inflation_CS', 'Best ROE_CS']
+2026-06-21 06:51:15,089 - INFO - Feature matrices built for 34 / 34 countries
+2026-06-21 06:51:15,090 - INFO - Feature matrices: 34 countries
+2026-06-21 06:51:15,472 - WARNING - Model is not converging.  Current: -84.56962295026949 is not greater than -84.56955623903205. Delta is -6.671123743728913e-05
+2026-06-21 06:51:15,891 - WARNING - Model is not converging.  Current: -18.117966907889457 is not greater than -18.11792505370325. Delta is -4.18541862075017e-05
+2026-06-21 06:51:15,959 - WARNING - Model is not converging.  Current: -118.81951769159886 is not greater than -118.81412671088532. Delta is -0.0053909807135426036
+2026-06-21 06:51:15,987 - WARNING - Model is not converging.  Current: -125.32207954409104 is not greater than -125.31993191083271. Delta is -0.0021476332583318936
+2026-06-21 06:51:16,638 - WARNING - Model is not converging.  Current: -198.37944412160297 is not greater than -198.37944405413782. Delta is -6.746515168742917e-08
+2026-06-21 06:51:16,685 - WARNING - Model is not converging.  Current: -351.4176412391197 is not greater than -351.4176406493358. Delta is -5.897838946111733e-07
+2026-06-21 06:51:16,911 - WARNING - Model is not converging.  Current: -866.7650643821369 is not greater than -866.7585014345348. Delta is -0.006562947602105851
+2026-06-21 06:51:17,572 - INFO - Canada: 218 OOS months
+2026-06-21 06:51:17,639 - WARNING - Model is not converging.  Current: 29.760017164085156 is not greater than 29.760140554797403. Delta is -0.0001233907122468736
+2026-06-21 06:51:18,111 - WARNING - Model is not converging.  Current: 18.459065902554713 is not greater than 18.479376711433893. Delta is -0.020310808879180797
+2026-06-21 06:51:18,258 - WARNING - Model is not converging.  Current: -124.69985816191435 is not greater than -124.69979210183683. Delta is -6.606007751486231e-05
+2026-06-21 06:51:18,411 - WARNING - Model is not converging.  Current: -229.79797428418325 is not greater than -229.7978236311201. Delta is -0.00015065306314454574
+2026-06-21 06:51:18,768 - WARNING - Model is not converging.  Current: -113.83453744076465 is not greater than -113.83452818311635. Delta is -9.257648301286281e-06
+2026-06-21 06:51:19,063 - WARNING - Model is not converging.  Current: -1527.3464025356209 is not greater than -1527.3463678273604. Delta is -3.470826050033793e-05
+2026-06-21 06:51:19,336 - INFO - ChinaH: 217 OOS months
+2026-06-21 06:51:20,115 - INFO - Denmark: 219 OOS months
+2026-06-21 06:51:20,199 - WARNING - Model is not converging.  Current: -186.85114216562715 is not greater than -186.85114082599156. Delta is -1.3396355882377975e-06
+2026-06-21 06:51:20,353 - WARNING - Model is not converging.  Current: -609.84996619345 is not greater than -609.849925288624. Delta is -4.090482593710476e-05
+2026-06-21 06:51:20,766 - INFO - France: 218 OOS months
+2026-06-21 06:51:21,676 - INFO - Germany: 218 OOS months
+2026-06-21 06:51:21,707 - WARNING - Model is not converging.  Current: -343.64452623650044 is not greater than -343.6440054280633. Delta is -0.0005208084371588484
+2026-06-21 06:51:21,750 - WARNING - Model is not converging.  Current: -501.18641947118266 is not greater than -501.1778764622141. Delta is -0.008543008968558752
+2026-06-21 06:51:21,779 - WARNING - Model is not converging.  Current: -575.6465363726408 is not greater than -575.6157497613982. Delta is -0.030786611242547224
+2026-06-21 06:51:21,883 - WARNING - Model is not converging.  Current: -662.1041143602922 is not greater than -662.1040080722446. Delta is -0.00010628804761836363
+2026-06-21 06:51:21,942 - WARNING - Model is not converging.  Current: -866.9604773476783 is not greater than -866.9604690939761. Delta is -8.253702162619447e-06
+2026-06-21 06:51:22,323 - INFO - Hong Kong: 217 OOS months
+2026-06-21 06:51:22,343 - WARNING - Model is not converging.  Current: -144.57230842949463 is not greater than -144.56582058865814. Delta is -0.006487840836484793
+2026-06-21 06:51:22,352 - WARNING - Model is not converging.  Current: -190.49787600932387 is not greater than -190.49786381639993. Delta is -1.2192923946940937e-05
+2026-06-21 06:51:22,422 - WARNING - Model is not converging.  Current: -215.43268993183875 is not greater than -215.432684496763. Delta is -5.435075763671193e-06
+2026-06-21 06:51:22,460 - WARNING - Model is not converging.  Current: -487.45083050997385 is not greater than -487.4403137227911. Delta is -0.010516787182780263
+2026-06-21 06:51:22,800 - INFO - India: 124 OOS months
+2026-06-21 06:51:22,820 - WARNING - Model is not converging.  Current: 152.17137182557968 is not greater than 152.17147416352282. Delta is -0.00010233794313307953
+2026-06-21 06:51:23,674 - INFO - Indonesia: 217 OOS months
+2026-06-21 06:51:23,796 - WARNING - Model is not converging.  Current: -184.00108453849572 is not greater than -183.99322997163594. Delta is -0.007854566859776924
+2026-06-21 06:51:23,840 - WARNING - Model is not converging.  Current: -275.17949521843803 is not greater than -275.172851408238. Delta is -0.0066438102000461186
+2026-06-21 06:51:24,532 - INFO - Italy: 217 OOS months
+2026-06-21 06:51:25,324 - INFO - Japan: 220 OOS months
+2026-06-21 06:51:26,186 - INFO - Korea: 217 OOS months
+2026-06-21 06:51:26,210 - WARNING - Model is not converging.  Current: 103.85027245941583 is not greater than 103.85029532856964. Delta is -2.2869153809779164e-05
+2026-06-21 06:51:26,219 - WARNING - Model is not converging.  Current: 57.23474990620298 is not greater than 57.28428805319815. Delta is -0.049538146995175225
+2026-06-21 06:51:26,242 - WARNING - Model is not converging.  Current: 33.292345611630765 is not greater than 33.33741581962886. Delta is -0.04507020799809425
+2026-06-21 06:51:26,264 - WARNING - Model is not converging.  Current: -31.21422013334915 is not greater than -31.143447503289345. Delta is -0.07077263005980683
+2026-06-21 06:51:26,329 - WARNING - Model is not converging.  Current: -61.85459252925584 is not greater than -61.81941575201365. Delta is -0.03517677724219226
+2026-06-21 06:51:26,342 - WARNING - Model is not converging.  Current: 24.246371287290426 is not greater than 24.35699770121062. Delta is -0.11062641392019401
+2026-06-21 06:51:26,794 - WARNING - Model is not converging.  Current: -559.2121951873482 is not greater than -559.2120857403161. Delta is -0.00010944703217319329
+2026-06-21 06:51:26,881 - WARNING - Model is not converging.  Current: -135.355756446901 is not greater than -135.35572028505237. Delta is -3.616184864085881e-05
+2026-06-21 06:51:26,956 - WARNING - Model is not converging.  Current: -189.89009551231655 is not greater than -189.89008282301873. Delta is -1.2689297818724299e-05
+2026-06-21 06:51:27,877 - WARNING - Model is not converging.  Current: -255.9064057212921 is not greater than -255.90451641074708. Delta is -0.001889310545010403
+2026-06-21 06:51:27,920 - WARNING - Model is not converging.  Current: -285.82627895017333 is not greater than -285.8254169357059. Delta is -0.0008620144674296171
+2026-06-21 06:51:27,930 - WARNING - Model is not converging.  Current: -424.64205191322014 is not greater than -424.6336338541917. Delta is -0.00841805902842907
+2026-06-21 06:51:28,523 - INFO - NASDAQ: 220 OOS months
+2026-06-21 06:51:29,216 - INFO - Netherlands: 219 OOS months
+2026-06-21 06:51:30,894 - INFO - Poland: 218 OOS months
+2026-06-21 06:51:30,916 - WARNING - Model is not converging.  Current: 24.187286102420742 is not greater than 24.1872904161608. Delta is -4.313740056716142e-06
+2026-06-21 06:51:30,986 - WARNING - Model is not converging.  Current: -152.43462061054564 is not greater than -152.43461269647875. Delta is -7.914066884495696e-06
+2026-06-21 06:51:30,990 - INFO - Saudi Arabia: 43 OOS months
+2026-06-21 06:51:31,616 - WARNING - Model is not converging.  Current: -1395.1739484268774 is not greater than -1395.1734920039714. Delta is -0.00045642290592695645
+2026-06-21 06:51:31,786 - INFO - Singapore: 219 OOS months
+2026-06-21 06:51:32,602 - INFO - South Africa: 220 OOS months
+2026-06-21 06:51:33,010 - WARNING - Model is not converging.  Current: -1121.5634944807025 is not greater than -1121.5184902221179. Delta is -0.04500425858464041
+2026-06-21 06:51:33,115 - WARNING - Model is not converging.  Current: -1321.4445494432268 is not greater than -1321.3931708415666. Delta is -0.051378601660189815
+2026-06-21 06:51:33,349 - INFO - Spain: 208 OOS months
+2026-06-21 06:51:33,413 - WARNING - Model is not converging.  Current: -47.20678534289837 is not greater than -47.13777789604856. Delta is -0.06900744684980964
+2026-06-21 06:51:34,287 - INFO - Sweden: 219 OOS months
+2026-06-21 06:51:34,321 - WARNING - Model is not converging.  Current: -269.6031476843445 is not greater than -269.6031446351913. Delta is -3.049153178835695e-06
+2026-06-21 06:51:35,158 - INFO - Switzerland: 219 OOS months
+2026-06-21 06:51:36,631 - INFO - Thailand: 218 OOS months
+2026-06-21 06:51:36,715 - WARNING - Model is not converging.  Current: 36.85470856705075 is not greater than 36.856326737712294. Delta is -0.0016181706615441271
+2026-06-21 06:51:37,216 - WARNING - Model is not converging.  Current: -1991.8583044619368 is not greater than -1991.8583019116559. Delta is -2.5502808966848534e-06
+2026-06-21 06:51:37,355 - INFO - Turkey: 217 OOS months
+2026-06-21 06:51:38,235 - INFO - U.K.: 219 OOS months
+2026-06-21 06:51:38,442 - WARNING - Model is not converging.  Current: -579.7817688340326 is not greater than -579.7817291970654. Delta is -3.963696724440524e-05
+2026-06-21 06:51:38,859 - INFO - U.S.: 220 OOS months
+2026-06-21 06:51:38,881 - WARNING - Model is not converging.  Current: -67.65923426564271 is not greater than -67.65598559782913. Delta is -0.0032486678135796865
+2026-06-21 06:51:38,903 - WARNING - Model is not converging.  Current: -92.08388323375112 is not greater than -92.07954057680334. Delta is -0.004342656947784462
+2026-06-21 06:51:38,973 - WARNING - Model is not converging.  Current: -396.59460257873906 is not greater than -396.5946010079575. Delta is -1.57078153506518e-06
+2026-06-21 06:51:38,984 - WARNING - Model is not converging.  Current: -604.827378760335 is not greater than -604.8126069902391. Delta is -0.01477177009587649
+2026-06-21 06:51:39,135 - WARNING - Model is not converging.  Current: -848.1183718031144 is not greater than -848.1183414655304. Delta is -3.033758400761144e-05
+2026-06-21 06:51:39,189 - WARNING - Model is not converging.  Current: -897.22508684449 is not greater than -897.2250868270635. Delta is -1.7426486920157913e-08
+2026-06-21 06:51:39,601 - INFO - US SmallCap: 219 OOS months
+2026-06-21 06:51:39,857 - WARNING - Model is not converging.  Current: -970.0011338621723 is not greater than -970.0011321601299. Delta is -1.7020423683788977e-06
+2026-06-21 06:51:39,896 - WARNING - Model is not converging.  Current: -1084.3281808638992 is not greater than -1084.3280867716371. Delta is -9.409226208845212e-05
+2026-06-21 06:51:40,010 - INFO - Vietnam: 136 OOS months
+2026-06-21 06:51:40,019 - INFO - Saved ew_signals.parquet: 5316 rows, 26 countries
+2026-06-21 06:51:40,034 - INFO - GATE 1 PASS | median_persist=0.767 (≥0.75?) | frac_dur_3m=0.69 (≥0.60?)
+2026-06-21 06:51:40,128 - INFO - GATE 2 OK | median |corr(P_adverse, vol6m)| = 0.133 < 0.70
+2026-06-21 06:51:40,286 - INFO - GATE 3 FAIL | sign=7/26 p=0.9953 | med_rho=P:0.053 dP:-0.025 | spread=-1.01%/mo
+2026-06-21 06:51:40,291 - INFO - GATE 3 FAILED — writing results, stopping.
+2026-06-21 06:52:00,692 - INFO - === Per-Country Regime Early-Warning Test ===
+2026-06-21 06:52:00,692 - INFO - Mode: walk-forward OOS
+2026-06-21 06:52:00,692 - INFO - Loading factor panel ...
+2026-06-21 06:52:00,735 - INFO - Loading country returns ...
+2026-06-21 06:52:00,760 - INFO - Features (6): ['12-1MTR_CS', 'REER_CS', 'RSI14_CS', 'Best PE _CS', 'Inflation_CS', 'Best ROE_CS']
+2026-06-21 06:52:01,115 - INFO - Feature matrices built for 34 / 34 countries
+2026-06-21 06:52:01,116 - INFO - Feature matrices: 34 countries
+2026-06-21 06:52:01,511 - WARNING - Model is not converging.  Current: -84.56962295026949 is not greater than -84.56955623903205. Delta is -6.671123743728913e-05
+2026-06-21 06:52:01,947 - WARNING - Model is not converging.  Current: -18.117966907889457 is not greater than -18.11792505370325. Delta is -4.18541862075017e-05
+2026-06-21 06:52:02,017 - WARNING - Model is not converging.  Current: -118.81951769159886 is not greater than -118.81412671088532. Delta is -0.0053909807135426036
+2026-06-21 06:52:02,046 - WARNING - Model is not converging.  Current: -125.32207954409104 is not greater than -125.31993191083271. Delta is -0.0021476332583318936
+2026-06-21 06:52:02,732 - WARNING - Model is not converging.  Current: -198.37944412160297 is not greater than -198.37944405413782. Delta is -6.746515168742917e-08
+2026-06-21 06:52:02,782 - WARNING - Model is not converging.  Current: -351.4176412391197 is not greater than -351.4176406493358. Delta is -5.897838946111733e-07
+2026-06-21 06:52:03,014 - WARNING - Model is not converging.  Current: -866.7650643821369 is not greater than -866.7585014345348. Delta is -0.006562947602105851
+2026-06-21 06:52:03,702 - INFO - Canada: 218 OOS months
+2026-06-21 06:52:03,770 - WARNING - Model is not converging.  Current: 29.760017164085156 is not greater than 29.760140554797403. Delta is -0.0001233907122468736
+2026-06-21 06:52:04,259 - WARNING - Model is not converging.  Current: 18.459065902554713 is not greater than 18.479376711433893. Delta is -0.020310808879180797
+2026-06-21 06:52:04,410 - WARNING - Model is not converging.  Current: -124.69985816191435 is not greater than -124.69979210183683. Delta is -6.606007751486231e-05
+2026-06-21 06:52:04,568 - WARNING - Model is not converging.  Current: -229.79797428418325 is not greater than -229.7978236311201. Delta is -0.00015065306314454574
+2026-06-21 06:52:04,914 - WARNING - Model is not converging.  Current: -113.83453744076465 is not greater than -113.83452818311635. Delta is -9.257648301286281e-06
+2026-06-21 06:52:05,230 - WARNING - Model is not converging.  Current: -1527.3464025356209 is not greater than -1527.3463678273604. Delta is -3.470826050033793e-05
+2026-06-21 06:52:05,545 - INFO - ChinaH: 217 OOS months
+2026-06-21 06:52:06,330 - INFO - Denmark: 219 OOS months
+2026-06-21 06:52:06,413 - WARNING - Model is not converging.  Current: -186.85114216562715 is not greater than -186.85114082599156. Delta is -1.3396355882377975e-06
+2026-06-21 06:52:06,581 - WARNING - Model is not converging.  Current: -609.84996619345 is not greater than -609.849925288624. Delta is -4.090482593710476e-05
+2026-06-21 06:52:06,980 - INFO - France: 218 OOS months
+2026-06-21 06:52:07,935 - INFO - Germany: 218 OOS months
+2026-06-21 06:52:07,965 - WARNING - Model is not converging.  Current: -343.64452623650044 is not greater than -343.6440054280633. Delta is -0.0005208084371588484
+2026-06-21 06:52:08,009 - WARNING - Model is not converging.  Current: -501.18641947118266 is not greater than -501.1778764622141. Delta is -0.008543008968558752
+2026-06-21 06:52:08,037 - WARNING - Model is not converging.  Current: -575.6465363726408 is not greater than -575.6157497613982. Delta is -0.030786611242547224
+2026-06-21 06:52:08,138 - WARNING - Model is not converging.  Current: -662.1041143602922 is not greater than -662.1040080722446. Delta is -0.00010628804761836363
+2026-06-21 06:52:08,196 - WARNING - Model is not converging.  Current: -866.9604773476783 is not greater than -866.9604690939761. Delta is -8.253702162619447e-06
+2026-06-21 06:52:08,585 - INFO - Hong Kong: 217 OOS months
+2026-06-21 06:52:08,605 - WARNING - Model is not converging.  Current: -144.57230842949463 is not greater than -144.56582058865814. Delta is -0.006487840836484793
+2026-06-21 06:52:08,614 - WARNING - Model is not converging.  Current: -190.49787600932387 is not greater than -190.49786381639993. Delta is -1.2192923946940937e-05
+2026-06-21 06:52:08,684 - WARNING - Model is not converging.  Current: -215.43268993183875 is not greater than -215.432684496763. Delta is -5.435075763671193e-06
+2026-06-21 06:52:08,722 - WARNING - Model is not converging.  Current: -487.45083050997385 is not greater than -487.4403137227911. Delta is -0.010516787182780263
+2026-06-21 06:52:09,051 - INFO - India: 124 OOS months
+2026-06-21 06:52:09,071 - WARNING - Model is not converging.  Current: 152.17137182557968 is not greater than 152.17147416352282. Delta is -0.00010233794313307953
+2026-06-21 06:52:09,927 - INFO - Indonesia: 217 OOS months
+2026-06-21 06:52:10,047 - WARNING - Model is not converging.  Current: -184.00108453849572 is not greater than -183.99322997163594. Delta is -0.007854566859776924
+2026-06-21 06:52:10,092 - WARNING - Model is not converging.  Current: -275.17949521843803 is not greater than -275.172851408238. Delta is -0.0066438102000461186
+2026-06-21 06:52:10,809 - INFO - Italy: 217 OOS months
+2026-06-21 06:52:11,652 - INFO - Japan: 220 OOS months
+2026-06-21 06:52:12,551 - INFO - Korea: 217 OOS months
+2026-06-21 06:52:12,575 - WARNING - Model is not converging.  Current: 103.85027245941583 is not greater than 103.85029532856964. Delta is -2.2869153809779164e-05
+2026-06-21 06:52:12,585 - WARNING - Model is not converging.  Current: 57.23474990620298 is not greater than 57.28428805319815. Delta is -0.049538146995175225
+2026-06-21 06:52:12,610 - WARNING - Model is not converging.  Current: 33.292345611630765 is not greater than 33.33741581962886. Delta is -0.04507020799809425
+2026-06-21 06:52:12,632 - WARNING - Model is not converging.  Current: -31.21422013334915 is not greater than -31.143447503289345. Delta is -0.07077263005980683
+2026-06-21 06:52:12,700 - WARNING - Model is not converging.  Current: -61.85459252925584 is not greater than -61.81941575201365. Delta is -0.03517677724219226
+2026-06-21 06:52:12,713 - WARNING - Model is not converging.  Current: 24.246371287290426 is not greater than 24.35699770121062. Delta is -0.11062641392019401
+2026-06-21 06:52:13,158 - WARNING - Model is not converging.  Current: -559.2121951873482 is not greater than -559.2120857403161. Delta is -0.00010944703217319329
+2026-06-21 06:52:13,241 - WARNING - Model is not converging.  Current: -135.355756446901 is not greater than -135.35572028505237. Delta is -3.616184864085881e-05
+2026-06-21 06:52:13,321 - WARNING - Model is not converging.  Current: -189.89009551231655 is not greater than -189.89008282301873. Delta is -1.2689297818724299e-05
+2026-06-21 06:52:14,226 - WARNING - Model is not converging.  Current: -255.9064057212921 is not greater than -255.90451641074708. Delta is -0.001889310545010403
+2026-06-21 06:52:14,268 - WARNING - Model is not converging.  Current: -285.82627895017333 is not greater than -285.8254169357059. Delta is -0.0008620144674296171
+2026-06-21 06:52:14,277 - WARNING - Model is not converging.  Current: -424.64205191322014 is not greater than -424.6336338541917. Delta is -0.00841805902842907
+2026-06-21 06:52:14,859 - INFO - NASDAQ: 220 OOS months
+2026-06-21 06:52:15,557 - INFO - Netherlands: 219 OOS months
+2026-06-21 06:52:17,212 - INFO - Poland: 218 OOS months
+2026-06-21 06:52:17,235 - WARNING - Model is not converging.  Current: 24.187286102420742 is not greater than 24.1872904161608. Delta is -4.313740056716142e-06
+2026-06-21 06:52:17,306 - WARNING - Model is not converging.  Current: -152.43462061054564 is not greater than -152.43461269647875. Delta is -7.914066884495696e-06
+2026-06-21 06:52:17,310 - INFO - Saudi Arabia: 43 OOS months
+2026-06-21 06:52:17,894 - WARNING - Model is not converging.  Current: -1395.1739484268774 is not greater than -1395.1734920039714. Delta is -0.00045642290592695645
+2026-06-21 06:52:18,038 - INFO - Singapore: 219 OOS months
+2026-06-21 06:52:18,824 - INFO - South Africa: 220 OOS months
+2026-06-21 06:52:19,212 - WARNING - Model is not converging.  Current: -1121.5634944807025 is not greater than -1121.5184902221179. Delta is -0.04500425858464041
+2026-06-21 06:52:19,312 - WARNING - Model is not converging.  Current: -1321.4445494432268 is not greater than -1321.3931708415666. Delta is -0.051378601660189815
+2026-06-21 06:52:19,531 - INFO - Spain: 208 OOS months
+2026-06-21 06:52:19,594 - WARNING - Model is not converging.  Current: -47.20678534289837 is not greater than -47.13777789604856. Delta is -0.06900744684980964
+2026-06-21 06:52:20,443 - INFO - Sweden: 219 OOS months
+2026-06-21 06:52:20,479 - WARNING - Model is not converging.  Current: -269.6031476843445 is not greater than -269.6031446351913. Delta is -3.049153178835695e-06
+2026-06-21 06:52:21,326 - INFO - Switzerland: 219 OOS months
+2026-06-21 06:52:22,756 - INFO - Thailand: 218 OOS months
+2026-06-21 06:52:22,836 - WARNING - Model is not converging.  Current: 36.85470856705075 is not greater than 36.856326737712294. Delta is -0.0016181706615441271
+2026-06-21 06:52:23,305 - WARNING - Model is not converging.  Current: -1991.8583044619368 is not greater than -1991.8583019116559. Delta is -2.5502808966848534e-06
+2026-06-21 06:52:23,442 - INFO - Turkey: 217 OOS months
+2026-06-21 06:52:24,324 - INFO - U.K.: 219 OOS months
+2026-06-21 06:52:24,539 - WARNING - Model is not converging.  Current: -579.7817688340326 is not greater than -579.7817291970654. Delta is -3.963696724440524e-05
+2026-06-21 06:52:24,942 - INFO - U.S.: 220 OOS months
+2026-06-21 06:52:24,963 - WARNING - Model is not converging.  Current: -67.65923426564271 is not greater than -67.65598559782913. Delta is -0.0032486678135796865
+2026-06-21 06:52:24,985 - WARNING - Model is not converging.  Current: -92.08388323375112 is not greater than -92.07954057680334. Delta is -0.004342656947784462
+2026-06-21 06:52:25,053 - WARNING - Model is not converging.  Current: -396.59460257873906 is not greater than -396.5946010079575. Delta is -1.57078153506518e-06
+2026-06-21 06:52:25,063 - WARNING - Model is not converging.  Current: -604.827378760335 is not greater than -604.8126069902391. Delta is -0.01477177009587649
+2026-06-21 06:52:25,211 - WARNING - Model is not converging.  Current: -848.1183718031144 is not greater than -848.1183414655304. Delta is -3.033758400761144e-05
+2026-06-21 06:52:25,262 - WARNING - Model is not converging.  Current: -897.22508684449 is not greater than -897.2250868270635. Delta is -1.7426486920157913e-08
+2026-06-21 06:52:25,676 - INFO - US SmallCap: 219 OOS months
+2026-06-21 06:52:25,939 - WARNING - Model is not converging.  Current: -970.0011338621723 is not greater than -970.0011321601299. Delta is -1.7020423683788977e-06
+2026-06-21 06:52:25,977 - WARNING - Model is not converging.  Current: -1084.3281808638992 is not greater than -1084.3280867716371. Delta is -9.409226208845212e-05
+2026-06-21 06:52:26,090 - INFO - Vietnam: 136 OOS months
+2026-06-21 06:52:26,098 - INFO - Saved ew_signals.parquet: 5316 rows, 26 countries
+2026-06-21 06:52:26,112 - INFO - GATE 1 PASS | median_persist=0.767 (≥0.75?) | frac_dur_3m=0.69 (≥0.60?)
+2026-06-21 06:52:26,204 - INFO - GATE 2 OK | median |corr(P_adverse, vol6m)| = 0.133 < 0.70
+2026-06-21 06:52:26,370 - INFO - GATE 3 FAIL | sign=7/26 p=0.9953 | med_rho=P:0.053 dP:-0.025 | spread=-1.01%/mo
+2026-06-21 06:52:26,375 - INFO - GATE 3 FAILED — writing results, stopping.

@@ -66,6 +66,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -78,19 +79,32 @@ PYTHON = sys.executable
 BBG_ENV = "/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg/.venv"
 LOG_DIR = BASE_DIR / "Data" / "logs"
 
+# Shared bounded-subprocess helper (needs the repo root on sys.path).
+sys.path.insert(0, str(BASE_DIR))
+from scripts.loop.procutil import run_bounded  # noqa: E402
+# Absolute conda path: launchd's PATH lacks /opt/homebrew/bin, and a bare
+# "conda" raised FileNotFoundError that killed the loop on 2026-06-11.
+CONDA = shutil.which("conda") or "/opt/homebrew/bin/conda"
 
-def run_step(name, script, flags, log_file, conda=False):
+
+def run_step(name, script, flags, log_file, conda=False, timeout=None):
     if conda:
-        cmd = ["conda", "run", "-p", BBG_ENV, "python", str(SCRIPTS_DIR / script)] + flags
+        cmd = [CONDA, "run", "-p", BBG_ENV, "python", str(SCRIPTS_DIR / script)] + flags
     else:
         cmd = [PYTHON, str(SCRIPTS_DIR / script)] + flags
+    to = timeout or (1800 if conda else 1200)  # BBG steps get a longer budget
     print(f"\n{'─'*60}\nSTEP: {name}\nCMD:  {' '.join(cmd)}\n{'─'*60}", flush=True)
     t0 = time.time()
-    res = subprocess.run(cmd, capture_output=True, text=True, cwd=str(BASE_DIR),
-                         env={**os.environ, "PYTHONUNBUFFERED": "1"})
+    res = run_bounded(cmd, timeout=to, cwd=str(BASE_DIR),
+                      env={**os.environ, "PYTHONUNBUFFERED": "1"})
     elapsed = time.time() - t0
     out = res.stdout + res.stderr
-    status = "OK" if res.returncode == 0 else "FAILED"
+    if res.returncode == 0:
+        status = "OK"
+    elif getattr(res, "timed_out", False):
+        status = "TIMEOUT"
+    else:
+        status = "FAILED"
     print(out[-2000:], flush=True)
     with open(log_file, "a") as f:
         f.write(f"\n{'='*60}\nSTEP: {name}\nSTATUS: {status} (exit {res.returncode}) ELAPSED {elapsed:.1f}s\n{'='*60}\n{out}\n")

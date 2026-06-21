@@ -125,6 +125,8 @@ USAGE:
 from __future__ import annotations
 
 import argparse
+import fcntl
+import os
 import shutil
 import subprocess
 import sys
@@ -136,12 +138,39 @@ import yaml
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(BASE_DIR))  # so `from scripts.loop import run_manifest` resolves
+from scripts.loop.procutil import run_bounded  # noqa: E402  bounded subprocess + group kill
 PY = str(BASE_DIR / "venv" / "bin" / "python")
 BBG_ENV = "/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg/.venv"
 # Absolute conda path: under launchd the default PATH has no /opt/homebrew/bin,
 # and a bare "conda" raised FileNotFoundError which killed the whole job
 # (2026-06-11 11:30 silent death). Resolve from PATH first, then Homebrew.
 CONDA = shutil.which("conda") or "/opt/homebrew/bin/conda"
+
+# Per-step hard wall-clock cap (seconds). A hung BBG/Neo4j/Dropbox child must
+# never block the whole 33-step pipeline indefinitely. Generous by default
+# (catch a HANG, not a slow step); override per step where known.
+DEFAULT_STEP_TIMEOUT = 1800
+STEP_TIMEOUTS = {
+    "collect_sov_ratings_bql": 900,   # BQL rating history is the slowest BBG pull
+}
+# Singleton lock so the 07:30 chained run and the 11:30 launchd safety-net
+# cannot rebuild the loop DB concurrently (self-collision guard).
+LOCK_PATH = BASE_DIR / "Data" / "loop" / ".loop_daily.lock"
+
+
+def _acquire_singleton_lock():
+    """Non-blocking exclusive flock. Returns the open fd (keep it referenced for
+    the lifetime of the run) or None if another full run already holds it."""
+    LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
+    fd = open(LOCK_PATH, "w")
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        fd.close()
+        return None
+    fd.write(f"{os.getpid()} {datetime.now().isoformat(timespec='seconds')}\n")
+    fd.flush()
+    return fd
 
 STEPS = [
     ("collect_news_bridge", [PY, "scripts/loop/collect_news_bridge.py"]),
@@ -248,15 +277,15 @@ def _auto_commit_brief() -> None:
             return
         newest = str(briefs[-1])
         r = subprocess.run(["git", "add", "--", newest], cwd=str(BASE_DIR),
-                           capture_output=True)
+                           capture_output=True, timeout=60)
         if r.returncode != 0:
             print(f"!!! brief auto-commit: git add failed: {r.stderr.decode().strip()}", flush=True)
             return
         if subprocess.run(["git", "diff", "--cached", "--quiet", "--", newest],
-                          cwd=str(BASE_DIR)).returncode != 0:
+                          cwd=str(BASE_DIR), timeout=60).returncode != 0:
             subprocess.run(["git", "commit", "-q", "-m",
                             f"Auto-commit nightly brief {briefs[-1].name}", "--", newest],
-                           cwd=str(BASE_DIR))
+                           cwd=str(BASE_DIR), timeout=60)
     except Exception as exc:  # noqa: BLE001
         print(f"!!! brief auto-commit failed (non-fatal): {exc}", flush=True)
 
@@ -272,19 +301,23 @@ def _load_optional_steps() -> set[str]:
         return set()
 
 
-def _run_step(name: str, cmd: list[str], max_attempts: int = 2) -> int:
-    """Run a step subprocess with up to max_attempts tries (retry on exit 1).
-    Returns the final return code. Exit 2 (PARTIAL) is never retried."""
+def _run_step(name: str, cmd: list[str], max_attempts: int = 2,
+              timeout: float = DEFAULT_STEP_TIMEOUT) -> int:
+    """Run a step subprocess, BOUNDED by `timeout` (the whole process group is
+    killed on expiry so conda/python/bbcomm grandchildren can't orphan), with up
+    to max_attempts tries. Output streams to the parent (capture=False) so a hang
+    is visible. Exit 2 (PARTIAL), a timeout, and a missing binary are NOT retried
+    (a hang won't self-heal in 10s; a missing binary never will)."""
+    rc = 1
     for attempt in range(max_attempts):
-        try:
-            rc = subprocess.run(cmd, cwd=str(BASE_DIR)).returncode
-        except FileNotFoundError as exc:
-            # Missing binary — fail immediately, no retry (won't self-heal).
-            print(f"!!! STEP BINARY MISSING: {name}: {exc}", flush=True)
-            return 127
-        except OSError as exc:
-            print(f"!!! STEP OS ERROR: {name}: {exc}", flush=True)
-            rc = 1
+        res = run_bounded(cmd, timeout=timeout, cwd=str(BASE_DIR), capture=False)
+        rc = res.returncode
+        if res.timed_out:
+            print(f"!!! STEP TIMEOUT: {name} exceeded {timeout:.0f}s — process group killed", flush=True)
+            return rc
+        if rc == 127:
+            print(f"!!! STEP BINARY MISSING: {name}", flush=True)
+            return rc
         if rc == 0 or rc == 2:
             return rc
         if attempt + 1 < max_attempts:
@@ -305,6 +338,16 @@ def main() -> int:
         print(f"No step named {args.only!r}. Steps: {[n for n, _ in STEPS]}")
         return 2
 
+    # Concurrency guard: a full run takes a singleton lock so the 07:30 chained
+    # run and the 11:30 launchd safety-net cannot rebuild the loop DB at the same
+    # time. Single-step (--only) runs are operator-driven and skip the lock.
+    lock_fd = None
+    if args.only is None:
+        lock_fd = _acquire_singleton_lock()
+        if lock_fd is None:
+            print("Another full loop run is in progress — skipping (concurrency guard).", flush=True)
+            return 0
+
     # Honour optional=true from the governance contract: a failing optional step
     # is a warning (exit 2 equivalent), not a hard failure that red-lights the loop.
     optional_steps = _load_optional_steps()
@@ -317,7 +360,7 @@ def main() -> int:
     for name, cmd in steps:
         print(f"\n{'─' * 60}\n{datetime.now().strftime('%H:%M:%S')} STEP: {name}\n{'─' * 60}", flush=True)
         started_ts = datetime.now().isoformat(timespec="seconds")
-        rc = _run_step(name, cmd)
+        rc = _run_step(name, cmd, timeout=STEP_TIMEOUTS.get(name, DEFAULT_STEP_TIMEOUT))
         ended_ts = datetime.now().isoformat(timespec="seconds")
         records.append({"name": name, "rc": rc, "started_ts": started_ts, "ended_ts": ended_ts})
         if rc == 0:
@@ -358,7 +401,7 @@ def main() -> int:
     for gov_cmd, label in (([PY, "scripts/loop/heartbeat.py", "--exit-code", str(rc_final)], "heartbeat"),
                            ([PY, "scripts/loop/build_governance_scorecard.py"], "scorecard")):
         try:
-            subprocess.run(gov_cmd, cwd=str(BASE_DIR))
+            run_bounded(gov_cmd, timeout=300, cwd=str(BASE_DIR), capture=False)
         except Exception as exc:  # noqa: BLE001
             print(f"!!! governance {label} failed (non-fatal): {exc}", flush=True)
 

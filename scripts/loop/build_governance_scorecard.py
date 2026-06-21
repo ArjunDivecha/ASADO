@@ -71,12 +71,18 @@ MARK_END = "<!-- GOVERNANCE_SCORECARD_END -->"
 GLYPH = {"green": "🟢", "amber": "🟡", "red": "🔴", "blind": "⚪"}
 
 
-def _git(*args: str) -> str:
+def _git(*args: str) -> "str | None":
+    """Run git, returning stripped stdout on success or None on ANY failure
+    (non-zero exit, missing binary, timeout, held index.lock). None is
+    distinct from '' (a clean/empty-but-successful result) so callers can tell
+    'git said nothing' apart from 'git could not run' — the latter must never
+    read as a clean tree (gov-git-empty-on-failure-silent)."""
     try:
-        return subprocess.run(["git", *args], cwd=str(BASE_DIR),
-                              capture_output=True, text=True).stdout.strip()
-    except Exception:  # noqa: BLE001
-        return ""
+        r = subprocess.run(["git", *args], cwd=str(BASE_DIR),
+                           capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return r.stdout.strip() if r.returncode == 0 else None
 
 
 def _read_json(p: Path) -> "dict | None":
@@ -104,14 +110,35 @@ def _dim_liveness():
 def _dim_ledger_integrity():
     if not LOOP_DB.exists():
         return "blind", "asado_loop.duckdb", "loop DB absent"
-    try:
-        import duckdb
-        con = duckdb.connect(str(LOOP_DB), read_only=True)
-        bad = con.execute("SELECT count(*) FROM live_signals WHERE status IN ('retired','rejected')").fetchone()[0]
-        resurrected = con.execute("SELECT count(*) FROM live_signals WHERE hypothesis_id='H_20260610_001'").fetchone()[0]
-        con.close()
-    except Exception as exc:  # noqa: BLE001
-        return "blind", "live_signals", f"check failed: {exc}"
+    import duckdb
+    import time as _t
+    bad = resurrected = None
+    last = None
+    for attempt, wait in enumerate([0, 2, 4]):  # small retry for transient lock
+        con = None
+        try:
+            if wait:
+                _t.sleep(wait)
+            con = duckdb.connect(str(LOOP_DB), read_only=True)
+            bad = con.execute("SELECT count(*) FROM live_signals WHERE status IN ('retired','rejected')").fetchone()[0]
+            resurrected = con.execute("SELECT count(*) FROM live_signals WHERE hypothesis_id='H_20260610_001'").fetchone()[0]
+            break
+        except Exception as exc:  # noqa: BLE001
+            last = exc
+            msg = str(exc).lower()
+            if not ("lock" in msg or "io error" in msg or "being used" in msg):
+                # schema drift / query error — a real problem, not transient lock.
+                # FAIL-IS-FAIL: do NOT downgrade a possible ledger leak to amber.
+                return "red", "live_signals", f"ledger check error: {exc}"
+        finally:
+            if con is not None:
+                try:
+                    con.close()
+                except Exception:  # noqa: BLE001
+                    pass
+    else:
+        # exhausted retries, all transient-lock — could not verify, don't false-red
+        return "amber", "live_signals", f"could not verify (transient lock/IO): {last}"
     if bad or resurrected:
         return "red", "live_signals", f"retired/rejected leak={bad}, H_20260610_001 present={resurrected}"
     return "green", "live_signals", "no retired/rejected in live_signals"
@@ -180,7 +207,15 @@ def _dim_cross_source_minimal():
 
 
 def _dim_config_guard():
-    dirty = [tr for tr in TRUST_ROOTS if _git("status", "--porcelain", "--", tr)]
+    dirty = []
+    for tr in TRUST_ROOTS:
+        out = _git("status", "--porcelain", "--", tr)
+        if out is None:
+            # git itself could not run — we have NOT verified the trust roots;
+            # honour the BLIND-never-green invariant and red the dimension.
+            return "red", "git", "config guard could not run (git unavailable / index.lock)"
+        if out:
+            dirty.append(tr)
     if dirty:
         return "red", "git", f"uncommitted/dirty trust-roots: {dirty}"
     return "green", "git", "all trust-root YAMLs committed"
@@ -211,7 +246,7 @@ def _degraded_scorecard(reason: str) -> dict:
         "as_of": datetime.now().isoformat(timespec="seconds"),
         "contract_version": "",
         "contract_hash": "",
-        "repo_sha": _git("rev-parse", "HEAD"),
+        "repo_sha": _git("rev-parse", "HEAD") or "",
         "repo_dirty": bool(_git("status", "--porcelain")),
         "overall": "red",
         "dimensions_expected": sorted(CHECKS),
@@ -275,7 +310,7 @@ def build_scorecard() -> dict:
         "as_of": datetime.now().isoformat(timespec="seconds"),
         "contract_version": str(contract.get("contract_version", "")),
         "contract_hash": contract_hash,
-        "repo_sha": _git("rev-parse", "HEAD"),
+        "repo_sha": _git("rev-parse", "HEAD") or "",
         "repo_dirty": repo_dirty,
         "overall": overall,
         "dimensions_expected": [s["name"] for s in expected],
@@ -303,17 +338,24 @@ def render_markdown(sc: dict) -> str:
 
 
 def _prepend_to_brief(md: str) -> "str | None":
+    import re
     briefs = [Path(p) for p in globmod.glob(str(BRIEF_DIR / "brief_*.md"))
-              if os.path.isfile(p)]
+              if os.path.isfile(p) and "conflicted copy" not in p.lower()]
     if not briefs:
         return None
     brief = max(briefs, key=lambda p: p.stat().st_mtime)
     body = brief.read_text()
-    if MARK_START in body and MARK_END in body:  # idempotent: replace old block
-        pre, rest = body.split(MARK_START, 1)
-        _, post = rest.split(MARK_END, 1)
-        body = pre + post.lstrip("\n")
-    brief.write_text(md + body)
+    # Idempotent + self-healing: strip any well-formed prior block, THEN strip
+    # any orphan marker left by an interrupted prepend (the START-without-END
+    # corruption case the old paired-split could not remove and would stack on).
+    body = re.sub(re.escape(MARK_START) + r".*?" + re.escape(MARK_END), "",
+                  body, flags=re.DOTALL)
+    body = body.replace(MARK_START, "").replace(MARK_END, "").lstrip("\n")
+    # Atomic write (temp + rename in the same dir), mirroring the JSON write so a
+    # kill mid-write cannot truncate the git-tracked brief.
+    tmp = brief.with_suffix(".md.tmp")
+    tmp.write_text(md + body)
+    os.replace(tmp, brief)
     return str(brief)
 
 

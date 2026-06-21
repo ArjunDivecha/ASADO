@@ -546,3 +546,97 @@ next full `setup_duckdb.py` reproduces it). No git commit (left for Arjun).
 ---
 SESSION END: 2026-06-17 | Agent: Claude Code (Opus 4.8 1M)
 ---
+
+---
+SESSION: 2026-06-19 | Agent: Claude Code (Opus 4.8 1M, Desktop)
+---
+
+## Two threads this session
+
+### 1. Chief-of-Staff cockpit — Claude Design redesign + live data layer
+- **Design brief** for a full Claude Design redesign of the cockpit:
+  `cos_mockups/DESIGN_BRIEF.md`. §1 "Selection Intelligence" is the spine (the rules
+  that decide WHAT is shown: 3-slot "Today" promotion, detector firing, harness-owned
+  verdicts, governance=worst-dimension, intent→view routing). Seed Design with the
+  brief + `cos_mockups/cockpit.html` (restyle, don't re-architect).
+- **Live data layer (built + verified):**
+  - `cos_mockups/build_cockpit_data.py` → reads loop DB + governance JSON + brief +
+    thesis ledger + sovereign/valuation tables, applies §1 rules, writes
+    `cockpit_data.json` (+ `cockpit_data.js` global). Read-only, per-source try/except,
+    atomic write. Pulls per-country fundamentals (10Y/2s10s/CDS/CAPE-ERP pctile).
+  - `cos_mockups/test_cockpit_selection.py` → 15 tests, ALL PASS. Locks the §1 rules.
+  - `cos_mockups/make_live_cockpit.py` → generates `cockpit_live.html` from the mock,
+    wired to real data. Headless-verified (Playwright), zero page errors.
+  - Real data corrects the mock: combiner is WEAK (not WATCH); real WATCHes are
+    momentum_sanity (diagnostic) + graph_trade_gap; Indonesia DD −33.8% (not −50%).
+- **Next:** when Arjun has Claude Design comps, import via Vercel MCP
+  `import-claude-design-from-url`, then bind to `window.COCKPIT_DATA` (field names
+  already proven by the live prototype).
+
+### 2. Nightly loop FAILURE → RECOVERED (Bloomberg logout)
+- Symptom: governance overall RED. Root cause: Bloomberg Terminal was LOGGED OUT in
+  Parallels → BLPAPI session couldn't start → all 7 *_bbg/*_bql collectors failed →
+  run_manifest + liveness RED. NOT a code bug. No data lost (load_* reused prior parquet).
+- Fix (done): Arjun logged into Bloomberg → connection verified (10/10 tickers) →
+  re-ran all 7 collectors (`loop_daily_job.py --only <step>`, 7/7 OK) → re-ran 6 loaders
+  (all OK) → rebuilt governance: **RED → AMBER** (the lone amber is cross_source_minimal,
+  amber_by_design = healthy baseline). Cockpit data refreshed, 15/15 tests green.
+- LESSON: when all *_bbg steps fail as a block but non-BBG steps pass, it's the
+  Bloomberg login/connection, not code. Recovery = log in, re-run --only collectors +
+  loaders, rebuild governance scorecard.
+
+## App/sync note (NOT ASADO data — all data safe on disk)
+- iOS app not showing this session. Cause is structural: a TRANSFERRED desktop session
+  doesn't sync to iOS; quitting/restarting the desktop app drops live processes (iOS
+  mirrors live local processes, not storage). Transcripts intact in
+  ~/.claude/projects/-Users-...-ASADO/ (this session = d34fb50b-...jsonl).
+- Workaround: resume from CLI (`claude --resume`) — reads on-disk transcript, comes up
+  as a clean live process; pair Remote Control from the CLI (not the GUI). Don't quit
+  the desktop app on a session you want to keep monitoring.
+
+---
+SESSION PAUSE: 2026-06-19 ~20:45 | governance AMBER (healthy), cockpit live data built
+---
+
+---
+SESSION: 2026-06-20 | Agent: Claude Code (Opus 4.8 1M, Desktop)
+---
+
+## Loop hardening — MERGED TO MAIN (df9e6c1)
+
+Triggered by the Friday loop failure. Multi-agent brittleness audit (50 agents,
+21 rate-limited) -> docs/LOOP_HARDENING_REPORT_2026_06_20.md (19 confirmed findings).
+Implemented + unit-tested + validated by a clean full-loop run (GREEN 7/7, exit 0):
+
+- **cross_source_minimal -> STATUS-DRIVEN** (was hardwired amber-by-design). Green
+  when checks pass AND coverage>=90%; amber on partial/pair; red on hard breach.
+  Phase-C widens the check set but no longer gates green.
+- **CRITICAL**: empty/truncated governance_contract.yaml now forces a RED
+  scorecard (contract_degraded dim), was silently greening with zero checks.
+- **All loop subprocesses bounded** (new scripts/loop/procutil.run_bounded): hard
+  timeout + process-group kill (conda/python/bbcomm can't orphan). Wired into
+  loop_daily_job._run_step, daily_update.run_step, gov tail, git calls, predmkt.
+- **Dual-loop concurrency flock** (07:30 chained vs 11:30 launchd safety-net).
+- **git-silent-green fixed**: _git returns None on failure; config_guard REDS.
+- **Atomic writes**: brief prepend (+orphan-marker self-heal, conflicted-copy
+  exclusion) and predmkt archive COPY (temp+rename).
+- **predmkt**: BY NAME restore (schema-drift safe), _connect_retry on main DB.
+- **heartbeat**: json.loads guarded so a corrupt manifest ALERTS, not crashes.
+- **loopdb.loop_connection**: classify lock-vs-deterministic, close ATTACH leak.
+
+**DEFERRED (in the report, need sign-off / other repos):** relocate loop DB off
+Dropbox (#10), BBG handshake in OpusBloomberg/bbg.py (#11), caffeinate plists
+(#17), missing-key + disk-space preflights, LOW items #12/#13.
+
+**Branch claude/nightwatch-06-20-failures-37d4lv fast-forwarded into main via real
+merge (-X theirs on regenerable brief artifacts; main-only commits were all
+nightly auto-brief noise). Pushed.**
+
+## Cockpit (cos_mockups/) — still UNTRACKED, unaffected
+build_cockpit_data.py + cockpit_data.json, test_cockpit_selection.py (15 pass),
+cockpit_live.html (real data), DESIGN_BRIEF.md, COCKPIT_DATA_CONTRACT.md. Waiting
+on Claude Design comps -> import via Vercel MCP -> bind to window.COCKPIT_DATA.
+
+---
+SESSION END: 2026-06-20 | loop hardening merged to main, governance GREEN 7/7
+---

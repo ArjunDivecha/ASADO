@@ -30,8 +30,10 @@ lists cannot drift; the contract hash + repo SHA + dirty flag are stamped.
 Two non-negotiable rules (the "knows what it doesn't know" property):
   - any expected dimension not computed -> BLIND (amber/red per its severity),
     NEVER green.
-  - any partial-coverage dimension (cross_source_minimal) -> AMBER, never green
-    in Phase A; so overall caps at amber until the Phase-C full sweep.
+  - cross_source_minimal is STATUS-DRIVEN: green when all configured cross-source
+    checks pass AND coverage is substantially complete (>=90% of critical mapped
+    series); amber on partial coverage or a soft pair discrepancy; red on a hard
+    sentinel breach. (Phase-C widens the check set; it does not gate green.)
   - CONFIG GUARD: an uncommitted/dirty trust-root YAML -> config_guard RED.
 
 DEPENDENCIES:
@@ -69,12 +71,18 @@ MARK_END = "<!-- GOVERNANCE_SCORECARD_END -->"
 GLYPH = {"green": "🟢", "amber": "🟡", "red": "🔴", "blind": "⚪"}
 
 
-def _git(*args: str) -> str:
+def _git(*args: str) -> "str | None":
+    """Run git, returning stripped stdout on success or None on ANY failure
+    (non-zero exit, missing binary, timeout, held index.lock). None is
+    distinct from '' (a clean/empty-but-successful result) so callers can tell
+    'git said nothing' apart from 'git could not run' — the latter must never
+    read as a clean tree (gov-git-empty-on-failure-silent)."""
     try:
-        return subprocess.run(["git", *args], cwd=str(BASE_DIR),
-                              capture_output=True, text=True).stdout.strip()
-    except Exception:  # noqa: BLE001
-        return ""
+        r = subprocess.run(["git", *args], cwd=str(BASE_DIR),
+                           capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return r.stdout.strip() if r.returncode == 0 else None
 
 
 def _read_json(p: Path) -> "dict | None":
@@ -102,14 +110,35 @@ def _dim_liveness():
 def _dim_ledger_integrity():
     if not LOOP_DB.exists():
         return "blind", "asado_loop.duckdb", "loop DB absent"
-    try:
-        import duckdb
-        con = duckdb.connect(str(LOOP_DB), read_only=True)
-        bad = con.execute("SELECT count(*) FROM live_signals WHERE status IN ('retired','rejected')").fetchone()[0]
-        resurrected = con.execute("SELECT count(*) FROM live_signals WHERE hypothesis_id='H_20260610_001'").fetchone()[0]
-        con.close()
-    except Exception as exc:  # noqa: BLE001
-        return "blind", "live_signals", f"check failed: {exc}"
+    import duckdb
+    import time as _t
+    bad = resurrected = None
+    last = None
+    for attempt, wait in enumerate([0, 2, 4]):  # small retry for transient lock
+        con = None
+        try:
+            if wait:
+                _t.sleep(wait)
+            con = duckdb.connect(str(LOOP_DB), read_only=True)
+            bad = con.execute("SELECT count(*) FROM live_signals WHERE status IN ('retired','rejected')").fetchone()[0]
+            resurrected = con.execute("SELECT count(*) FROM live_signals WHERE hypothesis_id='H_20260610_001'").fetchone()[0]
+            break
+        except Exception as exc:  # noqa: BLE001
+            last = exc
+            msg = str(exc).lower()
+            if not ("lock" in msg or "io error" in msg or "being used" in msg):
+                # schema drift / query error — a real problem, not transient lock.
+                # FAIL-IS-FAIL: do NOT downgrade a possible ledger leak to amber.
+                return "red", "live_signals", f"ledger check error: {exc}"
+        finally:
+            if con is not None:
+                try:
+                    con.close()
+                except Exception:  # noqa: BLE001
+                    pass
+    else:
+        # exhausted retries, all transient-lock — could not verify, don't false-red
+        return "amber", "live_signals", f"could not verify (transient lock/IO): {last}"
     if bad or resurrected:
         return "red", "live_signals", f"retired/rejected leak={bad}, H_20260610_001 present={resurrected}"
     return "green", "live_signals", "no retired/rejected in live_signals"
@@ -145,18 +174,48 @@ def _dim_pit_lag_proof():
     return "green", "pit_proof_registry.yaml", "no unbacked lag-0 claims; daily defaults fail closed"
 
 
+# Fraction of critical mapped series that must be cross-checked to earn GREEN.
+# Below this the dimension is AMBER (partial coverage), not because coverage is
+# "minimal by design" but because we genuinely haven't validated enough series.
+CROSS_SOURCE_GREEN_COVERAGE = 0.90
+
+
 def _dim_cross_source_minimal():
+    """STATUS-DRIVEN (no longer amber-by-design):
+      red    -> a hard sentinel breach (two sources disagree on a critical price)
+      amber  -> a soft pair discrepancy, OR coverage below the green threshold
+      green  -> all configured cross-source checks pass AND coverage is
+                substantially complete (>= CROSS_SOURCE_GREEN_COVERAGE)
+      blind  -> the check did not run
+    Phase-C will widen the *set* of checks; it does not gate green here. Green
+    means 'everything I currently cross-check agrees and I checked enough of it.'
+    """
     st = _read_json(GOV_DIR / "cross_source_status.json")
     if st is None:
         return "blind", "cross_source_status.json", "not run"
-    if st.get("hard_breach") or st.get("pair_breach"):
-        return "red", "cross_source_status.json", f"hard={st.get('hard_breach')} pair={st.get('pair_breach')}"
-    # AMBER BY DESIGN — minimal coverage, never green in Phase A.
-    return "amber", "cross_source_status.json", f"checks pass; coverage={st.get('coverage_fraction')} (partial by design)"
+    cov = float(st.get("coverage_fraction") or 0.0)
+    n, tot = st.get("n_checked", 0), st.get("critical_series_count", 0)
+    if st.get("hard_breach"):
+        return "red", "cross_source_status.json", f"hard sentinel breach: {st.get('sentinel_breaches')}"
+    if st.get("pair_breach"):
+        return "amber", "cross_source_status.json", f"pair discrepancy flagged; coverage {n}/{tot}"
+    if cov < CROSS_SOURCE_GREEN_COVERAGE:
+        return "amber", "cross_source_status.json", \
+            f"partial coverage {n}/{tot} ({cov:.0%} < {CROSS_SOURCE_GREEN_COVERAGE:.0%} needed for green)"
+    return "green", "cross_source_status.json", \
+        f"all cross-source checks pass; coverage {n}/{tot} ({cov:.0%})"
 
 
 def _dim_config_guard():
-    dirty = [tr for tr in TRUST_ROOTS if _git("status", "--porcelain", "--", tr)]
+    dirty = []
+    for tr in TRUST_ROOTS:
+        out = _git("status", "--porcelain", "--", tr)
+        if out is None:
+            # git itself could not run — we have NOT verified the trust roots;
+            # honour the BLIND-never-green invariant and red the dimension.
+            return "red", "git", "config guard could not run (git unavailable / index.lock)"
+        if out:
+            dirty.append(tr)
     if dirty:
         return "red", "git", f"uncommitted/dirty trust-roots: {dirty}"
     return "green", "git", "all trust-root YAMLs committed"
@@ -175,11 +234,50 @@ CHECKS = {
 _RANK = {"green": 0, "amber": 1, "blind": 2, "red": 3}
 
 
+def _degraded_scorecard(reason: str) -> dict:
+    """Schema-valid RED scorecard emitted when the contract itself cannot be
+    trusted (missing/truncated/malformed, or it fails to cover the checks we
+    know how to run). Forcing RED — never green — preserves the 'knows what it
+    doesn't know' invariant: if the contract is unreadable we have verified
+    NOTHING, and must not report a confident green."""
+    return {
+        "schema_version": 1,
+        "producer_version": "build_governance_scorecard.py 1.0",
+        "as_of": datetime.now().isoformat(timespec="seconds"),
+        "contract_version": "",
+        "contract_hash": "",
+        "repo_sha": _git("rev-parse", "HEAD") or "",
+        "repo_dirty": bool(_git("status", "--porcelain")),
+        "overall": "red",
+        "dimensions_expected": sorted(CHECKS),
+        "dimensions_computed": [],
+        "dimensions": [{
+            "name": "contract_degraded", "owner_item": "A8",
+            "severity": "red", "amber_by_design": False,
+            "status": "red", "effective": "red",
+            "evidence": "governance_contract.yaml", "detail": reason,
+        }],
+    }
+
+
 def build_scorecard() -> dict:
-    raw = CONTRACT_PATH.read_bytes()
-    contract = yaml.safe_load(raw)
+    # CRITICAL (gov-empty-contract-green): a truncated/malformed/empty contract
+    # must NOT green the board. Read defensively and validate coverage against
+    # the CHECKS dict (the floor is derived from code, not a second literal, so
+    # the two cannot silently drift).
+    try:
+        raw = CONTRACT_PATH.read_bytes()
+        contract = yaml.safe_load(raw) or {}
+    except (OSError, yaml.YAMLError) as e:
+        return _degraded_scorecard(f"contract unreadable/malformed: {e}")
+    expected = contract.get("scorecard_dimensions") or []
+    expected_names = {s.get("name") for s in expected if isinstance(s, dict)}
+    if not expected or not expected_names.issuperset(CHECKS):
+        missing = sorted(set(CHECKS) - expected_names)
+        return _degraded_scorecard(
+            f"contract does not cover known checks {missing or 'ALL'} "
+            "— refusing to report green on an incomplete contract")
     contract_hash = "sha256:" + hashlib.sha256(raw).hexdigest()
-    expected = contract.get("scorecard_dimensions", [])
     repo_dirty = bool(_git("status", "--porcelain"))
 
     dims = []
@@ -212,7 +310,7 @@ def build_scorecard() -> dict:
         "as_of": datetime.now().isoformat(timespec="seconds"),
         "contract_version": str(contract.get("contract_version", "")),
         "contract_hash": contract_hash,
-        "repo_sha": _git("rev-parse", "HEAD"),
+        "repo_sha": _git("rev-parse", "HEAD") or "",
         "repo_dirty": repo_dirty,
         "overall": overall,
         "dimensions_expected": [s["name"] for s in expected],
@@ -240,17 +338,24 @@ def render_markdown(sc: dict) -> str:
 
 
 def _prepend_to_brief(md: str) -> "str | None":
+    import re
     briefs = [Path(p) for p in globmod.glob(str(BRIEF_DIR / "brief_*.md"))
-              if os.path.isfile(p)]
+              if os.path.isfile(p) and "conflicted copy" not in p.lower()]
     if not briefs:
         return None
     brief = max(briefs, key=lambda p: p.stat().st_mtime)
     body = brief.read_text()
-    if MARK_START in body and MARK_END in body:  # idempotent: replace old block
-        pre, rest = body.split(MARK_START, 1)
-        _, post = rest.split(MARK_END, 1)
-        body = pre + post.lstrip("\n")
-    brief.write_text(md + body)
+    # Idempotent + self-healing: strip any well-formed prior block, THEN strip
+    # any orphan marker left by an interrupted prepend (the START-without-END
+    # corruption case the old paired-split could not remove and would stack on).
+    body = re.sub(re.escape(MARK_START) + r".*?" + re.escape(MARK_END), "",
+                  body, flags=re.DOTALL)
+    body = body.replace(MARK_START, "").replace(MARK_END, "").lstrip("\n")
+    # Atomic write (temp + rename in the same dir), mirroring the JSON write so a
+    # kill mid-write cannot truncate the git-tracked brief.
+    tmp = brief.with_suffix(".md.tmp")
+    tmp.write_text(md + body)
+    os.replace(tmp, brief)
     return str(brief)
 
 

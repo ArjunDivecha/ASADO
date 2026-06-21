@@ -41,13 +41,16 @@ USAGE:
 NOTES:
 - Only the LATEST month's edges are kept in Neo4j (the graph is a "now"
   surface; history lives in DuckDB tables similarity_twins / leadlag_edges).
-- FAIL-IS-FAIL: empty source tables abort; Neo4j down aborts.
+- FAIL-IS-FAIL: empty source tables abort (exit 1). Neo4j down → PARTIAL (exit 2)
+  because this step is optional=true in the governance contract; the graph is a
+  query surface, not a data source — DuckDB holds the canonical history.
 =============================================================================
 """
 
 from __future__ import annotations
 
 import argparse
+import socket
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -63,7 +66,19 @@ def log(msg: str) -> None:
     print(f"{datetime.now().strftime('%H:%M:%S')} [graph_write] {msg}", flush=True)
 
 
+def _neo4j_reachable(host: str = "localhost", port: int = 7687, timeout: float = 3.0) -> bool:
+    try:
+        with socket.create_connection((host, port), timeout=timeout):
+            return True
+    except OSError:
+        return False
+
+
 def write() -> int:
+    if not _neo4j_reachable():
+        log("WARNING: Neo4j bolt port unreachable — skipping graph write (PARTIAL)")
+        return 2
+
     from neo4j import GraphDatabase
 
     con = loop_connection(read_only=True)
@@ -136,6 +151,10 @@ def write() -> int:
 
 
 def check() -> int:
+    if not _neo4j_reachable():
+        log("WARNING: Neo4j bolt port unreachable — cannot run check (PARTIAL)")
+        return 2
+
     from neo4j import GraphDatabase
 
     drv = GraphDatabase.driver(NEO4J_URI, auth=NEO4J_AUTH)

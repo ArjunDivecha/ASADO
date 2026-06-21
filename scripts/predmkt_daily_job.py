@@ -61,8 +61,10 @@ NOTES:
 from __future__ import annotations
 
 import argparse
-import subprocess
+import os
+import subprocess  # noqa: F401  (kept for compatibility; collector now runs via run_bounded)
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -72,6 +74,33 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DB_PATH = BASE_DIR / "Data" / "asado.duckdb"
 ARCHIVE_DIR = BASE_DIR / "Data" / "loop" / "predmkt_archive"
 COLLECTOR = BASE_DIR / "scripts" / "build_predmkt_panel.py"
+
+sys.path.insert(0, str(BASE_DIR))
+from scripts.loop.procutil import run_bounded  # noqa: E402  bounded subprocess helper
+
+# Transient DuckDB contention markers — the 06:30 predmkt job writes the MAIN
+# warehouse read-write and can collide with the 07:30 loop's read-only ATTACH
+# or a monthly setup_duckdb.py rebuild. Retry those; re-raise deterministic ones.
+_RETRYABLE_DB = ("lock", "being used by another", "io error",
+                 "could not set lock", "conflicting lock")
+
+
+def _connect_retry(read_only: bool = False):
+    """Open the main warehouse with bounded retry on transient write-lock/IO
+    contention (2/4/8/16s). Deterministic errors are re-raised immediately."""
+    last = None
+    for attempt, wait in enumerate([0, 2, 4, 8, 16]):
+        try:
+            if wait:
+                time.sleep(wait)
+            return duckdb.connect(str(DB_PATH), read_only=read_only)
+        except Exception as exc:  # noqa: BLE001
+            last = exc
+            if not any(m in str(exc).lower() for m in _RETRYABLE_DB):
+                raise
+            if attempt < 4:
+                log(f"DB busy (attempt {attempt + 1}): {exc}; retrying in {[2,4,8,16][attempt]}s")
+    raise last
 
 # Tables with a snapshot_date column get date-aware restore; meta tables are
 # restored whole only when entirely missing from the DB.
@@ -109,7 +138,7 @@ def restore_missing_history(con: duckdb.DuckDBPyConnection) -> None:
         before = con.execute(f"SELECT count(*) FROM {t}").fetchone()[0]
         con.execute(
             f"""
-            INSERT INTO {t}
+            INSERT INTO {t} BY NAME
             SELECT * FROM read_parquet(?) a
             WHERE a.snapshot_date NOT IN (SELECT DISTINCT snapshot_date FROM {t})
             """,
@@ -141,13 +170,19 @@ def archive_tables(con: duckdb.DuckDBPyConnection) -> None:
             log(f"ARCHIVE: {t} does not exist in DB - skipped")
             continue
         pq = ARCHIVE_DIR / f"{t}.parquet"
-        con.execute(f"COPY (SELECT * FROM {t}) TO '{pq}' (FORMAT PARQUET)")
+        tmp = ARCHIVE_DIR / f"{t}.parquet.tmp"
+        if tmp.exists():
+            tmp.unlink()
+        # Atomic: COPY to a temp file in the same dir, then rename. A kill mid-COPY
+        # can no longer truncate the ONLY rebuild-proof predmkt history store.
+        con.execute(f"COPY (SELECT * FROM {t}) TO '{tmp}' (FORMAT PARQUET)")
+        os.replace(tmp, pq)
         cnt = con.execute(f"SELECT count(*) FROM {t}").fetchone()[0]
         log(f"ARCHIVE: {t} -> {pq.name} ({cnt} rows)")
 
 
 def check() -> int:
-    con = duckdb.connect(str(DB_PATH), read_only=True)
+    con = _connect_retry(read_only=True)
     try:
         for t in ALL_TABLES:
             db_n = con.execute(f"SELECT count(*) FROM {t}").fetchone()[0] if table_exists(con, t) else "MISSING"
@@ -172,7 +207,7 @@ def main() -> int:
 
     # 1. RESTORE
     log("Step 1/3: restore missing history from archive (if any)")
-    con = duckdb.connect(str(DB_PATH))
+    con = _connect_retry()
     try:
         restore_missing_history(con)
     finally:
@@ -180,21 +215,20 @@ def main() -> int:
 
     # 2. COLLECT (subprocess so the collector's own backup/restore logic runs intact)
     log("Step 2/3: run build_predmkt_panel.py")
-    result = subprocess.run(
+    result = run_bounded(
         [sys.executable, str(COLLECTOR), "--stats"],
-        cwd=str(BASE_DIR),
-        capture_output=True,
-        text=True,
+        timeout=1800, cwd=str(BASE_DIR),
     )
     print(result.stdout)
     if result.returncode != 0:
         print(result.stderr)
-        log(f"FAIL: collector exited {result.returncode} - archive NOT updated, job failing loudly")
+        to = " (TIMEOUT)" if getattr(result, "timed_out", False) else ""
+        log(f"FAIL: collector exited {result.returncode}{to} - archive NOT updated, job failing loudly")
         return result.returncode
 
     # 3. ARCHIVE
     log("Step 3/3: export predmkt tables to parquet archive")
-    con = duckdb.connect(str(DB_PATH))
+    con = _connect_retry()
     try:
         archive_tables(con)
     finally:

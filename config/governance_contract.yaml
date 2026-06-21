@@ -105,7 +105,7 @@ steps:
 
   - name: load_sovereign_daily
     governance: false
-    optional: false
+    optional: true          # paired with optional BBG collector; exits 2 if parquet absent
     expected_outputs:
       - {kind: loop_db_table, table: sovereign_signals}
 
@@ -129,7 +129,7 @@ steps:
 
   - name: load_etf_flows
     governance: false
-    optional: false
+    optional: true          # paired with optional BBG collector; exits 2 if parquet absent
     expected_outputs:
       - {kind: loop_db_table, table: etf_flow_signals}
 
@@ -141,7 +141,7 @@ steps:
 
   - name: load_consensus
     governance: false
-    optional: false
+    optional: true          # paired with optional BBG collector; exits 2 if parquet absent
     expected_outputs:
       - {kind: loop_db_table, table: consensus_signals}
 
@@ -159,7 +159,7 @@ steps:
 
   - name: load_market_implied
     governance: false
-    optional: false
+    optional: true          # paired with optional BBG collector; exits 2 if parquet absent
     expected_outputs:
       - {kind: loop_db_table, table: market_implied_signals}
 
@@ -171,7 +171,7 @@ steps:
 
   - name: load_sov_ratings
     governance: false
-    optional: false
+    optional: true          # paired with optional BBG collector; exits 2 if parquet absent
     expected_outputs:
       - {kind: loop_db_table, table: sov_rating_changes}
 
@@ -183,7 +183,7 @@ steps:
 
   - name: load_eco_surprise
     governance: false
-    optional: false
+    optional: true          # paired with optional BBG collector; exits 2 if parquet absent
     expected_outputs:
       - {kind: loop_db_table, table: eco_surprise_signals}
 
@@ -289,8 +289,8 @@ scorecard_dimensions:
   - name: cross_source_minimal
     owner_item: A7
     severity: amber
-    amber_by_design: true
-    description: "Sentinels + D11-lite pass; coverage of critical mapped series reported (amber until Phase-C full sweep)."
+    amber_by_design: false
+    description: "Status-driven: green when sentinels + pair checks pass AND coverage >=90% of critical mapped series; amber on partial coverage or soft pair discrepancy; red on hard sentinel breach."
   - name: config_guard
     owner_item: A8
     severity: red

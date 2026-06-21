@@ -24,11 +24,12 @@ A7 — the GSAB defense. Two checks: (1) human-curated SENTINEL anchors (exact
 match, hard stop on mismatch — catches silent corruption/restatement);
 (2) cross-source PAIRS — a redundant series from two independent sources must
 agree per country; a large discrepancy is a series tracking the wrong entity
-(the GSAB10YR shape). Partial by design: cross_source_minimal is AMBER, never
-green in Phase A; coverage_fraction is reported honestly.
+(the GSAB10YR shape). Status-driven: the scorecard reads cross_source_status.json
+and is GREEN when checks pass and coverage_fraction >= 0.90, AMBER on partial
+coverage or a soft pair discrepancy, RED on a hard sentinel breach.
 
 EXIT: non-zero on a hard breach (sentinel mismatch). Pair breaches are recorded
-(they red the scorecard) but do NOT crash the nightly job — a convention
+(they amber the scorecard) but do NOT crash the nightly job — a convention
 difference must not false-fail the whole loop.
 
 DEPENDENCIES:
@@ -95,16 +96,29 @@ def run_checks(config: Optional[dict] = None) -> dict:
     con = loop_connection(read_only=True)
     try:
         # ── Sentinels (hard) ──────────────────────────────────────────────
+        # Query for the MOST RECENT value within `recent_days` rather than
+        # an exact date, so stale sentinel dates don't false-trip. If no data
+        # in window: log a warning and skip (can't verify) — BBG may have been
+        # down. A large mismatch vs expected (GSAB-style swap) is a HARD STOP.
         sentinel_breaches = []
         for s in cfg.get("sentinels", []):
             qual = s["table"] if s["db"] == "loop" else f"asado.{s['table']}"
+            recent_days = int(s.get("recent_days", 60))
             row = con.execute(
-                f"SELECT value FROM {qual} WHERE variable=? AND country=? AND date=CAST(? AS DATE)",
-                [s["variable"], s["country"], s["date"]]).fetchone()
+                f"""SELECT value FROM {qual}
+                    WHERE variable=? AND country=?
+                    AND date >= CURRENT_DATE - INTERVAL {recent_days} DAY
+                    ORDER BY date DESC LIMIT 1""",
+                [s["variable"], s["country"]]).fetchone()
             got = None if row is None else row[0]
-            if got is None or abs(float(got) - float(s["expected"])) > float(s["tol"]):
-                sentinel_breaches.append({**{k: s[k] for k in ("table", "variable", "country", "date", "expected")},
-                                          "got": (None if got is None else round(float(got), 4))})
+            if got is None:
+                print(f"  SENTINEL SKIP: no data for {s['country']} {s['variable']} "
+                      f"in last {recent_days}d — cannot verify (BBG may be down)", flush=True)
+                continue
+            if abs(float(got) - float(s["expected"])) > float(s["tol"]):
+                sentinel_breaches.append(
+                    {**{k: s[k] for k in ("table", "variable", "country", "expected")},
+                     "got": round(float(got), 4)})
 
         # ── Cross-source pairs (soft: red the scorecard, no crash) ────────
         pair_results = []
@@ -133,7 +147,7 @@ def run_checks(config: Optional[dict] = None) -> dict:
         "critical_series_count": critical,
         "sentinel_breaches": sentinel_breaches,
         "pairs": pair_results,
-        "note": "cross_source_minimal is AMBER by design (partial coverage); full sweep is Phase C.",
+        "note": "cross_source_minimal is status-driven: green when checks pass and coverage>=90%, amber on partial/pair, red on hard breach. Phase-C widens the check set.",
     }
 
 

@@ -206,10 +206,10 @@ def _loop_table_counter() -> Optional[Callable[[str], Optional[int]]]:
     try:
         import duckdb
         con = duckdb.connect(str(LOOP_DB), read_only=True)
+        known = {r[0] for r in con.execute(
+            "SELECT table_name FROM information_schema.tables WHERE table_schema='main'").fetchall()}
     except Exception:  # noqa: BLE001 — DB locked/absent: degrade to no table checks
         return None
-    known = {r[0] for r in con.execute(
-        "SELECT table_name FROM information_schema.tables WHERE table_schema='main'").fetchall()}
 
     def counter(table: str) -> Optional[int]:
         if table not in known:

@@ -42,6 +42,7 @@ USAGE:
 from __future__ import annotations
 
 import json
+import time
 from pathlib import Path
 
 import duckdb
@@ -55,18 +56,54 @@ BRIEF_DIR = BASE_DIR / "Data" / "dislocations"
 COUNTRY_MAPPING = BASE_DIR / "config" / "country_mapping.json"
 
 
+# DuckDB error substrings that mark transient contention (worth retrying) vs a
+# deterministic failure (corrupt DB, bad path, version mismatch) that retrying
+# would only delay by the full backoff budget.
+_RETRYABLE_MARKERS = (
+    "lock", "conflicting lock", "being used by another", "io error",
+    "could not set lock", "resource temporarily unavailable",
+)
+
+
+def _is_retryable(exc: Exception) -> bool:
+    return any(m in str(exc).lower() for m in _RETRYABLE_MARKERS)
+
+
 def loop_connection(read_only: bool = False) -> duckdb.DuckDBPyConnection:
     """Open the loop DB with the main warehouse attached read-only as `asado`.
 
-    FAIL-IS-FAIL: if the main warehouse is missing we raise instead of
-    returning a half-usable connection.
+    FAIL-IS-FAIL: if the main warehouse is missing we raise. Transient write-lock
+    / IO contention is retried with exponential backoff (2, 4, 8, 16 s). A
+    DETERMINISTIC error (corrupt DB, bad ATTACH path, version mismatch) is
+    re-raised immediately rather than burning 30s of backoff. If the ATTACH
+    fails after connect, the half-open connection is closed so a leaked write
+    handle cannot self-induce the very lock error we are retrying against.
     """
     LOOP_DIR.mkdir(parents=True, exist_ok=True)
     if not MAIN_DB.exists():
         raise FileNotFoundError(f"Main ASADO warehouse not found: {MAIN_DB}")
-    con = duckdb.connect(str(LOOP_DB), read_only=read_only)
-    con.execute(f"ATTACH '{MAIN_DB}' AS asado (READ_ONLY)")
-    return con
+    last_exc: Exception = RuntimeError("unreachable")
+    for attempt, wait in enumerate([0, 2, 4, 8, 16]):
+        if wait:
+            time.sleep(wait)
+        con = None
+        try:
+            con = duckdb.connect(str(LOOP_DB), read_only=read_only)
+            con.execute(f"ATTACH '{MAIN_DB}' AS asado (READ_ONLY)")
+            return con
+        except Exception as exc:  # noqa: BLE001
+            if con is not None:
+                try:
+                    con.close()
+                except Exception:  # noqa: BLE001
+                    pass
+            last_exc = exc
+            if not _is_retryable(exc):
+                raise  # deterministic — fail fast, don't waste the backoff budget
+            if attempt < 4:
+                print(f"[loopdb] transient contention attempt {attempt + 1} ({exc}); "
+                      f"retrying in {[2,4,8,16][attempt]}s", flush=True)
+    raise last_exc
 
 
 # The canonical 34-country T2 universe (CLAUDE.md). Hardcoded deliberately:

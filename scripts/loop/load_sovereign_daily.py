@@ -185,7 +185,11 @@ def main() -> int:
     args = parser.parse_args()
     if args.check:
         return check()
-    rebuild()
+    try:
+        rebuild()
+    except FileNotFoundError as exc:
+        print(f"PARTIAL: {exc} — BBG collector may not have run yet", flush=True)
+        return 2
     return 0
 
 

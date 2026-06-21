@@ -102,9 +102,15 @@ def _brief_committed(path: Path) -> bool:
 def compute_health(exit_code: int) -> dict:
     manifest_present = MANIFEST_PATH.exists()
     fail_steps, stale_steps = [], []
+    manifest_unreadable = None
     if manifest_present:
-        m = json.loads(MANIFEST_PATH.read_text())
-        fail_steps, stale_steps = m.get("fail_steps", []), m.get("stale_steps", [])
+        try:
+            m = json.loads(MANIFEST_PATH.read_text())
+            fail_steps, stale_steps = m.get("fail_steps", []), m.get("stale_steps", [])
+        except (json.JSONDecodeError, OSError) as exc:
+            # present-but-corrupt (Dropbox conflict / 0-byte / truncated) must
+            # BECOME the alert, not a crash that silences the push below.
+            manifest_unreadable = str(exc)
     brief = _newest_brief()
     brief_present = brief is not None
     brief_committed = _brief_committed(brief) if brief else False
@@ -114,6 +120,8 @@ def compute_health(exit_code: int) -> dict:
         reasons.append(f"loop exit {exit_code}")
     if not manifest_present:
         reasons.append("run_manifest missing")
+    elif manifest_unreadable:
+        reasons.append(f"run_manifest unreadable: {manifest_unreadable}")
     if fail_steps:
         reasons.append(f"steps failed: {fail_steps}")
     if stale_steps:
@@ -154,12 +162,12 @@ def run_watchdog(no_push: bool) -> int:
     """Catch the loop dying entirely: heartbeat.json missing or stale."""
     stale = True
     if HEARTBEAT_PATH.exists():
-        hb = json.loads(HEARTBEAT_PATH.read_text())
         try:
+            hb = json.loads(HEARTBEAT_PATH.read_text())
             age = datetime.now() - datetime.fromisoformat(hb["as_of"])
             stale = age > timedelta(hours=WATCHDOG_STALE_HOURS)
         except Exception:  # noqa: BLE001
-            stale = True
+            stale = True  # corrupt/unreadable heartbeat -> treat as stale, alert
     if stale:
         msg = "ASADO loop watchdog: heartbeat missing/stale — the nightly loop did not run."
         print(msg, flush=True)

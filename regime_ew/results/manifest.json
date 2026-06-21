@@ -1,0 +1,35 @@
+{
+  "gate1": {
+    "PASS": true,
+    "median_persist_1m": 0.767449702146791,
+    "frac_countries_mean_adv_duration_ge3m": 0.6923076923076923,
+    "threshold_persist_1m": 0.75,
+    "threshold_frac_duration": 0.6
+  },
+  "gate2": {
+    "IS_VOL_SIGNAL_FLAG": false,
+    "median_abs_corr_P_adverse_vol6m": 0.13321724118561573,
+    "flag_threshold": 0.7,
+    "n_countries": 26
+  },
+  "gate3": {
+    "PASS": false,
+    "sign_test_P_adverse": {
+      "n_negative": 7,
+      "n_total": 26,
+      "binom_pval": 0.9953223466873169
+    },
+    "sign_test_dP_adverse": {
+      "n_negative": 14,
+      "n_total": 26,
+      "binom_pval": 0.42250949144363403
+    },
+    "median_rho_P_adverse_1MRet": 0.05335113591453656,
+    "median_rho_dP_adverse_1MRet": -0.024581710492255535,
+    "economic_spread_pct_per_month": -1.0115545977435134,
+    "condition_sign_ok": false,
+    "condition_rho_ok": false,
+    "condition_spread_ok": false
+  },
+  "gate4": null
+}

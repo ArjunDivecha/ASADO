@@ -1,0 +1,9 @@
+{
+  "country": "NASDAQ",
+  "K_selected": 3,
+  "BIC": {
+    "2": 1123418.2,
+    "3": 1122673.0
+  },
+  "adverse_state_index": 1
+}

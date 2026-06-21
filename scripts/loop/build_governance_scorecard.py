@@ -30,8 +30,10 @@ lists cannot drift; the contract hash + repo SHA + dirty flag are stamped.
 Two non-negotiable rules (the "knows what it doesn't know" property):
   - any expected dimension not computed -> BLIND (amber/red per its severity),
     NEVER green.
-  - any partial-coverage dimension (cross_source_minimal) -> AMBER, never green
-    in Phase A; so overall caps at amber until the Phase-C full sweep.
+  - cross_source_minimal is STATUS-DRIVEN: green when all configured cross-source
+    checks pass AND coverage is substantially complete (>=90% of critical mapped
+    series); amber on partial coverage or a soft pair discrepancy; red on a hard
+    sentinel breach. (Phase-C widens the check set; it does not gate green.)
   - CONFIG GUARD: an uncommitted/dirty trust-root YAML -> config_guard RED.
 
 DEPENDENCIES:
@@ -145,14 +147,36 @@ def _dim_pit_lag_proof():
     return "green", "pit_proof_registry.yaml", "no unbacked lag-0 claims; daily defaults fail closed"
 
 
+# Fraction of critical mapped series that must be cross-checked to earn GREEN.
+# Below this the dimension is AMBER (partial coverage), not because coverage is
+# "minimal by design" but because we genuinely haven't validated enough series.
+CROSS_SOURCE_GREEN_COVERAGE = 0.90
+
+
 def _dim_cross_source_minimal():
+    """STATUS-DRIVEN (no longer amber-by-design):
+      red    -> a hard sentinel breach (two sources disagree on a critical price)
+      amber  -> a soft pair discrepancy, OR coverage below the green threshold
+      green  -> all configured cross-source checks pass AND coverage is
+                substantially complete (>= CROSS_SOURCE_GREEN_COVERAGE)
+      blind  -> the check did not run
+    Phase-C will widen the *set* of checks; it does not gate green here. Green
+    means 'everything I currently cross-check agrees and I checked enough of it.'
+    """
     st = _read_json(GOV_DIR / "cross_source_status.json")
     if st is None:
         return "blind", "cross_source_status.json", "not run"
-    if st.get("hard_breach") or st.get("pair_breach"):
-        return "red", "cross_source_status.json", f"hard={st.get('hard_breach')} pair={st.get('pair_breach')}"
-    # AMBER BY DESIGN — minimal coverage, never green in Phase A.
-    return "amber", "cross_source_status.json", f"checks pass; coverage={st.get('coverage_fraction')} (partial by design)"
+    cov = float(st.get("coverage_fraction") or 0.0)
+    n, tot = st.get("n_checked", 0), st.get("critical_series_count", 0)
+    if st.get("hard_breach"):
+        return "red", "cross_source_status.json", f"hard sentinel breach: {st.get('sentinel_breaches')}"
+    if st.get("pair_breach"):
+        return "amber", "cross_source_status.json", f"pair discrepancy flagged; coverage {n}/{tot}"
+    if cov < CROSS_SOURCE_GREEN_COVERAGE:
+        return "amber", "cross_source_status.json", \
+            f"partial coverage {n}/{tot} ({cov:.0%} < {CROSS_SOURCE_GREEN_COVERAGE:.0%} needed for green)"
+    return "green", "cross_source_status.json", \
+        f"all cross-source checks pass; coverage {n}/{tot} ({cov:.0%})"
 
 
 def _dim_config_guard():

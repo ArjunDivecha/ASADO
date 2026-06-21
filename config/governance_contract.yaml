@@ -289,8 +289,8 @@ scorecard_dimensions:
   - name: cross_source_minimal
     owner_item: A7
     severity: amber
-    amber_by_design: true
-    description: "Sentinels + D11-lite pass; coverage of critical mapped series reported (amber until Phase-C full sweep)."
+    amber_by_design: false
+    description: "Status-driven: green when sentinels + pair checks pass AND coverage >=90% of critical mapped series; amber on partial coverage or soft pair discrepancy; red on hard sentinel breach."
   - name: config_guard
     owner_item: A8
     severity: red

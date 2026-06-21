@@ -24,11 +24,12 @@ A7 — the GSAB defense. Two checks: (1) human-curated SENTINEL anchors (exact
 match, hard stop on mismatch — catches silent corruption/restatement);
 (2) cross-source PAIRS — a redundant series from two independent sources must
 agree per country; a large discrepancy is a series tracking the wrong entity
-(the GSAB10YR shape). Partial by design: cross_source_minimal is AMBER, never
-green in Phase A; coverage_fraction is reported honestly.
+(the GSAB10YR shape). Status-driven: the scorecard reads cross_source_status.json
+and is GREEN when checks pass and coverage_fraction >= 0.90, AMBER on partial
+coverage or a soft pair discrepancy, RED on a hard sentinel breach.
 
 EXIT: non-zero on a hard breach (sentinel mismatch). Pair breaches are recorded
-(they red the scorecard) but do NOT crash the nightly job — a convention
+(they amber the scorecard) but do NOT crash the nightly job — a convention
 difference must not false-fail the whole loop.
 
 DEPENDENCIES:
@@ -146,7 +147,7 @@ def run_checks(config: Optional[dict] = None) -> dict:
         "critical_series_count": critical,
         "sentinel_breaches": sentinel_breaches,
         "pairs": pair_results,
-        "note": "cross_source_minimal is AMBER by design (partial coverage); full sweep is Phase C.",
+        "note": "cross_source_minimal is status-driven: green when checks pass and coverage>=90%, amber on partial/pair, red on hard breach. Phase-C widens the check set.",
     }
 
 

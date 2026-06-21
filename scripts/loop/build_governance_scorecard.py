@@ -199,11 +199,50 @@ CHECKS = {
 _RANK = {"green": 0, "amber": 1, "blind": 2, "red": 3}
 
 
+def _degraded_scorecard(reason: str) -> dict:
+    """Schema-valid RED scorecard emitted when the contract itself cannot be
+    trusted (missing/truncated/malformed, or it fails to cover the checks we
+    know how to run). Forcing RED — never green — preserves the 'knows what it
+    doesn't know' invariant: if the contract is unreadable we have verified
+    NOTHING, and must not report a confident green."""
+    return {
+        "schema_version": 1,
+        "producer_version": "build_governance_scorecard.py 1.0",
+        "as_of": datetime.now().isoformat(timespec="seconds"),
+        "contract_version": "",
+        "contract_hash": "",
+        "repo_sha": _git("rev-parse", "HEAD"),
+        "repo_dirty": bool(_git("status", "--porcelain")),
+        "overall": "red",
+        "dimensions_expected": sorted(CHECKS),
+        "dimensions_computed": [],
+        "dimensions": [{
+            "name": "contract_degraded", "owner_item": "A8",
+            "severity": "red", "amber_by_design": False,
+            "status": "red", "effective": "red",
+            "evidence": "governance_contract.yaml", "detail": reason,
+        }],
+    }
+
+
 def build_scorecard() -> dict:
-    raw = CONTRACT_PATH.read_bytes()
-    contract = yaml.safe_load(raw)
+    # CRITICAL (gov-empty-contract-green): a truncated/malformed/empty contract
+    # must NOT green the board. Read defensively and validate coverage against
+    # the CHECKS dict (the floor is derived from code, not a second literal, so
+    # the two cannot silently drift).
+    try:
+        raw = CONTRACT_PATH.read_bytes()
+        contract = yaml.safe_load(raw) or {}
+    except (OSError, yaml.YAMLError) as e:
+        return _degraded_scorecard(f"contract unreadable/malformed: {e}")
+    expected = contract.get("scorecard_dimensions") or []
+    expected_names = {s.get("name") for s in expected if isinstance(s, dict)}
+    if not expected or not expected_names.issuperset(CHECKS):
+        missing = sorted(set(CHECKS) - expected_names)
+        return _degraded_scorecard(
+            f"contract does not cover known checks {missing or 'ALL'} "
+            "— refusing to report green on an incomplete contract")
     contract_hash = "sha256:" + hashlib.sha256(raw).hexdigest()
-    expected = contract.get("scorecard_dimensions", [])
     repo_dirty = bool(_git("status", "--porcelain"))
 
     dims = []

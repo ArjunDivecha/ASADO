@@ -236,6 +236,9 @@ def run_lab_session(
         tools=[CARD_TOOL], tool_choice={"type": "tool", "name": "emit_discovery_cards"},
     )
     cards = _extract_cards(response)
+    _u = getattr(response, "usage", None)
+    usage = {"input_tokens": getattr(_u, "input_tokens", None),
+             "output_tokens": getattr(_u, "output_tokens", None)} if _u else None
 
     # 4) provenance route for these LLM ideas (forward window => prospective-only by default)
     route = classify(generator_type="llm", visibility_mode="tool_outcome_blind",
@@ -279,4 +282,4 @@ def run_lab_session(
         drafts.append(record)
 
     return {"look_id": look_id, "drafts": drafts, "dropped": dropped,
-            "route": route, "n_cards": len(cards)}
+            "route": route, "n_cards": len(cards), "usage": usage}

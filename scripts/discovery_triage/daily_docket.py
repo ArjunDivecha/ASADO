@@ -120,9 +120,12 @@ def main(argv: Optional[list[str]] = None) -> int:
         con.close()
     total = sum(len(r.get("drafts", [])) for r in results)
     dropped = sum(len(r.get("dropped", [])) for r in results)
+    in_tok = sum((r.get("usage") or {}).get("input_tokens") or 0 for r in results)
+    out_tok = sum((r.get("usage") or {}).get("output_tokens") or 0 for r in results)
     print(f"[docket] {out}")
     print(f"[docket] searches={searches} cards={total} dropped={dropped} "
           f"route={results[0].get('route') if results else None}")
+    print(f"[docket] LIVE Anthropic usage ({args.model}): input={in_tok:,} output={out_tok:,} tokens")
     link = "file://" + str(out).replace(" ", "%20")
     print(f"[docket] {link}")
     return 0

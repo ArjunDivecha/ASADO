@@ -28,6 +28,7 @@ CLAIMS_JSONL = CLAIMS_DIR / "claims.jsonl"
 BLIND_RULINGS = BLIND_RULINGS_DIR / "blind_rulings.jsonl"
 PROSPECTIVE_QUEUE = PROSPECTIVE_DIR / "prospective_queue.jsonl"
 GRAVEYARD_TRACKING = GRAVEYARD_DIR / "graveyard_forward_tracking.jsonl"
+ANALOG_SETS_INDEX = ANALOG_DIR / "analog_sets.jsonl"
 
 
 def ensure_dirs() -> None:

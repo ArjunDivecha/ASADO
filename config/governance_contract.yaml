@@ -73,6 +73,12 @@ steps:
     expected_outputs:
       - {kind: file, path_template: "journal/prospective_queue/prospective_queue.jsonl"}
 
+  - name: discovery_docket
+    governance: false
+    optional: true          # GATED: no-op unless ASADO_RUN_DISCOVERY_LAB=1 (Anthropic cost guard)
+    expected_outputs:
+      - {kind: file, path_template: "journal/dockets/.gitkeep"}
+
   - name: build_tot_shares
     governance: false
     optional: true          # 7-day freshness gate: parquet not rewritten nightly

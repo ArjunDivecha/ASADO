@@ -180,6 +180,9 @@ STEPS = [
     # Runs after build_country_returns (its return surface); optional + no-op until
     # claims have been routed (see config/governance_contract.yaml).
     ("discovery_forward_track", [PY, "scripts/discovery_triage/forward_track.py"]),
+    # Discovery Lab daily docket — GATED: --nightly no-ops unless ASADO_RUN_DISCOVERY_LAB=1,
+    # so it never auto-spends on the Anthropic API without explicit opt-in.
+    ("discovery_docket", [PY, "scripts/discovery_triage/daily_docket.py", "--nightly"]),
     ("build_tot_shares", [PY, "scripts/loop/build_tot_shares.py"]),
     ("build_graph_features", [PY, "scripts/loop/build_graph_features.py"]),
     ("build_forward_calendar", [PY, "scripts/loop/build_forward_calendar.py"]),

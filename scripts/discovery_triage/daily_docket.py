@@ -33,8 +33,12 @@ from datetime import date
 from pathlib import Path
 from typing import Any, Optional
 
-from .lab_session import DEFAULT_MODEL, run_lab_session
+from .lab_session import DEFAULT_MODEL, _searches, run_lab_session
 from .paths import DOCKETS_DIR
+
+
+def all_searches() -> list[str]:
+    return list(_searches().keys())
 
 MIN_CARDS, MAX_CARDS = 3, 10
 # Resolve the loop DB: worktrees don't carry the 119 MB data file, so allow an
@@ -78,6 +82,10 @@ def _render(as_of: str, results: list[dict[str, Any]]) -> str:
     if len(cards) < MIN_CARDS:
         lines.append(f"> NOTE: only {len(cards)} card(s) emitted — below the {MIN_CARDS} floor "
                      "(thin run; not padded).")
+    skipped = [r for r in results if r.get("error")]
+    if skipped:
+        lines += ["", "### Skipped searches"]
+        lines += [f"- `{r.get('search')}` — {str(r.get('error'))[:160]}" for r in skipped]
     return "\n".join(lines)
 
 
@@ -92,7 +100,10 @@ def build_docket(
 ) -> tuple[Path, list[dict[str, Any]]]:
     results = []
     for s in searches:
-        results.append(run_lab_session(s, as_of, client=client, con=con, model_id=model_id))
+        try:
+            results.append(run_lab_session(s, as_of, client=client, con=con, model_id=model_id))
+        except Exception as e:  # noqa: BLE001 — one failing search must not kill the docket
+            results.append({"search": s, "error": str(e), "drafts": [], "dropped": [], "usage": None})
     dockets_dir.mkdir(parents=True, exist_ok=True)
     out = dockets_dir / f"discovery_docket_{as_of.replace('-', '_')}.md"
     out.write_text(_render(as_of, results), encoding="utf-8")
@@ -103,11 +114,20 @@ def main(argv: Optional[list[str]] = None) -> int:
     ap = argparse.ArgumentParser(description="Build the daily discovery docket (real Claude model).")
     ap.add_argument("--as-of", default=date.today().isoformat())
     ap.add_argument("--search", action="append", dest="searches",
-                    default=None, help="repeatable; default cross_surface_contradiction")
+                    default=None, help="repeatable; default = all 5 discovery searches")
     ap.add_argument("--model", default=DEFAULT_MODEL)
     ap.add_argument("--loop-db", default=os.environ.get("ASADO_LOOP_DB", _DEFAULT_LOOP_DB))
+    ap.add_argument("--nightly", action="store_true",
+                    help="nightly mode: no-op unless ASADO_RUN_DISCOVERY_LAB=1 (cost guard)")
     args = ap.parse_args(argv)
-    searches = args.searches or ["cross_surface_contradiction"]
+    searches = args.searches or all_searches()
+
+    # Cost guard: the nightly job must NOT auto-spend on the Anthropic API unless
+    # explicitly opted in. A manual run (no --nightly) always proceeds.
+    if args.nightly and not os.environ.get("ASADO_RUN_DISCOVERY_LAB"):
+        print("[docket] nightly Discovery Lab disabled — set ASADO_RUN_DISCOVERY_LAB=1 "
+              "to enable live LLM runs. (no spend)")
+        return 0
 
     import duckdb
     if not Path(args.loop_db).exists():

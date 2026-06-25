@@ -1,0 +1,48 @@
+schema_version: 1
+metrics:
+  - metric_id: macro_state_v1
+    label: Macro-state analogs
+    outcome_blind: true
+    feature_blocks: [valuation_state, sovereign_stress, inflation_growth_surprise, consensus_revision]
+    distance: rank_normalized_euclidean
+    lookback_window_days: 252
+  - metric_id: price_state_v1
+    label: Price-state analogs
+    outcome_blind: true
+    feature_blocks: [drawdown_state, momentum_state, realized_vol_state, price_absorption_state]
+    distance: rank_normalized_euclidean
+    lookback_window_days: 126
+  - metric_id: stress_state_v1
+    label: Stress-state analogs
+    outcome_blind: true
+    feature_blocks: [fx_options_state, sovereign_cds_state, curve_state, market_implied_global_stress]
+    distance: rank_normalized_euclidean
+    lookback_window_days: 63
+  - metric_id: graph_state_v1
+    label: Graph-state analogs
+    outcome_blind: true
+    feature_blocks: [pit_trade_neighbor_state, pit_bank_neighbor_state, leadlag_state, similarity_twin_state]
+    distance: cosine_rank_hybrid
+    lookback_window_days: 252
+  - metric_id: mixed_state_v1
+    label: Mixed-state analogs
+    outcome_blind: true
+    feature_blocks: [price_state, valuation_state, stress_state, graph_state, flow_state]
+    distance: weighted_rank_normalized_euclidean
+    lookback_window_days: 252
+
+differencing_policy:
+  may_change_analog_membership: false
+  may_view_forward_outcomes_before_set_frozen: false
+  allowed_outputs: [analog_note, detector_draft, claim_candidate, caveat]
+  allowed_difference_axes:
+    - valuation_state
+    - fx_stress_state
+    - sovereign_stress_state
+    - commodity_exposure
+    - foreign_flow_state
+    - ETF_expression_quality
+    - drawdown_state
+    - graph_neighbor_state
+    - policy_rate_state
+    - inflation_surprise_state

@@ -1,0 +1,43 @@
+schema_version: 1
+classes:
+  pit_preregistered:
+    certification_route: standard_harness_then_triage
+    description: Registered before outcome-conditioned exploration with known family denominator.
+  deterministic_detector:
+    certification_route: measured_gap_claim_required
+    description: Known Gap Monitor output; measured state, not alpha by itself.
+  human_pretest:
+    certification_route: standard_if_look_ledger_clean_else_prospective
+    description: Human idea frozen before relevant outcome inspection.
+  llm_outcome_blind_post_cutoff:
+    certification_route: post_cutoff_holdout_testable
+    description: LLM saw only tool-enforced outcome-blind state and the certification window is after the model training cutoff.
+  llm_retrospective_or_pre_cutoff:
+    certification_route: prospective_only
+    description: LLM may have outcome knowledge through weights or provided context; historical certification forbidden.
+  legacy_unknown:
+    certification_route: legacy_grandfathered_forward_tracking
+    description: Existing ASADO idea with unknown or likely retrospective provenance.
+
+legacy_tiers:
+  tier_0_clean_pit_registered: Clean PIT registered, known denominator.
+  tier_1_documented_before_recent_tests: Deterministic or documented before recent tests.
+  tier_2_legacy_retrospective_plausible: Retrospective but economically plausible; forward track.
+  tier_3_narrative_unknown: Narrative or unknown provenance; quarantine.
+  tier_4_fatal_leakage: Fatal leakage or target contamination.
+
+blind_ruling:
+  required_before_unseal: true
+  log_ruling_change_after_unseal: true
+  allowed_inputs_before_ruling:
+    - neutral_claim
+    - provenance
+    - triage_probe_results
+    - harness_stats
+    - power_budget_band
+  forbidden_inputs_before_ruling:
+    - generator_rationale
+    - bull_case
+    - excitement_score
+    - trade_recommendation
+    - discovery_transcript

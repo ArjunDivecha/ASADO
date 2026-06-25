@@ -1,0 +1,69 @@
+schema_version: 1
+system_name: ASADO Discovery Triage
+principles:
+  - Discovery is allowed, but it emits drafts rather than validated alpha.
+  - For LLM-generated hypotheses, the model training cutoff is the real PIT boundary.
+  - Pre-cutoff or unknown-cutoff LLM discoveries cannot be historically certified; they route to prospective tracking.
+  - Discipline precedes the Lab: denominator, triage probes, and blind ruling must exist before daily discovery is enabled.
+  - The graveyard is a control arm: killed and quarantined ideas are tracked forward when mechanically measurable.
+
+status_ladder:
+  fatal_kill: killed_fatal_leakage
+  rejected: rejected_for_now
+  quarantine: prospective_only
+  incubate: incubating
+  triage_pass: triage_passed_not_validated
+  holdout: post_cutoff_holdout_testable
+  legacy: legacy_grandfathered
+
+llm_certification_policy:
+  require_model_training_cutoff: true
+  missing_cutoff_route: prospective_only_unknown_cutoff
+  pre_cutoff_data_route: prospective_only_training_cutoff_contamination
+  full_retrospective_route: prospective_only_retrospective
+  post_cutoff_outcome_blind_route: post_cutoff_holdout_testable
+  forward_only_route: prospective_only_forward_certification
+  ordinary_in_sample_validation_for_llm: forbidden
+
+forbidden_context_surfaces:
+  - harness_results
+  - hypothesis_ledger.verdict
+  - verdict_json
+  - factor_returns
+  - factor_returns_daily
+  - factor_top20_membership
+  - country_factor_attribution
+  - forward_returns
+  - future_returns
+  - pnl
+  - realized_forward_outcomes
+  - gap_holdout_daily.promoted
+  - gap_holdout_daily.gap_id
+
+discovery_searches:
+  - id: cross_surface_contradiction
+    label: Cross-surface contradiction
+    description: Find countries where two PIT-safe state families strongly disagree, without seeing forward returns or harness verdicts.
+    allowed_surfaces: [price_state_daily, valuation_monthly, sovereign_signals, market_implied_signals, etf_flow_signals]
+  - id: graph_motif
+    label: Graph motif
+    description: Find graph-neighbor or lead-lag motifs where connected markets moved but endpoint price did not.
+    allowed_surfaces: [graph_features_pit_daily, leadlag_features_daily, similarity_features_daily, price_state_daily]
+  - id: analog_mismatch
+    label: Analog mismatch
+    description: Retrieve outcome-blind analog sets and flag where price-state analogs disagree with macro-state analogs.
+    allowed_surfaces: [price_state_daily, valuation_monthly, sovereign_signals, graph_features_pit_daily]
+  - id: regime_sign_flip
+    label: Regime sign flip
+    description: Search for conditions where a normally bad state may become constructive, without inspecting forward labels.
+    allowed_surfaces: [price_state_daily, sovereign_signals, market_implied_signals, etf_flow_signals, valuation_monthly]
+  - id: nonlinear_condition_draft
+    label: Nonlinear condition draft
+    description: Draft simple two-to-four condition detectors from PIT-safe state contradictions; route all LLM variants through prospective tracking unless post-cutoff holdout eligible.
+    allowed_surfaces: [price_state_daily, valuation_monthly, sovereign_signals, market_implied_signals, etf_flow_signals, graph_features_pit_daily]
+
+daily_docket:
+  min_drafts: 3
+  max_drafts: 10
+  default_route: prospective_only
+  output_dir: journal/dockets

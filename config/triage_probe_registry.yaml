@@ -1,0 +1,20 @@
+schema_version: 1
+v1_required_probes:
+  - probe_id: target_reentry
+    fatal: true
+    description: Reject claims whose signal variables or tables use returns, optimizer outputs, factor portfolio returns, top-20 membership, attribution, or future labels.
+  - probe_id: leave_one_crisis_out
+    fatal: false
+    description: Flag claims whose evidence is dominated by GFC, COVID, 2022 rates/inflation, China 2015, or Eurozone stress windows.
+  - probe_id: country_region_jackknife
+    fatal: false
+    description: Flag claims owned by one country, region, or sleeve.
+v1_conditional_probes:
+  - probe_id: publication_lag_sensitivity
+    applies_to: [IMF, WDI, WEO, IFS, BOP, WGI, OECD, CLI, EPU, GPR, revised_macro]
+  - probe_id: horizon_profile
+    applies_to: [all_claims_with_mechanism_horizon]
+graveyard_tracking:
+  track_killed_claims_forward: true
+  track_quarantined_claims_forward: true
+  graveyard_is_control_arm: true

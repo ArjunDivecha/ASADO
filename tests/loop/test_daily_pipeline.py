@@ -128,7 +128,25 @@ def run(asof: str):
             f"gdelt_factors_daily max date: {max_gdelt}",
         )
 
-        # A5. factor_returns_daily freshness
+        # A5. raw GDELT freshness must move with the normalized GDELT table.
+        # This catches stale sibling-table drift where normalized factors pass
+        # but the off-universe raw entity bridge is still loading an old parquet.
+        max_gdelt_raw = con.execute(
+            "SELECT max(date) FROM gdelt_raw_daily"
+        ).fetchone()[0]
+        check(
+            max_gdelt_raw is not None and str(max_gdelt_raw)[:10] >= str(yesterday),
+            f"gdelt_raw_daily max date: {max_gdelt_raw}",
+        )
+        check(
+            max_gdelt is not None
+            and max_gdelt_raw is not None
+            and str(max_gdelt_raw)[:10] == str(max_gdelt)[:10],
+            "gdelt_raw_daily and gdelt_factors_daily max dates agree",
+            f"raw={max_gdelt_raw}, normalized={max_gdelt}",
+        )
+
+        # A6. factor_returns_daily freshness
         max_fr = con.execute(
             "SELECT max(date) FROM factor_returns_daily"
         ).fetchone()[0]
@@ -137,7 +155,7 @@ def run(asof: str):
             f"factor_returns_daily max date: {max_fr}",
         )
 
-        # A6. 1DRet non-zero check — must use the PREVIOUS trading day,
+        # A7. 1DRet non-zero check — must use the PREVIOUS trading day,
         # not today (market may still be open; Bloomberg fills today with
         # prior close so today's 1DRet = 0 until the close prints).
         check_date = str(yesterday)
@@ -238,12 +256,21 @@ def run(asof: str):
         except Exception as e:
             fail("dislocation_daily", str(e))
 
-        # B5. thesis_ledger: at least the 3 seed theses
+        # B5. thesis_ledger: seed thesis history is intact. Do not require all
+        # seed theses to remain open; T_20260610_003 was legitimately killed in
+        # review after its entry signal proved to be a measurement artifact.
         try:
-            tl_count = con.execute(
-                "SELECT count(*) FROM thesis_ledger WHERE status = 'open'"
+            tl_total, tl_open = con.execute(
+                "SELECT count(*), count(*) FILTER (WHERE status = 'open') FROM thesis_ledger"
+            ).fetchone()
+            null_status = con.execute(
+                "SELECT count(*) FROM thesis_ledger WHERE status IS NULL OR status = ''"
             ).fetchone()[0]
-            check(tl_count >= 3, f"open theses: {tl_count}")
+            check(
+                tl_total >= 3 and null_status == 0,
+                f"thesis_ledger total/open: {tl_total}/{tl_open}",
+                f"expected >=3 total seed theses and zero null statuses; null_status={null_status}",
+            )
         except Exception as e:
             fail("thesis_ledger", str(e))
 

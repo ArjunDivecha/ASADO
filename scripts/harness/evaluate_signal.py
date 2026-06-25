@@ -18,7 +18,8 @@ OUTPUT FILES:
   Full result payload for every run (written immediately - incremental
   result persistence).
 - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/asado_loop.duckdb
-  Table `harness_results` - one summary row per run.
+  Tables `harness_results` and `harness_ic_series` - one summary row per run
+  plus the per-date rank-IC path used by the front end.
 - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/ledgers/hypothesis_ledger.jsonl
   Verdict event appended automatically (never by hand).
 
@@ -128,6 +129,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from scripts.loop.ledgers import (attach_verdict, canonical_family_of,
                                   family_trial_count, get_hypothesis)
 from scripts.loop.loopdb import LOOP_DIR, T2_UNIVERSE, daily_country_returns, loop_connection
+from scripts.harness.ic_series_store import replace_ic_series
 
 RUNS_DIR = LOOP_DIR / "harness_runs"
 
@@ -749,6 +751,7 @@ def evaluate_signal(
 
         # ── IC block per horizon ────────────────────────────────────────
         ic_block = {}
+        ic_series_by_label = {}
         aligned_by_label: dict[str, Any] = {}
         first_label = None
         for h in horizons:
@@ -759,6 +762,7 @@ def evaluate_signal(
                 aligned = align_daily(signal, returns, h, lag_days)
                 label = f"{h}d"
             ic = rank_ic_series(aligned)
+            ic_series_by_label[label] = ic
             yearly = yearly_ic_table(ic)
             pct_pos = (
                 float(np.mean([v > 0 for v in yearly.values()])) if yearly else None
@@ -936,6 +940,7 @@ def evaluate_signal(
              summary["mean_ic"], summary["nw_t"], summary["deflated_sharpe"],
              summary["result_file"]],
         )
+        replace_ic_series(con, result, ic_series_by_label)
     finally:
         con.close()
 

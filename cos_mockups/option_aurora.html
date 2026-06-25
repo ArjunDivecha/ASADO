@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<!--
+=============================================================================
+FILE: option_aurora.html
+=============================================================================
+ASADO · Chief of Staff — "Aurora" design direction (light mode only).
+
+A single self-contained HTML mockup of a desktop "command cockpit" for a
+quantitative macro research platform covering 34 country equity markets.
+
+AESTHETIC: "Aurora" — contemporary, crisp, chat-forward. Bright near-white
+surface (#FCFCFD), soft layered shadows, generously rounded cards, ONE
+restrained teal→indigo signature gradient used as a single signature moment,
+a very subtle mesh wash in the background. Typography pairs Clash Display
+(display) with General Sans (body), oldstyle/tabular figures for numbers.
+
+INPUT FILES:  none (fully self-contained; only Google-Fonts-style webfont CSS
+              from the Fontshare CDN <link> is fetched externally).
+OUTPUT FILES: none (renders in browser only).
+
+VERSION: 1.0   LAST UPDATED: 2026-06-17   AUTHOR: Claude (Aurora direction)
+
+NOTES:
+- Designed for a 1440×900 viewport (screenshot target).
+- All charts are hand-drawn inline SVG with the real numbers shown nearby.
+- The 34-country map is a self-contained region-grouped hex/tile cartogram.
+- Tiny vanilla JS only: staggered load reveal + map layer toggle.
+=============================================================================
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ASADO · Chief of Staff</title>
+<link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+<link href="https://api.fontshare.com/v2/css?f[]=clash-display@600,500,700&f[]=general-sans@400,500,600,700&display=swap" rel="stylesheet" />
+<style>
+/* ============================ DESIGN TOKENS ============================ */
+:root{
+  --bg:#FCFCFD;
+  --surface:#FFFFFF;
+  --surface-2:#F7F8FA;
+  --ink:#15181E;
+  --ink-2:#444B57;
+  --ink-3:#8A93A2;
+  --ink-4:#AEB6C2;
+  --line:#ECEEF2;
+  --line-2:#E2E6EC;
+
+  /* signature gradient: teal -> indigo */
+  --grad: linear-gradient(118deg,#0FB8AD 0%, #1E8FE0 48%, #4F5BE8 100%);
+  --grad-soft: linear-gradient(118deg, rgba(15,184,173,.14) 0%, rgba(30,143,224,.12) 48%, rgba(79,91,232,.14) 100%);
+  --teal:#0FB8AD;
+  --blue:#1E8FE0;
+  --indigo:#4F5BE8;
+
+  /* status colors */
+  --green:#11A36B;
+  --green-bg:#E6F6EF;
+  --amber:#E0921A;
+  --amber-bg:#FBF1DF;
+  --red:#E0473C;
+  --red-bg:#FBE9E7;
+  --slate:#5B6473;
+
+  --shadow-sm: 0 1px 2px rgba(20,28,46,.05), 0 1px 1px rgba(20,28,46,.03);
+  --shadow-md: 0 4px 14px rgba(22,30,52,.06), 0 1px 3px rgba(22,30,52,.05);
+  --shadow-lg: 0 18px 50px rgba(22,30,52,.10), 0 4px 14px rgba(22,30,52,.06);
+  --r-lg:22px; --r-md:16px; --r-sm:11px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:"General Sans",sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  font-feature-settings:"ss01","cv01","tnum";
+  letter-spacing:-.01em;
+  overflow:hidden;
+}
+/* subtle aurora mesh wash, kept light */
+body::before{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(820px 520px at 8% -8%, rgba(15,184,173,.10), transparent 60%),
+    radial-gradient(900px 600px at 102% 4%, rgba(79,91,232,.09), transparent 58%),
+    radial-gradient(700px 480px at 60% 116%, rgba(30,143,224,.07), transparent 60%);
+}
+.num{font-feature-settings:"tnum","ss01";letter-spacing:0}
+.display{font-family:"Clash Display",sans-serif;letter-spacing:-.02em}
+
+/* ============================ LAYOUT SHELL ============================ */
+.app{
+  position:relative;z-index:1;
+  height:100vh;width:100vw;
+  display:grid;
+  grid-template-rows:auto 1fr;
+  padding:14px 16px 16px;
+  gap:13px;
+}
+
+/* ---------- HEADER / HEALTH BANNER ---------- */
+.header{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--r-lg);
+  box-shadow:var(--shadow-md);
+  display:flex;align-items:center;
+  padding:11px 16px 11px 14px;
+  gap:18px;
+}
+.brand{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.logo{
+  width:38px;height:38px;border-radius:12px;flex-shrink:0;
+  background:var(--grad);
+  box-shadow:0 6px 16px rgba(30,143,224,.30), inset 0 1px 0 rgba(255,255,255,.35);
+  display:grid;place-items:center;
+}
+.logo svg{width:21px;height:21px}
+.brand-txt h1{font-family:"Clash Display";font-size:18px;font-weight:600;line-height:1;letter-spacing:-.02em}
+.brand-txt .sub{font-size:11px;color:var(--ink-3);font-weight:500;margin-top:3px;letter-spacing:.02em}
+
+.hdr-date{
+  margin-left:2px;display:flex;flex-direction:column;gap:2px;
+  padding-left:18px;border-left:1px solid var(--line-2);
+}
+.hdr-date .d1{font-size:13px;font-weight:600;color:var(--ink)}
+.hdr-date .d2{font-size:11px;color:var(--ink-3);font-weight:500}
+
+.scorecard{margin-left:auto;display:flex;align-items:center;gap:14px}
+.overall{
+  display:flex;align-items:center;gap:9px;
+  padding:7px 13px 7px 10px;border-radius:11px;
+  background:var(--amber-bg);border:1px solid #F2DEB3;
+}
+.overall .pulse{
+  width:9px;height:9px;border-radius:50%;background:var(--amber);
+  box-shadow:0 0 0 0 rgba(224,146,26,.5);animation:pulse 2.4s infinite;
+}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(224,146,26,.45)}70%{box-shadow:0 0 0 7px rgba(224,146,26,0)}100%{box-shadow:0 0 0 0 rgba(224,146,26,0)}}
+.overall .lab{font-size:10px;color:var(--amber);font-weight:600;text-transform:uppercase;letter-spacing:.09em}
+.overall .val{font-family:"Clash Display";font-size:14px;font-weight:600;color:#B9760F;line-height:1}
+
+.dims{display:flex;align-items:center;gap:5px}
+.dim{
+  display:flex;align-items:center;gap:6px;
+  padding:5px 9px;border-radius:9px;background:var(--surface-2);
+  border:1px solid var(--line);
+}
+.dim .dot{width:7px;height:7px;border-radius:50%}
+.dot.green{background:var(--green);box-shadow:0 0 0 3px var(--green-bg)}
+.dot.amber{background:var(--amber);box-shadow:0 0 0 3px var(--amber-bg)}
+.dot.red{background:var(--red);box-shadow:0 0 0 3px var(--red-bg)}
+.dim .nm{font-size:10.5px;color:var(--ink-2);font-weight:500;letter-spacing:-.005em}
+
+/* ---------- MAIN GRID ---------- */
+.main{
+  display:grid;
+  grid-template-columns:1.52fr 1.06fr 1.04fr;
+  gap:13px;min-height:0;
+}
+.col{display:flex;flex-direction:column;gap:13px;min-height:0}
+
+.card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--r-md);
+  box-shadow:var(--shadow-md);
+  position:relative;
+}
+.card-h{
+  display:flex;align-items:center;gap:9px;
+  padding:13px 15px 11px;
+}
+.card-h .ic{
+  width:24px;height:24px;border-radius:8px;display:grid;place-items:center;
+  background:var(--grad-soft);color:var(--blue);flex-shrink:0;
+}
+.card-h .ic svg{width:14px;height:14px}
+.card-h h2{font-size:13px;font-weight:600;letter-spacing:-.01em}
+.card-h .meta{margin-left:auto;font-size:11px;color:var(--ink-3);font-weight:500;font-feature-settings:"tnum"}
+.eyebrow{font-size:9.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-4)}
+
+/* ============================ WORLD MAP ============================ */
+.map-card{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.map-head{display:flex;align-items:center;gap:9px;padding:13px 15px 9px}
+.layer-toggle{
+  margin-left:auto;display:flex;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px;
+}
+.layer-toggle button{
+  font-family:"General Sans";font-size:11px;font-weight:600;
+  border:none;background:transparent;color:var(--ink-3);
+  padding:5px 11px;border-radius:7px;cursor:pointer;transition:.18s;letter-spacing:-.005em;
+}
+.layer-toggle button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-sm)}
+.layer-toggle button:hover:not(.on){color:var(--ink-2)}
+
+.map-body{flex:1;position:relative;padding:2px 12px 8px;min-height:0;display:flex;flex-direction:column}
+.map-svg-wrap{flex:1;display:grid;place-items:center;min-height:0}
+.map-svg{width:100%;height:100%;display:block}
+
+.hex text{font-family:"General Sans";font-weight:600;fill:#2A3340;pointer-events:none}
+.hex .tile{transition:transform .15s ease, filter .15s ease;cursor:pointer;transform-box:fill-box;transform-origin:center}
+.hex:hover .tile{filter:brightness(1.04) drop-shadow(0 4px 9px rgba(30,80,120,.22));transform:translateY(-1.5px)}
+.hex.sel .tile{stroke:#1E8FE0;stroke-width:2.2}
+.hex.disloc .tile{stroke:#E0921A;stroke-width:2}
+.region-lab{font-family:"Clash Display";font-size:11px;font-weight:600;fill:var(--ink-4);letter-spacing:.06em;text-transform:uppercase}
+
+.map-legend{display:flex;align-items:center;gap:14px;padding:2px 6px 2px;margin-top:2px}
+.legend-scale{display:flex;align-items:center;gap:8px}
+.legend-scale .bar{width:118px;height:8px;border-radius:5px;
+  background:linear-gradient(90deg,#EAF6F4,#9FE0D8,#4FB6E0,#5566E6)}
+.legend-scale .t{font-size:10px;color:var(--ink-3);font-weight:500}
+.legend-keys{display:flex;align-items:center;gap:14px;margin-left:auto}
+.legend-keys .k{display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--ink-2);font-weight:500}
+.legend-keys .swatch{width:14px;height:9px;border-radius:3px;border:1px solid var(--line-2)}
+.swatch.sel{border:2px solid #1E8FE0;background:#EAF3FC}
+.swatch.dis{border:2px solid #E0921A;background:#FBF1DF}
+.swatch.dd{background:repeating-linear-gradient(45deg,#FBE9E7,#FBE9E7 3px,#fff 3px,#fff 6px);border:1px solid #F0BDB8}
+
+/* ============================ SIGNALS TABLE ============================ */
+.signals{flex-shrink:0}
+.sig-row{
+  display:grid;grid-template-columns:1.7fr auto 58px 58px;
+  align-items:center;gap:8px;
+  padding:8px 15px;border-top:1px solid var(--line);transition:background .14s;
+}
+.sig-row:hover{background:var(--surface-2)}
+.sig-name{font-size:12px;font-weight:600;color:var(--ink);font-feature-settings:"tnum";letter-spacing:-.01em}
+.sig-name .note{display:block;font-size:9.5px;color:var(--ink-3);font-weight:500;margin-top:1px;letter-spacing:0}
+.verdict{
+  font-size:9.5px;font-weight:700;letter-spacing:.06em;
+  padding:3px 8px;border-radius:6px;text-transform:uppercase;justify-self:start;
+}
+.v-watch{background:#E7F1FB;color:#1670C7}
+.v-weak{background:var(--amber-bg);color:#B9760F}
+.v-dead{background:#EEF0F3;color:#8A93A2}
+.sig-num{font-size:12px;font-weight:600;text-align:right;font-feature-settings:"tnum";color:var(--ink-2)}
+.sig-num.muted{color:var(--ink-4)}
+.tally{
+  display:flex;gap:7px;padding:9px 15px 12px;flex-wrap:wrap;
+  border-top:1px solid var(--line);
+}
+.tally .chip{
+  display:flex;align-items:baseline;gap:5px;
+  background:var(--surface-2);border:1px solid var(--line);
+  border-radius:8px;padding:5px 9px;
+}
+.tally .chip b{font-family:"Clash Display";font-size:13px;font-weight:600}
+.tally .chip span{font-size:9.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3)}
+.tally .chip.watch b{color:var(--blue)}
+.tally .chip.weak b{color:var(--amber)}
+.tally .chip.dead b{color:var(--slate)}
+.tally .chip.insf b{color:var(--ink-3)}
+
+/* ============================ DISLOCATIONS ============================ */
+.disloc-feed{flex:1;min-height:0;display:flex;flex-direction:column}
+.disloc-scroll{overflow:hidden;padding:0 6px 6px}
+.dloc{
+  display:flex;gap:11px;padding:10px 9px;border-radius:11px;
+  transition:background .14s;
+}
+.dloc:hover{background:var(--surface-2)}
+.dloc .tag{
+  flex-shrink:0;width:30px;height:30px;border-radius:9px;
+  display:grid;place-items:center;font-family:"Clash Display";font-weight:600;font-size:12px;
+  background:var(--grad-soft);color:var(--indigo);
+}
+.dloc.warm .tag{background:var(--amber-bg);color:#B9760F}
+.dloc.cold .tag{background:var(--red-bg);color:var(--red)}
+.dloc .body{flex:1;min-width:0}
+.dloc .top{display:flex;align-items:baseline;gap:7px}
+.dloc .ctry{font-size:12px;font-weight:600;color:var(--ink)}
+.dloc .z{font-size:10.5px;font-weight:600;color:var(--blue);font-feature-settings:"tnum";margin-left:auto;flex-shrink:0}
+.dloc .z.warm{color:var(--amber)}
+.dloc .z.cold{color:var(--red)}
+.dloc .desc{font-size:11px;color:var(--ink-2);line-height:1.42;margin-top:2px;font-weight:450}
+.dloc .desc em{font-style:normal;color:var(--ink-3);font-weight:500}
+
+/* ============================ BRAZIL DEEP DIVE ============================ */
+.brazil{flex-shrink:0}
+.bz-top{display:flex;align-items:center;gap:11px;padding:0 15px 11px}
+.bz-flag{
+  width:34px;height:34px;border-radius:10px;flex-shrink:0;
+  background:linear-gradient(135deg,#11A36B,#0E8F5E);
+  display:grid;place-items:center;color:#FFF6CC;font-family:"Clash Display";font-weight:700;font-size:14px;
+  box-shadow:0 4px 11px rgba(17,163,107,.28);
+}
+.bz-top .nm{font-family:"Clash Display";font-size:16px;font-weight:600}
+.bz-top .rg{font-size:10px;font-weight:600;color:var(--ink-3)}
+.regime-chip{
+  margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  padding:5px 10px;border-radius:8px;background:var(--amber-bg);color:#B9760F;
+  display:flex;align-items:center;gap:6px;
+}
+.regime-chip .d{width:6px;height:6px;border-radius:50%;background:var(--amber)}
+
+.bz-grid{display:grid;grid-template-columns:1.15fr 1fr;gap:10px;padding:0 15px 13px}
+.bz-panel{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:11px 12px}
+.bz-panel .lbl{font-size:9.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-4);margin-bottom:7px}
+.bz-ret{display:flex;align-items:baseline;gap:7px;margin-bottom:5px}
+.bz-ret .big{font-family:"Clash Display";font-size:24px;font-weight:600;color:var(--green);line-height:1;font-feature-settings:"tnum"}
+.bz-ret .unit{font-size:10px;color:var(--ink-3);font-weight:600}
+.spark{width:100%;height:34px;display:block;margin-top:3px}
+
+.val-rows{display:flex;flex-direction:column;gap:9px}
+.val-row{display:flex;align-items:center;gap:8px}
+.val-row .vl{font-size:11px;font-weight:600;color:var(--ink-2);width:44px;flex-shrink:0}
+.gauge{flex:1;height:7px;border-radius:5px;background:#E7EBF0;position:relative;overflow:hidden}
+.gauge .fill{position:absolute;top:0;bottom:0;left:0;border-radius:5px}
+.gauge .fill.cheap{background:linear-gradient(90deg,#11A36B,#3DC089)}
+.gauge .fill.rich{background:linear-gradient(90deg,#E0921A,#E0473C)}
+.val-row .vt{font-size:10.5px;font-weight:600;font-feature-settings:"tnum";width:74px;text-align:right;flex-shrink:0}
+.val-row .vt b{font-family:"Clash Display";font-weight:600}
+.vt.cheap b{color:var(--green)}.vt.rich b{color:#C97D14}
+
+.bz-rates{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 15px 13px}
+.rate-cell{background:var(--surface-2);border:1px solid var(--line);border-radius:11px;padding:9px 11px}
+.rate-cell .rl{font-size:9.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-4)}
+.rate-cell .rv{font-family:"Clash Display";font-size:17px;font-weight:600;margin-top:3px;line-height:1;font-feature-settings:"tnum"}
+.rate-cell .rv small{font-size:10px;color:var(--ink-3);font-weight:600;font-family:"General Sans"}
+.curve-svg{width:100%;height:26px;margin-top:5px;display:block}
+
+.thesis-chip{
+  margin:0 15px 14px;display:flex;align-items:center;gap:11px;
+  padding:10px 12px;border-radius:12px;
+  background:var(--grad-soft);border:1px solid rgba(79,91,232,.18);
+}
+.thesis-chip .ic2{width:26px;height:26px;border-radius:8px;background:#FFF;display:grid;place-items:center;color:var(--indigo);flex-shrink:0;box-shadow:var(--shadow-sm)}
+.thesis-chip .ic2 svg{width:14px;height:14px}
+.thesis-chip .tx .id{font-size:10px;font-weight:600;color:var(--indigo);font-feature-settings:"tnum"}
+.thesis-chip .tx .ds{font-size:11.5px;font-weight:600;color:var(--ink);margin-top:1px}
+.thesis-chip .pnl{margin-left:auto;text-align:right;flex-shrink:0}
+.thesis-chip .pnl .p{font-family:"Clash Display";font-size:15px;font-weight:600;color:var(--green);line-height:1;font-feature-settings:"tnum"}
+.thesis-chip .pnl .st{font-size:9px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+
+/* ============================ CHAT RAIL ============================ */
+.chat{
+  display:flex;flex-direction:column;min-height:0;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--r-md);
+  box-shadow:var(--shadow-lg);
+  overflow:hidden;
+}
+.chat-h{
+  display:flex;align-items:center;gap:10px;
+  padding:14px 16px 13px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,#FFFFFF, #FCFDFE);
+}
+.chat-av{
+  width:34px;height:34px;border-radius:11px;background:var(--grad);
+  display:grid;place-items:center;flex-shrink:0;
+  box-shadow:0 5px 13px rgba(30,143,224,.30), inset 0 1px 0 rgba(255,255,255,.3);
+}
+.chat-av svg{width:18px;height:18px}
+.chat-h .ti h3{font-family:"Clash Display";font-size:14px;font-weight:600;line-height:1}
+.chat-h .ti .on{display:flex;align-items:center;gap:5px;margin-top:3px;font-size:10.5px;color:var(--ink-3);font-weight:500}
+.chat-h .ti .on .g{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px var(--green-bg)}
+.grounding{margin-left:auto;display:flex;gap:5px}
+.gkey{display:flex;align-items:center;gap:4px;font-size:9px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-3)}
+.gkey .gd{width:7px;height:7px;border-radius:2px}
+.gd.fact{background:var(--teal)}.gd.inf{background:var(--blue)}.gd.unk{background:var(--ink-4)}
+
+.chat-body{flex:1;overflow:hidden;padding:16px 16px 8px;display:flex;flex-direction:column;gap:13px}
+.msg{display:flex;gap:9px;max-width:100%}
+.msg.user{flex-direction:row-reverse}
+.msg .mav{width:26px;height:26px;border-radius:8px;flex-shrink:0;display:grid;place-items:center;font-size:10px;font-weight:700}
+.msg.user .mav{background:#15181E;color:#FFF}
+.msg.cos .mav{background:var(--grad);color:#FFF}
+.bubble{
+  border-radius:14px;padding:11px 13px;font-size:12.5px;line-height:1.5;font-weight:450;
+}
+.msg.user .bubble{background:#15181E;color:#FFF;border-bottom-right-radius:5px;max-width:80%}
+.msg.cos .bubble{background:var(--surface-2);border:1px solid var(--line);color:var(--ink);border-bottom-left-radius:5px}
+.bubble .lead{font-weight:600;color:var(--ink);margin-bottom:7px}
+.point{display:flex;gap:8px;margin-bottom:8px}
+.point:last-child{margin-bottom:0}
+.point .pn{
+  flex-shrink:0;width:18px;height:18px;border-radius:6px;display:grid;place-items:center;
+  font-size:10px;font-weight:700;font-family:"Clash Display";color:#FFF;background:var(--grad);margin-top:1px;
+}
+.point .pt{flex:1;font-size:12px;line-height:1.46;color:var(--ink-2)}
+.cite{
+  display:inline-flex;align-items:center;gap:3px;
+  font-size:9.5px;font-weight:600;padding:1px 6px;border-radius:5px;
+  background:#E4F6F3;color:#0B8C82;font-feature-settings:"tnum";white-space:nowrap;
+  vertical-align:baseline;
+}
+.cite.inf{background:#E7F1FB;color:#1670C7}
+.cite::before{content:"›";font-weight:700;margin-right:1px}
+.bubble .close{margin-top:9px;font-size:11.5px;font-style:italic;color:var(--ink-3);padding-top:8px;border-top:1px solid var(--line)}
+
+.chat-foot{padding:9px 14px 14px;border-top:1px solid var(--line);background:var(--surface)}
+.suggest{display:flex;gap:6px;margin-bottom:9px;flex-wrap:wrap}
+.suggest button{
+  font-family:"General Sans";font-size:10.5px;font-weight:600;color:var(--ink-2);
+  background:var(--surface-2);border:1px solid var(--line);border-radius:20px;
+  padding:5px 11px;cursor:pointer;transition:.16s;letter-spacing:-.005em;
+}
+.suggest button:hover{border-color:var(--blue);color:var(--blue);background:#F4F9FE}
+.composer{
+  display:flex;align-items:center;gap:9px;
+  background:var(--surface);border:1.5px solid var(--line-2);border-radius:14px;
+  padding:8px 8px 8px 14px;transition:.18s;box-shadow:var(--shadow-sm);
+}
+.composer:focus-within{border-color:var(--blue);box-shadow:0 0 0 4px rgba(30,143,224,.10)}
+.composer input{
+  flex:1;border:none;outline:none;background:transparent;
+  font-family:"General Sans";font-size:12.5px;color:var(--ink);font-weight:450;
+}
+.composer input::placeholder{color:var(--ink-4)}
+.composer .send{
+  width:34px;height:34px;border-radius:10px;border:none;cursor:pointer;flex-shrink:0;
+  background:var(--grad);display:grid;place-items:center;
+  box-shadow:0 4px 11px rgba(30,143,224,.30);transition:.16s;
+}
+.composer .send:hover{transform:translateY(-1px);box-shadow:0 7px 15px rgba(30,143,224,.36)}
+.composer .send svg{width:16px;height:16px}
+
+/* ============================ LOAD REVEAL ============================ */
+.reveal{opacity:0;transform:translateY(10px);animation:rise .7s cubic-bezier(.21,.7,.25,1) forwards}
+@keyframes rise{to{opacity:1;transform:translateY(0)}}
+.hex .tile{opacity:0;animation:fadein .5s ease forwards}
+@keyframes fadein{to{opacity:1}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ===================== HEADER / HEALTH BANNER ===================== -->
+  <header class="header reveal" style="animation-delay:.02s">
+    <div class="brand">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 2.5 3.5 7v10L12 21.5 20.5 17V7L12 2.5Z" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="#fff"/></svg>
+      </div>
+      <div class="brand-txt">
+        <h1>ASADO <span style="color:var(--ink-4);font-weight:500">·</span> Chief of Staff</h1>
+        <div class="sub">34-COUNTRY MACRO COMMAND COCKPIT</div>
+      </div>
+    </div>
+    <div class="hdr-date">
+      <div class="d1 num">2026-06-17</div>
+      <div class="d2 num">data as-of 2026-06-16</div>
+    </div>
+
+    <div class="scorecard">
+      <div class="overall">
+        <span class="pulse"></span>
+        <div>
+          <div class="lab">Governance</div>
+          <div class="val">AMBER</div>
+        </div>
+      </div>
+      <div class="dims">
+        <div class="dim"><span class="dot green"></span><span class="nm">run_manifest</span></div>
+        <div class="dim"><span class="dot green"></span><span class="nm">liveness</span></div>
+        <div class="dim"><span class="dot green"></span><span class="nm">ledger_integrity</span></div>
+        <div class="dim"><span class="dot green"></span><span class="nm">family_registry</span></div>
+        <div class="dim"><span class="dot green"></span><span class="nm">pit_lag_proof</span></div>
+        <div class="dim"><span class="dot amber"></span><span class="nm">cross_source_minimal</span></div>
+        <div class="dim"><span class="dot green"></span><span class="nm">config_guard</span></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================== MAIN 3-COLUMN GRID ===================== -->
+  <div class="main">
+
+    <!-- ============== COLUMN 1 : MAP + SIGNALS ============== -->
+    <div class="col">
+
+      <!-- WORLD MAP -->
+      <section class="card map-card reveal" style="animation-delay:.08s">
+        <div class="map-head">
+          <div class="card-h" style="padding:0;gap:9px">
+            <div class="ic"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18" stroke="currentColor" stroke-width="1.5"/></svg></div>
+            <h2>The 34-Country Universe</h2>
+          </div>
+          <div class="layer-toggle">
+            <button onclick="setLayer('return',this)">Return</button>
+            <button class="on" onclick="setLayer('disloc',this)">Dislocation</button>
+            <button onclick="setLayer('signal',this)">Signal</button>
+          </div>
+        </div>
+
+        <div class="map-body">
+          <div class="map-svg-wrap">
+            <!-- Region-grouped hex cartogram. data-i = intensity 0..1, data-r=return%, data-s=signal -->
+            <svg class="map-svg" viewBox="0 0 760 318" preserveAspectRatio="xMidYMid meet" id="cartogram">
+              <defs>
+                <pattern id="ddhatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                  <rect width="6" height="6" fill="#FBE9E7"/><rect width="3" height="6" fill="#fff"/>
+                </pattern>
+              </defs>
+              <!-- region labels -->
+              <text class="region-lab" x="14" y="20">Americas</text>
+              <text class="region-lab" x="246" y="20">Europe</text>
+              <text class="region-lab" x="246" y="206">MEA</text>
+              <text class="region-lab" x="470" y="20">Asia</text>
+              <text class="region-lab" x="470" y="284">Oceania</text>
+
+              <!-- ===== AMERICAS ===== -->
+              <g class="hex" data-i=".62" data-r="+1.4" data-s="WEAK"><g class="tile"><rect x="14" y="30" width="92" height="40" rx="11"/><text x="60" y="55" text-anchor="middle" font-size="11.5">Canada</text></g></g>
+              <g class="hex" data-i=".70" data-r="+2.1" data-s="WATCH"><g class="tile"><rect x="14" y="76" width="92" height="40" rx="11"/><text x="60" y="101" text-anchor="middle" font-size="11.5">U.S.</text></g></g>
+              <g class="hex" data-i=".74" data-r="+2.6" data-s="WATCH"><g class="tile"><rect x="112" y="76" width="92" height="40" rx="11"/><text x="158" y="101" text-anchor="middle" font-size="11">NASDAQ</text></g></g>
+              <g class="hex" data-i=".58" data-r="+1.1" data-s="WEAK"><g class="tile"><rect x="14" y="122" width="92" height="40" rx="11"/><text x="60" y="147" text-anchor="middle" font-size="10">US SmallCap</text></g></g>
+              <g class="hex" data-i=".52" data-r="+0.4" data-s="WEAK"><g class="tile"><rect x="112" y="122" width="92" height="40" rx="11"/><text x="158" y="147" text-anchor="middle" font-size="11.5">Mexico</text></g></g>
+              <!-- Brazil = SELECTED -->
+              <g class="hex sel" data-i=".66" data-r="+3.2" data-s="WEAK"><g class="tile" style="fill:#EAF3FC"><rect x="14" y="168" width="92" height="40" rx="11"/><text x="60" y="193" text-anchor="middle" font-size="11.5">Brazil ★</text></g></g>
+              <!-- Chile = DISLOCATION D1 -->
+              <g class="hex disloc" data-i=".88" data-r="+0.2" data-s="DLOC"><g class="tile"><rect x="112" y="168" width="92" height="40" rx="11"/><text x="158" y="193" text-anchor="middle" font-size="11.5">Chile ⚡</text></g></g>
+
+              <!-- ===== EUROPE ===== -->
+              <g class="hex" data-i=".56" data-r="+0.9" data-s="WEAK"><g class="tile"><rect x="246" y="30" width="68" height="36" rx="10"/><text x="280" y="52" text-anchor="middle" font-size="11">U.K.</text></g></g>
+              <g class="hex" data-i=".50" data-r="+0.6" data-s="WEAK"><g class="tile"><rect x="320" y="30" width="68" height="36" rx="10"/><text x="354" y="52" text-anchor="middle" font-size="11">France</text></g></g>
+              <g class="hex" data-i=".54" data-r="+0.8" data-s="WEAK"><g class="tile"><rect x="394" y="30" width="68" height="36" rx="10"/><text x="428" y="52" text-anchor="middle" font-size="10.5">Germany</text></g></g>
+              <g class="hex" data-i=".48" data-r="+0.5" data-s="WEAK"><g class="tile"><rect x="246" y="72" width="68" height="36" rx="10"/><text x="280" y="94" text-anchor="middle" font-size="9.5">Netherlands</text></g></g>
+              <g class="hex" data-i=".44" data-r="+0.3" data-s="WEAK"><g class="tile"><rect x="320" y="72" width="68" height="36" rx="10"/><text x="354" y="94" text-anchor="middle" font-size="10">Switz.</text></g></g>
+              <g class="hex" data-i=".46" data-r="+0.4" data-s="WEAK"><g class="tile"><rect x="394" y="72" width="68" height="36" rx="10"/><text x="428" y="94" text-anchor="middle" font-size="11">Italy</text></g></g>
+              <g class="hex" data-i=".50" data-r="+0.7" data-s="WEAK"><g class="tile"><rect x="246" y="114" width="68" height="36" rx="10"/><text x="280" y="136" text-anchor="middle" font-size="11">Spain</text></g></g>
+              <g class="hex" data-i=".42" data-r="+0.2" data-s="WEAK"><g class="tile"><rect x="320" y="114" width="68" height="36" rx="10"/><text x="354" y="136" text-anchor="middle" font-size="10.5">Sweden</text></g></g>
+              <!-- Denmark = DEEP DRAWDOWN -->
+              <g class="hex" data-i=".30" data-r="-2.8" data-s="DD" data-dd="1"><g class="tile" style="fill:url(#ddhatch);stroke:#F0BDB8;stroke-width:1.4"><rect x="394" y="114" width="68" height="36" rx="10"/><text x="428" y="136" text-anchor="middle" font-size="10.5">Denmark</text></g></g>
+              <g class="hex" data-i=".58" data-r="+1.0" data-s="WEAK"><g class="tile"><rect x="246" y="156" width="68" height="36" rx="10"/><text x="280" y="178" text-anchor="middle" font-size="11">Poland</text></g></g>
+
+              <!-- ===== MEA ===== -->
+              <g class="hex" data-i=".60" data-r="+1.2" data-s="WEAK"><g class="tile"><rect x="246" y="216" width="68" height="36" rx="10"/><text x="280" y="238" text-anchor="middle" font-size="9">S.Africa</text></g></g>
+              <g class="hex" data-i=".64" data-r="+1.5" data-s="WEAK"><g class="tile"><rect x="320" y="216" width="68" height="36" rx="10"/><text x="354" y="238" text-anchor="middle" font-size="8.5">Saudi Ar.</text></g></g>
+              <g class="hex" data-i=".55" data-r="+0.8" data-s="WEAK"><g class="tile"><rect x="394" y="216" width="68" height="36" rx="10"/><text x="428" y="238" text-anchor="middle" font-size="11">Turkey</text></g></g>
+
+              <!-- ===== ASIA ===== -->
+              <g class="hex" data-i=".52" data-r="+0.6" data-s="WEAK"><g class="tile"><rect x="470" y="30" width="66" height="36" rx="10"/><text x="503" y="52" text-anchor="middle" font-size="10">ChinaA</text></g></g>
+              <g class="hex" data-i=".54" data-r="+0.7" data-s="WEAK"><g class="tile"><rect x="542" y="30" width="66" height="36" rx="10"/><text x="575" y="52" text-anchor="middle" font-size="10">ChinaH</text></g></g>
+              <g class="hex" data-i=".56" data-r="+0.9" data-s="WEAK"><g class="tile"><rect x="614" y="30" width="66" height="36" rx="10"/><text x="647" y="52" text-anchor="middle" font-size="8.5">HongKong</text></g></g>
+              <g class="hex" data-i=".50" data-r="+0.5" data-s="WEAK"><g class="tile"><rect x="686" y="30" width="60" height="36" rx="10"/><text x="716" y="52" text-anchor="middle" font-size="11">Japan</text></g></g>
+              <!-- Korea = DISLOCATION D2 -->
+              <g class="hex disloc" data-i=".86" data-r="+2.3" data-s="DLOC"><g class="tile"><rect x="470" y="72" width="66" height="36" rx="10"/><text x="503" y="94" text-anchor="middle" font-size="10.5">Korea ⚡</text></g></g>
+              <g class="hex" data-i=".58" data-r="+1.0" data-s="WEAK"><g class="tile"><rect x="542" y="72" width="66" height="36" rx="10"/><text x="575" y="94" text-anchor="middle" font-size="10.5">Taiwan</text></g></g>
+              <g class="hex" data-i=".68" data-r="+1.8" data-s="WEAK"><g class="tile"><rect x="614" y="72" width="66" height="36" rx="10"/><text x="647" y="94" text-anchor="middle" font-size="11">India</text></g></g>
+              <!-- Indonesia = DISLOCATION D5 + DEEP DRAWDOWN -->
+              <g class="hex disloc" data-i=".92" data-r="-3.1" data-s="DLOC" data-dd="1"><g class="tile"><rect x="686" y="72" width="60" height="36" rx="10"/><text x="716" y="93" text-anchor="middle" font-size="8.5">Indon. ⚡</text></g></g>
+              <g class="hex" data-i=".48" data-r="+0.4" data-s="WEAK"><g class="tile"><rect x="470" y="114" width="66" height="36" rx="10"/><text x="503" y="136" text-anchor="middle" font-size="9.5">Malaysia</text></g></g>
+              <g class="hex" data-i=".46" data-r="+0.3" data-s="WEAK"><g class="tile"><rect x="542" y="114" width="66" height="36" rx="10"/><text x="575" y="135" text-anchor="middle" font-size="8.5">Philipp.</text></g></g>
+              <g class="hex" data-i=".50" data-r="+0.6" data-s="WEAK"><g class="tile"><rect x="614" y="114" width="66" height="36" rx="10"/><text x="647" y="135" text-anchor="middle" font-size="8.5">Singap.</text></g></g>
+              <g class="hex" data-i=".52" data-r="+0.7" data-s="WEAK"><g class="tile"><rect x="686" y="114" width="60" height="36" rx="10"/><text x="716" y="136" text-anchor="middle" font-size="9.5">Thailand</text></g></g>
+              <g class="hex" data-i=".64" data-r="+1.6" data-s="WEAK"><g class="tile"><rect x="470" y="156" width="66" height="36" rx="10"/><text x="503" y="178" text-anchor="middle" font-size="9.5">Vietnam</text></g></g>
+
+              <!-- ===== OCEANIA ===== -->
+              <g class="hex" data-i=".54" data-r="+0.8" data-s="WEAK"><g class="tile"><rect x="686" y="248" width="60" height="40" rx="11"/><text x="716" y="271" text-anchor="middle" font-size="9">Australia</text></g></g>
+            </svg>
+          </div>
+
+          <div class="map-legend">
+            <div class="legend-scale">
+              <span class="t">Low</span><span class="bar"></span><span class="t">High</span>
+              <span class="t" style="margin-left:6px;color:var(--ink-4)">— dislocation intensity</span>
+            </div>
+            <div class="legend-keys">
+              <span class="k"><span class="swatch sel"></span>Selected</span>
+              <span class="k"><span class="swatch dis"></span>Active dislocation</span>
+              <span class="k"><span class="swatch dd"></span>Deep drawdown</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TOP SIGNALS -->
+      <section class="card signals reveal" style="animation-delay:.14s">
+        <div class="card-h">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M3 17l5-6 4 3 5-8 4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <h2>Top Signals</h2>
+          <span class="meta">live · verdict · IC · NW-t</span>
+        </div>
+        <div class="sig-row">
+          <div class="sig-name">combiner_ridge_daily<span class="note">strongest registered signal · components selected in-sample → a ceiling</span></div>
+          <span class="verdict v-watch">Watch</span>
+          <span class="sig-num">0.057</span>
+          <span class="sig-num">10.7</span>
+        </div>
+        <div class="sig-row">
+          <div class="sig-name">network_spillover<span class="note">trade-neighbour return gap · N=21</span></div>
+          <span class="verdict v-weak">Weak</span>
+          <span class="sig-num">0.034</span>
+          <span class="sig-num">4.5</span>
+        </div>
+        <div class="sig-row">
+          <div class="sig-name">fundamental_twins<span class="note">cross-sectional similarity graph</span></div>
+          <span class="verdict v-weak">Weak</span>
+          <span class="sig-num">0.028</span>
+          <span class="sig-num">5.6</span>
+        </div>
+        <div class="sig-row">
+          <div class="sig-name">eco_infl_surprise<span class="note">reflation: hot inflation prints → outperformance</span></div>
+          <span class="verdict v-weak">Weak</span>
+          <span class="sig-num muted">—</span>
+          <span class="sig-num">3.0</span>
+        </div>
+        <div class="sig-row">
+          <div class="sig-name">valuation_pctile<span class="note">cross-sectional cheapness rank</span></div>
+          <span class="verdict v-dead">Dead</span>
+          <span class="sig-num muted">—</span>
+          <span class="sig-num muted">—</span>
+        </div>
+        <div class="tally">
+          <div class="chip watch"><b class="num">2</b><span>Watch</span></div>
+          <div class="chip weak"><b class="num">39</b><span>Weak</span></div>
+          <div class="chip dead"><b class="num">31</b><span>Dead</span></div>
+          <div class="chip insf"><b class="num">16</b><span>Insufficient</span></div>
+          <div style="margin-left:auto;display:flex;align-items:center;font-size:10px;color:var(--ink-4);font-weight:500">ledger tally · 88 registered</div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============== COLUMN 2 : DISLOCATIONS + BRAZIL ============== -->
+    <div class="col">
+
+      <!-- DISLOCATIONS FEED -->
+      <section class="card disloc-feed reveal" style="animation-delay:.18s">
+        <div class="card-h">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
+          <h2>Nightly Dislocation Brief</h2>
+          <span class="meta">as-of 2026-06-16 · 79 rows</span>
+        </div>
+        <div class="disloc-scroll">
+          <div class="dloc warm">
+            <span class="tag">D1</span>
+            <div class="body">
+              <div class="top"><span class="ctry">Chile</span><span class="z warm num">z +2.0</span></div>
+              <div class="desc">Copper terms-of-trade impulse, equity flat — <em>unpriced</em></div>
+            </div>
+          </div>
+          <div class="dloc">
+            <span class="tag">D2</span>
+            <div class="body">
+              <div class="top"><span class="ctry">Korea</span><span class="z num">+2.3z</span></div>
+              <div class="desc">Trade-neighbour return gap (spillover) — <em>endpoint not repriced</em></div>
+            </div>
+          </div>
+          <div class="dloc warm">
+            <span class="tag">D5</span>
+            <div class="body">
+              <div class="top"><span class="ctry">Indonesia</span><span class="z warm num">z +2.4</span></div>
+              <div class="desc">GDELT attention spike, |5d return| &lt; 0.5σ — <em>attention without resolution</em></div>
+            </div>
+          </div>
+          <div class="dloc">
+            <span class="tag">D8</span>
+            <div class="body">
+              <div class="top"><span class="ctry">Open-thesis stewardship</span><span class="z num">36 rows</span></div>
+              <div class="desc">Active theses under review — <em>steward & re-mark</em></div>
+            </div>
+          </div>
+          <div class="dloc">
+            <span class="tag">D9</span>
+            <div class="body">
+              <div class="top"><span class="ctry">Country-vs-ETF basis</span><span class="z num">3 gaps</span></div>
+              <div class="desc">Index/ETF basis dislocations — <em>tradable plumbing</em></div>
+            </div>
+          </div>
+          <div class="dloc cold">
+            <span class="tag">JST</span>
+            <div class="body">
+              <div class="top"><span class="ctry">Long-cycle tail · 1870–2020</span><span class="z cold num">drawdown</span></div>
+              <div class="desc">Indonesia <b>−50%</b> (EM-analogy) · Denmark <b>−45%</b> (DM · Novo Nordisk)</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- BRAZIL DEEP DIVE -->
+      <section class="card brazil reveal" style="animation-delay:.24s">
+        <div class="card-h" style="padding-bottom:9px">
+          <span class="eyebrow">Selected · deep dive</span>
+        </div>
+        <div class="bz-top">
+          <div class="bz-flag">BR</div>
+          <div>
+            <div class="nm">Brazil</div>
+            <div class="rg">Americas · Emerging</div>
+          </div>
+          <div class="regime-chip"><span class="d"></span>Reflation</div>
+        </div>
+
+        <div class="bz-grid">
+          <div class="bz-panel">
+            <div class="lbl">Equity · 21-day</div>
+            <div class="bz-ret"><span class="big num">+3.2%</span><span class="unit">trailing 21d</span></div>
+            <!-- sparkline: rising +3.2% -->
+            <svg class="spark" viewBox="0 0 200 34" preserveAspectRatio="none">
+              <defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#11A36B" stop-opacity=".18"/><stop offset="1" stop-color="#11A36B" stop-opacity="0"/></linearGradient></defs>
+              <path d="M0,26 L18,24 L34,27 L50,22 L66,23 L82,18 L98,20 L114,15 L130,16 L146,11 L162,12 L180,7 L200,5 L200,34 L0,34 Z" fill="url(#sg)"/>
+              <path d="M0,26 L18,24 L34,27 L50,22 L66,23 L82,18 L98,20 L114,15 L130,16 L146,11 L162,12 L180,7 L200,5" fill="none" stroke="#11A36B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="200" cy="5" r="2.6" fill="#11A36B"/>
+            </svg>
+          </div>
+          <div class="bz-panel">
+            <div class="lbl">Valuation percentile</div>
+            <div class="val-rows">
+              <div class="val-row">
+                <span class="vl">CAPE</span>
+                <div class="gauge"><div class="fill cheap" style="width:38%"></div></div>
+                <span class="vt cheap"><b class="num">38</b> cheap</span>
+              </div>
+              <div class="val-row">
+                <span class="vl">ERP</span>
+                <div class="gauge"><div class="fill rich" style="width:72%"></div></div>
+                <span class="vt rich"><b class="num">72</b> rich</span>
+              </div>
+            </div>
+            <div style="margin-top:10px;font-size:10px;color:var(--ink-3);line-height:1.45;font-weight:500">Cheap on price, rich on risk-premium — a split signal.</div>
+          </div>
+        </div>
+
+        <div class="bz-rates">
+          <div class="rate-cell">
+            <div class="rl">10Y yield</div>
+            <div class="rv num">14.28<small>%</small></div>
+            <!-- mini sovereign curve 2s10s upward -->
+            <svg class="curve-svg" viewBox="0 0 80 26" preserveAspectRatio="none">
+              <path d="M4,18 C26,16 46,9 76,6" fill="none" stroke="#1E8FE0" stroke-width="1.8" stroke-linecap="round"/>
+              <circle cx="4" cy="18" r="2.2" fill="#1E8FE0"/><circle cx="76" cy="6" r="2.2" fill="#1E8FE0"/>
+            </svg>
+          </div>
+          <div class="rate-cell">
+            <div class="rl">2s10s slope</div>
+            <div class="rv num" style="color:var(--green)">+0.9</div>
+            <svg class="curve-svg" viewBox="0 0 80 26" preserveAspectRatio="none">
+              <line x1="4" y1="20" x2="76" y2="20" stroke="#E2E6EC" stroke-width="1" stroke-dasharray="2 2"/>
+              <path d="M4,20 L40,14 L76,8" fill="none" stroke="#11A36B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="rate-cell">
+            <div class="rl">5Y CDS</div>
+            <div class="rv num">148<small>bp</small></div>
+            <svg class="curve-svg" viewBox="0 0 80 26" preserveAspectRatio="none">
+              <path d="M4,17 L18,18 L32,14 L46,16 L60,12 L76,13" fill="none" stroke="#E0921A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="thesis-chip">
+          <div class="ic2"><svg viewBox="0 0 24 24" fill="none"><path d="M9 21h6M10 17h4a6 6 0 1 0-4 0Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="tx">
+            <div class="id num">T_20260610_001 · LONG Indonesia</div>
+            <div class="ds">Open thesis · 7 days · paper only</div>
+          </div>
+          <div class="pnl">
+            <div class="p num">+8.1%</div>
+            <div class="st">P&amp;L · paper</div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============== COLUMN 3 : CHIEF-OF-STAFF CHAT ============== -->
+    <aside class="chat reveal" style="animation-delay:.30s">
+      <div class="chat-h">
+        <div class="chat-av"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3Z" fill="#fff"/><circle cx="18" cy="17" r="2.4" fill="#fff" opacity=".85"/></svg></div>
+        <div class="ti">
+          <h3>Chief of Staff</h3>
+          <div class="on"><span class="g"></span>Grounded · live warehouse</div>
+        </div>
+        <div class="grounding">
+          <span class="gkey"><span class="gd fact"></span>Fact</span>
+          <span class="gkey"><span class="gd inf"></span>Infer</span>
+          <span class="gkey"><span class="gd unk"></span>Stale</span>
+        </div>
+      </div>
+
+      <div class="chat-body">
+        <div class="msg user">
+          <div class="mav">PM</div>
+          <div class="bubble">What should I care about today?</div>
+        </div>
+
+        <div class="msg cos">
+          <div class="mav">CoS</div>
+          <div class="bubble">
+            <div class="lead">Three things.</div>
+            <div class="point">
+              <span class="pn">1</span>
+              <span class="pt">Governance is <b>AMBER</b> — only because cross-source coverage is partial by design; everything else is green <span class="cite">scorecard.json</span></span>
+            </div>
+            <div class="point">
+              <span class="pn">2</span>
+              <span class="pt">The daily combiner is still your only <b>WATCH</b> (IC 0.057), but its components were selected in-sample — a ceiling, not proof <span class="cite">live_signals</span></span>
+            </div>
+            <div class="point">
+              <span class="pn">3</span>
+              <span class="pt">Fresh <b>D1</b>: Chile's copper terms-of-trade impulse (+2.0z) hasn't repriced into equities <span class="cite">brief · 2026-06-16</span></span>
+            </div>
+            <div class="close">Nothing here is a trade yet — all paper until the harness clears it.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-foot">
+        <div class="suggest">
+          <button>Why is governance amber?</button>
+          <button>Stress-test the combiner</button>
+          <button>Chile vs. copper history</button>
+        </div>
+        <div class="composer">
+          <input type="text" placeholder="Ask the Chief of Staff…  ⌘K" />
+          <button class="send"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12l16-7-7 16-2-6-7-3Z" fill="#fff"/></svg></button>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+</div>
+
+<script>
+/* ---- Map layer toggle: recolor hex tiles by chosen layer ---- */
+function colorFor(i){
+  // intensity 0..1 -> teal->indigo aurora ramp on a light base
+  var stops = [[234,246,244],[159,224,216],[79,182,224],[85,102,230]];
+  var t = Math.max(0,Math.min(1,i));
+  var seg = t*3, k=Math.floor(seg), f=seg-k; if(k>2){k=2;f=1;}
+  var a=stops[k], b=stops[k+1];
+  var r=Math.round(a[0]+(b[0]-a[0])*f), g=Math.round(a[1]+(b[1]-a[1])*f), bl=Math.round(a[2]+(b[2]-a[2])*f);
+  return 'rgb('+r+','+g+','+bl+')';
+}
+function setLayer(layer, btn){
+  document.querySelectorAll('.layer-toggle button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.querySelectorAll('#cartogram .hex').forEach(function(h){
+    var tile=h.querySelector('rect');
+    var dd=h.getAttribute('data-dd');
+    if(layer==='return'){
+      var r=parseFloat(h.getAttribute('data-r'));
+      tile.style.fill = r>=0 ? colorFor(0.35+Math.min(r,4)/4*0.6) : 'url(#ddhatch)';
+    } else if(layer==='disloc'){
+      tile.style.fill = colorFor(parseFloat(h.getAttribute('data-i')));
+    } else { // signal
+      var s=h.getAttribute('data-s');
+      var map={WATCH:0.85, DLOC:0.78, WEAK:0.42, DD:0.18};
+      tile.style.fill = colorFor(map[s]!==undefined?map[s]:0.4);
+    }
+    // keep deep-drawdown hatch & selected/disloc overrides legible
+    if(h.classList.contains('sel') && layer!=='return') tile.style.fill='#EAF3FC';
+    if(dd && layer!=='return' && !h.classList.contains('disloc')) tile.style.fill='url(#ddhatch)';
+  });
+}
+/* stagger the map tile fade-in on load */
+window.addEventListener('load', function(){
+  var tiles=document.querySelectorAll('#cartogram .tile');
+  tiles.forEach(function(t,i){ t.style.animationDelay=(0.35 + i*0.018)+'s'; });
+  setLayer('disloc', document.querySelector('.layer-toggle button.on'));
+});
+</script>
+</body>
+</html>

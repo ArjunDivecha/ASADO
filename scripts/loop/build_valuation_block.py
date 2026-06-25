@@ -100,6 +100,19 @@ def log(msg: str) -> None:
     print(f"[valuation] {msg}", flush=True)
 
 
+def log_panel_range(var: str, piv: pd.DataFrame) -> None:
+    """Log a panel range without assuming the index is non-empty/datetime."""
+    if piv.empty or len(piv.index) == 0:
+        log(f"{var}: 0 countries, no observations")
+        return
+    idx = pd.to_datetime(piv.index, errors="coerce")
+    idx = idx[~pd.isna(idx)]
+    if len(idx) == 0:
+        log(f"{var}: {piv.shape[1]} countries, date range unavailable")
+        return
+    log(f"{var}: {piv.shape[1]} countries, {idx.min().date()} -> {idx.max().date()}")
+
+
 def month_end_panel(con, table: str, variable: str, qualified: bool) -> pd.DataFrame:
     """(month-end dates x countries) using each series' last real observation
     per month (carried-forward placeholder rows are compressed away first)."""
@@ -146,7 +159,7 @@ def build() -> pd.DataFrame:
             if positive_only:
                 piv = piv.where(piv > 0)
             panels[out_var] = piv
-            log(f"{out_var}: {piv.shape[1]} countries, {piv.index.min().date()} -> {piv.index.max().date()}")
+            log_panel_range(out_var, piv)
         y10 = month_end_panel(con, "sovereign_daily", "SOV_10Y_YIELD_PCT", qualified=False)
         log(f"10Y (sovereign_daily): {y10.shape[1]} countries")
     finally:

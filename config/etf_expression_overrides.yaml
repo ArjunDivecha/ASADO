@@ -1,0 +1,51 @@
+# ETF expression metadata for ASADO Price-Discovery Gap Engine v1.
+#
+# Expense ratios are treated as ownership drag context, not a hard cost gate.
+# Values are seed metadata for the v1 pilot and should be reviewed before the
+# first formal holdout. Liquidity tiers are derived from etf_prices_daily ADV,
+# not hand-entered here.
+
+metadata:
+  version: etf_expression_v1_2026_06_24
+  source_note: "Manual v1 seed; review before first formal holdout. ADV/liquidity are derived from loop DB prices."
+  default_currency_basis: usd_unhedged_etf_vs_t2
+
+defaults:
+  expense_ratio_bps: 60
+  ownership_drag_note: "Default seed expense ratio used until ETF-specific metadata is reviewed."
+
+overrides:
+  Australia: {primary: EWA, expense_ratio_bps: 50}
+  Brazil: {primary: EWZ, expense_ratio_bps: 59}
+  Canada: {primary: EWC, expense_ratio_bps: 50}
+  Chile: {primary: ECH, expense_ratio_bps: 59}
+  ChinaA: {primary: ASHR, expense_ratio_bps: 65}
+  ChinaH: {primary: MCHI, expense_ratio_bps: 59}
+  Denmark: {primary: EDEN, expense_ratio_bps: 53}
+  France: {primary: EWQ, expense_ratio_bps: 50}
+  Germany: {primary: EWG, expense_ratio_bps: 50}
+  Hong Kong: {primary: EWH, expense_ratio_bps: 50}
+  India: {primary: INDA, expense_ratio_bps: 65}
+  Indonesia: {primary: EIDO, expense_ratio_bps: 59}
+  Italy: {primary: EWI, expense_ratio_bps: 50}
+  Japan: {primary: EWJ, expense_ratio_bps: 50}
+  Korea: {primary: EWY, expense_ratio_bps: 59}
+  Malaysia: {primary: EWM, expense_ratio_bps: 50}
+  Mexico: {primary: EWW, expense_ratio_bps: 50}
+  NASDAQ: {primary: QQQ, expense_ratio_bps: 20, proxy_type: broad_sleeve}
+  Netherlands: {primary: EWN, expense_ratio_bps: 50}
+  Philippines: {primary: EPHE, expense_ratio_bps: 59}
+  Poland: {primary: EPOL, expense_ratio_bps: 59}
+  Saudi Arabia: {primary: KSA, expense_ratio_bps: 74}
+  Singapore: {primary: EWS, expense_ratio_bps: 50}
+  South Africa: {primary: EZA, expense_ratio_bps: 59}
+  Spain: {primary: EWP, expense_ratio_bps: 50}
+  Sweden: {primary: EWD, expense_ratio_bps: 50}
+  Switzerland: {primary: EWL, expense_ratio_bps: 50}
+  Taiwan: {primary: EWT, expense_ratio_bps: 59}
+  Thailand: {primary: THD, expense_ratio_bps: 59}
+  Turkey: {primary: TUR, expense_ratio_bps: 59}
+  U.K.: {primary: EWU, expense_ratio_bps: 50}
+  U.S.: {primary: SPY, expense_ratio_bps: 9, proxy_type: broad_sleeve}
+  US SmallCap: {primary: IWM, expense_ratio_bps: 19, proxy_type: broad_sleeve}
+  Vietnam: {primary: VNM, expense_ratio_bps: 66}

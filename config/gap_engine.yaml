@@ -1,0 +1,149 @@
+# ASADO Price-Discovery Gap Engine v1 configuration.
+#
+# This file is part of the v1 pre-registration. Changing scoring weights,
+# thresholds, expected-move mappings, or holdout gates requires a config version
+# bump so old gap episodes and holdout rows remain auditable.
+
+config_version: gap_engine_v1_2026_06_24
+
+feature_flags:
+  render_top_gaps: true
+  pilot_label: true
+  write_parquet_artifacts: true
+
+promotion:
+  max_top_gaps: 5
+  max_age_days: 63
+  min_abs_severity: 1.0
+  min_tension_score: 0.35
+  allow_statuses: [new, intensifying, persisting, fading]
+  ranked_gap_classes: [G1, G2, G3, G4, G5]
+  diagnostic_gap_classes: [G6, G7, G8]
+  never_rank_detectors: [D8]
+  max_headline_per_entity_direction: 1
+
+horizons:
+  default_bucket: 21d
+  buckets:
+    5d: 5
+    21d: 21
+    63d: 63
+    126d: 126
+
+liquidity_tiers:
+  high_dollar_adv_min: 50000000
+  medium_dollar_adv_min: 10000000
+  low_dollar_adv_min: 1000000
+
+score_weights:
+  severity: 0.28
+  novelty: 0.12
+  validation_prior: 0.10
+  expression: 0.14
+  catalyst: 0.08
+  etf_drag: 0.05
+  crowding: 0.08
+  staleness: 0.08
+  data_quality: 0.07
+
+score_defaults:
+  validation_prior_neutral: 0.50
+  catalyst_neutral: 0.35
+  expression_missing: 0.10
+  data_quality_good_penalty: 0.0
+  data_quality_missing_penalty: 0.8
+
+expected_move:
+  severity_unit_z: 2.0
+  min_multiplier: 0.5
+  max_multiplier: 2.0
+  index_cap_abs: 2.0
+  default_floor_abs: 0.005
+  class_base_expected_move:
+    G1: {5d: 0.006, 21d: 0.015, 63d: 0.030, 126d: 0.050}
+    G2: {5d: 0.008, 21d: 0.020, 63d: 0.040, 126d: 0.060}
+    G3: {5d: 0.006, 21d: 0.018, 63d: 0.035, 126d: 0.050}
+    G4: {5d: 0.004, 21d: 0.014, 63d: 0.030, 126d: 0.050}
+    G5: {5d: 0.010, 21d: 0.025, 63d: 0.045, 126d: 0.065}
+    G6: {5d: 0.004, 21d: 0.010, 63d: 0.020, 126d: 0.030}
+    G7: {5d: 0.004, 21d: 0.012, 63d: 0.025, 126d: 0.040}
+    G8: {5d: 0.004, 21d: 0.012, 63d: 0.025, 126d: 0.040}
+
+holdout:
+  min_closed_promoted: 80
+  min_controls_per_promoted: 3
+  nw_t_proceed: 2.0
+  nw_t_fail: -2.0
+  random_shadow_seed: shadow_v1
+
+governance_dimension_dependencies:
+  t2_returns: [run_manifest, liveness, cross_source_minimal]
+  dislocation_daily: [run_manifest, liveness, config_guard]
+  etf_prices_daily: [run_manifest, liveness]
+  etf_flow_signals: [run_manifest, liveness]
+  market_implied_signals: [run_manifest, liveness]
+  sovereign_signals: [run_manifest, liveness, cross_source_minimal]
+  valuation_monthly: [run_manifest, liveness]
+  consensus_signals: [run_manifest, liveness]
+  eco_surprise_signals: [run_manifest, liveness]
+  combiner_scores_daily: [run_manifest, family_registry, pit_lag_proof]
+  ledgers: [ledger_integrity]
+
+detector_map:
+  D1:
+    gap_class: G2
+    mechanism_template_id: d1_tot_unabsorbed
+    horizon_bucket: 21d
+    validation_prior_score: 0.55
+  D2:
+    gap_class: G3
+    mechanism_template_id: d2_graph_latency
+    horizon_bucket: 21d
+    validation_prior_score: 0.65
+  D3:
+    gap_class: G4
+    mechanism_template_id: d3_revision_price_inertia
+    horizon_bucket: 63d
+    validation_prior_score: 0.50
+  D4:
+    gap_class: G5
+    mechanism_template_id: d4_cross_asset_incoherence
+    horizon_bucket: 21d
+    validation_prior_score: 0.55
+  D5:
+    gap_class: G7
+    mechanism_template_id: d5_attention_no_resolution
+    horizon_bucket: 21d
+    validation_prior_score: 0.35
+  D7:
+    gap_class: G1
+    mechanism_template_id: d7_factor_crowding
+    horizon_bucket: 21d
+    validation_prior_score: 0.45
+  D8:
+    gap_class: G7
+    mechanism_template_id: d8_stewardship
+    horizon_bucket: 21d
+    validation_prior_score: 0.20
+    research_only: true
+  D9:
+    gap_class: G6
+    mechanism_template_id: d9_etf_expression_gap
+    horizon_bucket: 21d
+    validation_prior_score: 0.35
+  D10:
+    gap_class: G5
+    mechanism_template_id: d10_fx_options_equity_conflict
+    horizon_bucket: 21d
+    validation_prior_score: 0.55
+
+mechanism_templates:
+  d1_tot_unabsorbed: "{entity} {direction}: terms-of-trade impulse is extreme while ETF/country price-state has not fully repriced."
+  d2_graph_latency: "{entity} {direction}: graph neighbors or twins have repriced faster than the endpoint market."
+  d3_revision_price_inertia: "{entity} {direction}: macro forecast revisions moved faster than ETF/country price-state."
+  d4_cross_asset_incoherence: "{entity} {direction}: sovereign/rates/FX stress disagrees with equity/ETF pricing."
+  d5_attention_no_resolution: "{entity} flag: attention/news state is elevated without a clean price-resolution path."
+  d7_factor_crowding: "{entity} {direction}: own-history/factor state is extreme but price-state has not absorbed it."
+  d8_stewardship: "{entity} flag: holdings/thesis stewardship item, kept outside top gap ranking."
+  d9_etf_expression_gap: "{entity} flag: ETF expression diverges from the intended country exposure or crowding state."
+  d10_fx_options_equity_conflict: "{entity} {direction}: FX options and equity/ETF price-state disagree."

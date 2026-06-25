@@ -17,8 +17,9 @@ DESCRIPTION:
              t2_normalize_daily.py             (_CS/_TS normalized daily factors)
              build_benchmark_rets_daily.py     (daily benchmarks -> Portfolio_Data.xlsx)
              t2_optimizer_daily.py             (daily factor returns)
-      GDELT: gdelt_ingest (daily, from GKG source) -> gdelt_normalize_daily ->
-             gdelt_optimizer_daily             (daily GDELT normalized factors + returns)
+      GDELT: refresh_gdelt_daily.py            (GKG source -> upstream parquet)
+             gdelt_normalize_daily.py          (parquet -> normalized daily factors)
+             gdelt_optimizer_daily.py          (daily GDELT factor returns)
       DB:    build_daily_panels.py             (load daily tables into DuckDB)
       Graph: setup_neo4j.py                    (refresh from the fresh daily data)
       Loop:  loop/loop_daily_job.py            (Layer 1: dislocations + brief,
@@ -26,7 +27,8 @@ DESCRIPTION:
 
 INPUT FILES:
     - Bloomberg live API (OpusBloomberg) for T2 daily prices
-    - Data/gdelt/ (GKG cache + daily panels) for GDELT
+    - /Users/arjundivecha/Dropbox/AAA Backup/A Working/GDELT/data/panels/
+      country_signal_daily.parquet for GDELT
 
 OUTPUT FILES:
     - Data/work/t2_daily/*  (T2 Bloomberg Master Daily.xlsx, T2 Master Daily.xlsx,
@@ -145,7 +147,7 @@ def main() -> int:
     results = []
     t_start = time.time()
 
-    # ── declarative stage list (name, script, flags, conda, enabled) ─────
+    # ── declarative stage list (name, script, flags, conda, enabled[, timeout]) ─────
     full = not args.t2_only
     stages = [
         ("T2: daily Bloomberg pull (live blpapi)", "collect_t2_bloomberg.py", ["--daily"], True,
@@ -154,6 +156,8 @@ def main() -> int:
         ("T2: normalize daily", "t2_normalize_daily.py", [], False, True),
         ("T2: daily benchmarks", "build_benchmark_rets_daily.py", [], False, True),
         ("T2: daily factor returns", "t2_optimizer_daily.py", [], False, True),
+        ("GDELT: refresh upstream parquet", "refresh_gdelt_daily.py", [], False,
+         full and not args.skip_gdelt, 7200),
         # GDELT factor returns use the GDELT-SPECIFIC optimizer (1DRet same-date,
         # CSV-only dates, cross-sectional fill) — NOT the T2 Step-Four taper.
         ("GDELT: normalize daily", "gdelt_normalize_daily.py", [], False,
@@ -172,7 +176,9 @@ def main() -> int:
     ]
 
     aborted_at = None
-    for name, script, flags, conda, enabled in stages:
+    for stage in stages:
+        name, script, flags, conda, enabled = stage[:5]
+        timeout = stage[5] if len(stage) > 5 else None
         if not enabled:
             continue
         if args.resume and done.get(name) == "OK":
@@ -180,7 +186,7 @@ def main() -> int:
             results.append({"name": name, "status": "OK", "elapsed": 0.0, "rc": 0,
                             "skipped_resume": True})
             continue
-        r = run_step(name, script, flags, log_file, conda=conda)
+        r = run_step(name, script, flags, log_file, conda=conda, timeout=timeout)
         results.append(r)
         if r["status"] == "OK":
             done[name] = "OK"

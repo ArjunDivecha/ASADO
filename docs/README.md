@@ -1,6 +1,6 @@
 # ASADO Documentation Index
 
-Last updated: 2026-06-17
+Last updated: 2026-06-22
 
 This file tells Claude Code / Codex / any agent which docs are canonical specs,
 which are generated reports, and which are historical snapshots — so you don't
@@ -24,6 +24,7 @@ when you need to understand the history behind a design choice.
 | Doc | Purpose | Freshness |
 |-----|---------|-----------|
 | `PRD_Alpha_Hunting_Loop.md` | Full spec for the alpha-hunting loop: detectors, ledgers, harness, thesis/calibration. | Manual; update when loop semantics change. |
+| `PRD_Price_Discovery_Gap_Engine.md` | Gap-episode layer for ASADO's north-star question: what data knows that price has not absorbed; includes ETF expression quality, absorption marks, holdout controls, and autopsies. | Draft; update before/after implementation. |
 | `MARKET_IMPLIED_EXTENSION_STATUS.md` | FX vol, forwards, VIX/MOVE/OAS, commodity curves — Bloomberg-driven market-implied layer. | Manual; updated when the layer changes. |
 | `PREDMKT_EXTENSION_STATUS.md` | Prediction-market pipeline: registry, collector, signals, spillovers. | Manual. |
 | `BBG_SKILL_ENHANCEMENTS_2026_06_12.md` | What the 2026-06-12 Bloomberg skill-mining batch added. | Snapshot; still current unless another batch lands. |
@@ -48,8 +49,10 @@ date in the filename and may be stale.
 
 - `DATABASE_AUDIT_2026_06_09.md`
 - `DAILY_PIPELINE_REPORT_2026_06_09.md`
+- `PRICE_DISCOVERY_GAP_ENGINE_REVIEW_RESULTS_2026_06_22.md`
 - `MORNING_REPORT_2026_06_10.md`
 - `MORNING_REPORT_2026_06_11.md`
+- `MORNING_REPORT_2026_06_24_GAP_ENGINE.md`
 - `EOD_REPORT_2026_06_10.md`
 - `DAILY_EXTENSION_STATUS.md` is a spec, but its "status" sections were true
   at the time of writing; verify against the live DB before relying on numbers.
@@ -67,4 +70,3 @@ date in the filename and may be stale.
 - `Data/loop/calibration/calibration_YYYY_MM.xlsx` — Brier calibration report.
 
 These live under `Data/` (gitignored) and must be read from disk, not git.
-

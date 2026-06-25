@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<!--
+=============================================================================
+FILE: option_atlas.html
+=============================================================================
+DESCRIPTION:
+  Self-contained desktop mockup of "ASADO · Chief of Staff" command cockpit
+  for a quantitative macro strategy over 34 country equity markets.
+  AESTHETIC: "Atlas" — antique-cartographic. Warm parchment surface, sepia ink,
+  verdigris/teal accent for live countries. The 34-country tile cartogram is the
+  hero centrepiece, framed by a governance health banner, signals/dislocations
+  panels, a Brazil deep-dive, and a grounded Chief-of-Staff chat rail.
+
+  All charts are hand-drawn inline SVG. No external data fetches, no build step.
+  External resources: Google Fonts only (Spectral display serif + Public Sans body).
+
+INPUT FILES:  none (fully self-contained; all data inlined verbatim from brief)
+OUTPUT FILES: none (renders in browser via file://)
+
+VERSION: 1.0   LAST UPDATED: 2026-06-17   AUTHOR: Claude (Atlas direction)
+=============================================================================
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1440, initial-scale=1" />
+<title>ASADO · Chief of Staff — Atlas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&family=Public+Sans:wght@300;400;500;600;700&family=Spectral+SC:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --parch:        #F4EEE2;   /* dominant warm parchment */
+  --parch-deep:   #EBE2D0;
+  --parch-card:   #FBF7EE;
+  --ink:          #3A2F25;   /* sepia ink */
+  --ink-soft:     #6A5A48;
+  --ink-faint:    #9A8B76;
+  --line:         #D8CBB2;   /* hairline graticule */
+  --line-soft:    #E4DAC6;
+  --teal:         #2C7A6B;   /* verdigris / live accent */
+  --teal-deep:    #1F5B50;
+  --teal-wash:    #DCE9E2;
+  --rust:         #B4521E;   /* warning / dislocation accent */
+  --rust-wash:    #F0DEC8;
+  --gold:         #B8862F;   /* amber */
+  --crimson:      #973A2E;   /* deep drawdown / dead */
+  --green:        #43764A;
+  --amber:        #C58A1E;
+  --shadow:       0 1px 0 rgba(255,255,255,.6), 0 14px 40px -22px rgba(58,47,37,.55);
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{
+  width:1440px; height:900px; overflow:hidden;
+  background:var(--parch);
+  color:var(--ink);
+  font-family:"Public Sans",sans-serif;
+  -webkit-font-smoothing:antialiased;
+  font-feature-settings:"tnum" 1,"lnum" 1;
+}
+/* paper grain + faint graticule wash behind everything */
+body::before{
+  content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(216,203,178,.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(216,203,178,.16) 1px, transparent 1px),
+    radial-gradient(circle at 22% 14%, rgba(216,203,178,.30), transparent 60%),
+    radial-gradient(circle at 86% 92%, rgba(216,203,178,.26), transparent 60%);
+  background-size: 48px 48px, 48px 48px, 100% 100%, 100% 100%;
+  opacity:.7;
+}
+.mono{font-variant-numeric:tabular-nums lining-nums;}
+.serif{font-family:"Spectral",serif;}
+.sc{font-family:"Spectral SC",serif; letter-spacing:.04em;}
+
+/* ───────── stage ───────── */
+.stage{position:relative; z-index:1; width:1440px; height:900px; padding:14px 18px 16px;
+  display:grid; grid-template-rows:auto 1fr; gap:12px;}
+
+/* ───────── header / governance banner ───────── */
+.topbar{display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:22px;
+  padding:11px 18px; background:linear-gradient(180deg,#FBF7EE,#F3ECDD);
+  border:1px solid var(--line); border-radius:11px; box-shadow:var(--shadow);
+  position:relative; overflow:hidden;}
+.topbar::after{content:""; position:absolute; left:0; right:0; bottom:0; height:2px;
+  background:repeating-linear-gradient(90deg,var(--teal) 0 14px, transparent 14px 22px); opacity:.5;}
+.brand{display:flex; align-items:baseline; gap:13px;}
+.brand .mark{width:34px; height:34px; flex:none; align-self:center;}
+.brand h1{font-family:"Spectral",serif; font-weight:600; font-size:24px; letter-spacing:.2px;}
+.brand h1 b{color:var(--teal-deep); font-weight:700;}
+.brand .sub{font-size:11px; color:var(--ink-faint); letter-spacing:.14em; text-transform:uppercase; margin-top:3px;}
+
+.asof{justify-self:start; display:flex; flex-direction:column; gap:2px; padding-left:22px; border-left:1px solid var(--line);}
+.asof .d1{font-family:"Spectral",serif; font-size:15px; font-weight:500;}
+.asof .d2{font-size:10.5px; color:var(--ink-faint); letter-spacing:.06em;}
+
+.gov{display:flex; align-items:center; gap:14px;}
+.gov-overall{display:flex; align-items:center; gap:9px; padding:6px 13px 6px 9px;
+  border:1px solid var(--line); border-radius:30px; background:var(--parch-card);}
+.gov-overall .ring{width:22px;height:22px;}
+.gov-overall .lbl{font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-faint);}
+.gov-overall .val{font-family:"Spectral SC",serif; font-size:16px; font-weight:600; color:var(--amber); letter-spacing:.06em;}
+.gov-dims{display:flex; gap:7px;}
+.dim{display:flex; flex-direction:column; align-items:center; gap:5px; width:62px; text-align:center;}
+.dim .pip{width:9px;height:9px;border-radius:50%; box-shadow:0 0 0 3px rgba(255,255,255,.5);}
+.dim.g .pip{background:var(--green);} .dim.a .pip{background:var(--amber);} .dim.r .pip{background:var(--crimson);}
+.dim .n{font-size:8px; letter-spacing:.04em; color:var(--ink-soft); line-height:1.15; text-transform:uppercase;}
+.dim.a .n{color:var(--gold); font-weight:600;}
+
+/* ───────── main grid ───────── */
+.grid{display:grid; grid-template-columns:300px 1fr 332px; grid-template-rows:1fr; gap:12px; min-height:0;}
+.col{display:flex; flex-direction:column; gap:12px; min-height:0;}
+
+.card{background:var(--parch-card); border:1px solid var(--line); border-radius:11px;
+  box-shadow:var(--shadow); position:relative; display:flex; flex-direction:column; min-height:0;}
+.card-h{display:flex; align-items:center; justify-content:space-between; padding:10px 13px 8px;
+  border-bottom:1px solid var(--line-soft);}
+.card-h .t{font-family:"Spectral SC",serif; font-size:12.5px; font-weight:600; letter-spacing:.05em; color:var(--ink);}
+.card-h .meta{font-size:10px; color:var(--ink-faint); letter-spacing:.04em;}
+.card-b{padding:11px 13px; min-height:0; overflow:hidden;}
+
+/* corner flourishes for the antique feel */
+.card::before,.card::after{content:""; position:absolute; width:10px; height:10px; pointer-events:none; opacity:.5;}
+.card::before{top:5px; left:5px; border-top:1px solid var(--ink-faint); border-left:1px solid var(--ink-faint);}
+.card::after{bottom:5px; right:5px; border-bottom:1px solid var(--ink-faint); border-right:1px solid var(--ink-faint);}
+
+/* ───────── MAP (hero) ───────── */
+.mapcard{flex:1; min-height:0;}
+.mapcard .card-b{flex:1; display:flex; flex-direction:column; padding:0;}
+.maphead{display:flex; align-items:center; justify-content:space-between; padding:9px 16px;
+  border-bottom:1px solid var(--line-soft); background:linear-gradient(180deg,#FBF7EE,#F6EFE1);}
+.maphead .ttl{display:flex; align-items:baseline; gap:11px;}
+.maphead .ttl .h{font-family:"Spectral",serif; font-size:16px; font-weight:600;}
+.maphead .ttl .s{font-size:10.5px; color:var(--ink-faint); font-style:italic;}
+.toggle{display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--parch);}
+.toggle button{font-family:"Public Sans"; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+  padding:6px 13px; border:none; background:transparent; color:var(--ink-soft); cursor:pointer;
+  border-right:1px solid var(--line); transition:all .18s;}
+.toggle button:last-child{border-right:none;}
+.toggle button.on{background:var(--teal); color:#FBF7EE; font-weight:600;}
+.toggle button:not(.on):hover{background:var(--parch-deep);}
+
+.mapwrap{flex:1; position:relative; min-height:0;}
+.mapwrap svg{width:100%; height:100%; display:block;}
+
+/* tiles */
+.tile{stroke:#FBF7EE; stroke-width:1.1; transition:transform .2s, filter .2s; cursor:pointer; transform-box:fill-box; transform-origin:center;}
+.tile:hover{filter:brightness(1.06) saturate(1.1);}
+.tile.sel{stroke:var(--ink); stroke-width:2.1;}
+.tile.disloc{stroke:var(--rust); stroke-width:2;}
+.tlabel{font-family:"Public Sans"; font-size:8.2px; font-weight:600; fill:var(--ink); letter-spacing:.02em; pointer-events:none;}
+.tlabel.lt{fill:#FBF7EE;}
+.tval{font-family:"Public Sans"; font-size:6.6px; font-weight:500; pointer-events:none; font-variant-numeric:tabular-nums;}
+.grouplbl{font-family:"Spectral SC",serif; font-size:11px; fill:var(--ink-faint); letter-spacing:.18em;}
+.grat{stroke:var(--line); stroke-width:.6; fill:none;}
+.grat.maj{stroke:var(--line); stroke-width:.9; stroke-dasharray:2 3;}
+
+/* compass */
+.compass .ring{fill:none; stroke:var(--ink-faint); stroke-width:.9;}
+.compass .pt{fill:var(--ink);}
+.compass .ptl{fill:var(--teal-deep);}
+.compass .lbl{font-family:"Spectral SC",serif; font-size:8px; fill:var(--ink-soft);}
+
+/* legend */
+.maplegend{display:flex; align-items:center; justify-content:space-between; padding:8px 16px 10px;
+  border-top:1px solid var(--line-soft);}
+.grad{display:flex; align-items:center; gap:10px;}
+.grad .bar{width:190px; height:9px; border-radius:5px; border:1px solid var(--line);
+  background:linear-gradient(90deg,#9C3A2C,#C88B3A,#E9DEC8,#7FB6A6,#2C7A6B);}
+.grad .gl{font-size:9.5px; color:var(--ink-faint); letter-spacing:.05em;}
+.lgnd-keys{display:flex; gap:16px; font-size:9.8px; color:var(--ink-soft);}
+.lgnd-keys span{display:inline-flex; align-items:center; gap:6px;}
+.lgnd-keys i{width:11px; height:11px; border-radius:3px; display:inline-block; border:1px solid rgba(0,0,0,.15);}
+
+/* ───────── signals table ───────── */
+.sig-tbl{width:100%; border-collapse:collapse;}
+.sig-tbl th{font-size:8.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint);
+  text-align:left; padding:0 6px 6px 0; font-weight:600;}
+.sig-tbl th.r,.sig-tbl td.r{text-align:right; padding-right:0;}
+.sig-tbl td{padding:6px 6px 6px 0; border-top:1px solid var(--line-soft); vertical-align:middle;}
+.sig-name{font-family:"Spectral",serif; font-size:12.5px; font-weight:500; color:var(--ink);}
+.sig-note{font-size:9px; color:var(--ink-faint); font-style:italic; margin-top:1px; line-height:1.2;}
+.verdict{font-family:"Spectral SC",serif; font-size:9.5px; font-weight:600; letter-spacing:.06em;
+  padding:2px 7px; border-radius:4px; display:inline-block; white-space:nowrap;}
+.v-watch{color:var(--teal-deep); background:var(--teal-wash); border:1px solid #BAD4CB;}
+.v-weak{color:var(--gold); background:#F2E6CE; border:1px solid #E1CC9F;}
+.v-dead{color:var(--crimson); background:#EFD9CF; border:1px solid #E0BCAE;}
+.num{font-size:11.5px; font-variant-numeric:tabular-nums; color:var(--ink);}
+.num.dim{color:var(--ink-faint);}
+.tally{display:flex; gap:7px; margin-top:9px; padding-top:9px; border-top:1px solid var(--line-soft);}
+.tally div{flex:1; text-align:center; padding:5px 2px; border-radius:6px; background:var(--parch);}
+.tally .k{font-family:"Spectral",serif; font-size:16px; font-weight:600; line-height:1;}
+.tally .l{font-size:7.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); margin-top:3px;}
+.tally .watch .k{color:var(--teal-deep);} .tally .weak .k{color:var(--gold);}
+.tally .dead .k{color:var(--crimson);} .tally .ins .k{color:var(--ink-soft);}
+
+/* ───────── dislocations feed ───────── */
+.dfeed{display:flex; flex-direction:column; gap:0;}
+.drow{display:flex; gap:10px; padding:8px 0; border-top:1px solid var(--line-soft); align-items:flex-start;}
+.drow:first-child{border-top:none; padding-top:2px;}
+.dtag{font-family:"Spectral SC",serif; font-size:10px; font-weight:600; color:#FBF7EE; background:var(--rust);
+  padding:2px 6px; border-radius:4px; flex:none; letter-spacing:.04em; margin-top:1px;}
+.dtag.t8,.dtag.t9{background:var(--ink-soft);}
+.dbody .dc{font-family:"Spectral",serif; font-size:12px; font-weight:600;}
+.dbody .dx{font-size:10px; color:var(--ink-soft); line-height:1.32; margin-top:1px;}
+.dbody .dz{color:var(--rust); font-weight:600; font-variant-numeric:tabular-nums;}
+.tail{margin-top:9px; padding-top:9px; border-top:1px dashed var(--line); display:flex; flex-direction:column; gap:5px;}
+.tail .th{font-size:8.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint);}
+.tail .tr{display:flex; align-items:center; gap:8px; font-size:10.5px; color:var(--ink-soft);}
+.tail .tr b{font-family:"Spectral",serif; color:var(--ink); font-size:11.5px;}
+.tail .dd{color:var(--crimson); font-weight:600; font-variant-numeric:tabular-nums;}
+
+/* ───────── Brazil deep-dive ───────── */
+.bz-head{display:flex; align-items:center; gap:10px;}
+.bz-flag{width:26px;height:18px; border-radius:3px; border:1px solid var(--line); flex:none;
+  background:linear-gradient(135deg,#2C7A6B 0 50%,#B8862F 50% 100%);}
+.bz-grid{display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:9px;}
+.bz-cell{background:var(--parch); border:1px solid var(--line-soft); border-radius:7px; padding:7px 9px;}
+.bz-cell .lab{font-size:8px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint);}
+.bz-cell .v{font-family:"Spectral",serif; font-size:16px; font-weight:600; margin-top:2px; line-height:1;}
+.bz-cell .v small{font-size:10px; font-weight:500; color:var(--ink-soft);}
+.pctbar{height:5px; border-radius:3px; background:var(--line-soft); margin-top:6px; position:relative; overflow:hidden;}
+.pctbar i{position:absolute; top:0; bottom:0; left:0; border-radius:3px;}
+.pctbar i.cheap{background:var(--teal);} .pctbar i.rich{background:var(--rust);}
+.pcttag{font-size:8.5px; font-weight:600; margin-top:3px;}
+.pcttag.cheap{color:var(--teal-deep);} .pcttag.rich{color:var(--rust);}
+.spark-row{display:flex; align-items:center; justify-content:space-between; margin-top:10px; gap:10px;}
+.spark-row .sl{font-size:9px; color:var(--ink-faint); letter-spacing:.05em; text-transform:uppercase;}
+.spark-row .sv{font-family:"Spectral",serif; font-size:15px; font-weight:600; color:var(--teal-deep);}
+.regime{display:inline-flex; align-items:center; gap:6px; font-family:"Spectral SC",serif; font-size:10px;
+  letter-spacing:.05em; color:var(--gold); background:#F2E6CE; border:1px solid #E1CC9F; padding:3px 9px; border-radius:14px;}
+.thesis-chip{display:flex; align-items:center; gap:9px; margin-top:10px; padding:8px 10px; border-radius:8px;
+  background:var(--teal-wash); border:1px solid #BAD4CB;}
+.thesis-chip .tk{font-family:"Spectral SC",serif; font-size:9px; color:var(--teal-deep); letter-spacing:.04em;}
+.thesis-chip .tt{font-family:"Spectral",serif; font-size:12px; font-weight:600; color:var(--ink);}
+.thesis-chip .tt b{color:var(--teal-deep);}
+.thesis-chip .tp{margin-left:auto; font-size:9px; color:var(--ink-soft); text-align:right; line-height:1.3;}
+
+/* ───────── chat rail ───────── */
+.chatcard{flex:1; min-height:0;}
+.chatcard .card-b{flex:1; display:flex; flex-direction:column; padding:0; min-height:0;}
+.chat-scroll{flex:1; overflow:hidden; padding:13px 14px 6px; display:flex; flex-direction:column; gap:13px;}
+.msg{display:flex; flex-direction:column; gap:5px; max-width:100%;}
+.msg .who{display:flex; align-items:center; gap:7px; font-size:8.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint);}
+.msg .who .av{width:18px;height:18px;border-radius:5px; display:grid; place-items:center; font-family:"Spectral",serif; font-weight:700; font-size:11px;}
+.msg.pm{align-items:flex-end;}
+.msg.pm .who{flex-direction:row-reverse;}
+.msg.pm .av{background:var(--ink); color:var(--parch);}
+.msg.cos .av{background:var(--teal); color:#FBF7EE;}
+.bubble{font-family:"Spectral",serif; font-size:13px; line-height:1.5; padding:10px 13px; border-radius:12px;
+  border:1px solid var(--line);}
+.msg.pm .bubble{background:var(--ink); color:var(--parch-card); border-color:var(--ink); border-bottom-right-radius:4px;
+  font-weight:400; max-width:82%;}
+.msg.cos .bubble{background:var(--parch-card); color:var(--ink); border-bottom-left-radius:4px;}
+.bubble .lead{display:block;}
+.bubble .pt{display:block; padding:6px 0; border-bottom:1px dotted var(--line); }
+.bubble .pt:last-of-type{border-bottom:none;}
+.bubble .pn{font-family:"Spectral SC",serif; color:var(--teal-deep); font-weight:600; margin-right:5px;}
+.cite{font-family:"Public Sans"; font-size:9.5px; font-weight:600; color:var(--teal-deep);
+  background:var(--teal-wash); border:1px solid #C2D8D0; padding:0px 5px; border-radius:4px; white-space:nowrap;
+  font-variant-numeric:tabular-nums;}
+.kicker{font-family:"Public Sans"; font-style:normal; font-size:12px; font-weight:600;}
+.kicker.amber{color:var(--gold);} .kicker.teal{color:var(--teal-deep);} .kicker.rust{color:var(--rust);}
+.closing{display:block; margin-top:7px; padding-top:7px; border-top:1px solid var(--line-soft);
+  font-style:italic; color:var(--ink-soft); font-size:12px;}
+
+.ground{display:flex; gap:7px; padding:7px 14px; border-top:1px solid var(--line-soft); background:var(--parch);}
+.gk{display:inline-flex; align-items:center; gap:5px; font-size:9px; letter-spacing:.04em; color:var(--ink-soft);}
+.gk i{width:8px;height:8px;border-radius:2px; display:inline-block;}
+.gk.fact i{background:var(--teal);} .gk.inf i{background:var(--gold);} .gk.unk i{background:var(--ink-faint); border-radius:50%;}
+
+.composer{padding:11px 13px 13px; border-top:1px solid var(--line-soft);}
+.composer .box{display:flex; align-items:center; gap:9px; background:var(--parch-card); border:1px solid var(--line);
+  border-radius:11px; padding:9px 11px;}
+.composer .box:focus-within{border-color:var(--teal); box-shadow:0 0 0 3px var(--teal-wash);}
+.composer input{flex:1; border:none; background:transparent; outline:none; font-family:"Spectral",serif;
+  font-size:13px; color:var(--ink);}
+.composer input::placeholder{color:var(--ink-faint); font-style:italic;}
+.composer .send{width:30px;height:30px; flex:none; border-radius:8px; border:none; background:var(--teal);
+  color:#FBF7EE; cursor:pointer; display:grid; place-items:center; transition:background .18s;}
+.composer .send:hover{background:var(--teal-deep);}
+.composer .hint{display:flex; justify-content:space-between; margin-top:7px; font-size:9px; color:var(--ink-faint);}
+.composer .hint b{color:var(--teal-deep);}
+
+/* ───────── load reveal ───────── */
+@keyframes rise{from{opacity:0; transform:translateY(12px);} to{opacity:1; transform:translateY(0);}}
+@keyframes fade{from{opacity:0;} to{opacity:1;}}
+@keyframes tilein{from{opacity:0; transform:scale(.82);} to{opacity:1; transform:scale(1);}}
+.reveal{opacity:0; animation:rise .7s cubic-bezier(.2,.7,.2,1) forwards;}
+.tile{opacity:0; animation:tilein .5s ease forwards;}
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <!-- ══════════════ HEADER / GOVERNANCE ══════════════ -->
+  <header class="topbar reveal" style="animation-delay:.02s">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 40 40">
+        <circle cx="20" cy="20" r="18.5" fill="none" stroke="#2C7A6B" stroke-width="1.4"/>
+        <circle cx="20" cy="20" r="13" fill="none" stroke="#9A8B76" stroke-width=".7"/>
+        <line x1="20" y1="1.5" x2="20" y2="38.5" stroke="#9A8B76" stroke-width=".6"/>
+        <line x1="1.5" y1="20" x2="38.5" y2="20" stroke="#9A8B76" stroke-width=".6"/>
+        <polygon points="20,4 23,20 20,36 17,20" fill="#3A2F25"/>
+        <polygon points="4,20 20,17 36,20 20,23" fill="#2C7A6B"/>
+        <circle cx="20" cy="20" r="2.3" fill="#FBF7EE" stroke="#3A2F25" stroke-width="1"/>
+      </svg>
+      <div>
+        <h1>ASADO <b>· Chief of Staff</b></h1>
+        <div class="sub">Command Cockpit — 34-Country Macro</div>
+      </div>
+    </div>
+
+    <div class="asof">
+      <div class="d1 serif">2026-06-17</div>
+      <div class="d2 mono">DATA AS-OF 2026-06-16</div>
+    </div>
+
+    <div class="gov">
+      <div class="gov-overall">
+        <svg class="ring" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9" fill="none" stroke="#E4DAC6" stroke-width="3.4"/>
+          <circle cx="12" cy="12" r="9" fill="none" stroke="#C58A1E" stroke-width="3.4"
+                  stroke-dasharray="42 57" stroke-linecap="round" transform="rotate(-90 12 12)"/>
+        </svg>
+        <div>
+          <div class="lbl">Governance</div>
+          <div class="val">AMBER</div>
+        </div>
+      </div>
+      <div class="gov-dims">
+        <div class="dim g"><span class="pip"></span><span class="n">run<br>manifest</span></div>
+        <div class="dim g"><span class="pip"></span><span class="n">live<br>ness</span></div>
+        <div class="dim g"><span class="pip"></span><span class="n">ledger<br>integ.</span></div>
+        <div class="dim g"><span class="pip"></span><span class="n">family<br>registry</span></div>
+        <div class="dim g"><span class="pip"></span><span class="n">pit lag<br>proof</span></div>
+        <div class="dim a"><span class="pip"></span><span class="n">cross<br>source</span></div>
+        <div class="dim g"><span class="pip"></span><span class="n">config<br>guard</span></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ══════════════ MAIN GRID ══════════════ -->
+  <div class="grid">
+
+    <!-- ─────────── LEFT COLUMN ─────────── -->
+    <div class="col">
+
+      <!-- TOP SIGNALS -->
+      <div class="card reveal" style="animation-delay:.10s; flex:none;">
+        <div class="card-h"><span class="t">Top Signals</span><span class="meta mono">live · verdicts</span></div>
+        <div class="card-b">
+          <table class="sig-tbl">
+            <thead><tr><th>Signal</th><th class="r">IC</th><th class="r">NW-t</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><div class="sig-name">combiner_ridge_daily <span class="verdict v-watch">WATCH</span></div>
+                    <div class="sig-note">strongest registered · components in-sample → a ceiling</div></td>
+                <td class="r num">0.057</td><td class="r num">10.7</td>
+              </tr>
+              <tr>
+                <td><div class="sig-name">network_spillover <span class="verdict v-weak">WEAK</span></div>
+                    <div class="sig-note">N = 21</div></td>
+                <td class="r num">0.034</td><td class="r num">4.5</td>
+              </tr>
+              <tr>
+                <td><div class="sig-name">fundamental_twins <span class="verdict v-weak">WEAK</span></div></td>
+                <td class="r num">0.028</td><td class="r num">5.6</td>
+              </tr>
+              <tr>
+                <td><div class="sig-name">eco_infl_surprise <span class="verdict v-weak">WEAK</span></div>
+                    <div class="sig-note">reflation: hot prints → outperformance</div></td>
+                <td class="r num dim">—</td><td class="r num">3.0</td>
+              </tr>
+              <tr>
+                <td><div class="sig-name">valuation_pctile <span class="verdict v-dead">DEAD</span></div></td>
+                <td class="r num dim">—</td><td class="r num dim">—</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="tally">
+            <div class="watch"><div class="k mono">2</div><div class="l">Watch</div></div>
+            <div class="weak"><div class="k mono">39</div><div class="l">Weak</div></div>
+            <div class="dead"><div class="k mono">31</div><div class="l">Dead</div></div>
+            <div class="ins"><div class="k mono">16</div><div class="l">Insuf.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DISLOCATIONS FEED -->
+      <div class="card reveal" style="animation-delay:.18s; flex:1;">
+        <div class="card-h"><span class="t">Dislocations · Nightly Brief</span><span class="meta mono">79 rows · 06-16</span></div>
+        <div class="card-b" style="overflow:hidden;">
+          <div class="dfeed">
+            <div class="drow">
+              <span class="dtag">D1</span>
+              <div class="dbody"><span class="dc">Chile</span>
+                <div class="dx">copper terms-of-trade impulse <span class="dz">z=+2.0</span>, equity flat <i>(unpriced)</i></div></div>
+            </div>
+            <div class="drow">
+              <span class="dtag">D2</span>
+              <div class="dbody"><span class="dc">Korea</span>
+                <div class="dx">trade-neighbour return gap <span class="dz">+2.3z</span> · spillover, endpoint not repriced</div></div>
+            </div>
+            <div class="drow">
+              <span class="dtag">D5</span>
+              <div class="dbody"><span class="dc">Indonesia</span>
+                <div class="dx">GDELT attention <span class="dz">z=+2.4</span>, |5d return| &lt; 0.5σ <i>(attention w/o resolution)</i></div></div>
+            </div>
+            <div class="drow">
+              <span class="dtag t8">D8</span>
+              <div class="dbody"><span class="dc">36 open-thesis stewardship rows</span>
+                <div class="dx">aging theses pending harness clearance</div></div>
+            </div>
+            <div class="drow">
+              <span class="dtag t9">D9</span>
+              <div class="dbody"><span class="dc">3 country-vs-ETF basis gaps</span>
+                <div class="dx">cash-index vs passive vehicle dispersion</div></div>
+            </div>
+          </div>
+          <div class="tail">
+            <div class="th">Long-cycle tail · JST 1870–2020</div>
+            <div class="tr"><b>Indonesia</b> <span class="dd">−50%</span> drawdown <i>· EM-analogy</i></div>
+            <div class="tr"><b>Denmark</b> <span class="dd">−45%</span> drawdown <i>· DM · Novo Nordisk</i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─────────── CENTER : THE MAP ─────────── -->
+    <div class="col">
+      <div class="card mapcard reveal" style="animation-delay:.06s">
+        <div class="card-b">
+          <div class="maphead">
+            <div class="ttl">
+              <span class="h serif">A Chart of Capital Flows</span>
+              <span class="s">34 markets · tile cartogram · signal intensity</span>
+            </div>
+            <div class="toggle">
+              <button>Return</button>
+              <button class="on">Dislocation</button>
+              <button>Signal</button>
+            </div>
+          </div>
+
+          <div class="mapwrap">
+            <svg viewBox="0 0 760 430" preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#F8F2E6"/><stop offset="1" stop-color="#F1E9D8"/>
+                </linearGradient>
+              </defs>
+              <rect x="0" y="0" width="760" height="430" fill="url(#sea)"/>
+
+              <!-- graticule -->
+              <g class="grat">
+                <line x1="0" y1="72" x2="760" y2="72"/>
+                <line x1="0" y1="144" x2="760" y2="144" class="maj"/>
+                <line x1="0" y1="216" x2="760" y2="216" class="maj"/>
+                <line x1="0" y1="288" x2="760" y2="288" class="maj"/>
+                <line x1="0" y1="360" x2="760" y2="360"/>
+                <line x1="100" y1="0" x2="100" y2="430"/>
+                <line x1="240" y1="0" x2="240" y2="430" class="maj"/>
+                <line x1="400" y1="0" x2="400" y2="430" class="maj"/>
+                <line x1="560" y1="0" x2="560" y2="430" class="maj"/>
+                <line x1="680" y1="0" x2="680" y2="430"/>
+              </g>
+
+              <!-- region labels -->
+              <text class="grouplbl" x="22" y="32">AMERICAS</text>
+              <text class="grouplbl" x="300" y="32">EUROPE</text>
+              <text class="grouplbl" x="300" y="248">M · E · A</text>
+              <text class="grouplbl" x="498" y="32">ASIA</text>
+              <text class="grouplbl" x="22" y="332">OCEANIA</text>
+
+              <!--
+                Tiles. r/g/b classes carry signal color.
+                Color scale (dislocation layer): teal=cool/unrepriced-opportunity,
+                rust=hot dislocation, gold=watch, parchment=neutral.
+                Each tile: rect + name + small value.
+                Layout coordinates chosen to be geographically sensible per group.
+              -->
+
+              <!-- ===== AMERICAS (left) ===== -->
+              <!-- Canada -->
+              <g style="animation-delay:.30s"><rect class="tile" x="26" y="52" width="86" height="40" rx="6" fill="#CFA86A"/>
+                <text class="tlabel" x="32" y="72">Canada</text><text class="tval" x="32" y="84" fill="#3A2F25">+0.4σ</text></g>
+              <!-- U.S. -->
+              <g style="animation-delay:.34s"><rect class="tile" x="26" y="98" width="56" height="42" rx="6" fill="#8FBFAE"/>
+                <text class="tlabel" x="32" y="117">U.S.</text><text class="tval" x="32" y="129" fill="#3A2F25">+1.1σ</text></g>
+              <!-- NASDAQ -->
+              <g style="animation-delay:.36s"><rect class="tile" x="86" y="98" width="58" height="42" rx="6" fill="#7FB6A6"/>
+                <text class="tlabel" x="92" y="117">NASDAQ</text><text class="tval" x="92" y="129" fill="#3A2F25">+1.4σ</text></g>
+              <!-- US SmallCap -->
+              <g style="animation-delay:.38s"><rect class="tile" x="26" y="146" width="118" height="34" rx="6" fill="#D9B987"/>
+                <text class="tlabel" x="32" y="166">US SmallCap</text><text class="tval" x="106" y="166" fill="#3A2F25">−0.2σ</text></g>
+              <!-- Mexico -->
+              <g style="animation-delay:.40s"><rect class="tile" x="26" y="184" width="56" height="40" rx="6" fill="#E0C597"/>
+                <text class="tlabel" x="32" y="203">Mexico</text><text class="tval" x="32" y="215" fill="#3A2F25">+0.1σ</text></g>
+              <!-- Chile (dislocation D1) -->
+              <g style="animation-delay:.42s"><rect class="tile disloc" x="86" y="184" width="58" height="40" rx="6" fill="#C77F38"/>
+                <text class="tlabel lt" x="92" y="203">Chile</text><text class="tval" x="92" y="215" fill="#FBF7EE">D1 +2.0z</text></g>
+              <!-- Brazil (selected) -->
+              <g style="animation-delay:.44s"><rect class="tile sel" x="26" y="228" width="118" height="44" rx="6" fill="#4F9885"/>
+                <text class="tlabel lt" x="32" y="249" style="font-size:9.6px;">Brazil ★</text>
+                <text class="tval" x="32" y="262" fill="#FBF7EE">21d +3.2% · reflation</text></g>
+
+              <!-- ===== EUROPE (center-top) ===== -->
+              <!-- U.K. -->
+              <g style="animation-delay:.46s"><rect class="tile" x="300" y="44" width="52" height="36" rx="6" fill="#CFA86A"/>
+                <text class="tlabel" x="306" y="62">U.K.</text><text class="tval" x="306" y="74" fill="#3A2F25">+0.3σ</text></g>
+              <!-- Netherlands -->
+              <g style="animation-delay:.47s"><rect class="tile" x="356" y="44" width="56" height="36" rx="6" fill="#BFCF9F"/>
+                <text class="tlabel" x="362" y="62">Neth.</text><text class="tval" x="362" y="74" fill="#3A2F25">+0.6σ</text></g>
+              <!-- Sweden -->
+              <g style="animation-delay:.48s"><rect class="tile" x="416" y="44" width="50" height="36" rx="6" fill="#D9B987"/>
+                <text class="tlabel" x="422" y="62">Sweden</text><text class="tval" x="422" y="74" fill="#3A2F25">−0.1σ</text></g>
+              <!-- Denmark (deep drawdown) -->
+              <g style="animation-delay:.49s"><rect class="tile disloc" x="416" y="84" width="50" height="36" rx="6" fill="#A4452F"/>
+                <text class="tlabel lt" x="422" y="102">Den.</text><text class="tval" x="422" y="114" fill="#FBF7EE">−45%</text></g>
+              <!-- France -->
+              <g style="animation-delay:.50s"><rect class="tile" x="300" y="84" width="52" height="36" rx="6" fill="#D9B987"/>
+                <text class="tlabel" x="306" y="102">France</text><text class="tval" x="306" y="114" fill="#3A2F25">+0.2σ</text></g>
+              <!-- Germany -->
+              <g style="animation-delay:.51s"><rect class="tile" x="356" y="84" width="56" height="36" rx="6" fill="#BFCF9F"/>
+                <text class="tlabel" x="362" y="102">Germany</text><text class="tval" x="362" y="114" fill="#3A2F25">+0.7σ</text></g>
+              <!-- Switzerland -->
+              <g style="animation-delay:.52s"><rect class="tile" x="300" y="124" width="52" height="34" rx="6" fill="#CFA86A"/>
+                <text class="tlabel" x="306" y="142">Switz.</text><text class="tval" x="306" y="153" fill="#3A2F25">+0.3σ</text></g>
+              <!-- Italy -->
+              <g style="animation-delay:.53s"><rect class="tile" x="356" y="124" width="40" height="34" rx="6" fill="#E0C597"/>
+                <text class="tlabel" x="362" y="142">Italy</text><text class="tval" x="362" y="153" fill="#3A2F25">0.0σ</text></g>
+              <!-- Spain -->
+              <g style="animation-delay:.54s"><rect class="tile" x="400" y="124" width="40" height="34" rx="6" fill="#E0C597"/>
+                <text class="tlabel" x="406" y="142">Spain</text><text class="tval" x="406" y="153" fill="#3A2F25">+0.1σ</text></g>
+              <!-- Poland -->
+              <g style="animation-delay:.55s"><rect class="tile" x="444" y="124" width="22" height="34" rx="6" fill="#D9B987"/>
+                <text class="tlabel" x="448" y="148" style="font-size:7px;">PL</text></g>
+
+              <!-- ===== MEA (center-mid) ===== -->
+              <!-- South Africa -->
+              <g style="animation-delay:.56s"><rect class="tile" x="300" y="260" width="56" height="40" rx="6" fill="#CFA86A"/>
+                <text class="tlabel" x="306" y="279">S.Africa</text><text class="tval" x="306" y="291" fill="#3A2F25">+0.4σ</text></g>
+              <!-- Saudi Arabia -->
+              <g style="animation-delay:.57s"><rect class="tile" x="360" y="260" width="56" height="40" rx="6" fill="#8FBFAE" stroke="#3A2F25" stroke-width="1.6"/>
+                <text class="tlabel" x="366" y="279">Saudi</text><text class="tval" x="366" y="291" fill="#3A2F25">+0.9σ</text></g>
+              <!-- Turkey -->
+              <g style="animation-delay:.58s"><rect class="tile" x="420" y="260" width="46" height="40" rx="6" fill="#E0C597"/>
+                <text class="tlabel" x="426" y="279">Turkey</text><text class="tval" x="426" y="291" fill="#3A2F25">−0.3σ</text></g>
+
+              <!-- ===== ASIA (right) ===== -->
+              <!-- ChinaA -->
+              <g style="animation-delay:.60s"><rect class="tile" x="498" y="44" width="56" height="38" rx="6" fill="#D9B987"/>
+                <text class="tlabel" x="504" y="63">ChinaA</text><text class="tval" x="504" y="75" fill="#3A2F25">−0.2σ</text></g>
+              <!-- ChinaH -->
+              <g style="animation-delay:.61s"><rect class="tile" x="558" y="44" width="56" height="38" rx="6" fill="#E0C597"/>
+                <text class="tlabel" x="564" y="63">ChinaH</text><text class="tval" x="564" y="75" fill="#3A2F25">−0.1σ</text></g>
+              <!-- Hong Kong -->
+              <g style="animation-delay:.62s"><rect class="tile" x="618" y="44" width="56" height="38" rx="6" fill="#CFA86A"/>
+                <text class="tlabel" x="624" y="63">HK</text><text class="tval" x="624" y="75" fill="#3A2F25">+0.3σ</text></g>
+              <!-- Japan -->
+              <g style="animation-delay:.63s"><rect class="tile" x="498" y="86" width="58" height="40" rx="6" fill="#9FC6B5"/>
+                <text class="tlabel" x="504" y="106">Japan</text><text class="tval" x="504" y="118" fill="#3A2F25">+0.6σ</text></g>
+              <!-- Korea (dislocation D2) -->
+              <g style="animation-delay:.64s"><rect class="tile disloc" x="560" y="86" width="56" height="40" rx="6" fill="#C77F38"/>
+                <text class="tlabel lt" x="566" y="106">Korea</text><text class="tval" x="566" y="118" fill="#FBF7EE">D2 +2.3z</text></g>
+              <!-- Taiwan -->
+              <g style="animation-delay:.65s"><rect class="tile" x="620" y="86" width="54" height="40" rx="6" fill="#7FB6A6"/>
+                <text class="tlabel" x="626" y="106">Taiwan</text><text class="tval" x="626" y="118" fill="#3A2F25">+1.2σ</text></g>
+              <!-- India -->
+              <g style="animation-delay:.66s"><rect class="tile" x="498" y="130" width="58" height="42" rx="6" fill="#9FC6B5"/>
+                <text class="tlabel" x="504" y="150">India</text><text class="tval" x="504" y="162" fill="#3A2F25">+0.8σ</text></g>
+              <!-- Indonesia (D5 + drawdown) -->
+              <g style="animation-delay:.67s"><rect class="tile disloc" x="560" y="130" width="58" height="42" rx="6" fill="#A4452F"/>
+                <text class="tlabel lt" x="566" y="149">Indon.</text><text class="tval" x="566" y="161" fill="#FBF7EE">D5 z+2.4</text>
+                <text class="tval" x="566" y="169" fill="#FBF7EE">−50%</text></g>
+              <!-- Malaysia -->
+              <g style="animation-delay:.68s"><rect class="tile" x="622" y="130" width="52" height="42" rx="6" fill="#D9B987"/>
+                <text class="tlabel" x="628" y="150">Malay.</text><text class="tval" x="628" y="162" fill="#3A2F25">−0.1σ</text></g>
+              <!-- Philippines -->
+              <g style="animation-delay:.69s"><rect class="tile" x="498" y="176" width="42" height="36" rx="6" fill="#E0C597"/>
+                <text class="tlabel" x="504" y="195">Phil.</text><text class="tval" x="504" y="206" fill="#3A2F25">0.0σ</text></g>
+              <!-- Singapore -->
+              <g style="animation-delay:.70s"><rect class="tile" x="544" y="176" width="44" height="36" rx="6" fill="#BFCF9F"/>
+                <text class="tlabel" x="550" y="195">S'pore</text><text class="tval" x="550" y="206" fill="#3A2F25">+0.5σ</text></g>
+              <!-- Thailand -->
+              <g style="animation-delay:.71s"><rect class="tile" x="592" y="176" width="42" height="36" rx="6" fill="#D9B987"/>
+                <text class="tlabel" x="598" y="195">Thai.</text><text class="tval" x="598" y="206" fill="#3A2F25">−0.2σ</text></g>
+              <!-- Vietnam -->
+              <g style="animation-delay:.72s"><rect class="tile" x="638" y="176" width="36" height="36" rx="6" fill="#BFCF9F"/>
+                <text class="tlabel" x="644" y="195">Viet.</text><text class="tval" x="644" y="206" fill="#3A2F25">+0.5σ</text></g>
+
+              <!-- ===== OCEANIA ===== -->
+              <g style="animation-delay:.74s"><rect class="tile" x="22" y="290" width="90" height="44" rx="6" fill="#CFA86A"/>
+                <text class="tlabel" x="28" y="312">Australia</text><text class="tval" x="28" y="324" fill="#3A2F25">+0.3σ</text></g>
+
+              <!-- compass rose (bottom-right of map) -->
+              <g class="compass" transform="translate(700,366)">
+                <circle class="ring" cx="0" cy="0" r="30"/>
+                <circle class="ring" cx="0" cy="0" r="20"/>
+                <polygon class="pt" points="0,-30 5,0 0,8 -5,0"/>
+                <polygon class="ptl" points="0,30 5,0 0,-8 -5,0"/>
+                <polygon class="pt" points="-30,0 0,5 8,0 0,-5"/>
+                <polygon class="pt" points="30,0 0,5 -8,0 0,-5"/>
+                <text class="lbl" x="-3" y="-33">N</text>
+                <text class="lbl" x="-3" y="40">S</text>
+                <text class="lbl" x="33" y="3">E</text>
+                <text class="lbl" x="-40" y="3">W</text>
+              </g>
+            </svg>
+          </div>
+
+          <div class="maplegend">
+            <div class="grad">
+              <span class="gl mono">−2σ</span>
+              <span class="bar"></span>
+              <span class="gl mono">+2σ</span>
+              <span class="gl" style="margin-left:6px;">signal intensity</span>
+            </div>
+            <div class="lgnd-keys">
+              <span><i style="border-color:var(--rust); background:#C77F38;"></i>active dislocation</span>
+              <span><i style="background:#A4452F;"></i>deep drawdown</span>
+              <span><i style="border:2px solid #3A2F25; background:#4F9885;"></i>selected</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─────────── RIGHT COLUMN ─────────── -->
+    <div class="col">
+
+      <!-- BRAZIL DEEP-DIVE -->
+      <div class="card reveal" style="animation-delay:.14s; flex:none;">
+        <div class="card-h">
+          <span class="t" style="display:flex;align-items:center;gap:8px;"><span class="bz-flag"></span>Brazil · Deep Dive</span>
+          <span class="regime">◷ REFLATION</span>
+        </div>
+        <div class="card-b">
+          <!-- returns sparkline -->
+          <div class="spark-row">
+            <span class="sl">Equity · 21d return</span>
+            <span class="sv mono">+3.2%</span>
+          </div>
+          <svg viewBox="0 0 300 46" style="width:100%;height:44px;margin-top:4px;">
+            <line x1="0" y1="40" x2="300" y2="40" stroke="#E4DAC6" stroke-width="1"/>
+            <line x1="0" y1="23" x2="300" y2="23" stroke="#EEE6D5" stroke-width="1" stroke-dasharray="2 3"/>
+            <path d="M0,33 L20,35 L40,31 L60,34 L80,28 L100,30 L120,24 L140,27 L160,20 L180,22 L200,16 L220,18 L240,12 L260,14 L280,9 L300,7"
+                  fill="none" stroke="#2C7A6B" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/>
+            <path d="M0,33 L20,35 L40,31 L60,34 L80,28 L100,30 L120,24 L140,27 L160,20 L180,22 L200,16 L220,18 L240,12 L260,14 L280,9 L300,7 L300,40 L0,40 Z"
+                  fill="#2C7A6B" opacity="0.08"/>
+            <circle cx="300" cy="7" r="3" fill="#2C7A6B" stroke="#FBF7EE" stroke-width="1.4"/>
+          </svg>
+
+          <!-- valuation -->
+          <div class="bz-grid">
+            <div class="bz-cell">
+              <div class="lab">CAPE percentile</div>
+              <div class="v mono">38<small> /100</small></div>
+              <div class="pctbar"><i class="cheap" style="width:38%"></i></div>
+              <div class="pcttag cheap">CHEAP</div>
+            </div>
+            <div class="bz-cell">
+              <div class="lab">ERP percentile</div>
+              <div class="v mono">72<small> /100</small></div>
+              <div class="pctbar"><i class="rich" style="width:72%"></i></div>
+              <div class="pcttag rich">RICH</div>
+            </div>
+          </div>
+
+          <!-- sovereign curve -->
+          <div class="spark-row" style="margin-top:11px;">
+            <span class="sl">Sovereign curve · 2s10s +0.9</span>
+            <span class="sl mono" style="color:var(--rust);">5Y CDS 148bp</span>
+          </div>
+          <svg viewBox="0 0 300 56" style="width:100%;height:52px;margin-top:3px;">
+            <line x1="0" y1="48" x2="300" y2="48" stroke="#E4DAC6"/>
+            <!-- curve: 2Y to 10Y rising -->
+            <path d="M28,38 C90,30 150,22 270,12" fill="none" stroke="#3A2F25" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="28" cy="38" r="3.4" fill="#B8862F" stroke="#FBF7EE" stroke-width="1.3"/>
+            <circle cx="150" cy="24" r="3.4" fill="#9A8B76" stroke="#FBF7EE" stroke-width="1.3"/>
+            <circle cx="270" cy="12" r="3.4" fill="#2C7A6B" stroke="#FBF7EE" stroke-width="1.3"/>
+            <text x="20" y="55" style="font-size:8px;fill:#9A8B76;font-family:'Public Sans';">2Y</text>
+            <text x="142" y="55" style="font-size:8px;fill:#9A8B76;font-family:'Public Sans';">5Y</text>
+            <text x="252" y="55" style="font-size:8px;fill:#9A8B76;font-family:'Public Sans';">10Y</text>
+            <text x="262" y="9" style="font-size:11px;fill:#2C7A6B;font-weight:700;font-family:'Spectral';" text-anchor="middle">14.28%</text>
+          </svg>
+
+          <!-- thesis chip -->
+          <div class="thesis-chip">
+            <div>
+              <div class="tk mono">THESIS · T_20260610_001</div>
+              <div class="tt"><b>LONG</b> Indonesia &nbsp;<span style="color:var(--teal-deep);">+8.1%</span></div>
+            </div>
+            <div class="tp">open 7d<br>· paper ·</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHIEF-OF-STAFF CHAT -->
+      <div class="card chatcard reveal" style="animation-delay:.22s">
+        <div class="card-h">
+          <span class="t" style="display:flex;align-items:center;gap:7px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2C7A6B" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            Chief of Staff
+          </span>
+          <span class="meta">grounded · cited</span>
+        </div>
+        <div class="card-b">
+          <div class="chat-scroll">
+
+            <div class="msg pm">
+              <div class="who"><span class="av">A</span>Portfolio Manager</div>
+              <div class="bubble">What should I care about today?</div>
+            </div>
+
+            <div class="msg cos">
+              <div class="who"><span class="av">C</span>Chief of Staff</div>
+              <div class="bubble">
+                <span class="lead">Three things.</span>
+                <span class="pt"><span class="pn">①</span><span class="kicker amber">Governance is AMBER</span> — only because cross-source coverage is partial <i>by design</i>; everything else is green. <span class="cite">scorecard.json</span></span>
+                <span class="pt"><span class="pn">②</span>The <span class="kicker teal">daily combiner</span> is still your only WATCH (IC 0.057), but its components were selected in-sample — a ceiling, not proof. <span class="cite">live_signals</span></span>
+                <span class="pt"><span class="pn">③</span>Fresh <span class="kicker rust">D1</span>: Chile's copper terms-of-trade impulse (+2.0z) hasn't repriced into equities. <span class="cite">brief · 2026-06-16</span></span>
+                <span class="closing">Nothing here is a trade yet — all paper until the harness clears it.</span>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="ground">
+            <span class="gk fact"><i></i>FACT (cited)</span>
+            <span class="gk inf"><i></i>INFERENCE</span>
+            <span class="gk unk"><i></i>UNKNOWN / STALE</span>
+          </div>
+
+          <div class="composer">
+            <div class="box">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9A8B76" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+              <input type="text" placeholder="Think out loud with your analyst…" />
+              <button class="send" aria-label="send">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FBF7EE" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+            </div>
+            <div class="hint">
+              <span>Grounded in DuckDB · Neo4j · nightly brief</span>
+              <span><b>⏎</b> to ask</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* tiny vanilla: layer toggle (visual only) + composer enter affordance */
+document.querySelectorAll('.toggle button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.toggle button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<!--
+=============================================================================
+FILE: option_atelier.html
+=============================================================================
+DESCRIPTION:
+  Self-contained desktop "command cockpit" mockup for ASADO · Chief of Staff,
+  rendered in the "Atelier" aesthetic — an editorial luxe research letter from
+  a storied macro desk crossed with a fine art-book. Warm ivory paper, deep
+  ink, oxblood accent, thin gold hairlines. Fraunces (display serif) + Hanken
+  Grotesk (body grotesque). All charts are hand-drawn inline SVG. The 34-country
+  world map is a self-contained region-grouped tile cartogram (no external
+  GeoJSON). Designed for a 1440x900 viewport.
+
+INPUT FILES:  none (fully self-contained; only Google Fonts via <link>)
+OUTPUT FILES: none (this IS the deliverable)
+
+VERSION: 1.0
+LAST UPDATED: 2026-06-17
+AUTHOR: Claude (Atelier direction)
+
+NOTES:
+  - Light mode only (house rule). No data fetches, no build step.
+  - Tiny vanilla JS only for: page-load reveal + map layer toggle.
+=============================================================================
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ASADO · Chief of Staff</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..700&family=Hanken+Grotesk:wght@300..800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBF8F1;
+    --paper-2:#F5F0E4;
+    --paper-3:#F0E9D9;
+    --ink:#1B1A17;
+    --ink-2:#4A453C;
+    --ink-3:#6E675A;
+    --oxblood:#7C2D2D;
+    --oxblood-deep:#5E1F1F;
+    --gold:#B8975A;
+    --gold-soft:#D7C49A;
+    --green:#3E6B4A;
+    --amber:#B07A24;
+    --red:#9A3324;
+    --rule:rgba(27,26,23,.14);
+    --rule-soft:rgba(27,26,23,.08);
+    --shadow:0 1px 0 rgba(27,26,23,.04), 0 18px 40px -28px rgba(27,26,23,.45);
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(1200px 700px at 18% -8%, #FFFDF7 0%, rgba(255,253,247,0) 60%),
+      radial-gradient(900px 600px at 105% 8%, #FAF4E7 0%, rgba(250,244,231,0) 55%),
+      var(--paper);
+    color:var(--ink);
+    font-family:"Hanken Grotesk", sans-serif;
+    font-weight:400;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+    font-feature-settings:"tnum" 0, "onum" 1, "liga" 1;
+    min-height:100vh;
+  }
+  /* faint paper grain */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;mix-blend-mode:multiply;opacity:.5;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.022 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+
+  .serif{font-family:"Fraunces", serif;}
+  .num{font-feature-settings:"tnum" 1, "onum" 0;}
+  .small-caps{font-variant:small-caps;letter-spacing:.06em;}
+
+  /* ---------- frame ---------- */
+  .sheet{
+    position:relative;z-index:1;
+    width:1440px;min-height:900px;margin:0 auto;
+    padding:22px 30px 26px;
+  }
+
+  /* page-load reveal */
+  .reveal{opacity:0;transform:translateY(10px);animation:rise .8s cubic-bezier(.2,.7,.2,1) forwards;}
+  @keyframes rise{to{opacity:1;transform:none}}
+
+  /* ===================== MASTHEAD ===================== */
+  .masthead{
+    display:grid;grid-template-columns:auto 1fr auto;align-items:end;
+    gap:18px;padding-bottom:12px;border-bottom:2px solid var(--ink);
+    position:relative;
+  }
+  .masthead::after{content:"";position:absolute;left:0;right:0;bottom:-5px;height:1px;background:var(--gold);}
+  .brand{display:flex;align-items:baseline;gap:14px}
+  .folio{
+    font-family:"Fraunces",serif;font-weight:600;font-size:11px;letter-spacing:.34em;
+    text-transform:uppercase;color:var(--oxblood);writing-mode:horizontal-tb;
+    border:1px solid var(--gold);padding:4px 8px;border-radius:1px;background:rgba(184,151,90,.06);
+  }
+  .wordmark{
+    font-family:"Fraunces",serif;font-weight:600;font-size:40px;line-height:.9;letter-spacing:-.01em;
+    color:var(--ink);
+  }
+  .wordmark em{font-style:italic;font-weight:400;color:var(--oxblood);}
+  .dek{margin-top:6px;font-size:12.5px;color:var(--ink-3);max-width:560px;letter-spacing:.01em;}
+  .dek .sep{color:var(--gold);padding:0 6px;}
+  .issue{text-align:right;}
+  .issue .vol{font-family:"Fraunces",serif;font-weight:500;font-style:italic;font-size:14px;color:var(--ink-2);}
+  .issue .date{font-family:"Fraunces",serif;font-weight:600;font-size:21px;margin-top:2px;letter-spacing:-.01em;}
+  .issue .asof{font-size:11px;color:var(--ink-3);margin-top:2px;letter-spacing:.02em;}
+
+  /* ===================== STATUS RIBBON ===================== */
+  .ribbon{
+    margin-top:14px;display:grid;grid-template-columns:auto 1fr;align-items:stretch;
+    border:1px solid var(--rule);background:linear-gradient(180deg,#FFFDF7, #F7F1E4);
+    box-shadow:var(--shadow);border-radius:2px;overflow:hidden;
+  }
+  .ribbon-seal{
+    display:flex;flex-direction:column;justify-content:center;align-items:center;gap:2px;
+    padding:10px 20px;background:var(--oxblood);color:#F7ECD9;min-width:172px;position:relative;
+  }
+  .ribbon-seal::after{content:"";position:absolute;right:0;top:8px;bottom:8px;width:1px;background:rgba(247,236,217,.35);}
+  .ribbon-seal .lbl{font-size:9.5px;letter-spacing:.28em;text-transform:uppercase;opacity:.78;}
+  .ribbon-seal .verdict{font-family:"Fraunces",serif;font-weight:600;font-size:26px;letter-spacing:.04em;line-height:1;}
+  .ribbon-seal .verdict::first-letter{color:var(--gold-soft);}
+  .ribbon-seal .sub{font-size:9.5px;opacity:.72;letter-spacing:.04em;text-align:center;}
+  .scorecard{display:flex;align-items:stretch;}
+  .dim{
+    flex:1;display:flex;flex-direction:column;justify-content:center;gap:5px;
+    padding:9px 12px;border-left:1px solid var(--rule-soft);position:relative;
+  }
+  .dim:first-child{border-left:none;}
+  .dim .dname{font-size:10px;letter-spacing:.04em;color:var(--ink-2);text-transform:uppercase;font-weight:600;}
+  .dim .drow{display:flex;align-items:center;gap:7px;}
+  .pip{width:9px;height:9px;border-radius:50%;flex:none;box-shadow:0 0 0 2px rgba(255,255,255,.6);}
+  .pip.g{background:var(--green);}
+  .pip.a{background:var(--amber);}
+  .pip.r{background:var(--red);}
+  .dim .dstate{font-size:10px;letter-spacing:.1em;font-weight:700;text-transform:uppercase;}
+  .dstate.g{color:var(--green);} .dstate.a{color:var(--amber);} .dstate.r{color:var(--red);}
+  .dim.flag{background:rgba(176,122,36,.06);}
+
+  /* ===================== GRID ===================== */
+  .grid{
+    margin-top:16px;display:grid;
+    grid-template-columns:1fr 392px;
+    gap:20px;align-items:start;
+  }
+  .col-left{display:grid;grid-template-columns:1fr;gap:18px;}
+  .row2{display:grid;grid-template-columns:1.04fr 1fr;gap:18px;align-items:start;}
+
+  /* panel chrome — looks like a typeset article block */
+  .panel{
+    position:relative;background:linear-gradient(180deg,#FFFEFA, #FCF7EC);
+    border:1px solid var(--rule);border-radius:2px;box-shadow:var(--shadow);
+    padding:16px 18px 16px;
+  }
+  .panel::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,var(--oxblood),var(--gold) 70%, transparent);}
+  .phead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px;}
+  .phead .kicker{display:flex;align-items:baseline;gap:10px;}
+  .secnum{font-family:"Fraunces",serif;font-weight:300;font-style:italic;font-size:30px;color:var(--gold);line-height:.8;}
+  .ptitle{font-family:"Fraunces",serif;font-weight:600;font-size:19px;letter-spacing:-.01em;}
+  .ptitle .accent{color:var(--oxblood);font-style:italic;font-weight:500;}
+  .pmeta{font-size:10.5px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;}
+  .hr{height:1px;background:var(--gold);opacity:.55;margin:2px 0 12px;}
+  .hr-soft{height:1px;background:var(--rule-soft);margin:10px 0;}
+
+  /* ===================== MAP ===================== */
+  .map-panel .phead{margin-bottom:6px;}
+  .legend{display:flex;align-items:center;gap:12px;font-size:10.5px;color:var(--ink-3);}
+  .legend .scale{display:flex;align-items:center;gap:0;}
+  .legend .swatch{width:20px;height:9px;display:inline-block;}
+  .legend .scale-lbl{margin:0 7px;letter-spacing:.05em;}
+  .toggle{display:inline-flex;border:1px solid var(--gold);border-radius:2px;overflow:hidden;background:rgba(184,151,90,.05);}
+  .toggle button{
+    font-family:"Hanken Grotesk",sans-serif;border:none;background:transparent;cursor:pointer;
+    font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);
+    padding:5px 11px;border-left:1px solid var(--gold-soft);transition:.18s;
+  }
+  .toggle button:first-child{border-left:none;}
+  .toggle button.on{background:var(--oxblood);color:#F7ECD9;}
+  .toggle button:not(.on):hover{background:rgba(124,45,45,.07);color:var(--oxblood);}
+
+  .cartogram{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:8px;}
+  .region{border:1px solid var(--rule-soft);border-radius:2px;padding:8px 8px 9px;background:rgba(255,255,255,.35);}
+  .region h4{
+    margin:0 0 7px;font-family:"Fraunces",serif;font-weight:600;font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--ink-2);display:flex;justify-content:space-between;align-items:baseline;
+  }
+  .region h4 .cnt{font-family:"Hanken Grotesk";font-weight:600;color:var(--gold);font-size:10px;}
+  .tiles{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+  .tile{
+    position:relative;height:38px;border-radius:2px;border:1px solid rgba(27,26,23,.12);
+    display:flex;flex-direction:column;justify-content:center;padding:3px 6px;cursor:default;
+    transition:transform .16s ease, box-shadow .16s ease, outline-color .16s;overflow:hidden;
+    outline:1.5px solid transparent;outline-offset:-1.5px;
+  }
+  .tile .nm{font-size:9.5px;font-weight:700;letter-spacing:.01em;line-height:1.02;color:var(--ink);}
+  .tile .vl{font-size:8.5px;font-weight:600;letter-spacing:.02em;margin-top:1px;}
+  .tile:hover{transform:translateY(-2px);box-shadow:0 8px 18px -10px rgba(27,26,23,.5);z-index:3;}
+  .tile.span2{grid-column:span 2;height:38px;}
+  /* signal intensity ramp (oxblood->gold->green on ivory) */
+  .s5{background:#7C2D2D;} .s5 .nm,.s5 .vl{color:#F7ECD9;}
+  .s4{background:#A85234;} .s4 .nm,.s4 .vl{color:#FBF3E6;}
+  .s3{background:#C98A4B;} .s3 .nm{color:#2A1E12;} .s3 .vl{color:#3a2a18;}
+  .s2{background:#E3C887;} .s2 .nm{color:#3A2E12;} .s2 .vl{color:#4a3a18;}
+  .s1{background:#EBE5CF;} .s1 .nm{color:#403a26;} .s1 .vl{color:#5a523c;}
+  .s0{background:#F0EAD8;} .s0 .nm{color:#5a523c;} .s0 .vl{color:#7a715a;}
+  .sg{background:#3E6B4A;} .sg .nm,.sg .vl{color:#EAF1E6;}      /* green/positive */
+  .sg2{background:#6E9474;} .sg2 .nm,.sg2 .vl{color:#22301f;}
+  /* highlight rings */
+  .tile.disloc{outline-color:var(--oxblood);box-shadow:0 0 0 2px rgba(124,45,45,.18);}
+  .tile.selected{outline-color:var(--gold);box-shadow:0 0 0 2px rgba(184,151,90,.4), 0 8px 16px -8px rgba(27,26,23,.5);}
+  .tile .star{position:absolute;top:2px;right:3px;font-size:8px;color:inherit;opacity:.85;font-family:"Fraunces",serif;}
+  .map-foot{display:flex;gap:16px;margin-top:10px;font-size:10px;color:var(--ink-3);align-items:center;flex-wrap:wrap;}
+  .map-foot .key{display:inline-flex;align-items:center;gap:5px;}
+  .map-foot .ringkey{width:11px;height:11px;border-radius:2px;border:1.5px solid var(--oxblood);}
+  .map-foot .ringkey.sel{border-color:var(--gold);}
+
+  /* ===================== SIGNALS TABLE ===================== */
+  .sig-table{width:100%;border-collapse:collapse;}
+  .sig-table thead th{
+    font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);font-weight:700;
+    text-align:left;padding:0 8px 7px;border-bottom:1px solid var(--gold);
+  }
+  .sig-table thead th.r{text-align:right;}
+  .sig-table tbody td{padding:8px;border-bottom:1px solid var(--rule-soft);vertical-align:middle;}
+  .sig-table tbody tr:last-child td{border-bottom:none;}
+  .sig-table tbody tr:hover{background:rgba(184,151,90,.08);}
+  .sig-name{font-family:"Fraunces",serif;font-weight:500;font-size:13.5px;color:var(--ink);letter-spacing:-.005em;}
+  .sig-note{font-size:10px;color:var(--ink-3);margin-top:1px;line-height:1.25;max-width:240px;}
+  .verdict-chip{font-size:9.5px;font-weight:800;letter-spacing:.1em;padding:3px 8px;border-radius:2px;text-transform:uppercase;display:inline-block;white-space:nowrap;}
+  .v-watch{background:rgba(124,45,45,.1);color:var(--oxblood);border:1px solid rgba(124,45,45,.4);}
+  .v-weak{background:rgba(176,122,36,.1);color:var(--amber);border:1px solid rgba(176,122,36,.35);}
+  .v-dead{background:rgba(110,103,90,.1);color:var(--ink-3);border:1px solid var(--rule);}
+  .mono-n{font-feature-settings:"tnum" 1,"onum" 0;font-weight:700;font-size:13px;text-align:right;color:var(--ink);}
+  .mono-n.dim{color:var(--ink-3);font-weight:600;}
+  .tally{display:flex;gap:0;margin-top:11px;border:1px solid var(--rule);border-radius:2px;overflow:hidden;}
+  .tally div{flex:1;text-align:center;padding:7px 4px;border-left:1px solid var(--rule-soft);}
+  .tally div:first-child{border-left:none;}
+  .tally .tn{font-family:"Fraunces",serif;font-weight:600;font-size:18px;font-feature-settings:"tnum" 1;}
+  .tally .tl{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-top:1px;}
+  .tally .watch .tn{color:var(--oxblood);} .tally .weak .tn{color:var(--amber);}
+  .tally .dead .tn{color:var(--ink-2);} .tally .insf .tn{color:var(--ink-3);}
+
+  /* ===================== DISLOCATIONS FEED ===================== */
+  .feed{list-style:none;margin:0;padding:0;}
+  .feed li{display:grid;grid-template-columns:auto 1fr;gap:11px;padding:9px 0;border-bottom:1px solid var(--rule-soft);}
+  .feed li:last-child{border-bottom:none;}
+  .dcode{
+    font-family:"Fraunces",serif;font-weight:700;font-size:12px;color:#F7ECD9;background:var(--oxblood);
+    width:30px;height:30px;border-radius:2px;display:flex;align-items:center;justify-content:center;flex:none;
+    letter-spacing:.02em;box-shadow:0 2px 6px -3px rgba(124,45,45,.7);
+  }
+  .dcode.cycle{background:var(--gold);color:#2A1E12;}
+  .dbody .dt{font-size:12.5px;line-height:1.32;color:var(--ink);}
+  .dbody .dt b{font-family:"Fraunces",serif;font-weight:600;color:var(--oxblood);font-size:13px;}
+  .dbody .dz{font-feature-settings:"tnum" 1;font-weight:700;color:var(--ink);}
+  .dbody .dtag{display:inline-block;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-top:2px;font-weight:600;}
+  .feed-foot{margin-top:9px;font-size:10.5px;color:var(--ink-3);font-style:italic;font-family:"Fraunces",serif;}
+
+  /* ===================== BRAZIL DEEP-DIVE ===================== */
+  .brz-grid{display:grid;grid-template-columns:1.18fr 1fr;gap:16px;align-items:start;}
+  .dropcap{float:left;font-family:"Fraunces",serif;font-weight:600;font-size:58px;line-height:.72;color:var(--oxblood);margin:4px 10px 0 0;}
+  .brz-lede{font-size:12px;line-height:1.5;color:var(--ink-2);}
+  .brz-lede b{color:var(--ink);font-weight:700;}
+  .regime{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--gold);background:rgba(184,151,90,.08);
+    padding:3px 9px;border-radius:2px;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--oxblood);margin-top:8px;}
+  .regime::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--oxblood);}
+  .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:13px;border-top:1px solid var(--gold);border-bottom:1px solid var(--gold);}
+  .stat{padding:9px 10px;border-left:1px solid var(--rule-soft);}
+  .stat:first-child{border-left:none;}
+  .stat .sl{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:700;}
+  .stat .sv{font-family:"Fraunces",serif;font-weight:600;font-size:21px;margin-top:2px;font-feature-settings:"tnum" 1;letter-spacing:-.01em;}
+  .stat .ss{font-size:9.5px;color:var(--ink-3);margin-top:0;}
+  .stat .sv.up{color:var(--green);} .stat .sv.ox{color:var(--oxblood);}
+  .val-block{margin-top:13px;}
+  .val-row{display:flex;align-items:center;gap:10px;margin-top:9px;}
+  .val-row .vlabel{font-size:10.5px;width:62px;color:var(--ink-2);font-weight:700;letter-spacing:.02em;}
+  .val-track{flex:1;height:8px;background:var(--paper-3);border-radius:4px;position:relative;border:1px solid var(--rule-soft);}
+  .val-fill{position:absolute;top:-1px;bottom:-1px;left:0;border-radius:4px;}
+  .val-fill.cheap{background:linear-gradient(90deg,#6E9474,#3E6B4A);}
+  .val-fill.rich{background:linear-gradient(90deg,#C98A4B,#7C2D2D);}
+  .val-row .vpct{font-family:"Fraunces",serif;font-weight:600;font-size:14px;width:36px;text-align:right;font-feature-settings:"tnum" 1;}
+  .val-row .vtag{font-size:9px;letter-spacing:.08em;text-transform:uppercase;width:42px;font-weight:700;}
+  .vtag.cheap{color:var(--green);} .vtag.rich{color:var(--oxblood);}
+  .thesis-chip{margin-top:14px;display:flex;align-items:center;gap:10px;border:1px solid var(--rule);background:rgba(62,107,74,.05);border-radius:2px;padding:8px 11px;}
+  .thesis-chip .tdot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(62,107,74,.15);flex:none;}
+  .thesis-chip .tid{font-family:"Fraunces",serif;font-weight:600;font-size:11px;color:var(--ink-2);letter-spacing:.02em;}
+  .thesis-chip .ttxt{font-size:11px;color:var(--ink-2);}
+  .thesis-chip .ttxt b{color:var(--green);font-weight:800;}
+  .thesis-chip .tpaper{margin-left:auto;font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);border:1px solid var(--gold-soft);padding:2px 6px;border-radius:2px;font-weight:700;}
+  .spark-cap{font-size:9.5px;color:var(--ink-3);letter-spacing:.04em;margin-top:7px;display:flex;justify-content:space-between;}
+  .curve-cap{font-size:9.5px;color:var(--ink-3);letter-spacing:.04em;text-align:center;margin-top:4px;}
+
+  /* ===================== CHAT RAIL ===================== */
+  .chat{
+    position:relative;display:flex;flex-direction:column;
+    background:linear-gradient(180deg,#FFFEFA,#FAF4E6);
+    border:1px solid var(--rule);border-radius:2px;box-shadow:var(--shadow);
+    height:806px;overflow:hidden;
+  }
+  .chat::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,var(--oxblood),var(--gold) 70%, transparent);}
+  .chat-head{padding:15px 18px 12px;border-bottom:1px solid var(--gold);}
+  .chat-head .ch-k{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);font-weight:700;}
+  .chat-head .ch-t{font-family:"Fraunces",serif;font-weight:600;font-size:21px;margin-top:3px;letter-spacing:-.01em;}
+  .chat-head .ch-t em{font-style:italic;color:var(--oxblood);font-weight:500;}
+  .chat-head .ch-s{font-size:11px;color:var(--ink-3);margin-top:3px;line-height:1.4;}
+  .ground-key{display:flex;gap:7px;margin-top:11px;flex-wrap:wrap;}
+  .gk{font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;padding:3px 7px;border-radius:2px;display:inline-flex;align-items:center;gap:4px;}
+  .gk::before{content:"";width:6px;height:6px;border-radius:50%;}
+  .gk.fact{color:var(--green);background:rgba(62,107,74,.08);border:1px solid rgba(62,107,74,.3);}
+  .gk.fact::before{background:var(--green);}
+  .gk.inf{color:var(--amber);background:rgba(176,122,36,.08);border:1px solid rgba(176,122,36,.3);}
+  .gk.inf::before{background:var(--amber);}
+  .gk.unk{color:var(--ink-3);background:rgba(110,103,90,.08);border:1px solid var(--rule);}
+  .gk.unk::before{background:var(--ink-3);}
+
+  .chat-body{flex:1;overflow:hidden;padding:15px 18px 6px;display:flex;flex-direction:column;gap:13px;}
+  .msg{max-width:96%;}
+  .msg .who{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:5px;display:flex;align-items:center;gap:7px;}
+  .msg.pm{align-self:flex-end;text-align:right;}
+  .msg.pm .who{justify-content:flex-end;color:var(--ink-3);}
+  .msg.pm .bubble{
+    display:inline-block;background:var(--oxblood);color:#F8EEDC;border-radius:10px 10px 2px 10px;
+    padding:11px 14px;font-family:"Fraunces",serif;font-weight:500;font-size:14.5px;line-height:1.35;letter-spacing:-.005em;
+    box-shadow:0 8px 18px -12px rgba(124,45,45,.8);
+  }
+  .msg.cos .who{color:var(--oxblood);}
+  .msg.cos .who .seal{width:16px;height:16px;border-radius:50%;background:var(--oxblood);color:var(--gold-soft);
+    font-family:"Fraunces",serif;font-size:9px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;}
+  .msg.cos .bubble{
+    background:#FFFDF7;border:1px solid var(--rule);border-left:3px solid var(--gold);border-radius:2px 10px 10px 10px;
+    padding:13px 15px;font-size:12.5px;line-height:1.56;color:var(--ink);
+  }
+  .bubble .lead{font-family:"Fraunces",serif;font-weight:500;font-size:13px;}
+  .enum{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;
+    background:var(--oxblood);color:#F7ECD9;font-size:9px;font-weight:800;font-family:"Hanken Grotesk";margin-right:3px;vertical-align:1px;}
+  .cite{font-feature-settings:"tnum" 1;color:var(--gold);font-weight:700;font-size:11px;}
+  .cite::before{content:"[";} .cite::after{content:"]";}
+  .ann{display:inline-block;font-size:8px;font-weight:800;letter-spacing:.08em;vertical-align:1.5px;padding:1px 4px;border-radius:2px;margin:0 1px;text-transform:uppercase;}
+  .ann.fact{color:var(--green);background:rgba(62,107,74,.1);}
+  .ann.inf{color:var(--amber);background:rgba(176,122,36,.12);}
+  .bubble .kicker-note{margin-top:9px;padding-top:9px;border-top:1px solid var(--rule-soft);font-style:italic;font-family:"Fraunces",serif;font-size:12px;color:var(--oxblood);}
+
+  .chat-input{padding:12px 16px 15px;border-top:1px solid var(--gold);background:rgba(245,240,228,.6);}
+  .input-shell{display:flex;align-items:center;gap:10px;background:#FFFDF7;border:1px solid var(--rule);border-radius:3px;padding:10px 12px;box-shadow:inset 0 1px 2px rgba(27,26,23,.04);}
+  .input-shell .qmark{font-family:"Fraunces",serif;font-style:italic;font-weight:500;color:var(--gold);font-size:18px;line-height:1;}
+  .input-shell input{flex:1;border:none;background:transparent;font-family:"Hanken Grotesk";font-size:12.5px;color:var(--ink);outline:none;}
+  .input-shell input::placeholder{color:var(--ink-3);font-style:italic;font-family:"Fraunces",serif;}
+  .send{background:var(--oxblood);color:#F7ECD9;border:none;width:32px;height:32px;border-radius:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.16s;}
+  .send:hover{background:var(--oxblood-deep);transform:translateY(-1px);}
+  .chips{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap;}
+  .chip{font-size:10px;color:var(--ink-2);border:1px solid var(--rule);background:#FFFDF7;border-radius:14px;padding:4px 10px;cursor:pointer;transition:.16s;letter-spacing:.01em;}
+  .chip:hover{border-color:var(--oxblood);color:var(--oxblood);background:rgba(124,45,45,.04);}
+
+  /* footer line */
+  .colophon{margin-top:14px;display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--ink-3);letter-spacing:.06em;padding-top:9px;border-top:1px solid var(--rule);}
+  .colophon .c-mark{font-family:"Fraunces",serif;font-style:italic;}
+  .colophon .c-r{font-feature-settings:"tnum" 1;}
+
+  /* stagger helpers */
+  .d1{animation-delay:.04s} .d2{animation-delay:.12s} .d3{animation-delay:.2s}
+  .d4{animation-delay:.3s} .d5{animation-delay:.4s} .d6{animation-delay:.5s}
+  .d7{animation-delay:.6s} .d8{animation-delay:.7s}
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead reveal d1">
+    <div class="brand">
+      <span class="folio">No. 1407</span>
+      <div>
+        <div class="wordmark">ASADO <em>· Chief of Staff</em></div>
+        <div class="dek">A standing letter on the state of the research system <span class="sep">—</span> 34 country equity markets, grounded counsel, paper until proven.</div>
+      </div>
+    </div>
+    <div></div>
+    <div class="issue">
+      <div class="vol">Daily Despatch · Vol. VI</div>
+      <div class="date num">17 June 2026</div>
+      <div class="asof num">data as-of 2026-06-16</div>
+    </div>
+  </header>
+
+  <!-- ===================== STATUS RIBBON ===================== -->
+  <div class="ribbon reveal d2">
+    <div class="ribbon-seal">
+      <span class="lbl">Governance</span>
+      <span class="verdict serif">AMBER</span>
+      <span class="sub">6 green · 1 amber · by design</span>
+    </div>
+    <div class="scorecard">
+      <div class="dim"><span class="dname">run_manifest</span><span class="drow"><i class="pip g"></i><span class="dstate g">Green</span></span></div>
+      <div class="dim"><span class="dname">liveness</span><span class="drow"><i class="pip g"></i><span class="dstate g">Green</span></span></div>
+      <div class="dim"><span class="dname">ledger_integrity</span><span class="drow"><i class="pip g"></i><span class="dstate g">Green</span></span></div>
+      <div class="dim"><span class="dname">family_registry</span><span class="drow"><i class="pip g"></i><span class="dstate g">Green</span></span></div>
+      <div class="dim"><span class="dname">pit_lag_proof</span><span class="drow"><i class="pip g"></i><span class="dstate g">Green</span></span></div>
+      <div class="dim flag"><span class="dname">cross_source_minimal</span><span class="drow"><i class="pip a"></i><span class="dstate a">Amber</span></span></div>
+      <div class="dim"><span class="dname">config_guard</span><span class="drow"><i class="pip g"></i><span class="dstate g">Green</span></span></div>
+    </div>
+  </div>
+
+  <!-- ===================== MAIN GRID ===================== -->
+  <div class="grid">
+
+    <!-- ========== LEFT / CENTER COLUMN ========== -->
+    <div class="col-left">
+
+      <!-- WORLD MAP -->
+      <section class="panel map-panel reveal d3">
+        <div class="phead">
+          <div class="kicker">
+            <span class="secnum">I</span>
+            <div>
+              <div class="ptitle">The <span class="accent">Universe</span> at a Glance</div>
+              <div class="pmeta">34 markets · five regions · coloured by layer</div>
+            </div>
+          </div>
+          <div class="toggle" id="layerToggle">
+            <button class="on" data-layer="signal">Signal</button>
+            <button data-layer="return">Return</button>
+            <button data-layer="disloc">Dislocation</button>
+          </div>
+        </div>
+        <div class="hr"></div>
+
+        <div class="cartogram">
+          <!-- AMERICAS -->
+          <div class="region">
+            <h4>Americas <span class="cnt">07</span></h4>
+            <div class="tiles">
+              <div class="tile s2"><span class="nm">Canada</span><span class="vl num">+0.4σ</span></div>
+              <div class="tile s3"><span class="nm">U.S.</span><span class="vl num">+0.9σ</span></div>
+              <div class="tile s2"><span class="nm">NASDAQ</span><span class="vl num">+0.6σ</span></div>
+              <div class="tile s1"><span class="nm">US SmCap</span><span class="vl num">+0.2σ</span></div>
+              <div class="tile s2"><span class="nm">Mexico</span><span class="vl num">+0.5σ</span></div>
+              <div class="tile selected sg span2"><span class="star">◆</span><span class="nm">Brazil</span><span class="vl num">reflation · sel.</span></div>
+              <div class="tile disloc s5"><span class="star">D1</span><span class="nm">Chile</span><span class="vl num">+2.0z Cu</span></div>
+            </div>
+          </div>
+          <!-- EUROPE -->
+          <div class="region">
+            <h4>Europe <span class="cnt">11</span></h4>
+            <div class="tiles">
+              <div class="tile s2"><span class="nm">U.K.</span><span class="vl num">+0.5σ</span></div>
+              <div class="tile s1"><span class="nm">France</span><span class="vl num">+0.1σ</span></div>
+              <div class="tile s2"><span class="nm">Germany</span><span class="vl num">+0.4σ</span></div>
+              <div class="tile s1"><span class="nm">Netherl.</span><span class="vl num">+0.2σ</span></div>
+              <div class="tile s2"><span class="nm">Switzer.</span><span class="vl num">+0.5σ</span></div>
+              <div class="tile s1"><span class="nm">Italy</span><span class="vl num">+0.1σ</span></div>
+              <div class="tile s2"><span class="nm">Spain</span><span class="vl num">+0.3σ</span></div>
+              <div class="tile s1"><span class="nm">Sweden</span><span class="vl num">+0.2σ</span></div>
+              <div class="tile s5"><span class="star">▼</span><span class="nm">Denmark</span><span class="vl num">−45% DD</span></div>
+              <div class="tile s2"><span class="nm">Poland</span><span class="vl num">+0.4σ</span></div>
+            </div>
+          </div>
+          <!-- MEA -->
+          <div class="region">
+            <h4>MEA <span class="cnt">03</span></h4>
+            <div class="tiles">
+              <div class="tile span2 s1"><span class="nm">South Africa</span><span class="vl num">+0.2σ</span></div>
+              <div class="tile span2 s3"><span class="star">◆</span><span class="nm">Saudi Arabia</span><span class="vl num">+0.8σ</span></div>
+              <div class="tile span2 s4"><span class="nm">Turkey</span><span class="vl num">+1.3σ</span></div>
+            </div>
+          </div>
+          <!-- ASIA -->
+          <div class="region">
+            <h4>Asia <span class="cnt">12</span></h4>
+            <div class="tiles">
+              <div class="tile s2"><span class="nm">ChinaA</span><span class="vl num">+0.4σ</span></div>
+              <div class="tile s2"><span class="nm">ChinaH</span><span class="vl num">+0.5σ</span></div>
+              <div class="tile s1"><span class="nm">HongKong</span><span class="vl num">+0.2σ</span></div>
+              <div class="tile s2"><span class="nm">Japan</span><span class="vl num">+0.6σ</span></div>
+              <div class="tile disloc s5"><span class="star">D2</span><span class="nm">Korea</span><span class="vl num">+2.3z gap</span></div>
+              <div class="tile s2"><span class="nm">Taiwan</span><span class="vl num">+0.7σ</span></div>
+              <div class="tile s3"><span class="nm">India</span><span class="vl num">+0.8σ</span></div>
+              <div class="tile disloc s5"><span class="star">D5▼</span><span class="nm">Indonesia</span><span class="vl num">+2.4z att</span></div>
+              <div class="tile s1"><span class="nm">Malaysia</span><span class="vl num">+0.1σ</span></div>
+              <div class="tile s1"><span class="nm">Philipp.</span><span class="vl num">+0.2σ</span></div>
+              <div class="tile s2"><span class="nm">Singapore</span><span class="vl num">+0.4σ</span></div>
+              <div class="tile s1"><span class="nm">Thailand</span><span class="vl num">+0.1σ</span></div>
+            </div>
+          </div>
+          <!-- OCEANIA + VIETNAM column -->
+          <div class="region">
+            <h4>Oceania <span class="cnt">02</span></h4>
+            <div class="tiles">
+              <div class="tile span2 s2"><span class="nm">Australia</span><span class="vl num">+0.5σ</span></div>
+              <div class="tile span2 s2"><span class="nm">Vietnam</span><span class="vl num">+0.6σ</span></div>
+            </div>
+            <h4 style="margin-top:11px;">Intensity <span class="cnt">σ / z</span></h4>
+            <div style="margin-top:2px;">
+              <svg width="100%" height="46" viewBox="0 0 150 46" preserveAspectRatio="none" aria-hidden="true">
+                <defs>
+                  <linearGradient id="ramp" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0" stop-color="#F0EAD8"/>
+                    <stop offset=".4" stop-color="#E3C887"/>
+                    <stop offset=".7" stop-color="#C98A4B"/>
+                    <stop offset="1" stop-color="#7C2D2D"/>
+                  </linearGradient>
+                </defs>
+                <rect x="2" y="6" width="146" height="11" rx="2" fill="url(#ramp)" stroke="rgba(27,26,23,.12)"/>
+                <text x="2" y="32" font-family="Hanken Grotesk" font-size="8" fill="#6E675A">calm</text>
+                <text x="118" y="32" font-family="Hanken Grotesk" font-size="8" fill="#7C2D2D">hot</text>
+                <rect x="2" y="38" width="11" height="7" rx="1.5" fill="#3E6B4A"/>
+                <text x="17" y="44" font-family="Hanken Grotesk" font-size="8" fill="#6E675A">positive / selected</text>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="map-foot">
+          <span class="key"><i class="ringkey"></i> active dislocation — Chile · Korea · Indonesia</span>
+          <span class="key"><i class="ringkey sel"></i> selected — Brazil</span>
+          <span class="key">▼ deep drawdown (JST) — Denmark −45% · Indonesia −50%</span>
+          <span class="key" style="margin-left:auto;color:var(--gold);font-style:italic;font-family:'Fraunces',serif;">layer · signal intensity</span>
+        </div>
+      </section>
+
+      <!-- SIGNALS + DISLOCATIONS ROW -->
+      <div class="row2">
+
+        <!-- TOP SIGNALS -->
+        <section class="panel reveal d4">
+          <div class="phead">
+            <div class="kicker">
+              <span class="secnum">II</span>
+              <div>
+                <div class="ptitle">Top <span class="accent">Signals</span></div>
+                <div class="pmeta">live registry · verdict · IC · NW-t</div>
+              </div>
+            </div>
+          </div>
+          <div class="hr"></div>
+          <table class="sig-table">
+            <thead>
+              <tr><th>Signal</th><th>Verdict</th><th class="r">IC</th><th class="r">NW-t</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><div class="sig-name">combiner_ridge_daily</div><div class="sig-note">strongest registered signal; components selected in-sample → a ceiling</div></td>
+                <td><span class="verdict-chip v-watch">Watch</span></td>
+                <td class="mono-n">0.057</td><td class="mono-n">10.7</td>
+              </tr>
+              <tr>
+                <td><div class="sig-name">network_spillover</div><div class="sig-note">N = 21</div></td>
+                <td><span class="verdict-chip v-weak">Weak</span></td>
+                <td class="mono-n">0.034</td><td class="mono-n">4.5</td>
+              </tr>
+              <tr>
+                <td><div class="sig-name">fundamental_twins</div><div class="sig-note">similarity-graph peers</div></td>
+                <td><span class="verdict-chip v-weak">Weak</span></td>
+                <td class="mono-n">0.028</td><td class="mono-n">5.6</td>
+              </tr>
+              <tr>
+                <td><div class="sig-name">eco_infl_surprise</div><div class="sig-note">reflation: hot inflation prints → outperformance</div></td>
+                <td><span class="verdict-chip v-weak">Weak</span></td>
+                <td class="mono-n dim">—</td><td class="mono-n">3.0</td>
+              </tr>
+              <tr>
+                <td><div class="sig-name">valuation_pctile</div><div class="sig-note">no edge net of style</div></td>
+                <td><span class="verdict-chip v-dead">Dead</span></td>
+                <td class="mono-n dim">—</td><td class="mono-n dim">—</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="tally">
+            <div class="watch"><div class="tn num">2</div><div class="tl">Watch</div></div>
+            <div class="weak"><div class="tn num">39</div><div class="tl">Weak</div></div>
+            <div class="dead"><div class="tn num">31</div><div class="tl">Dead</div></div>
+            <div class="insf"><div class="tn num">16</div><div class="tl">Insuff.</div></div>
+          </div>
+        </section>
+
+        <!-- DISLOCATIONS FEED -->
+        <section class="panel reveal d5">
+          <div class="phead">
+            <div class="kicker">
+              <span class="secnum">III</span>
+              <div>
+                <div class="ptitle">The <span class="accent">Dislocations</span></div>
+                <div class="pmeta">nightly brief · as-of 2026-06-16 · 79 rows</div>
+              </div>
+            </div>
+          </div>
+          <div class="hr"></div>
+          <ul class="feed">
+            <li>
+              <span class="dcode">D1</span>
+              <div class="dbody"><div class="dt"><b>Chile</b> — copper terms-of-trade impulse <span class="dz">z = +2.0</span>, equity flat</div><span class="dtag">unpriced</span></div>
+            </li>
+            <li>
+              <span class="dcode">D2</span>
+              <div class="dbody"><div class="dt"><b>Korea</b> — trade-neighbour return gap <span class="dz">+2.3z</span></div><span class="dtag">spillover · endpoint not repriced</span></div>
+            </li>
+            <li>
+              <span class="dcode">D5</span>
+              <div class="dbody"><div class="dt"><b>Indonesia</b> — GDELT attention <span class="dz">z = +2.4</span>, |5d return| &lt; 0.5σ</div><span class="dtag">attention without resolution</span></div>
+            </li>
+            <li>
+              <span class="dcode">D8</span>
+              <div class="dbody"><div class="dt">36 open-thesis stewardship rows under review</div><span class="dtag">stewardship</span></div>
+            </li>
+            <li>
+              <span class="dcode">D9</span>
+              <div class="dbody"><div class="dt">3 country-vs-ETF basis gaps flagged</div><span class="dtag">basis</span></div>
+            </li>
+            <li>
+              <span class="dcode cycle">JST</span>
+              <div class="dbody"><div class="dt">Long-cycle tail (1870–2020): <b style="color:var(--ink)">Indonesia</b> <span class="dz">−50%</span> drawdown (EM-analogy) · <b style="color:var(--ink)">Denmark</b> <span class="dz">−45%</span> (DM · Novo Nordisk)</div></div>
+            </li>
+          </ul>
+          <div class="feed-foot">— 73 further rows in the full ledger.</div>
+        </section>
+      </div>
+
+      <!-- BRAZIL DEEP-DIVE -->
+      <section class="panel reveal d6">
+        <div class="phead">
+          <div class="kicker">
+            <span class="secnum">IV</span>
+            <div>
+              <div class="ptitle">Country Letter · <span class="accent">Brazil</span></div>
+              <div class="pmeta">selected market · deep-dive</div>
+            </div>
+          </div>
+          <span class="regime">Regime · Reflation</span>
+        </div>
+        <div class="hr"></div>
+
+        <div class="brz-grid">
+          <!-- left: lede + stats + valuation -->
+          <div>
+            <p class="brz-lede"><span class="dropcap serif">B</span>razil prints <b>reflation</b>: the sovereign 10-year holds at <b>14.28%</b> with the curve gently positive at <b>+0.9</b> two-to-ten, and 5-year CDS sits at <b>148bp</b>. Equities are up <b>+3.2%</b> over the trailing twenty-one sessions — cheap on cycle (CAPE) yet richly bid on equity risk premium.</p>
+
+            <div class="stat-row">
+              <div class="stat"><div class="sl">10Y Sov.</div><div class="sv num">14.28<span style="font-size:13px">%</span></div><div class="ss">2s10s +0.9</div></div>
+              <div class="stat"><div class="sl">5Y CDS</div><div class="sv num ox">148<span style="font-size:12px">bp</span></div><div class="ss">credit risk</div></div>
+              <div class="stat"><div class="sl">Equity · 21d</div><div class="sv num up">+3.2<span style="font-size:13px">%</span></div><div class="ss">trailing</div></div>
+            </div>
+
+            <div class="val-block">
+              <div class="val-row">
+                <span class="vlabel">CAPE</span>
+                <span class="val-track"><span class="val-fill cheap" style="width:38%"></span></span>
+                <span class="vpct num">38</span><span class="vtag cheap">cheap</span>
+              </div>
+              <div class="val-row">
+                <span class="vlabel">ERP</span>
+                <span class="val-track"><span class="val-fill rich" style="width:72%"></span></span>
+                <span class="vpct num">72</span><span class="vtag rich">rich</span>
+              </div>
+            </div>
+
+            <div class="thesis-chip">
+              <span class="tdot"></span>
+              <span class="tid">T_20260610_001</span>
+              <span class="ttxt"><b>LONG Indonesia +8.1%</b> · open 7d</span>
+              <span class="tpaper">Paper</span>
+            </div>
+          </div>
+
+          <!-- right: charts -->
+          <div>
+            <!-- returns sparkline -->
+            <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin-bottom:3px;">Equity · 21-day path</div>
+            <svg width="100%" height="74" viewBox="0 0 320 74" preserveAspectRatio="none" aria-label="Brazil 21-day return sparkline +3.2%">
+              <defs>
+                <linearGradient id="brzFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="rgba(62,107,74,.22)"/>
+                  <stop offset="1" stop-color="rgba(62,107,74,0)"/>
+                </linearGradient>
+              </defs>
+              <line x1="0" y1="58" x2="320" y2="58" stroke="rgba(27,26,23,.12)" stroke-width="1" stroke-dasharray="2 3"/>
+              <path d="M0,52 L0,52 14,54 28,49 42,51 56,46 70,48 84,42 98,44 112,38 126,41 140,35 154,37 168,31 182,34 196,28 210,30 224,24 238,27 252,21 266,23 280,18 294,20 308,15 320,12 L320,74 L0,74 Z" fill="url(#brzFill)"/>
+              <path d="M0,52 L14,54 28,49 42,51 56,46 70,48 84,42 98,44 112,38 126,41 140,35 154,37 168,31 182,34 196,28 210,30 224,24 238,27 252,21 266,23 280,18 294,20 308,15 320,12" fill="none" stroke="#3E6B4A" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+              <circle cx="320" cy="12" r="3" fill="#3E6B4A" stroke="#FBF8F1" stroke-width="1.5"/>
+            </svg>
+            <div class="spark-cap"><span class="num">21d ago · 100.0</span><span style="color:var(--green);font-weight:700;" class="num">today · 103.2 (+3.2%)</span></div>
+
+            <div class="hr-soft"></div>
+
+            <!-- sovereign curve -->
+            <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin-bottom:3px;">Sovereign curve · 2Y → 10Y</div>
+            <svg width="100%" height="92" viewBox="0 0 320 92" preserveAspectRatio="none" aria-label="Brazil sovereign curve 2Y 10Y and CDS">
+              <!-- gridlines -->
+              <line x1="0" y1="20" x2="320" y2="20" stroke="rgba(27,26,23,.07)"/>
+              <line x1="0" y1="46" x2="320" y2="46" stroke="rgba(27,26,23,.07)"/>
+              <line x1="0" y1="72" x2="320" y2="72" stroke="rgba(27,26,23,.07)"/>
+              <!-- y labels -->
+              <text x="2" y="17" font-family="Hanken Grotesk" font-size="8" fill="#6E675A">14.6</text>
+              <text x="2" y="75" font-family="Hanken Grotesk" font-size="8" fill="#6E675A">13.2</text>
+              <!-- curve: 2Y(13.38) -> 5Y -> 10Y(14.28), gently upward -->
+              <path d="M20,52 110,44 210,34 300,28" fill="none" stroke="#7C2D2D" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+              <circle cx="20" cy="52" r="3.5" fill="#7C2D2D"/>
+              <circle cx="210" cy="34" r="3.5" fill="#B8975A"/>
+              <circle cx="300" cy="28" r="3.5" fill="#7C2D2D"/>
+              <!-- point labels -->
+              <text x="20" y="68" font-family="Hanken Grotesk" font-size="9" font-weight="700" fill="#1B1A17" text-anchor="middle">2Y</text>
+              <text x="20" y="80" font-family="Hanken Grotesk" font-size="9" fill="#6E675A" text-anchor="middle">13.38</text>
+              <text x="210" y="84" font-family="Hanken Grotesk" font-size="9" font-weight="700" fill="#B8975A" text-anchor="middle">5Y CDS 148</text>
+              <text x="300" y="20" font-family="Hanken Grotesk" font-size="9" font-weight="700" fill="#1B1A17" text-anchor="end">10Y 14.28</text>
+            </svg>
+            <div class="curve-cap">2s10s slope <b style="color:var(--green)" class="num">+0.9</b> · positive · CDS midpoint marked in gold</div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ========== RIGHT: CHIEF-OF-STAFF CHAT ========== -->
+    <aside class="chat reveal d7">
+      <div class="chat-head">
+        <div class="ch-k">Section V</div>
+        <div class="ch-t serif">The <em>Chief of Staff</em></div>
+        <div class="ch-s">Grounded counsel on what is true and what to care about. Every claim is annotated by its standing.</div>
+        <div class="ground-key">
+          <span class="gk fact">Fact · cited</span>
+          <span class="gk inf">Inference</span>
+          <span class="gk unk">Unknown / stale</span>
+        </div>
+      </div>
+
+      <div class="chat-body">
+        <!-- PM -->
+        <div class="msg pm">
+          <div class="who">Portfolio Manager · 09:14</div>
+          <div class="bubble">What should I care about today?</div>
+        </div>
+
+        <!-- CoS -->
+        <div class="msg cos">
+          <div class="who"><span class="seal serif">A</span> Chief of Staff · 09:14</div>
+          <div class="bubble">
+            <span class="lead">Three things.</span>
+            <div style="margin-top:8px;">
+              <span class="enum">1</span> Governance is <b>AMBER</b> — only because cross-source coverage is partial <span class="ann inf">inf</span> by design; everything else is green <span class="cite">scorecard.json</span> <span class="ann fact">fact</span>.
+            </div>
+            <div style="margin-top:8px;">
+              <span class="enum">2</span> The daily combiner is still your only <b>WATCH</b> (IC 0.057), but its components were selected in-sample — a ceiling, not proof <span class="cite">live_signals</span> <span class="ann fact">fact</span>.
+            </div>
+            <div style="margin-top:8px;">
+              <span class="enum">3</span> Fresh <b>D1</b>: Chile's copper terms-of-trade impulse (+2.0z) hasn't repriced into equities <span class="cite">brief · 2026-06-16</span> <span class="ann fact">fact</span>.
+            </div>
+            <div class="kicker-note">Nothing here is a trade yet — all paper until the harness clears it.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-input">
+        <div class="input-shell">
+          <span class="qmark serif">¶</span>
+          <input type="text" placeholder="Ask the desk — e.g. why is governance amber?" aria-label="Message the Chief of Staff">
+          <button class="send" aria-label="Send">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+          </button>
+        </div>
+        <div class="chips">
+          <span class="chip">Explain cross_source amber</span>
+          <span class="chip">Is the combiner tradeable?</span>
+          <span class="chip">Walk me through D1 · Chile</span>
+          <span class="chip">Open theses</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- COLOPHON -->
+  <div class="colophon reveal d8">
+    <span class="c-mark">ASADO — set in Fraunces &amp; Hanken Grotesk · printed on ivory · oxblood &amp; gold</span>
+    <span class="c-r num">unified_panel 17.4M · feature_panel 31.6M · ledger 2 watch / 39 weak / 31 dead / 16 insuff. · paper-only</span>
+  </div>
+
+</div>
+
+<script>
+  // ---- map layer toggle: re-letterpresses the tiles with a different palette per layer ----
+  (function(){
+    var toggle = document.getElementById('layerToggle');
+    if(!toggle) return;
+    var btns = toggle.querySelectorAll('button');
+    var foot = document.querySelector('.map-foot .key:last-child');
+    btns.forEach(function(b){
+      b.addEventListener('click', function(){
+        btns.forEach(function(x){x.classList.remove('on');});
+        b.classList.add('on');
+        var layer = b.getAttribute('data-layer');
+        if(foot){
+          foot.textContent = layer === 'return' ? 'layer · 21-day return'
+                           : layer === 'disloc' ? 'layer · dislocation intensity'
+                           : 'layer · signal intensity';
+        }
+        // subtle re-reveal of tiles for a living feel (palette stays; this is a mockup)
+        document.querySelectorAll('.tile').forEach(function(t,i){
+          t.style.transition = 'none';
+          t.style.opacity = '0';
+          t.style.transform = 'translateY(4px)';
+          setTimeout(function(){
+            t.style.transition = 'opacity .4s ease, transform .4s ease';
+            t.style.opacity = '1';
+            t.style.transform = 'none';
+          }, 18*i % 220 + 10);
+        });
+      });
+    });
+  })();
+</script>
+</body>
+</html>

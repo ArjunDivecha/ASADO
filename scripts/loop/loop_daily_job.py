@@ -246,6 +246,13 @@ STEPS = [
     # Push discovered SIMILAR_TO / LEADS edges + combiner ranks into Neo4j.
     ("write_graph_discoveries", [PY, "scripts/loop/write_graph_discoveries.py"]),
     ("build_dislocations", [PY, "scripts/loop/build_dislocations.py"]),
+    # Price-Discovery Gap Engine (v1 pilot): enhancement layer over
+    # dislocation_daily. These steps are additive and feature-flagged in
+    # config/gap_engine.yaml; the original brief exists before render runs, so
+    # disabling render_top_gaps restores the old brief path.
+    ("build_price_state", [PY, "scripts/loop/build_price_state.py"]),
+    ("build_gap_episodes", [PY, "scripts/loop/build_gap_episodes.py"]),
+    ("render_dislocation_brief", [PY, "scripts/loop/render_dislocation_brief.py"]),
     # Cross-source consistency (A7 — the GSAB defense): sentinels (hard stop)
     # + redundant-pair agreement. Exits non-zero only on a sentinel mismatch.
     ("check_cross_source", [PY, "scripts/loop/check_cross_source.py"]),
@@ -295,7 +302,7 @@ def _load_optional_steps() -> set[str]:
     try:
         contract_path = BASE_DIR / "config" / "governance_contract.yaml"
         contract = yaml.safe_load(contract_path.read_text())
-        return {s["name"] for s in contract.get("steps", []) if s.get("optional")}
+        return {s["name"] for s in contract.get('steps', []) if s.get("optional")}
     except Exception as exc:  # noqa: BLE001
         print(f"!!! could not load governance_contract.yaml optional flags: {exc}", flush=True)
         return set()

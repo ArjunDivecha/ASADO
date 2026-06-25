@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ASADO · Chief of Staff</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F4EEE1; --paper-2:#FBF7EE; --paper-3:#EFE7D6;
+    --ink:#221F18; --ink-2:#5B5345; --ink-3:#8C8474;
+    --gold:#B8975A; --gold-soft:#D8C49A;
+    --oxblood:#7C2D2D; --rust:#B4521E; --teal:#2C7A6B;
+    --green:#3C7A4E; --amber:#B07A12; --red:#A23B2E;
+    --line:rgba(120,104,72,.30); --line-2:rgba(120,104,72,.16);
+    --shadow:0 1px 0 rgba(184,151,90,.18), 0 18px 40px -30px rgba(60,48,28,.5);
+    --serif:"Spectral",Georgia,serif; --display:"Fraunces",Georgia,serif; --ui:"Public Sans",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;font-family:var(--ui);color:var(--ink);overflow:hidden;
+    background:radial-gradient(1200px 600px at 18% -10%, #FBF6EA, transparent 60%),radial-gradient(900px 500px at 110% 120%, #F0E7D4, transparent 55%),var(--paper);
+    font-feature-settings:"ss01";-webkit-font-smoothing:antialiased;}
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.5;mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");}
+  .app{position:relative;z-index:2;height:100vh;display:grid;grid-template-rows:auto 1fr auto}
+
+  /* Ribbon */
+  .ribbon{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:12px 28px;border-bottom:1px solid var(--line);background:linear-gradient(var(--paper-2),rgba(251,247,238,.4))}
+  .mast{display:flex;align-items:baseline;gap:13px}
+  .mast .folio{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-3);border:1px solid var(--line);padding:3px 7px;border-radius:2px}
+  .mast h1{font-family:var(--display);font-weight:560;font-size:23px;margin:0;line-height:1}
+  .mast h1 em{font-style:italic;color:var(--oxblood);font-weight:480}
+  .mast .sub{font-family:var(--serif);font-style:italic;color:var(--ink-2);font-size:12.5px;margin-left:2px}
+  .ribbon-right{display:flex;align-items:center;gap:20px}
+  .scorecard{display:flex;align-items:center;gap:9px;cursor:pointer;padding:5px 12px;border:1px solid var(--line);border-radius:3px;background:var(--paper-2);transition:.2s}
+  .scorecard:hover{border-color:var(--gold);box-shadow:var(--shadow)}
+  .scorecard .lab{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3)}
+  .scorecard .overall{font-family:var(--display);font-weight:600;font-size:12.5px;letter-spacing:.12em;color:var(--amber)}
+  .pips{display:flex;gap:5px}
+  .pip{width:9px;height:9px;border-radius:50%;border:1px solid rgba(0,0,0,.08)}
+  .pip.green{background:var(--green)}.pip.amber{background:var(--amber)}.pip.red{background:var(--red)}
+  .date{font-size:11px;color:var(--ink-2);text-align:right;line-height:1.4}
+  .date b{font-family:var(--display);font-weight:560;color:var(--ink);font-size:12.5px}
+
+  /* Cockpit body: persistent left + dynamic focus right */
+  .cockpit{display:grid;grid-template-columns:1.45fr 1fr;gap:16px;padding:14px 20px 6px;min-height:0}
+  .left{display:grid;grid-template-rows:1.5fr 1fr;gap:14px;min-height:0}
+  .panel-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;min-height:0}
+
+  .panel{border:1px solid var(--line);border-radius:5px;background:var(--paper-2);box-shadow:var(--shadow);display:flex;flex-direction:column;min-height:0;overflow:hidden}
+  .panel.focus{border-color:var(--gold-soft)}
+  .phead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 14px;border-bottom:1px solid var(--line-2);background:linear-gradient(var(--paper-2),rgba(239,231,214,.4))}
+  .ptitle{font-family:var(--display);font-weight:540;font-size:14.5px;letter-spacing:.005em;display:flex;align-items:center;gap:8px}
+  .ptitle em{font-style:italic;color:var(--teal)}
+  .ptitle .where{font-family:var(--serif);font-style:italic;font-weight:400;font-size:12px;color:var(--ink-3)}
+  .pbody{flex:1;overflow:auto;min-height:0}
+  .pbody::-webkit-scrollbar{width:8px}.pbody::-webkit-scrollbar-thumb{background:var(--gold-soft);border-radius:6px;border:2px solid var(--paper-2)}
+  .back{cursor:pointer;border:1px solid var(--line);border-radius:50%;width:24px;height:24px;display:grid;place-items:center;color:var(--ink-2);background:var(--paper-2);transition:.2s;font-size:14px}
+  .back:hover{border-color:var(--gold);color:var(--oxblood)}
+
+  /* in-view options */
+  .opt-group{display:flex;border:1px solid var(--line);border-radius:3px;overflow:hidden;background:var(--paper-2)}
+  .opt{font-size:9.5px;letter-spacing:.04em;padding:4px 9px;cursor:pointer;color:var(--ink-2);border-right:1px solid var(--line-2);transition:.15s;white-space:nowrap}
+  .opt:last-child{border-right:0}.opt:hover{color:var(--ink);background:var(--paper-3)}.opt.on{background:var(--ink);color:var(--paper-2)}
+  .opt-lab{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin-right:4px}
+
+  /* Map */
+  .map-canvas{padding:12px 14px;background-image:linear-gradient(var(--line-2) 1px,transparent 1px),linear-gradient(90deg,var(--line-2) 1px,transparent 1px);background-size:40px 40px;position:relative;height:100%}
+  .region{margin-bottom:11px}
+  .region-lab{font-family:var(--serif);font-variant:small-caps;letter-spacing:.13em;font-size:12px;color:var(--ink-2);margin:0 0 6px 2px;border-bottom:1px solid var(--line-2);padding-bottom:2px}
+  .tiles{display:flex;flex-wrap:wrap;gap:6px}
+  .tile{width:62px;height:42px;border:1px solid rgba(60,48,28,.22);border-radius:3px;padding:5px 6px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;transition:transform .14s,box-shadow .14s,border-color .14s;position:relative}
+  .tile:hover{transform:translateY(-2px);box-shadow:0 8px 16px -10px rgba(60,40,20,.5);border-color:var(--ink)}
+  .tile .iso{font-weight:600;font-size:10px;color:var(--ink)}
+  .tile .val{font-variant-numeric:tabular-nums;font-size:10px;color:var(--ink-2)}
+  .tile.sel{outline:2px solid var(--teal);outline-offset:1px}
+  .tile.ring::after{content:"";position:absolute;inset:-4px;border:1px dashed var(--gold);border-radius:5px;pointer-events:none}
+  .tile .dot{position:absolute;top:4px;right:5px;width:6px;height:6px;border-radius:50%}
+  .compass{position:absolute;bottom:10px;right:12px;opacity:.45}
+  .legend{display:flex;align-items:center;gap:8px;font-size:10px;color:var(--ink-3)}
+  .legend .bar{width:90px;height:8px;border-radius:3px;background:linear-gradient(90deg,var(--rust),#E9DCC4,var(--teal))}
+
+  /* compact lists */
+  .lrow{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--line-2);cursor:pointer;transition:.14s}
+  .lrow:hover{background:var(--paper-3)}
+  .lrow .nm{font-family:var(--serif);font-size:13.5px;color:var(--ink)}
+  .lrow .sub{font-size:11px;color:var(--ink-3);font-style:italic}
+  .lrow .rt{margin-left:auto;text-align:right;font-variant-numeric:tabular-nums}
+  .verdict{font-size:8.5px;letter-spacing:.09em;font-weight:600;padding:2px 7px;border-radius:2px;text-transform:uppercase}
+  .v-watch{background:rgba(44,122,107,.14);color:var(--teal);border:1px solid rgba(44,122,107,.35)}
+  .v-weak{background:rgba(176,122,18,.12);color:var(--amber);border:1px solid rgba(176,122,18,.3)}
+  .v-dead{background:rgba(124,45,45,.1);color:var(--oxblood);border:1px solid rgba(124,45,45,.28)}
+  .code{font-weight:700;font-size:10px;color:var(--paper-2);background:var(--ink);width:26px;height:26px;border-radius:50%;display:grid;place-items:center;flex:none}
+  .code.hot{background:var(--rust)}
+  .z{font-family:var(--display);font-weight:560;font-size:15px;color:var(--rust);font-variant-numeric:tabular-nums}
+
+  /* Focus (dynamic) content */
+  .fpad{padding:16px 18px}
+  .eyebrow{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .eyebrow::after{content:"";flex:1;height:1px;background:var(--line-2)}
+  .reveal{opacity:0;transform:translateY(7px);animation:rise .5s cubic-bezier(.2,.7,.2,1) forwards}
+  @keyframes rise{to{opacity:1;transform:none}}
+  .lede{font-family:var(--serif);font-size:14px;line-height:1.6;color:var(--ink-2)}
+  .lede .dropcap{float:left;font-family:var(--display);font-weight:600;font-size:48px;line-height:.78;padding:5px 9px 0 0;color:var(--oxblood)}
+  .statline{display:flex;gap:20px;margin:16px 0 6px;flex-wrap:wrap}
+  .stat .v{font-family:var(--display);font-weight:560;font-size:25px;line-height:1;font-variant-numeric:tabular-nums}
+  .stat .v.pos{color:var(--teal)}.stat .v.neg{color:var(--oxblood)}
+  .stat .k{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-top:5px}
+  .barrow{display:flex;align-items:center;gap:10px;margin:9px 0}
+  .barrow .k{width:108px;font-family:var(--serif);font-size:12.5px;color:var(--ink-2)}
+  .track{flex:1;height:8px;background:var(--paper-3);border:1px solid var(--line-2);border-radius:5px;position:relative;overflow:hidden}
+  .fill{position:absolute;top:0;bottom:0;left:0;border-radius:5px}
+  .barrow .pc{width:78px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;color:var(--ink-2)}
+  .chip{display:inline-flex;align-items:center;gap:8px;font-family:var(--serif);font-size:12.5px;border:1px solid var(--line);border-radius:20px;padding:6px 13px;background:var(--paper-2);cursor:pointer;transition:.2s}
+  .chip:hover{border-color:var(--gold)}
+  .chip .tag{font-size:8px;letter-spacing:.12em;background:var(--ink);color:var(--paper-2);padding:2px 6px;border-radius:2px}
+  .subpanel{border:1px solid var(--line);border-radius:5px;background:var(--paper-2);padding:13px 15px;margin-top:14px}
+  .subpanel h4{margin:0 0 9px;font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+  table.dt{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+  table.dt th{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);cursor:pointer}
+  table.dt th:hover{color:var(--ink)}
+  table.dt td{padding:9px 8px;border-bottom:1px solid var(--line-2);font-size:12.5px}
+  table.dt tbody tr{cursor:pointer}table.dt tbody tr:hover{background:var(--paper-3)}
+  td.num{text-align:right;font-family:var(--ui);font-weight:500}
+  .tally{display:flex;margin-top:14px;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+  .tally div{flex:1;text-align:center;padding:9px 4px;border-right:1px solid var(--line-2)}.tally div:last-child{border-right:0}
+  .tally .n{font-family:var(--display);font-weight:560;font-size:21px;line-height:1}
+  .tally .l{font-size:8px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);margin-top:4px}
+  .narr{font-family:var(--serif);font-size:13px;color:var(--ink-2);line-height:1.55}
+  .keyrow{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-2);margin-top:8px;cursor:pointer;font-family:var(--serif)}
+  .keyrow:hover{color:var(--oxblood)}.keyrow .sw{width:10px;height:10px;border-radius:2px;flex:none}
+  .ox{color:var(--oxblood)}.tl{color:var(--teal)}.muted{color:var(--ink-3)}
+
+  /* Chat (prominent) */
+  .chat{border-top:1px solid var(--gold);background:linear-gradient(180deg,rgba(184,151,90,.05),var(--paper-2));padding:11px 28px 14px;display:flex;flex-direction:column;gap:9px}
+  .thread{max-height:74px;overflow:auto;display:flex;flex-direction:column;gap:7px;padding-right:6px}
+  .thread::-webkit-scrollbar{width:6px}.thread::-webkit-scrollbar-thumb{background:var(--gold-soft);border-radius:5px}
+  .msg{display:flex;gap:11px;align-items:flex-start}
+  .msg .who{font-size:8.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);width:70px;flex:none;padding-top:3px;text-align:right}
+  .msg.you .bub{font-family:var(--serif);font-size:14px;color:var(--ink);font-style:italic}
+  .msg.cos .bub{font-family:var(--serif);font-size:13.5px;color:var(--ink);line-height:1.5}
+  .msg.cos .who{color:var(--oxblood)}
+  .cite{font-size:9px;letter-spacing:.03em;color:var(--teal);border:1px solid rgba(44,122,107,.35);border-radius:10px;padding:1px 7px;margin:0 2px;white-space:nowrap;cursor:pointer}
+  .cite:hover{background:rgba(44,122,107,.1)}
+  .composer{display:flex;align-items:center;gap:12px;border:1px solid var(--gold-soft);border-radius:28px;background:var(--paper-2);padding:6px 7px 6px 20px;box-shadow:0 10px 28px -22px rgba(60,40,20,.6);transition:.2s}
+  .composer:focus-within{border-color:var(--gold);box-shadow:0 0 0 4px rgba(184,151,90,.16),0 12px 28px -20px rgba(60,40,20,.6)}
+  .composer input{flex:1;border:0;background:transparent;outline:none;font-family:var(--serif);font-size:16px;color:var(--ink)}
+  .composer input::placeholder{color:var(--ink-3);font-style:italic}
+  .composer .send{width:38px;height:38px;border-radius:50%;border:0;background:var(--oxblood);color:var(--paper-2);cursor:pointer;font-size:18px;display:grid;place-items:center;transition:.2s}
+  .composer .send:hover{background:#8e3636;transform:scale(1.04)}
+  .chips{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+  .qchip{font-family:var(--serif);font-size:12px;color:var(--ink-2);border:1px solid var(--line);border-radius:16px;padding:4px 12px;cursor:pointer;background:var(--paper-2);transition:.15s}
+  .qchip:hover{border-color:var(--gold);color:var(--ink);background:var(--paper-3)}
+  .gkey{margin-left:auto;font-size:9px;letter-spacing:.04em;color:var(--ink-3);display:flex;gap:13px}.gkey b{color:var(--ink-2);font-weight:600}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="ribbon">
+    <div class="mast"><span class="folio">No. 0617</span><h1>ASADO <em>·</em> Chief of Staff</h1><span class="sub">a standing brief, in conversation</span></div>
+    <div class="ribbon-right">
+      <div class="scorecard" onclick="ask('is the system healthy?')"><span class="lab">Governance</span><span class="overall">AMBER</span><span class="pips" id="pips"></span></div>
+      <div class="date">data as-of <b>16 Jun 2026</b><br><span class="muted">refreshed 07:32 · loop ✓</span></div>
+    </div>
+  </header>
+
+  <main class="cockpit">
+    <!-- PERSISTENT LEFT -->
+    <div class="left">
+      <!-- Map (persistent) -->
+      <section class="panel">
+        <div class="phead">
+          <div class="ptitle">A Chart of <em>Capital Flows</em> <span class="where">· 34 markets</span></div>
+          <div style="display:flex;align-items:center;gap:6px"><span class="opt-lab">Layer</span>
+            <div class="opt-group" id="maplayers"></div></div>
+        </div>
+        <div class="pbody"><div class="map-canvas" id="map"></div></div>
+      </section>
+      <!-- Signals + Dislocations (persistent) -->
+      <div class="panel-row">
+        <section class="panel">
+          <div class="phead"><div class="ptitle">Live <em>Signals</em></div>
+            <div class="opt" style="border:1px solid var(--line);border-radius:3px" onclick="ask('show all the signals')">All ›</div></div>
+          <div class="pbody" id="sigs"></div>
+        </section>
+        <section class="panel">
+          <div class="phead"><div class="ptitle">The <em>Dislocations</em> <span class="where">· 79</span></div>
+            <div class="opt" style="border:1px solid var(--line);border-radius:3px" onclick="ask('open the full brief')">Brief ›</div></div>
+          <div class="pbody" id="dislo"></div>
+        </section>
+      </div>
+    </div>
+
+    <!-- DYNAMIC FOCUS (the customized space) -->
+    <section class="panel focus">
+      <div class="phead">
+        <div class="ptitle" id="f-title"><span id="f-back"></span> <span id="f-ttl"></span></div>
+        <div id="f-opts"></div>
+      </div>
+      <div class="pbody" id="focus"></div>
+    </section>
+  </main>
+
+  <footer class="chat">
+    <div class="thread" id="thread"></div>
+    <div class="composer">
+      <input id="q" placeholder="Ask the Chief of Staff…  (try: where is pressure building? · Brazil · the WEAK signals · combiner · downside)" autocomplete="off"/>
+      <button class="send" onclick="submitQ()" title="Send">↵</button>
+    </div>
+    <div class="chips" id="chips"></div>
+  </footer>
+</div>
+
+<script>
+/* ===== DATA ===== */
+const SCORE=[["run_manifest","green"],["liveness","green"],["ledger_integrity","green"],["family_registry","green"],["pit_lag_proof","green"],["cross_source_minimal","amber"],["config_guard","green"]];
+const REGIONS=[
+ ["Americas",[["Canada",1.2],["U.S.",0.8],["NASDAQ",1.5],["US SmallCap",0.5],["Mexico",2.1],["Brazil",3.2],["Chile",0.2]]],
+ ["Europe",[["U.K.",0.6],["France",0.9],["Germany",1.1],["Netherlands",1.0],["Switzerland",0.4],["Italy",1.3],["Spain",1.2],["Sweden",0.7],["Denmark",-2.1],["Poland",1.8]]],
+ ["MEA",[["South Africa",2.4],["Saudi Arabia",0.9],["Turkey",3.1]]],
+ ["Asia",[["ChinaA",-0.5],["ChinaH",-0.6],["Hong Kong",-0.3],["Japan",0.9],["Korea",2.3],["Taiwan",1.4],["India",1.6],["Indonesia",-3.0],["Malaysia",0.8],["Philippines",1.1],["Singapore",0.7],["Thailand",0.9],["Vietnam",2.0]]],
+ ["Oceania",[["Australia",1.0]]]
+];
+const DISLO={"Chile":"copper ToT +2.0σ","Korea":"trade-nbr gap +2.3z","Indonesia":"attention z +2.4"};
+const DRAW={"Indonesia":-50,"Denmark":-45};
+const ISO={"Canada":"CAN","U.S.":"US","NASDAQ":"NDX","US SmallCap":"SML","Mexico":"MEX","Brazil":"BRA","Chile":"CHL","U.K.":"UK","France":"FRA","Germany":"DEU","Netherlands":"NLD","Switzerland":"CHE","Italy":"ITA","Spain":"ESP","Sweden":"SWE","Denmark":"DNK","Poland":"POL","South Africa":"ZAF","Saudi Arabia":"SAU","Turkey":"TUR","ChinaA":"CNA","ChinaH":"CNH","Hong Kong":"HK","Japan":"JPN","Korea":"KOR","Taiwan":"TWN","India":"IND","Indonesia":"IDN","Malaysia":"MYS","Philippines":"PHL","Singapore":"SGP","Thailand":"THA","Vietnam":"VNM","Australia":"AUS"};
+const SIGNALS=[
+ ["combiner_ridge_daily","WATCH",0.057,10.7,"strongest registered signal; in-sample → a ceiling"],
+ ["network_spillover","WEAK",0.034,4.5,"trade/lead-lag/twin spillover · N=21"],
+ ["fundamental_twins","WEAK",0.028,5.6,"top-5 cosine fundamental twins"],
+ ["eco_infl_surprise","WEAK",0.019,3.0,"reflation: hot inflation → outperformance"],
+ ["valuation_pctile","DEAD",0.004,0.6,"own-decade valuation percentiles — no edge"]
+];
+const TALLY=[["2","WATCH"],["39","WEAK"],["31","DEAD"],["16","INSUFF"]];
+const DISLOFEED=[
+ ["D1","Chile · ToT impulse unpriced","copper +2.0σ, equity flat","+2.0",1,"Chile"],
+ ["D2","Korea · spillover","return gap +2.3z","+2.3",1,"Korea"],
+ ["D5","Indonesia · attention","z +2.4, |5d| < 0.5σ","+2.4",1,"Indonesia"],
+ ["D8","Stewardship","36 open theses","36",0,null],
+ ["D9","Index-vs-ETF basis","3 gaps","3",0,null]
+];
+const COMBINER_IC=[0.012,0.021,0.018,0.03,0.041,0.038,0.049,0.052,0.046,0.057];
+const COMBINER_IC_63=[0.008,0.015,0.013,0.022,0.029,0.026,0.034,0.04,0.037,0.044];
+const COUNTRY={"Brazil":{y10:14.28,cds:148,s210:0.9,eq:3.2,cape:38,erp:72,reg:"reflation",lede:"Brazil sits rich on the equity-risk premium yet cheap on cyclically-adjusted earnings — a reflation tape with a steep, well-paid curve."}};
+
+/* ===== helpers ===== */
+const $=s=>document.querySelector(s);
+const thread=$("#thread");
+function lerp(a,b,t){return a+(b-a)*t}
+function mix(a,b,t){return `rgb(${Math.round(lerp(a[0],b[0],t))},${Math.round(lerp(a[1],b[1],t))},${Math.round(lerp(a[2],b[2],t))})`}
+function retColor(v){const t=Math.max(-1,Math.min(1,v/3.5));return t>=0?mix([233,220,196],[44,122,107],t):mix([233,220,196],[180,82,30],-t)}
+function disloColor(n){return DISLO[n]?'#E5C9A0':'rgba(233,220,196,.5)'}
+function signalColor(n){const s={"Brazil":.9,"Korea":.8,"Chile":.75,"India":.7,"Mexico":.65,"Taiwan":.6,"Indonesia":.25,"Denmark":.2,"ChinaA":.3,"ChinaH":.3}[n]??.5;return mix([233,220,196],[44,122,107],s)}
+
+/* ===== PERSISTENT: MAP ===== */
+let MAPLAYER="dislocation";
+function renderMapLayers(){$("#maplayers").innerHTML=["return","dislocation","signal"].map(l=>`<div class="opt ${MAPLAYER===l?'on':''}" onclick="setLayer('${l}')">${l[0].toUpperCase()+l.slice(1)}</div>`).join("")}
+function renderMap(){
+  $("#map").innerHTML=REGIONS.map(([reg,cs])=>`<div class="region"><div class="region-lab">${reg}</div><div class="tiles">${cs.map(([n,v])=>tile(n,v)).join("")}</div></div>`).join("")+
+   `<svg class="compass" width="46" height="46" viewBox="0 0 58 58"><circle cx="29" cy="29" r="26" fill="none" stroke="#B8975A"/><path d="M29 5 L33 29 L29 53 L25 29 Z" fill="#7C2D2D"/><path d="M5 29 L29 25 L53 29 L29 33 Z" fill="#2C7A6B" opacity=".6"/></svg>`;
+  renderMapLayers();
+}
+function tile(n,v){let bg,val;
+  if(MAPLAYER==="return"){bg=retColor(v);val=(v>0?"+":"")+v.toFixed(1)}
+  else if(MAPLAYER==="dislocation"){bg=disloColor(n);val=DISLO[n]?"⚑":""}
+  else{bg=signalColor(n);val=""}
+  const dd=DRAW[n]?`<span class="dot" style="background:var(--oxblood)"></span>`:"";
+  return `<div class="tile${SEL===n?' sel':''}${n==='Saudi Arabia'?' ring':''}" style="background:${bg}" onclick="openCountry('${n}')" title="${n}${DISLO[n]?' · '+DISLO[n]:''}"><span class="iso">${ISO[n]}</span>${dd}<span class="val">${val}</span></div>`;
+}
+function setLayer(l){MAPLAYER=l;renderMap()}
+let SEL="Brazil";
+
+/* ===== PERSISTENT: signals + dislocations lists ===== */
+function renderSigs(){const vmap={WATCH:"v-watch",WEAK:"v-weak",DEAD:"v-dead"};
+  $("#sigs").innerHTML=SIGNALS.map(s=>`<div class="lrow" onclick="openSignal('${s[0]}')">
+    <div><div class="nm">${s[0]}</div><div class="sub">t ${s[3].toFixed(1)} · IC ${s[2].toFixed(3)}</div></div>
+    <div class="rt"><span class="verdict ${vmap[s[1]]}">${s[1]}</span></div></div>`).join("");}
+function renderDislo(){$("#dislo").innerHTML=DISLOFEED.map(d=>`<div class="lrow" onclick="${d[5]?`openCountry('${d[5]}')`:`ask('explain stewardship')`}">
+    <div class="code ${d[4]?'hot':''}">${d[0]}</div>
+    <div><div class="nm" style="font-size:12.5px">${d[1]}</div><div class="sub">${d[2]}</div></div>
+    <div class="rt"><span class="z">${d[3]}</span></div></div>`).join("");}
+
+/* ===== DYNAMIC FOCUS ===== */
+let HIST=[],CUR=null;
+function go(view,params={}){if(CUR)HIST.push(CUR);CUR={view,params};SEL=(view==="country")?params.name:SEL;renderFocus();renderMap();}
+function back(){if(HIST.length){CUR=HIST.pop();SEL=(CUR.view==="country")?CUR.params.name:SEL;renderFocus();renderMap();}}
+function renderFocus(){const{view,params}=CUR;const V=FVIEWS[view];const f=$("#focus");
+  f.scrollTop=0;f.innerHTML=`<div class="fpad reveal">${V.render(params)}</div>`;
+  $("#f-back").innerHTML=HIST.length?`<span class="back" onclick="back()">‹</span>`:`<span class="back" style="opacity:.3;cursor:default">‹</span>`;
+  $("#f-ttl").innerHTML=V.title(params);
+  $("#f-opts").innerHTML=V.opts?V.opts(params):"";
+}
+const FVIEWS={};
+
+FVIEWS.overview={title:()=>`Today`,opts:()=>``,render:()=>`
+  <div class="eyebrow">The standing brief · 17 Jun</div>
+  <p class="narr" style="margin-bottom:14px">Three things worth your attention this morning — nothing here is a trade yet; all paper until the harness clears it.</p>
+  ${ocard("①","Governance is AMBER","Only because cross-source coverage is partial <em>by design</em> — every other dimension is green.","is the system healthy?","scorecard.json")}
+  ${ocard("②","The combiner is your only WATCH","IC 0.057, NW-t 10.7 — but components were selected in-sample. A ceiling, not proof.","open the combiner","live_signals")}
+  ${ocard("③","Fresh D1 · Chile","A copper terms-of-trade impulse (+2.0σ) that hasn't repriced into equities.","open Chile","brief · 2026-06-16")}`};
+function ocard(n,t,m,act,src){return `<div class="subpanel" style="cursor:pointer" onclick="ask('${act}')">
+  <div style="display:flex;gap:12px"><div style="font-family:var(--display);font-size:24px;color:var(--gold)">${n}</div>
+  <div><div style="font-family:var(--display);font-weight:540;font-size:15px;margin-bottom:3px">${t}</div>
+  <div class="narr">${m}</div><div style="margin-top:7px"><span class="cite">${src}</span></div></div></div></div>`}
+
+FVIEWS.country={title:p=>`${p.name} <span class="where">· ${(COUNTRY[p.name]||{reg:'—'}).reg}</span>`,
+  opts:()=>`<div class="opt-group"><div class="opt on">Markets</div><div class="opt" onclick="ask('downside if it keeps falling')">Tail</div></div>`,
+  render:p=>{const c=COUNTRY[p.name]||COUNTRY.Brazil;const dd=DRAW[p.name];
+   return `<div class="eyebrow">Country letter · ${ISO[p.name]||""}</div>
+   <p class="lede"><span class="dropcap">${p.name[0]}</span>${c.lede}</p>
+   <div class="statline">
+     <div class="stat"><div class="v">${c.y10.toFixed(2)}<span style="font-size:13px">%</span></div><div class="k">10Y</div></div>
+     <div class="stat"><div class="v">${c.cds}<span style="font-size:13px">bp</span></div><div class="k">5Y CDS</div></div>
+     <div class="stat"><div class="v pos">+${c.eq}<span style="font-size:13px">%</span></div><div class="k">eq · 21d</div></div>
+     <div class="stat"><div class="v">+${c.s210}</div><div class="k">2s10s</div></div></div>
+   ${valBar("CAPE percentile",c.cape,"cheap")}${valBar("ERP percentile",c.erp,"rich")}
+   <div class="subpanel"><h4>Equity · trailing 21 sessions</h4>${spark(500,70,[0,.4,.2,.7,.5,1.1,.9,1.6,1.3,2.1,1.9,2.6,2.4,3,3.2],"#2C7A6B")}
+     <div style="font-size:10.5px;color:var(--ink-3);margin-top:5px;display:flex;justify-content:space-between"><span>26 May</span><span>+3.2%</span><span>16 Jun</span></div></div>
+   <div style="margin-top:13px"><span class="chip" onclick="ask('mark the Indonesia thesis')"><span class="tag">PAPER</span> T_20260610_001 · LONG Indonesia · <b class="tl">+8.1%</b></span></div>
+   ${dd?`<div class="keyrow" onclick="ask('downside if it keeps falling')"><span class="sw" style="background:var(--oxblood)"></span>JST tail · ${dd}% drawdown →</div>`:""}`}};
+
+FVIEWS.signals={title:()=>`Live <em>Signals</em>`,
+  opts:()=>`<div class="opt-group"><div class="opt ${SIGSORT==='nwt'?'on':''}" onclick="setSort('nwt')">NW-t</div><div class="opt ${SIGSORT==='ic'?'on':''}" onclick="setSort('ic')">IC</div></div>`,
+  render:()=>{let r=[...SIGNALS];if(SIGSORT==='ic')r.sort((a,b)=>b[2]-a[2]);else r.sort((a,b)=>b[3]-a[3]);const vmap={WATCH:"v-watch",WEAK:"v-weak",DEAD:"v-dead"};
+   return `<table class="dt"><thead><tr><th>Signal</th><th>Verdict</th><th style="text-align:right" onclick="setSort('ic')">IC</th><th style="text-align:right" onclick="setSort('nwt')">NW-t</th></tr></thead><tbody>
+   ${r.map(s=>`<tr onclick="openSignal('${s[0]}')"><td style="font-family:var(--serif);font-size:13px">${s[0]}</td><td><span class="verdict ${vmap[s[1]]}">${s[1]}</span></td><td class="num">${s[2].toFixed(3)}</td><td class="num">${s[3].toFixed(1)}</td></tr>`).join("")}
+   </tbody></table><div class="tally">${TALLY.map(([n,l])=>`<div><div class="n ${l==='WATCH'?'tl':''}">${n}</div><div class="l">${l}</div></div>`).join("")}</div>
+   <p class="narr" style="margin-top:12px">Verdicts come <em>only</em> from the skeptic harness — I never adjudicate. Click a row for its history.</p>`}};
+let SIGSORT="nwt";function setSort(s){SIGSORT=s;renderFocus()}
+
+let ICHOR="21";
+FVIEWS.signal={title:p=>`${p.name}`,
+  opts:()=>`<div class="opt-group"><div class="opt ${ICHOR==='21'?'on':''}" onclick="setHor('21')">21d</div><div class="opt ${ICHOR==='63'?'on':''}" onclick="setHor('63')">63d</div></div>`,
+  render:p=>{const ser=ICHOR==="21"?COMBINER_IC:COMBINER_IC_63;const last=ser[ser.length-1];
+   return `<div class="eyebrow">Information coefficient · ${ICHOR}-day</div>
+   <div class="subpanel" style="margin-top:0">${lineChart(500,130,ser,"#2C7A6B")}<div style="font-size:10.5px;color:var(--ink-3);margin-top:5px;display:flex;justify-content:space-between"><span>2025-09</span><span>latest <b class="tl">${last.toFixed(3)}</b></span><span>2026-06</span></div></div>
+   <div class="statline"><div class="stat"><div class="v tl">${last.toFixed(3)}</div><div class="k">Rank IC</div></div><div class="stat"><div class="v">${ICHOR==='21'?'10.7':'8.1'}</div><div class="k">NW-t</div></div><div class="stat"><div class="v">−</div><div class="k">Defl. SR</div></div></div>
+   <p class="narr"><span class="ox">⚑ Caveat (INFERENCE).</span> Strongest IC in the registry, but components were <b>selected in-sample (2026-06)</b> and deflated Sharpe is still negative. A <b>ceiling</b>, not proof — it has not earned champion status.</p>
+   <div style="margin-top:8px"><span class="chip" onclick="ask('is the system healthy?')"><span class="tag">SRC</span> live_signals · harness_runs</span></div>`}};
+function setHor(h){ICHOR=h;renderFocus()}
+
+FVIEWS.dislo={title:()=>`The <em>Brief</em>`,opts:()=>``,render:()=>`
+   <div class="eyebrow">As-of 16 Jun · 79 rows</div>
+   ${DISLOFEED.map(d=>`<div class="lrow" style="padding-left:0" onclick="${d[5]?`openCountry('${d[5]}')`:`ask('explain stewardship')`}"><div class="code ${d[4]?'hot':''}">${d[0]}</div><div><div class="nm">${d[1]}</div><div class="sub">${d[2]}</div></div><div class="rt"><span class="z">${d[3]}</span></div></div>`).join("")}
+   <div class="subpanel" style="border-color:var(--gold-soft)"><h4>Long-cycle tail · JST 1870–2020</h4>
+     <div class="keyrow" onclick="openCountry('Indonesia')"><span class="sw" style="background:var(--rust)"></span><b>Indonesia</b> −50% · EM-analogy</div>
+     <div class="keyrow" onclick="openCountry('Denmark')"><span class="sw" style="background:var(--oxblood)"></span><b>Denmark</b> −45% · DM (Novo) · p10 →</div></div>`};
+
+FVIEWS.health={title:()=>`Governance <em>Scorecard</em>`,opts:()=>``,render:()=>`
+   <p class="narr">Overall <b style="color:var(--amber)">AMBER</b> — the system being <em>honest</em>, not broken. Six green; the only amber is <b>cross-source coverage</b>, partial <em>by design</em> until the full sweep ships.</p>
+   <table class="dt" style="margin-top:12px"><tbody>${[["run_manifest","green","steps ran fresh; no stale-but-green"],["liveness","green","loop clean; brief committed"],["ledger_integrity","green","no retired reads as live"],["family_registry","green","every variable classifies"],["pit_lag_proof","green","no unproven lag-0"],["cross_source_minimal","amber","coverage 1.0 — partial by design"],["config_guard","green","trust-roots committed"]].map(r=>`<tr style="cursor:default"><td style="width:16px"><span class="pip ${r[1]}"></span></td><td style="font-family:var(--serif);font-size:13px;width:160px">${r[0]}</td><td style="font-family:var(--serif);color:var(--ink-2);font-size:12px">${r[2]}</td></tr>`).join("")}</tbody></table>`};
+
+FVIEWS.tail={title:()=>`Long-cycle <em>Tail</em>`,opts:()=>``,render:()=>`
+   <div class="eyebrow">Forward 3y real return · by drawdown bucket</div>
+   <div class="subpanel" style="margin-top:0">${fan(500,150)}<div style="font-size:10.5px;color:var(--ink-3);margin-top:6px;text-align:center">p10 · median · p90 · 65 banking-crisis onsets</div></div>
+   <p class="narr">Indonesia's <b class="ox">−50% drawdown</b> maps to a bucket with median <b>+18%</b> but p10 <b class="ox">−22%</b> forward 3y — the once-in-a-century downside the modern sample can't see.</p>
+   <p class="narr"><span class="ox">UNKNOWN/STALE.</span> Live drawdown is nominal vs a real, DM-calibrated distribution; Indonesia is an <b>EM-analogy</b>. Context only — must clear the harness before sizing.</p>`};
+
+/* ===== SVG ===== */
+function spark(w,h,vals,col){const mn=Math.min(...vals),mx=Math.max(...vals),p=6,X=i=>p+i*(w-2*p)/(vals.length-1),Y=v=>h-p-(v-mn)/(mx-mn||1)*(h-2*p);const d=vals.map((v,i)=>`${i?'L':'M'}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`).join(" ");return `<svg width="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><path d="${d} L${X(vals.length-1)} ${h-p} L${X(0)} ${h-p} Z" fill="${col}" opacity=".08"/><path d="${d}" fill="none" stroke="${col}" stroke-width="2"/><circle cx="${X(vals.length-1)}" cy="${Y(vals[vals.length-1])}" r="3" fill="${col}"/></svg>`}
+function lineChart(w,h,vals,col){if(!vals||!vals.length)return `<svg width="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"></svg>`;const mn=Math.min(...vals,0),mx=Math.max(...vals,0),p=8,span=(mx-mn)||1,den=Math.max(vals.length-1,1),X=i=>p+i*(w-2*p)/den,Y=v=>h-p-(v-mn)/span*(h-2*p);const d=vals.map((v,i)=>`${i?'L':'M'}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`).join(" ");let g="";for(let k=0;k<=3;k++){const y=p+k*(h-2*p)/3;g+=`<line x1="${p}" y1="${y}" x2="${w-p}" y2="${y}" stroke="rgba(120,104,72,.16)"/>`}g+=`<line x1="${p}" y1="${Y(0).toFixed(1)}" x2="${w-p}" y2="${Y(0).toFixed(1)}" stroke="rgba(124,45,45,.22)"/>`;return `<svg width="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${g}<path d="${d}" fill="none" stroke="${col}" stroke-width="2.2"/>${vals.map((v,i)=>`<circle cx="${X(i)}" cy="${Y(v)}" r="2.2" fill="${v>=0?col:'var(--oxblood)'}"/>`).join("")}</svg>`}
+function fan(w,h){const p10=[140,150,120,90,60,40],med=[90,80,55,40,30,24],p90=[40,30,20,16,12,10],X=i=>14+i*(w-28)/5,P=a=>a.map((v,i)=>`${i?'L':'M'}${X(i)} ${v}`).join(" ");const band=`${P(p90)} ${p10.slice().reverse().map((v,i)=>`L${X(5-i)} ${v}`).join(" ")} Z`;return `<svg width="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><path d="${band}" fill="#B4521E" opacity=".12"/><path d="${P(med)}" fill="none" stroke="#7C2D2D" stroke-width="2"/><path d="${P(p10)}" fill="none" stroke="#B4521E" stroke-dasharray="4 3"/><path d="${P(p90)}" fill="none" stroke="#2C7A6B" stroke-dasharray="4 3"/></svg>`}
+function valBar(k,pc,what){const col=what==="cheap"?"var(--teal)":"var(--oxblood)";return `<div class="barrow"><div class="k">${k}</div><div class="track"><div class="fill" style="width:${pc}%;background:${col}"></div></div><div class="pc">${pc} <span class="muted">${what}</span></div></div>`}
+
+/* ===== chat ===== */
+function pushMsg(who,html){const m=document.createElement("div");m.className="msg "+(who==="you"?"you":"cos");m.innerHTML=`<div class="who">${who==="you"?"You":"Chief of Staff"}</div><div class="bub">${html}</div>`;thread.appendChild(m);thread.scrollTop=thread.scrollHeight;return m;}
+function openCountry(n){go("country",{name:n});pushMsg("cos",`Opening <b>${n}</b> into the focus panel — ${COUNTRY[n]?`10Y ${COUNTRY[n].y10}%, reflation`:`${DISLO[n]?DISLO[n]+'; ':''}${DRAW[n]?DRAW[n]+'% drawdown':'no active dislocation'}`}. <span class="cite">country panel</span>`);}
+function openSignal(n){go("signal",{name:n});pushMsg("cos",`<b>${n}</b> — its IC history is in the focus panel. The verdict is the harness's, not mine. <span class="cite">live_signals</span>`);}
+function applyCosActions(actions){
+  (actions||[]).forEach(a=>{
+    if(a.type==="focus_country"&&COUNTRY[a.country])go("country",{name:a.country});
+    else if(a.type==="focus_gap"&&typeof GAP_BY_ID!=="undefined"&&GAP_BY_ID[a.gap_id])go("gap",{id:a.gap_id});
+    else if(a.type==="focus_signal"&&typeof SIGMAP!=="undefined"&&SIGMAP[a.signal]){ICHOR=null;go("signal",{name:a.signal});}
+    else if(a.type==="focus_view"&&a.view)go(a.view);
+    else if(a.type==="set_layer"&&a.layer)setLayer(a.layer);
+  });
+}
+async function ask(t){
+  pushMsg("you",t);
+  const pending=pushMsg("cos",`Asking Opus through the ASADO evidence layer… <span class="cite">/api/cos/chat</span>`);
+  const bub=pending.querySelector(".bub");
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),60000);
+  try{
+    const res=await fetch("/api/cos/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:t,mode:"auto",model_tier:"standard",context:{active_view:CUR?.view||"overview",map_layer:MAPLAYER}}),signal:controller.signal});
+    clearTimeout(timer);
+    if(!res.ok)throw new Error(`HTTP ${res.status}`);
+    const payload=await res.json();
+    applyCosActions(payload.ui_actions||[]);
+    bub.innerHTML=(payload.answer_html||"No answer returned.")+`${payload.external_agent?` <span class="cite">${payload.external_agent}${payload.model?` · ${payload.model}`:""}</span>`:""}`;
+  }catch(err){
+    clearTimeout(timer);
+    bub.innerHTML=`Chief-of-Staff API unavailable; using local scripted fallback. <span class="cite">${String(err.message||err)}</span>`;
+    route(t);
+  }
+}
+function submitQ(){const v=$("#q").value.trim();if(!v)return;$("#q").value="";ask(v)}
+function route(t){const q=t.toLowerCase();
+  if(/(what should i|care about|brief me|three things|priorit|matter|today|overview)/.test(q)){go("overview");return pushMsg("cos",`Three things, in the focus panel. ① Governance <b style="color:var(--amber)">AMBER</b> (coverage partial by design) <span class="cite" onclick="ask('health')">scorecard.json</span> ② the combiner WATCH — a ceiling <span class="cite" onclick="openSignal('combiner_ridge_daily')">live_signals</span> ③ fresh Chile D1 <span class="cite" onclick="openCountry('Chile')">brief</span>.`)}
+  if(/(health|scorecard|governance|amber)/.test(q)){go("health");return pushMsg("cos",`Governance is <b style="color:var(--amber)">AMBER</b> — partial cross-source coverage <em>by design</em>; everything else green. <span class="cite">scorecard.json</span>`)}
+  if(/combiner/.test(q)){openSignal("combiner_ridge_daily");return}
+  if(/(weak|signals|registry|verdict|dead|all the signal)/.test(q)){go("signals");return pushMsg("cos",`The registry — <b>2 WATCH · 39 WEAK · 31 DEAD</b>. <span class="cite">live_signals</span>`)}
+  if(/brazil/.test(q)){openCountry("Brazil");return}
+  for(const c of Object.keys(ISO)){if(q.includes(c.toLowerCase())){openCountry(c);return}}
+  if(/(disloc|brief|tonight|fired|nightly)/.test(q)){go("dislo");return pushMsg("cos",`Tonight's brief — Chile D1, Korea D2, Indonesia D5. <span class="cite">brief · 2026-06-16</span>`)}
+  if(/(downside|tail|drawdown|risk|jst|crash|falling)/.test(q)){go("tail");return pushMsg("cos",`The long-cycle tail. Indonesia's −50% → median +18% but <b class="ox">p10 −22%</b> forward 3y. Context only. <span class="cite">jst_tail_risk</span>`)}
+  if(/(pressure|map|where|flows|world)/.test(q)){go("overview");setLayer("dislocation");return pushMsg("cos",`Pressure is in three places — see the map (dislocation layer): <b class="ox">Chile</b>, <b class="ox">Korea</b>, <b class="ox">Indonesia</b>. Click any to drill in. <span class="cite">brief</span>`)}
+  go("overview");pushMsg("cos",`Here's today. Try "the WEAK signals", "Brazil", or "downside if Indonesia keeps falling". <span class="muted">(prototype: scripted)</span>`)}
+$("#q")?.addEventListener("keydown",e=>{if(e.key==="Enter")submitQ()});
+
+/* ===== boot ===== */
+$("#pips").innerHTML=SCORE.map(s=>`<span class="pip ${s[1]}" title="${s[0]}"></span>`).join("");
+$("#chips").innerHTML=["What should I care about today?","Where is pressure building?","The WEAK signals","Brazil","Downside if Indonesia keeps falling?"].map(c=>`<span class="qchip" onclick="ask(\`${c}\`)">${c}</span>`).join("")+`<span class="gkey"><span><b>FACT</b> cited</span><span><b>INFERENCE</b> labelled</span><span><b>UNKNOWN/STALE</b> aloud</span></span>`;
+renderMap();renderSigs();renderDislo();
+CUR={view:"overview",params:{}};renderFocus();
+pushMsg("you","What should I care about today?");route("what should I care about today");
+</script>
+</body>
+</html>

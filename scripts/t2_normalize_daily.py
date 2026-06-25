@@ -9,7 +9,7 @@ DESCRIPTION:
     "Step Two Create Normalized Tidy.py" (T2 Factor Timing Fuzzy Daily).
 
     Reads the daily T2 Master workbook and produces the tidy normalized factor
-    CSV: the 5 daily forward-return sheets are kept RAW; every other sheet gets
+    tidy outputs: the 5 daily forward-return sheets are kept RAW; every other sheet gets
     a cross-sectional (_CS) and a time-series (_TS) z-score variant, with the
     "lower is better" sheets sign-flipped. Mirrors the monthly normalize except
     the metronome (daily) and the raw-passthrough set (*DRet vs *MRet).
@@ -19,6 +19,7 @@ INPUT FILES:
 
 OUTPUT FILES:
     - Data/work/t2_daily/Normalized_T2_MasterCSV.csv   (tidy: date,country,value,variable)
+    - Data/work/t2_daily/normalized_t2_master.parquet  (same tidy rows, parquet)
 
 VERSION: 1.0
 LAST UPDATED: 2026-06-09
@@ -54,6 +55,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 T2_DAILY_DIR = BASE_DIR / "Data" / "work" / "t2_daily"
 DEFAULT_MASTER = T2_DAILY_DIR / "T2 Master Daily.xlsx"
 DEFAULT_OUT = T2_DAILY_DIR / "Normalized_T2_MasterCSV.csv"
+DEFAULT_OUT_PARQUET = T2_DAILY_DIR / "normalized_t2_master.parquet"
 
 SKIP_SHEETS = ["README", "Sheet1"]
 COPY_DIRECT = ["1DRet", "5DRet", "20DRet", "60DRet", "120DRet"]   # kept raw
@@ -91,9 +93,10 @@ def tidy(df: pd.DataFrame, variable: str) -> pd.DataFrame:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Daily normalize: T2 Master Daily -> tidy normalized CSV.")
+    ap = argparse.ArgumentParser(description="Daily normalize: T2 Master Daily -> tidy normalized outputs.")
     ap.add_argument("--master", default=str(DEFAULT_MASTER))
     ap.add_argument("--out", default=str(DEFAULT_OUT))
+    ap.add_argument("--out-parquet", default=str(DEFAULT_OUT_PARQUET))
     args = ap.parse_args()
 
     master = Path(args.master)
@@ -102,6 +105,8 @@ def main() -> int:
         return 1
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_parquet = Path(args.out_parquet)
+    out_parquet.parent.mkdir(parents=True, exist_ok=True)
 
     xl = pd.ExcelFile(str(master))
     parts: list[pd.DataFrame] = []
@@ -134,7 +139,9 @@ def main() -> int:
 
     result = pd.concat(parts, ignore_index=True)
     result.to_csv(out_path, index=False)
-    logger.info("Wrote %s (%d rows, %d variables)", out_path, len(result), result["variable"].nunique())
+    result.to_parquet(out_parquet, index=False)
+    logger.info("Wrote %s and %s (%d rows, %d variables)",
+                out_path, out_parquet, len(result), result["variable"].nunique())
     return 0
 
 

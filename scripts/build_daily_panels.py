@@ -6,9 +6,9 @@ SCRIPT NAME: scripts/build_daily_panels.py
 
 INPUT FILES (all in-repo — daily pipeline is standalone, written by daily_update.py):
 - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/t2_daily/
-    Normalized_T2_MasterCSV.csv            (~35.6M rows, normalized _CS/_TS
-                                            variables, 34 countries; tidy long
-                                            format — written by t2_normalize_daily.py)
+    normalized_t2_master.parquet           normalized _CS/_TS variables,
+                                            34 countries; tidy long format —
+                                            written by t2_normalize_daily.py)
     T2 Master Daily.xlsx                    (58 sheets, raw factor levels +
                                             returns — PX_LAST, Tot Return Index,
                                             MCAP, RSI14, REER, 1DRet…120DRet, etc.;
@@ -18,17 +18,17 @@ INPUT FILES (all in-repo — daily pipeline is standalone, written by daily_upda
                                             — written by t2_optimizer_daily.py)
 
 - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/gdelt_daily/
-    GDELT_Factors_MasterCSV.csv            (~10.2M rows, normalized GDELT factors
+    gdelt_factors_daily.parquet            (~5M rows, normalized GDELT factors
                                             aligned to the 34-country T2 universe;
                                             tidy long — by gdelt_normalize_daily.py)
-    GDELT_Optimizer.xlsx                   (daily factor returns from the GDELT
-                                            optimizer; sheet Monthly_Net_Returns
-                                            — written by gdelt_optimizer_daily.py)
+    gdelt_optimizer_returns.parquet        (daily factor returns from the GDELT
+                                            optimizer; parquet-only, written by
+                                            gdelt_optimizer_daily.py)
 
-- /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/gdelt/panels/
-    country_signal_daily.parquet           (~967K rows, raw GDELT for 249 ISO3
-                                            countries — the off-universe entity
-                                            bridge; by scripts/gdelt_ingest/)
+- /Users/arjundivecha/Dropbox/AAA Backup/A Working/GDELT/data/panels/
+    country_signal_daily.parquet           raw GDELT for ISO3 countries — the
+                                            off-universe entity bridge; refreshed
+                                            by refresh_gdelt_daily.py before load
 
 OUTPUT TABLES (added to Data/asado.duckdb, additive — existing tables untouched):
 - t2_factors_daily            normalized _CS/_TS daily panel  (~34M rows)
@@ -108,15 +108,16 @@ BACKUP_PATH = BASE_DIR / "Data" / "asado.duckdb.backup"
 # writes here; no longer reads the hand-maintained A Complete/...Daily folders.
 T2_DAILY_DIR = BASE_DIR / "Data" / "work" / "t2_daily"
 GDELT_DAILY_DIR = BASE_DIR / "Data" / "work" / "gdelt_daily"
-# Canonical in-repo GDELT panels (migrated from A Complete/GDELT; rebuilt each
-# run by scripts/gdelt_ingest/build_fullhistory_workbook.py --save-panels).
-GDELT_RAW_DIR = BASE_DIR / "Data" / "gdelt" / "panels"
+# Canonical GDELT panel. This must match gdelt_normalize_daily.py; the ASADO
+# local Data/gdelt/panels copy can lag, while refresh_gdelt_daily.py updates the
+# upstream GDELT repo parquet before every full daily run.
+GDELT_RAW_DIR = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Working/GDELT/data/panels")
 
-T2_NORMALIZED_CSV = T2_DAILY_DIR / "Normalized_T2_MasterCSV.csv"
+T2_NORMALIZED_PQ = T2_DAILY_DIR / "normalized_t2_master.parquet"
 T2_LEVELS_XLSX    = T2_DAILY_DIR / "T2 Master Daily.xlsx"   # ASADO daily master (raw levels + returns)
 T2_OPTIMIZER_RETURNS = T2_DAILY_DIR / "T2_Optimizer.xlsx"
-GDELT_FACTORS_CSV = GDELT_DAILY_DIR / "GDELT_Factors_MasterCSV.csv"
-GDELT_OPTIMIZER_RETURNS = GDELT_DAILY_DIR / "GDELT_Optimizer.xlsx"
+GDELT_FACTORS_PQ = GDELT_DAILY_DIR / "gdelt_factors_daily.parquet"
+GDELT_OPTIMIZER_RETURNS = GDELT_DAILY_DIR / "gdelt_optimizer_returns.parquet"
 GDELT_RAW_PQ      = GDELT_RAW_DIR / "country_signal_daily.parquet"
 
 # Tables added by this script
@@ -157,7 +158,7 @@ log = logging.getLogger(__name__)
 
 def check_inputs(skip_levels: bool = False) -> List[Path]:
     """Verify all required input files exist. Returns list of missing files."""
-    required = [T2_NORMALIZED_CSV, GDELT_FACTORS_CSV, GDELT_RAW_PQ,
+    required = [T2_NORMALIZED_PQ, GDELT_FACTORS_PQ, GDELT_RAW_PQ,
                T2_OPTIMIZER_RETURNS, GDELT_OPTIMIZER_RETURNS]
     if not skip_levels:
         required.append(T2_LEVELS_XLSX)
@@ -191,7 +192,7 @@ def restore_backup() -> None:
 
 def load_t2_factors_daily(con: duckdb.DuckDBPyConnection) -> int:
     """
-    Load Normalized_T2_MasterCSV.csv → t2_factors_daily.
+    Load normalized_t2_master.parquet → t2_factors_daily.
     Filters out 1970-01-01 epoch rows from Bloomberg BEST-forecast warm-ups.
     """
     log.info("Loading t2_factors_daily ...")
@@ -204,7 +205,7 @@ def load_t2_factors_daily(con: duckdb.DuckDBPyConnection) -> int:
             country,
             value,
             variable
-        FROM read_csv_auto('{T2_NORMALIZED_CSV}', SAMPLE_SIZE=-1)
+        FROM read_parquet('{T2_NORMALIZED_PQ}')
         WHERE date >= DATE '2000-01-01'
     """)
     n = con.execute("SELECT COUNT(*) FROM t2_factors_daily").fetchone()[0]
@@ -217,7 +218,7 @@ def load_t2_factors_daily(con: duckdb.DuckDBPyConnection) -> int:
 
 
 def load_gdelt_factors_daily(con: duckdb.DuckDBPyConnection) -> int:
-    """Load GDELT_Factors_MasterCSV.csv → gdelt_factors_daily."""
+    """Load gdelt_factors_daily.parquet → gdelt_factors_daily."""
     log.info("Loading gdelt_factors_daily ...")
     t0 = time.time()
     con.execute("DROP TABLE IF EXISTS gdelt_factors_daily")
@@ -228,7 +229,7 @@ def load_gdelt_factors_daily(con: duckdb.DuckDBPyConnection) -> int:
             country,
             value,
             variable
-        FROM read_csv_auto('{GDELT_FACTORS_CSV}', SAMPLE_SIZE=-1)
+        FROM read_parquet('{GDELT_FACTORS_PQ}')
         WHERE date IS NOT NULL
     """)
     n = con.execute("SELECT COUNT(*) FROM gdelt_factors_daily").fetchone()[0]
@@ -369,14 +370,11 @@ def load_factor_returns_daily(con: duckdb.DuckDBPyConnection) -> int:
              f"{t2_count:,}", len(t2_returns.columns) - 1,
              t2_returns["Date"].min(), t2_returns["Date"].max())
 
-    # GDELT Optimizer returns
-    gdelt_returns = pd.read_excel(GDELT_OPTIMIZER_RETURNS, sheet_name="Monthly_Net_Returns")
-    gdelt_returns["Date"] = pd.to_datetime(gdelt_returns["Date"]).dt.date
-    gdelt_long = (
-        gdelt_returns.melt(id_vars="Date", var_name="factor", value_name="value")
-        .dropna(subset=["Date", "value"])
-        .rename(columns={"Date": "date"})
-    )
+    # GDELT Optimizer returns (parquet-only; no Excel in the daily GDELT path)
+    gdelt_long = pd.read_parquet(GDELT_OPTIMIZER_RETURNS)
+    gdelt_long["date"] = pd.to_datetime(gdelt_long["date"], errors="coerce").dt.date
+    gdelt_long["value"] = pd.to_numeric(gdelt_long["value"], errors="coerce")
+    gdelt_long = gdelt_long.dropna(subset=["date", "factor", "value"])
     gdelt_long["source"] = "gdelt_optimizer_daily"
     con.register("gdelt_returns_stage", gdelt_long[["date", "factor", "value", "source"]])
     con.execute("""
@@ -387,8 +385,8 @@ def load_factor_returns_daily(con: duckdb.DuckDBPyConnection) -> int:
     con.unregister("gdelt_returns_stage")
     gdelt_count = len(gdelt_long)
     log.info("  GDELT optimizer: %s rows | %d factors | %s → %s",
-             f"{gdelt_count:,}", len(gdelt_returns.columns) - 1,
-             gdelt_returns["Date"].min(), gdelt_returns["Date"].max())
+             f"{gdelt_count:,}", gdelt_long["factor"].nunique(),
+             gdelt_long["date"].min(), gdelt_long["date"].max())
 
     total = t2_count + gdelt_count
     nf = con.execute("SELECT COUNT(DISTINCT factor) FROM factor_returns_daily").fetchone()[0]
@@ -462,7 +460,7 @@ def build_variable_meta(con: duckdb.DuckDBPyConnection) -> int:
         rows.append({
             "variable": v,
             "source_table": "t2_factors_daily",
-            "source_file": "Normalized_T2_MasterCSV.csv",
+            "source_file": "normalized_t2_master.parquet",
             "native_frequency": "D",
             "monthly_equivalent": monthly_equiv_map.get(v, None),
             "is_normalized": v.endswith("_CS") or v.endswith("_TS"),
@@ -493,7 +491,7 @@ def build_variable_meta(con: duckdb.DuckDBPyConnection) -> int:
         rows.append({
             "variable": v,
             "source_table": "gdelt_factors_daily",
-            "source_file": "GDELT_Factors_MasterCSV.csv",
+            "source_file": "gdelt_factors_daily.parquet",
             "native_frequency": "D",
             "monthly_equivalent": None,
             "is_normalized": v.endswith("_CS") or v.endswith("_TS"),
@@ -855,7 +853,7 @@ def main() -> int:
         if all(t in existing for t in NEW_TABLES):
             db_mtime = DB_PATH.stat().st_mtime
             input_mtimes = [p.stat().st_mtime for p in [
-                T2_NORMALIZED_CSV, GDELT_FACTORS_CSV, GDELT_RAW_PQ,
+                T2_NORMALIZED_PQ, GDELT_FACTORS_PQ, GDELT_RAW_PQ,
                 T2_OPTIMIZER_RETURNS, GDELT_OPTIMIZER_RETURNS
             ] if p.exists()]
             if not args.skip_levels and T2_LEVELS_XLSX.exists():

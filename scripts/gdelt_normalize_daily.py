@@ -5,117 +5,180 @@ SCRIPT NAME: scripts/gdelt_normalize_daily.py
 =============================================================================
 
 DESCRIPTION:
-    DAILY analog of gdelt_normalize.py. Reads the DAILY GDELT signal workbook
-    (GDELT_DAILY.xlsx, produced from the GKG source by the GDELT ingest) and
-    produces tidy _CS/_TS normalized daily GDELT factors, plus the daily 1DRet
-    country-return series. Reuses the exact GDELT normalize helpers (CS/TS
-    z-scores, sign-flip prefixes, country mapping) — the only difference from
-    monthly is the metronome: daily dates (no month collapse) and 1DRet instead
-    of 1MRet.
+    DAILY analog of gdelt_normalize.py. Reads the upstream GDELT repo's
+    country_signal_daily.parquet directly and produces tidy _CS/_TS normalized
+    daily GDELT factors, plus the daily 1DRet country-return series.
 
 INPUT FILES:
-    - GDELT_DAILY.xlsx (--gdelt; default: ASADO Data/gdelt/spreadsheet/GDELT_DAILY.xlsx)
-    - Data/work/t2_daily/Normalized_T2_MasterCSV.csv  (for the 1DRet series)
+    - GDELT country_signal_daily.parquet
+    - Data/work/t2_daily/normalized_t2_master.parquet  (for the 1DRet series)
 
 OUTPUT FILES:
-    - Data/work/gdelt_daily/GDELT_Factors_MasterCSV.csv  (tidy: date,country,variable,value)
+    - Data/work/gdelt_daily/gdelt_factors_daily.parquet  (tidy: date,country,variable,value)
+
+NO EXCEL OR CSV:
+    The daily GDELT path reads parquet and writes parquet.
 
 VERSION: 1.0
 LAST UPDATED: 2026-06-09
 AUTHOR: Arjun Divecha (ported by Claude Code)
 
-DEPENDENCIES: pandas, numpy, openpyxl
+DEPENDENCIES: pandas, pyarrow
 
 USAGE:
     python scripts/gdelt_normalize_daily.py
-    python scripts/gdelt_normalize_daily.py --gdelt PATH --t2csv PATH --out PATH
+    python scripts/gdelt_normalize_daily.py --panel-parquet PATH --t2-parquet PATH --out-parquet PATH
 =============================================================================
 """
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
-import gdelt_normalize as gn   # reuse helpers (same scripts/ dir on sys.path)
+try:
+    from scripts import gdelt_normalize as gn
+    from scripts.loop.loopdb import t2_countries
+except ModuleNotFoundError:  # direct execution as python scripts/gdelt_normalize_daily.py
+    import gdelt_normalize as gn
+    from loop.loopdb import t2_countries
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-GDELT_DAILY_DIR = BASE_DIR / "Data" / "work" / "gdelt_daily"
-DEFAULT_GDELT = BASE_DIR / "Data" / "gdelt" / "spreadsheet" / "GDELT_DAILY.xlsx"
-DEFAULT_T2CSV = BASE_DIR / "Data" / "work" / "t2_daily" / "Normalized_T2_MasterCSV.csv"
-DEFAULT_OUT = GDELT_DAILY_DIR / "GDELT_Factors_MasterCSV.csv"
+GDELT_WORK_DIR = BASE_DIR / "Data" / "work" / "gdelt_daily"
+DEFAULT_PANEL_PARQUET = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Working/GDELT/data/panels/country_signal_daily.parquet")
+DEFAULT_T2_PARQUET = BASE_DIR / "Data" / "work" / "t2_daily" / "normalized_t2_master.parquet"
+DEFAULT_OUT_PARQUET = GDELT_WORK_DIR / "gdelt_factors_daily.parquet"
+COUNTRY_MAPPING = BASE_DIR / "config" / "country_mapping.json"
 
-METRONOME_SHEET = "daily_metronome"
+PANEL_INDICATORS = [
+    ("country_news_sentiment", "country_news_sentiment"),
+    ("country_news_risk", "country_news_risk"),
+    ("country_news_sentiment_raw", "country_news_sentiment_raw"),
+    ("country_news_risk_raw", "country_news_risk_raw"),
+    ("country_news_attention", "country_news_attention"),
+    ("local_attention_share", "local_attention_share"),
+    ("sentiment_x_attention", "country_news_sentiment_x_attention"),
+    ("local_tone", "local_tone"),
+    ("foreign_tone", "foreign_tone"),
+    ("attention_shock", "attention_shock"),
+    ("tone_dispersion", "tone_dispersion"),
+    ("tone_wavg_wordcount", "tone_wavg_wordcount"),
+    ("tone_mean", "tone_mean"),
+    ("tone_p50", "tone_p50"),
+    ("positive_mean", "positive_mean"),
+    ("negative_mean", "negative_mean"),
+    ("polarity_mean", "polarity_mean"),
+    ("n_articles", "n_articles"),
+]
 
 
-def _load_1dret_long(t2csv: Path) -> pd.DataFrame:
-    csv = pd.read_csv(t2csv)
-    csv = csv.rename(columns={c: c.lower() for c in csv.columns if c.lower() == "date"})
-    csv["date"] = pd.to_datetime(csv["date"], errors="coerce")
-    ret = csv[csv["variable"] == "1DRet"][["date", "country", "variable", "value"]].copy()
+def _load_1dret_long(t2_parquet: Path) -> pd.DataFrame:
+    if not t2_parquet.exists():
+        raise FileNotFoundError(f"T2 normalized parquet not found: {t2_parquet}")
+    panel = pd.read_parquet(t2_parquet, columns=["date", "country", "variable", "value"])
+    panel = panel.rename(columns={c: c.lower() for c in panel.columns if c.lower() == "date"})
+    panel["date"] = pd.to_datetime(panel["date"], errors="coerce")
+    ret = panel[panel["variable"] == "1DRet"][["date", "country", "variable", "value"]].copy()
     ret["country"] = ret["country"].astype(str)
     return ret
 
 
-def _window(gdelt_path: Path):
-    df = pd.read_excel(str(gdelt_path), sheet_name=METRONOME_SHEET, engine="openpyxl")
-    dates = pd.to_datetime(df.iloc[:, 0], errors="coerce")
-    has = df.iloc[:, 1:].notna().any(axis=1)
-    start = pd.Timestamp(dates.loc[has[has].index[0]]).normalize()
-    return start, pd.Timestamp(dates.max()).normalize()
+def _iso3_to_t2_countries(mapping_path: Path = COUNTRY_MAPPING) -> dict[str, list[str]]:
+    payload = json.loads(mapping_path.read_text())
+    live = set(t2_countries())
+    out: dict[str, list[str]] = {}
+    for country, meta in payload["countries"].items():
+        if country not in live:
+            continue
+        iso3 = str(meta.get("iso3") or "").strip()
+        if iso3:
+            out.setdefault(iso3, []).append(country)
+    return out
+
+
+def _panel_parts(
+    panel_path: Path,
+    mapping_path: Path = COUNTRY_MAPPING,
+) -> tuple[list[pd.DataFrame], pd.Timestamp, pd.Timestamp, list[str]]:
+    if not panel_path.exists():
+        raise FileNotFoundError(f"GDELT panel parquet not found: {panel_path}")
+    panel = pd.read_parquet(panel_path)
+    required = {"date", "country_iso3"}
+    missing_required = sorted(required - set(panel.columns))
+    if missing_required:
+        raise ValueError(f"GDELT panel missing required columns: {missing_required}")
+    panel = panel.copy()
+    panel["date"] = pd.to_datetime(panel["date"], errors="coerce").dt.normalize()
+    panel["country_iso3"] = panel["country_iso3"].astype(str).str.strip()
+    panel = panel.dropna(subset=["date"])
+    iso_to_t2 = _iso3_to_t2_countries(mapping_path)
+    panel = panel[panel["country_iso3"].isin(iso_to_t2)].copy()
+    if panel.empty:
+        raise ValueError(f"GDELT panel has no ASADO T2 countries: {panel_path}")
+
+    parts: list[pd.DataFrame] = []
+    loaded: list[str] = []
+    for sheet_name, column in PANEL_INDICATORS:
+        if column not in panel.columns:
+            continue
+        rows = panel[["date", "country_iso3", column]].copy()
+        rows[column] = pd.to_numeric(rows[column], errors="coerce")
+        rows = rows.dropna(subset=[column])
+        if rows.empty:
+            continue
+        exploded = []
+        for iso3, countries in iso_to_t2.items():
+            sub = rows.loc[rows["country_iso3"] == iso3, ["date", column]]
+            if sub.empty:
+                continue
+            for country in countries:
+                c = sub.rename(columns={column: country}).set_index("date")
+                exploded.append(c)
+        if not exploded:
+            continue
+        wide = pd.concat(exploded, axis=1).sort_index()
+        wide = wide.loc[:, ~wide.columns.duplicated()]
+        wide.index.name = "date"
+        if gn._should_flip(sheet_name):
+            wide = wide * -1.0
+        parts.extend(gn._sheet_to_long_variants(sheet_name, wide))
+        loaded.append(sheet_name)
+
+    if not parts:
+        raise ValueError(f"GDELT panel produced no normalized variables: {panel_path}")
+    return parts, pd.Timestamp(panel["date"].min()).normalize(), pd.Timestamp(panel["date"].max()).normalize(), loaded
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Daily GDELT normalize -> tidy factor CSV.")
-    ap.add_argument("--gdelt", default=str(DEFAULT_GDELT))
-    ap.add_argument("--t2csv", default=str(DEFAULT_T2CSV))
-    ap.add_argument("--out", default=str(DEFAULT_OUT))
+    ap = argparse.ArgumentParser(description="Daily GDELT parquet -> tidy factor parquet.")
+    ap.add_argument("--panel-parquet", default=str(DEFAULT_PANEL_PARQUET),
+                    help="GDELT repo country_signal_daily.parquet. Daily GDELT is parquet-only.")
+    ap.add_argument("--t2-parquet", default=str(DEFAULT_T2_PARQUET))
+    ap.add_argument("--out-parquet", default=str(DEFAULT_OUT_PARQUET))
     args = ap.parse_args()
 
-    gdelt_path = Path(args.gdelt)
-    if not gdelt_path.exists():
-        logger.error("GDELT_DAILY workbook not found: %s", gdelt_path)
-        return 1
-    out_path = Path(args.out); out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path = Path(args.out_parquet); out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    xl = pd.ExcelFile(str(gdelt_path), engine="openpyxl")
-    data_sheets = [s for s in xl.sheet_names if s not in gn.GDELT_SKIP_SHEETS]
-    all_parts, loaded = [], []
-    for sheet in data_sheets:
-        df = pd.read_excel(xl, sheet_name=sheet, engine="openpyxl")
-        if df.empty or df.shape[1] < 2:
-            continue
-        df = df.rename(columns={df.columns[0]: "date"})
-        df["date"] = pd.to_datetime(df["date"], errors="coerce")
-        df = df.dropna(subset=["date"])
-        # DAILY: no month collapse (monthly version does .dt.to_period('M'))
-        df = df.rename(columns={c: gn.map_country_label(c) for c in df.columns if c != "date"})
-        wide = df.set_index("date")
-        wide.index.name = "date"
-        wide = wide.apply(pd.to_numeric, errors="coerce")
-        if gn._should_flip(sheet):
-            wide = wide * -1.0
-        all_parts.extend(gn._sheet_to_long_variants(sheet, wide))
-        loaded.append(sheet)
+    panel_arg = Path(args.panel_parquet)
+    all_parts, win_s, win_e, loaded = _panel_parts(panel_arg)
+    logger.info("Loaded GDELT panel parquet: %s (%d indicators)", panel_arg, len(loaded))
 
-    if not all_parts:
-        logger.error("No GDELT sheets produced tidy data.")
-        return 1
-    ret = _load_1dret_long(Path(args.t2csv)) if Path(args.t2csv).exists() else pd.DataFrame(
-        columns=["date", "country", "variable", "value"])
+    ret = _load_1dret_long(Path(args.t2_parquet))
     combined = pd.concat([pd.concat(all_parts, ignore_index=True), ret], ignore_index=True)
-    win_s, win_e = _window(gdelt_path)
     combined["date"] = pd.to_datetime(combined["date"], errors="coerce")
     combined = combined.dropna(subset=["date"])
     combined = combined[(combined["date"] >= win_s) & (combined["date"] <= win_e)]
     combined = combined.sort_values(["date", "variable", "country"]).reset_index(drop=True)
-    combined.to_csv(out_path, index=False)
+    if combined.empty:
+        logger.error("GDELT normalization produced zero rows for window %s..%s", win_s.date(), win_e.date())
+        return 1
+    combined.to_parquet(out_path, index=False)
     logger.info("Wrote %s (%d rows, %d vars, window %s..%s)",
                 out_path, len(combined), combined["variable"].nunique(), win_s.date(), win_e.date())
     return 0

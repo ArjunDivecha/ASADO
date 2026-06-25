@@ -8,29 +8,34 @@ DESCRIPTION:
     ASADO-internal port of "Step Four GDELT Create Daily Top20 Returns.py"
     (A Complete/GDELT Factor Timing Fuzzy Daily/T2-Factor-Timing-Daily). Builds
     daily GDELT factor portfolios (fuzzy soft 15-25% taper) and writes their
-    daily net (excess-vs-benchmark) returns.
+    daily net (excess-vs-equal-weight-benchmark) returns.
 
     IMPORTANT — this is NOT the same as the T2 daily optimizer:
-      * The return paid to weights(T) is the `1DRet` series MERGED INTO THE CSV,
+      * The return paid to weights(T) is the `1DRet` series merged into the parquet,
         SAME DATE (no .shift). 1DRet already = TRI(T+1)/TRI(T)-1, so the forward
         step is baked in; shifting again (as T2 Step Four does) is wrong here.
-      * Only dates present in the CSV (factor ∩ 1DRet) are evaluated — no reindex
+      * Only dates present in the parquet (factor ∩ 1DRet) are evaluated — no reindex
         to a full calendar grid, so no weekend / out-of-window rows.
       * NaNs are filled with the per-date cross-sectional mean (across factors)
         before scaling x100.
 
 INPUT FILES:
-    - --csv  Data/work/gdelt_daily/GDELT_Factors_MasterCSV.csv  (GDELT _CS/_TS + 1DRet)
-    - --portfolio  Data/work/t2_daily/Portfolio_Data.xlsx       (Benchmarks: equal_weight)
+    - --factors-parquet  Data/work/gdelt_daily/gdelt_factors_daily.parquet
+      (GDELT _CS/_TS + 1DRet)
 
 OUTPUT FILES:
-    - --out  Data/work/gdelt_daily/GDELT_Optimizer.xlsx  (sheet Monthly_Net_Returns = DAILY net %)
+    - --out-parquet  Data/work/gdelt_daily/gdelt_optimizer_returns.parquet
+      Tidy columns: date, factor, value. Value is DAILY net return in percent.
+NO EXCEL OR CSV:
+    The daily GDELT optimizer reads parquet and writes parquet. The
+    equal-weight benchmark is computed directly from the merged same-date
+    1DRet rows.
 
 VERSION: 1.0
 LAST UPDATED: 2026-06-09
 AUTHOR: Arjun Divecha (ported by Claude Code)
 
-DEPENDENCIES: pandas, numpy, openpyxl
+DEPENDENCIES: pandas, numpy, pyarrow
 
 USAGE: python scripts/gdelt_optimizer_daily.py
 =============================================================================
@@ -48,19 +53,19 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-GDELT_DAILY_DIR = BASE_DIR / "Data" / "work" / "gdelt_daily"
-DEFAULT_CSV = GDELT_DAILY_DIR / "GDELT_Factors_MasterCSV.csv"
-DEFAULT_PORTFOLIO = BASE_DIR / "Data" / "work" / "t2_daily" / "Portfolio_Data.xlsx"
-DEFAULT_OUT = GDELT_DAILY_DIR / "GDELT_Optimizer.xlsx"
+GDELT_WORK_DIR = BASE_DIR / "Data" / "work" / "gdelt_daily"
+DEFAULT_FACTORS_PARQUET = GDELT_WORK_DIR / "gdelt_factors_daily.parquet"
+DEFAULT_OUT_PARQUET = GDELT_WORK_DIR / "gdelt_optimizer_returns.parquet"
 
 SOFT_BAND_TOP = 0.15
 SOFT_BAND_CUTOFF = 0.25
 
 
-def analyze(data: pd.DataFrame, features, benchmark_returns):
+def analyze(data: pd.DataFrame, features):
     rd = data[data["variable"] == "1DRet"].copy()
     rd["value"] = pd.to_numeric(rd["value"], errors="coerce")
     rd = rd.rename(columns={"value": "return_value"})
+    benchmark_returns = rd.groupby("date")["return_value"].mean().sort_index()
     returns_by_date = {d: g[["country", "return_value"]] for d, g in rd.groupby("date")}
 
     net = {}
@@ -104,39 +109,41 @@ def analyze(data: pd.DataFrame, features, benchmark_returns):
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Daily GDELT factor returns (Step Four GDELT port).")
-    ap.add_argument("--csv", default=str(DEFAULT_CSV))
-    ap.add_argument("--portfolio", default=str(DEFAULT_PORTFOLIO))
-    ap.add_argument("--out", default=str(DEFAULT_OUT))
+    ap.add_argument("--factors-parquet", default=str(DEFAULT_FACTORS_PARQUET))
+    ap.add_argument("--out-parquet", default=str(DEFAULT_OUT_PARQUET))
     args = ap.parse_args()
 
-    csv_path, port_path = Path(args.csv), Path(args.portfolio)
-    if not csv_path.exists() or not port_path.exists():
-        logger.error("Missing input(s): %s / %s", csv_path, port_path)
+    factors_path = Path(args.factors_parquet)
+    if not factors_path.exists():
+        logger.error("Missing input: %s", factors_path)
         return 1
 
-    logger.info("Loading GDELT factor CSV: %s", csv_path)
-    data = pd.read_csv(csv_path)
+    logger.info("Loading GDELT factor parquet: %s", factors_path)
+    data = pd.read_parquet(factors_path)
     data["date"] = pd.to_datetime(data["date"], errors="coerce")
     data["value"] = pd.to_numeric(data["value"], errors="coerce")
     data = data.dropna(subset=["value"])
     data = data.groupby(["date", "country", "variable"], as_index=False).last()
 
-    returns_df = pd.read_excel(str(port_path), sheet_name="Returns", index_col=0)
-    returns_df.index = pd.to_datetime(returns_df.index, errors="coerce")
-    bench = pd.read_excel(str(port_path), sheet_name="Benchmarks", index_col=0)
-    bench.index = pd.to_datetime(bench.index, errors="coerce")
-    benchmark_returns = pd.to_numeric(bench["equal_weight"], errors="coerce").reindex(returns_df.index)
-
     features = sorted(set(data["variable"]) - {"1DRet"})
     logger.info("Analyzing %d GDELT factor portfolios ...", len(features))
-    net = analyze(data, features, benchmark_returns)
+    net = analyze(data, features)
 
     net_df = pd.DataFrame(net).sort_index()
     filled = net_df.apply(lambda row: row.fillna(row.mean()), axis=1)   # cross-sectional fill
-    out = Path(args.out); out.parent.mkdir(parents=True, exist_ok=True)
-    with pd.ExcelWriter(str(out), engine="openpyxl") as wr:
-        (filled * 100).to_excel(wr, sheet_name="Monthly_Net_Returns", index_label="Date")
-    logger.info("Wrote %s (%d factors, %d daily dates)", out, filled.shape[1], filled.shape[0])
+    tidy = (
+        (filled * 100)
+        .reset_index(names="date")
+        .melt(id_vars="date", var_name="factor", value_name="value")
+        .dropna(subset=["date", "value"])
+        .sort_values(["date", "factor"])
+        .reset_index(drop=True)
+    )
+    out_parquet = Path(args.out_parquet)
+    out_parquet.parent.mkdir(parents=True, exist_ok=True)
+    tidy.to_parquet(out_parquet, index=False)
+    logger.info("Wrote %s (%d factors, %d daily dates, %d rows)",
+                out_parquet, filled.shape[1], filled.shape[0], len(tidy))
     return 0
 
 

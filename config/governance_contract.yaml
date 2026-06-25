@@ -226,6 +226,32 @@ steps:
       - {kind: file, glob: "Data/dislocations/brief_*.md", staleness: mtime}
       - {kind: loop_db_table, table: dislocation_daily}
 
+  - name: build_price_state
+    governance: false
+    optional: false
+    expected_outputs:
+      - {kind: loop_db_table, table: price_state_daily}
+      - {kind: loop_db_table, table: price_state_surface}
+      - {kind: file, path_template: "Data/loop/gap_engine/price_state_daily.parquet", staleness: mtime}
+      - {kind: file, path_template: "Data/loop/gap_engine/price_state_surface.parquet", staleness: mtime}
+
+  - name: build_gap_episodes
+    governance: false
+    optional: false
+    expected_outputs:
+      - {kind: loop_db_table, table: gap_episodes}
+      - {kind: loop_db_table, table: gap_episode_expression}
+      - {kind: loop_db_table, table: gap_episode_marks}
+      - {kind: loop_db_table, table: gap_holdout_daily}
+      - {kind: file, path_template: "Data/loop/gap_engine/gap_episodes.parquet", staleness: mtime}
+      - {kind: file, path_template: "Data/loop/gap_engine/gap_holdout_daily.parquet", staleness: mtime}
+
+  - name: render_dislocation_brief
+    governance: false
+    optional: false
+    expected_outputs:
+      - {kind: file, glob: "Data/dislocations/brief_*.md", staleness: mtime}
+
   - name: check_cross_source
     governance: true         # A7 GSAB defense: sentinels + cross-source pairs
     optional: false

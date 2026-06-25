@@ -121,14 +121,22 @@ def _searches() -> dict[str, dict[str, Any]]:
 
 
 def _load_key() -> str:
-    if os.environ.get("ANTHROPIC_API_KEY"):
-        return os.environ["ANTHROPIC_API_KEY"].strip()
+    # 1) explicit override always wins.
+    if os.environ.get("ASADO_ANTHROPIC_KEY"):
+        return os.environ["ASADO_ANTHROPIC_KEY"].strip()
+    # 2) the project key file is preferred over ambient env: a stale shell
+    #    ANTHROPIC_API_KEY has caused failures in ASADO/Opus runs before (Codex review).
     for p in (Path("/Users/arjundivecha/Dropbox/AAA Backup/.env.txt"),):
         if p.exists():
             for line in p.read_text().splitlines():
                 if line.strip().startswith("ANTHROPIC_API_KEY") and "=" in line:
                     return line.split("=", 1)[1].strip().strip('"').strip("'")
-    raise RuntimeError("ANTHROPIC_API_KEY not found (env or .env.txt) — FAIL IS FAIL, no fallback.")
+    # 3) fall back to ambient env.
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        return os.environ["ANTHROPIC_API_KEY"].strip()
+    raise RuntimeError(
+        "No Anthropic key found (ASADO_ANTHROPIC_KEY, project .env.txt, or env) — FAIL IS FAIL."
+    )
 
 
 def _build_client():

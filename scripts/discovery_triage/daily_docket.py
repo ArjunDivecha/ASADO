@@ -47,10 +47,21 @@ _DEFAULT_LOOP_DB = "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/
 
 
 def _render(as_of: str, results: list[dict[str, Any]]) -> str:
-    cards: list[dict[str, Any]] = []
+    all_cards: list[dict[str, Any]] = []
     for r in results:
         for d in r.get("drafts", []):
-            cards.append(d)
+            all_cards.append(d)
+    # Curate (Codex review P2): one card per entity (first/strongest wins), then cap.
+    # The full raw set remains in journal/drafts/ for the cockpit and audit.
+    seen: set = set()
+    cards: list[dict[str, Any]] = []
+    for c in all_cards:
+        key = c.get("family_name")
+        if key in seen:
+            continue
+        seen.add(key)
+        cards.append(c)
+    cards = cards[:MAX_CARDS]
     lines = [
         f"# Discovery Docket — {as_of}",
         "",
@@ -58,10 +69,11 @@ def _render(as_of: str, results: list[dict[str, Any]]) -> str:
         "trade. Each card carries its certification route; with a null model cutoff, ideas route "
         "prospective-only until forward evidence accrues.",
         "",
-        f"Cards: {len(cards)} (cap {MIN_CARDS}-{MAX_CARDS}).",
+        f"Cards: {len(cards)} shown (deduped by entity, cap {MAX_CARDS}) of {len(all_cards)} "
+        "drafts generated this run.",
         "",
     ]
-    for i, c in enumerate(cards[:MAX_CARDS], 1):
+    for i, c in enumerate(cards, 1):
         card = c.get("card", {})
         lines += [
             f"## {i}. [{c.get('object_type')}] {c.get('family_name')}",

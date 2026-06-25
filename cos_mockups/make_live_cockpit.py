@@ -101,6 +101,7 @@ function _dateShort(d){return (d||"").slice(0,10);}
 // tally in fixed order
 const _t=D.signals?.tally||{};
 const TALLY=[[String(_t.WATCH||0),"WATCH"],[String(_t.WEAK||0),"WEAK"],[String(_t.DEAD||0),"DEAD"],[String(_t.INSUFFICIENT_COVERAGE||0),"INSUFF"]];
+const RESEARCH=D.research_desk||{discovery_lab:[],analog_shelf:[],under_triage:[],blind_rulings:[],prospective:[],graveyard:[]};
 // dislocation feed: top country rows + structural detector tallies
 const _cnt=D.dislocations?.counts||{};
 const DISLOFEED=CR.slice(0,5).map(x=>[x.detector, `${x.entity} · ${x.archetype}`, (x.reading||""), `${x.severity}`, (Math.abs(x.severity)>=2?1:0), x.entity])

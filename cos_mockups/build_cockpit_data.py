@@ -18,6 +18,9 @@ INPUT FILES (all read-only):
     The nightly governance scorecard (overall + 7 dimensions).
 - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/dislocations/brief_YYYY_MM_DD.md
     The nightly dislocation brief (latest by filename) — surfaced as a pointer only.
+- /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/journal/{drafts,claims,blind_rulings,routing,analog_sets}/*.jsonl
+    Discovery Triage Research Desk stores. Missing files render empty states;
+    sealed rationales are never read or surfaced.
 
 OUTPUT FILES:
 - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/cos_mockups/cockpit_data.json
@@ -71,11 +74,22 @@ from pathlib import Path
 import duckdb
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-LOOP_DB = BASE_DIR / "Data" / "loop" / "asado_loop.duckdb"
-GOV_JSON = BASE_DIR / "Data" / "loop" / "governance" / "governance_scorecard.json"
-DISLO_DIR = BASE_DIR / "Data" / "dislocations"
+sys.path.insert(0, str(BASE_DIR))
+DATA_ROOT = Path(os.environ.get("ASADO_DATA_ROOT", BASE_DIR / "Data")).expanduser()
+LOOP_DB = DATA_ROOT / "loop" / "asado_loop.duckdb"
+GOV_JSON = DATA_ROOT / "loop" / "governance" / "governance_scorecard.json"
+DISLO_DIR = DATA_ROOT / "dislocations"
 OUT_JSON = BASE_DIR / "cos_mockups" / "cockpit_data.json"
-JOURNAL_DIR = BASE_DIR / "journal"  # Discovery Triage Court ledgers (FuguPRD §20.2)
+
+from scripts.discovery_triage.jsonl_store import read_jsonl  # noqa: E402
+from scripts.discovery_triage.paths import (  # noqa: E402
+    ANALOG_SETS_PATH,
+    BLIND_RULINGS_PATH,
+    CLAIMS_PATH,
+    DETECTOR_DRAFTS_PATH,
+    GRAVEYARD_TRACKING_PATH,
+    PROSPECTIVE_QUEUE_PATH,
+)
 
 # The 34 T2 universe, grouped by region (must match DESIGN_BRIEF / cockpit.html)
 REGIONS = [
@@ -159,6 +173,47 @@ def _date_str(value):
     if hasattr(value, "isoformat"):
         return value.isoformat()
     return str(value)
+
+
+def _first_present(row, keys, default=None):
+    for key in keys:
+        value = row.get(key)
+        if value not in (None, "", [], {}):
+            return value
+    return default
+
+
+def _epistemic_labels(row):
+    labels = []
+    for key in ("epistemic_status", "triage_flags"):
+        value = row.get(key)
+        if isinstance(value, list):
+            labels.extend(str(v) for v in value if v)
+        elif value:
+            labels.append(str(value))
+    route = row.get("certification_route") or (row.get("provenance") or {}).get("certification_route")
+    if route:
+        labels.append(str(route))
+    if not labels:
+        labels.append("UNVALIDATED")
+    return list(dict.fromkeys(labels))
+
+
+def _route_label(route):
+    mapping = {
+        "post_cutoff_holdout_testable": "POST-CUTOFF HOLDOUT TESTABLE",
+        "prospective_only_unknown_cutoff": "PROSPECTIVE REQUIRED",
+        "prospective_only_training_cutoff_contamination": "PRE-CUTOFF MODEL CONTAMINATION POSSIBLE",
+        "prospective_only_no_tool_enforced_blindness": "PROSPECTIVE REQUIRED",
+        "legacy_unknown": "LEGACY UNKNOWN",
+        "retrospective_snooped": "RETROSPECTIVE-SNOOPED",
+        "measured_gap_claim_required": "DETERMINISTIC",
+    }
+    return mapping.get(str(route or ""), str(route or "UNVALIDATED").replace("_", " ").upper())
+
+
+def _jsonl_cards(path, mapper):
+    return [mapper(row) for row in read_jsonl(path)]
 
 
 def _sample_points(points, limit=SIGNAL_IC_SAMPLE_LIMIT):
@@ -764,6 +819,162 @@ def build_today(gov, signals, dislo, gap_engine=None):
 
 
 # --------------------------------------------------------------------------- #
+# Research Desk readers (journal JSONL only; no sealed rationales)
+def read_discovery_lab():
+    def map_row(row):
+        route = row.get("certification_route")
+        return {
+            "id": row.get("draft_id"),
+            "kind": "detector_draft",
+            "title": row.get("family_name") or row.get("draft_id"),
+            "subtitle": f"{len(row.get('members') or [])} proposed members",
+            "source": row.get("source_look_id"),
+            "status": "UNVALIDATED",
+            "route": route,
+            "route_label": _route_label(route),
+            "labels": _epistemic_labels(row),
+            "recorded_ts": row.get("recorded_ts"),
+            "members": row.get("members") or [],
+            "falsification": row.get("falsification") or {},
+            "self_falsification": row.get("mythos_self_falsification") or {},
+        }
+
+    rows = _jsonl_cards(DETECTOR_DRAFTS_PATH, map_row)
+    rows.sort(key=lambda r: str(r.get("recorded_ts") or r.get("id") or ""), reverse=True)
+    return rows
+
+
+def read_analog_shelf():
+    def map_row(row):
+        return {
+            "id": row.get("set_id"),
+            "kind": "analog_set",
+            "title": f"{row.get('query_country')} analogs",
+            "subtitle": f"{row.get('metric_id')} · {len(row.get('members') or [])} members",
+            "status": "FROZEN OUTCOME-BLIND",
+            "route": "analog_shelf",
+            "route_label": "OUTCOME-BLIND ANALOG SET",
+            "labels": ["OUTCOME-BLIND", "FROZEN MEMBERSHIP"],
+            "recorded_ts": row.get("recorded_ts") or row.get("set_frozen_at"),
+            "as_of": row.get("as_of"),
+            "metric_id": row.get("metric_id"),
+            "query_country": row.get("query_country"),
+            "members": row.get("members") or [],
+            "surfaces_seen": row.get("surfaces_seen") or [],
+        }
+
+    rows = _jsonl_cards(ANALOG_SETS_PATH, map_row)
+    rows.sort(key=lambda r: str(r.get("recorded_ts") or r.get("id") or ""), reverse=True)
+    return rows
+
+
+def read_under_triage():
+    def map_row(row):
+        route = (row.get("provenance") or {}).get("certification_route")
+        status = row.get("court_status") or row.get("harness_verdict") or "frozen_not_validated"
+        return {
+            "id": row.get("claim_id"),
+            "kind": "claim",
+            "title": ((row.get("neutral_claim") or {}).get("sentence") or row.get("claim_id")),
+            "subtitle": f"{status} · {row.get('harness_verdict') or 'no harness verdict'}",
+            "status": str(status).replace("_", " ").upper(),
+            "route": route,
+            "route_label": _route_label(route),
+            "labels": _epistemic_labels(row),
+            "recorded_ts": row.get("recorded_ts"),
+            "target": row.get("target") or {},
+            "expression": row.get("expression") or {},
+            "triage_flags": row.get("triage_flags") or [],
+        }
+
+    rows = _jsonl_cards(CLAIMS_PATH, map_row)
+    rows.sort(key=lambda r: str(r.get("recorded_ts") or r.get("id") or ""), reverse=True)
+    return rows
+
+
+def read_blind_rulings():
+    def map_row(row):
+        ruling = row.get("blind_ruling") or {}
+        decision = _first_present(ruling, ["decision", "preliminary_decision"], "unknown")
+        return {
+            "id": row.get("ruling_id"),
+            "kind": "blind_ruling",
+            "title": f"{row.get('claim_id')} · {decision}",
+            "subtitle": f"judge {row.get('judge') or 'unknown'}",
+            "status": str(decision).replace("_", " ").upper(),
+            "route": "blind_ruling",
+            "route_label": "BLIND RULING",
+            "labels": ["BLIND PACKET ONLY"],
+            "recorded_ts": row.get("recorded_ts"),
+            "claim_id": row.get("claim_id"),
+            "ruling_changed_after_unseal": row.get("ruling_changed_after_unseal"),
+            "unseal": row.get("unseal") or {},
+        }
+
+    rows = _jsonl_cards(BLIND_RULINGS_PATH, map_row)
+    rows.sort(key=lambda r: str(r.get("recorded_ts") or r.get("id") or ""), reverse=True)
+    return rows
+
+
+def read_prospective():
+    def map_row(row):
+        return {
+            "id": row.get("claim_id"),
+            "kind": "incubator_entry",
+            "title": row.get("claim_id"),
+            "subtitle": f"{row.get('measurement_shape')} · {row.get('expected_readouts') or []}",
+            "status": str(row.get("status") or "forward_incubating").replace("_", " ").upper(),
+            "route": "prospective_queue",
+            "route_label": "PROSPECTIVE REQUIRED",
+            "labels": ["FORWARD INCUBATING"],
+            "recorded_ts": row.get("recorded_ts"),
+            "start_date": row.get("start_date"),
+            "first_readout_date": row.get("first_readout_date"),
+            "full_readout_date": row.get("full_readout_date"),
+            "return_surface": row.get("return_surface"),
+            "target_country": row.get("target_country"),
+        }
+
+    rows = _jsonl_cards(PROSPECTIVE_QUEUE_PATH, map_row)
+    rows.sort(key=lambda r: str(r.get("recorded_ts") or r.get("id") or ""), reverse=True)
+    return rows
+
+
+def read_graveyard():
+    def map_row(row):
+        return {
+            "id": row.get("claim_id"),
+            "kind": "graveyard_entry",
+            "title": row.get("claim_id"),
+            "subtitle": row.get("reason_for_tracking") or row.get("terminal_or_quarantine_status"),
+            "status": str(row.get("terminal_or_quarantine_status") or "graveyard").replace("_", " ").upper(),
+            "route": "graveyard_control",
+            "route_label": "GRAVEYARD CONTROL ARM",
+            "labels": ["CONTROL ARM", "FORWARD TRACKED"],
+            "recorded_ts": row.get("recorded_ts"),
+            "start_date": row.get("start_date"),
+            "expected_readouts": row.get("expected_readouts") or [],
+            "return_surface": row.get("return_surface"),
+            "target_country": row.get("target_country"),
+        }
+
+    rows = _jsonl_cards(GRAVEYARD_TRACKING_PATH, map_row)
+    rows.sort(key=lambda r: str(r.get("recorded_ts") or r.get("id") or ""), reverse=True)
+    return rows
+
+
+def read_research_desk():
+    return {
+        "discovery_lab": _safe(read_discovery_lab, "research_desk.discovery_lab", []),
+        "analog_shelf": _safe(read_analog_shelf, "research_desk.analog_shelf", []),
+        "under_triage": _safe(read_under_triage, "research_desk.under_triage", []),
+        "blind_rulings": _safe(read_blind_rulings, "research_desk.blind_rulings", []),
+        "prospective": _safe(read_prospective, "research_desk.prospective", []),
+        "graveyard": _safe(read_graveyard, "research_desk.graveyard", []),
+    }
+
+
+# --------------------------------------------------------------------------- #
 def build_map(returns_map, dislo, combiner, drawdowns, gap_engine=None):
     dislo_entities = {x["entity"]: x for x in dislo["country_ranked"]}
     gap_by_country = (gap_engine or {}).get("by_country", {})
@@ -792,146 +1003,6 @@ def build_map(returns_map, dislo, combiner, drawdowns, gap_engine=None):
     return regions
 
 
-# ---------------------------------------------------------------------------
-# Research Desk (Discovery Triage) journal readers — PR-3 empty-state shell.
-# Every reader returns [] when its ledger is absent (no fabrication); each row
-# carries a loud epistemic-status `badge` ("label the magic", FuguPRD §19.2).
-# ---------------------------------------------------------------------------
-_ROUTE_BADGES = {
-    "post_cutoff_holdout_testable": "POST-CUTOFF HOLDOUT TESTABLE",
-    "pit_preregistered": "PIT-PREREGISTERED",
-    "measured_gap_claim_required": "DETERMINISTIC — MEASURED STATE",
-    "legacy_grandfathered_forward_tracking": "LEGACY UNKNOWN",
-}
-
-
-def _badge(route_or_status):
-    s = str(route_or_status or "")
-    if s in _ROUTE_BADGES:
-        return _ROUTE_BADGES[s]
-    if s.startswith("prospective_only"):
-        return "PROSPECTIVE REQUIRED"
-    if "unknown_cutoff" in s:
-        return "UNKNOWN CUTOFF — PROSPECTIVE"
-    return s.upper().replace("_", " ") if s else "UNVALIDATED"
-
-
-def _read_journal_jsonl(path):
-    if not path.exists():
-        return []
-    rows = []
-    for line in path.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            rows.append(json.loads(line))
-        except json.JSONDecodeError:
-            continue
-    return rows
-
-
-def read_discovery_lab(journal_dir=JOURNAL_DIR):
-    return [{
-        "draft_id": d.get("draft_id"), "family_name": d.get("family_name"),
-        "source_look_id": d.get("source_look_id"),
-        "certification_route": d.get("certification_route"),
-        "epistemic_status": d.get("epistemic_status", []),
-        "badge": _badge(d.get("certification_route")),
-    } for d in _read_journal_jsonl(journal_dir / "drafts" / "detector_drafts.jsonl")]
-
-
-def read_under_triage(journal_dir=JOURNAL_DIR):
-    out = []
-    for c in _read_journal_jsonl(journal_dir / "claims" / "claims.jsonl"):
-        if c.get("blind_ruling"):
-            continue  # already ruled — not "under triage"
-        prov = c.get("provenance") or {}
-        out.append({
-            "claim_id": c.get("claim_id"),
-            "sentence": (c.get("neutral_claim") or {}).get("sentence"),
-            "certification_route": prov.get("certification_route"),
-            "harness_verdict": c.get("harness_verdict"),
-            "badge": _badge(prov.get("certification_route")),
-        })
-    return out
-
-
-def read_blind_rulings(journal_dir=JOURNAL_DIR):
-    latest = {}
-    for r in _read_journal_jsonl(journal_dir / "blind_rulings" / "blind_rulings.jsonl"):
-        latest[r.get("ruling_id")] = r  # fold: latest event per ruling_id
-    out = []
-    for r in latest.values():
-        br = r.get("blind_ruling") or {}
-        un = r.get("unseal") or {}
-        out.append({
-            "ruling_id": r.get("ruling_id"), "claim_id": r.get("claim_id"),
-            "decision": br.get("decision"),
-            "ruling_changed_after_unseal": un.get("ruling_changed_after_unseal"),
-        })
-    return out
-
-
-def read_prospective(journal_dir=JOURNAL_DIR):
-    out = []
-    for e in _read_journal_jsonl(journal_dir / "prospective_queue" / "prospective_queue.jsonl"):
-        if e.get("record_kind") != "incubator_entry":
-            continue
-        out.append({
-            "claim_id": e.get("claim_id"), "status": e.get("status"),
-            "measurement_shape": e.get("measurement_shape"),
-            "observations_so_far": e.get("observations_so_far"),
-            "observations_required": e.get("observations_required"),
-            "badge": _badge(e.get("status")),
-        })
-    return out
-
-
-def read_graveyard(journal_dir=JOURNAL_DIR):
-    out = []
-    for e in _read_journal_jsonl(journal_dir / "graveyard" / "graveyard_forward_tracking.jsonl"):
-        if e.get("record_kind") != "graveyard_entry":
-            continue
-        out.append({
-            "claim_id": e.get("claim_id"),
-            "terminal_or_quarantine_status": e.get("terminal_or_quarantine_status"),
-            "measurement_shape": e.get("measurement_shape"),
-            "badge": _badge(e.get("terminal_or_quarantine_status")),
-        })
-    return out
-
-
-def read_analog_shelf(journal_dir=JOURNAL_DIR):
-    d = journal_dir / "analog_sets"
-    if not d.exists():
-        return []
-    return [{"analog_set": p.stem} for p in sorted(d.glob("*.yaml"))]
-
-
-def build_research_desk(journal_dir=JOURNAL_DIR):
-    lab = read_discovery_lab(journal_dir)
-    shelf = read_analog_shelf(journal_dir)
-    triage = read_under_triage(journal_dir)
-    rulings = read_blind_rulings(journal_dir)
-    prospective = read_prospective(journal_dir)
-    graveyard = read_graveyard(journal_dir)
-    return {
-        "discovery_lab": lab, "analog_shelf": shelf, "under_triage": triage,
-        "blind_rulings": rulings, "prospective": prospective, "graveyard": graveyard,
-        "summary": {"discovery_lab": len(lab), "analog_shelf": len(shelf),
-                    "under_triage": len(triage), "blind_rulings": len(rulings),
-                    "prospective": len(prospective), "graveyard": len(graveyard)},
-        "empty": not any([lab, shelf, triage, rulings, prospective, graveyard]),
-    }
-
-
-_EMPTY_RESEARCH_DESK = {
-    "discovery_lab": [], "analog_shelf": [], "under_triage": [], "blind_rulings": [],
-    "prospective": [], "graveyard": [], "summary": {}, "empty": True,
-}
-
-
 def build_payload():
     payload = {
         "meta": {
@@ -944,10 +1015,7 @@ def build_payload():
 
     gov = _safe(read_governance, "governance", {"overall": None, "dimensions": []})
     payload["governance"] = gov
-
-    # Research Desk (Discovery Triage) — built from journal/ ledgers, NO loop DB
-    # needed, so it renders (empty-state) even when the warehouse is unavailable.
-    payload["research_desk"] = _safe(build_research_desk, "research_desk", _EMPTY_RESEARCH_DESK)
+    payload["research_desk"] = read_research_desk()
 
     con = _safe(_connect, "loop_db_connect", None)
     if con is None:

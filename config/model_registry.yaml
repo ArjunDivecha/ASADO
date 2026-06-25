@@ -13,16 +13,17 @@
 #   passes. No model id here is authoritative until that gate passes.
 # =============================================================================
 version: 1
-default_model: null
+default_model: claude-opus-4-8
 models:
-  # Example shape only — replace after Phase-3 verification. Keys stay null until
-  # a verified source is recorded.
-  verified_model_id:
+  claude-opus-4-8:
     model_version: null
-    training_cutoff: null            # MUST come from the model card; null => unknown-cutoff route
-    training_cutoff_source: null     # URL / doc name / provider reference (evidence)
-    cutoff_retrieved_at: null        # when the cutoff was looked up
-    access_mode: null                # API / subscription / ZDR / non-ZDR / etc.
+    training_cutoff: null            # NOT filled — must come from the official Anthropic
+                                     # model card. While null, every historical idea routes to
+                                     # prospective_only_unknown_cutoff (the safe default). Fill it
+                                     # to unlock post-cutoff holdout-testing for forward windows.
+    training_cutoff_source: null     # URL / doc name (evidence) — required before filling cutoff
+    cutoff_retrieved_at: null
+    access_mode: anthropic_api
 certification_routing:
   unknown_cutoff_route: prospective_only_unknown_cutoff
   rule: "if training_cutoff is null OR model_id absent -> unknown_cutoff_route"

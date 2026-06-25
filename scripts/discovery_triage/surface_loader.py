@@ -141,7 +141,10 @@ def load_surface(con: Any, table: str, as_of: str, *, latest_per_country: bool =
     where = 'CAST("date" AS DATE) <= CAST(? AS DATE)' if "date" in available else "TRUE"
     qual = ""
     if latest_per_country and "country" in available and "date" in available:
-        qual = 'QUALIFY row_number() OVER (PARTITION BY "country" ORDER BY "date" DESC) = 1'
+        # tidy (date,country,variable,value) tables must keep the latest per
+        # (country, variable); wide tables keep the latest per country.
+        parts = '"country"' + (', "variable"' if "variable" in available else "")
+        qual = f'QUALIFY row_number() OVER (PARTITION BY {parts} ORDER BY "date" DESC) = 1'
     sql = f'SELECT {col_sql} FROM "{table}" WHERE {where} {qual}'
     params = [as_of] if "date" in available else []
     rows = con.execute(sql, params).fetchall()

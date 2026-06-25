@@ -25,6 +25,9 @@ MODEL_REGISTRY = CONFIG_DIR / "model_registry.yaml"
 RESEARCH_LOOKS = LOOKS_DIR / "research_looks.jsonl"
 DETECTOR_DRAFTS = DRAFTS_DIR / "detector_drafts.jsonl"
 CLAIMS_JSONL = CLAIMS_DIR / "claims.jsonl"
+BLIND_RULINGS = BLIND_RULINGS_DIR / "blind_rulings.jsonl"
+PROSPECTIVE_QUEUE = PROSPECTIVE_DIR / "prospective_queue.jsonl"
+GRAVEYARD_TRACKING = GRAVEYARD_DIR / "graveyard_forward_tracking.jsonl"
 
 
 def ensure_dirs() -> None:

@@ -110,3 +110,59 @@ def test_missing_falsification_is_rejected(tmp_path):
     del bad["falsification"]
     with pytest.raises(Exception):  # pydantic ValidationError inside the locked append
         freeze_claim(bad, generator_type="llm", **p)
+
+
+def _hooks(calls):
+    def spec_hash(spec, mech):
+        return "hash-1"
+
+    def find_existing(fk, h):
+        return calls.get("existing")
+
+    def register(**kw):
+        calls["register"] = calls.get("register", 0) + 1
+        return "H_TEST_001"
+
+    def evaluate(hyp_id, spec, direction, **kw):
+        calls["evaluate"] = calls.get("evaluate", 0) + 1
+        calls["direction"] = direction
+        calls["start_date"] = kw.get("start_date")
+        return {"verdict": "WATCH", "result_file": "/tmp/r.json",
+                "ic": {"1m": {"mean_ic": 0.05, "nw_t": 2.2}}}
+
+    return {"spec_hash": spec_hash, "find_existing": find_existing,
+            "register_hypothesis": register, "evaluate_signal": evaluate}
+
+
+def _claim_with_spec():
+    c = claim(window="2027-02-01")  # post-cutoff (cutoff 2027-01-31) -> holdout-testable
+    c["signal_spec"] = {"table": "market_implied_signals", "variable": "FX_RR25_1M_Z252"}
+    c["family_key"] = "fx_2027_06"
+    return c
+
+
+def test_harness_wire_attaches_overlay(tmp_path):
+    p = _paths(tmp_path)
+    calls: dict = {}
+    cid, rec = freeze_claim(_claim_with_spec(), generator_type="llm", historical_intent=True,
+                            run_harness=True, harness_hooks=_hooks(calls),
+                            harness_opts={"frequency": "monthly"}, **p)
+    assert rec["links"]["hypothesis_id"] == "H_TEST_001"
+    assert rec["harness_verdict"] == "WATCH"
+    assert rec["harness_mean_ic"] == 0.05
+    assert calls["register"] == 1 and calls["evaluate"] == 1
+    assert calls["direction"] == "higher_is_better"        # long_high_signal -> higher_is_better
+    assert calls["start_date"] == "2027-02-01"             # post-cutoff holdout window only
+
+
+def test_harness_wire_reuses_existing_without_recharge(tmp_path):
+    p = _paths(tmp_path)
+    calls = {"existing": {"hypothesis_id": "H_OLD_009", "verdict": "WEAK",
+                          "result_file": "/tmp/old.json"}}
+    cid, rec = freeze_claim(_claim_with_spec(), generator_type="llm", historical_intent=True,
+                            run_harness=True, harness_hooks=_hooks(calls), **p)
+    assert rec["links"]["hypothesis_id"] == "H_OLD_009"
+    assert rec["harness_verdict"] == "WEAK"
+    assert rec["harness_reused"] is True
+    assert calls.get("register", 0) == 0  # cached path: NOT re-registered (no double-charge)
+    assert calls.get("evaluate", 0) == 0  # ...and NOT re-evaluated

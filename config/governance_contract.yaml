@@ -67,6 +67,12 @@ steps:
     expected_outputs:
       - {kind: file, path_template: "Data/loop/country_returns_monthly.parquet", staleness: mtime}
 
+  - name: discovery_forward_track
+    governance: false
+    optional: true          # appends forward readouts; no-op until claims are routed
+    expected_outputs:
+      - {kind: file, path_template: "journal/prospective_queue/prospective_queue.jsonl"}
+
   - name: build_tot_shares
     governance: false
     optional: true          # 7-day freshness gate: parquet not rewritten nightly

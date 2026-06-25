@@ -176,6 +176,10 @@ STEPS = [
     ("collect_news_bridge", [PY, "scripts/loop/collect_news_bridge.py"]),
     ("mark_theses", [PY, "scripts/loop/ledgers.py", "--mark"]),
     ("build_country_returns", [PY, "scripts/loop/build_country_returns.py"]),
+    # Discovery Triage: append forward readouts to the incubator/graveyard rosters.
+    # Runs after build_country_returns (its return surface); optional + no-op until
+    # claims have been routed (see config/governance_contract.yaml).
+    ("discovery_forward_track", [PY, "scripts/discovery_triage/forward_track.py"]),
     ("build_tot_shares", [PY, "scripts/loop/build_tot_shares.py"]),
     ("build_graph_features", [PY, "scripts/loop/build_graph_features.py"]),
     ("build_forward_calendar", [PY, "scripts/loop/build_forward_calendar.py"]),

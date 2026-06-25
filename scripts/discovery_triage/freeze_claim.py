@@ -55,9 +55,96 @@ _FORBIDDEN_PHRASES = [
 ]
 _PROSPECTIVE_ROUTE = re.compile(r"prospective_only|unknown_cutoff")
 
+# Routes for which a historical evaluate_signal run is permitted (Invariant C+D).
+HARNESS_OK_ROUTES = {
+    "post_cutoff_holdout_testable", "pit_preregistered",
+    "standard_harness_then_triage", "measured_gap_claim_required",
+}
+
 
 class ClaimGateError(ValueError):
     """Raised when a claim fails the cutoff or language gate."""
+
+
+def _direction(d: object) -> str:
+    """Map a claim's target.direction to the harness's higher/lower_is_better."""
+    s = str(d or "").lower()
+    if s in ("lower_is_better", "long_low_signal", "short_high_signal", "short"):
+        return "lower_is_better"
+    return "higher_is_better"
+
+
+def _default_hooks() -> dict[str, Any]:
+    """Lazy-bind the REAL harness/ledger functions (kept out of import time so the
+    schema+gate path works without the loop DB / ledger present)."""
+    from scripts.harness.evaluate_signal import evaluate_signal
+    from scripts.harness.sweep_signals import find_existing, spec_hash
+    from scripts.loop.ledgers import register_hypothesis
+    return {"spec_hash": spec_hash, "find_existing": find_existing,
+            "register_hypothesis": register_hypothesis, "evaluate_signal": evaluate_signal}
+
+
+def _harness_bridge(
+    claim: dict[str, Any],
+    route: str,
+    *,
+    hooks: Optional[dict[str, Any]] = None,
+    opts: Optional[dict[str, Any]] = None,
+) -> tuple[str, dict[str, Any]]:
+    """Wire a route-eligible claim to the existing harness WITHOUT duplicating it
+    (Invariant B): dedup by (family_key, spec_hash); register only if new; evaluate;
+    return (hypothesis_id, overlay). Never writes Court fields into the ledger."""
+    opts = opts or {}
+    hooks = hooks or _default_hooks()
+    spec = claim.get("signal_spec")
+    family_key = claim.get("family_key")
+    if not spec or not family_key:
+        raise ClaimGateError("harness wire needs claim.signal_spec and claim.family_key")
+    mech = str((claim.get("mechanism") or {}).get("text", ""))
+
+    h = hooks["spec_hash"](spec, mech)
+    existing = hooks["find_existing"](family_key, h)
+    if existing and existing.get("verdict"):
+        # cached path — do NOT re-register, do NOT re-charge the family
+        hyp_id = existing["hypothesis_id"]
+        result: dict[str, Any] = {"verdict": existing.get("verdict"), "reused": True,
+                                  "result_file": existing.get("result_file")}
+        reused = True
+    else:
+        hyp_id = hooks["register_hypothesis"](
+            archetype=claim.get("archetype", "other"),
+            family_key=family_key,
+            mechanism_text=mech,
+            signal_spec=spec,
+            author=(claim.get("provenance") or {}).get("model_id") or "discovery_triage",
+            primary_horizon=opts.get("primary_horizon"),
+        )
+        reused = False
+        start_date = opts.get("start_date")
+        if start_date is None and route == "post_cutoff_holdout_testable":
+            # only the post-cutoff holdout window certifies for an LLM idea
+            start_date = (claim.get("provenance") or {}).get("certification_window_start")
+        ev_kwargs: dict[str, Any] = {"frequency": opts.get("frequency", "monthly"),
+                                     "horizons": opts.get("horizons"),
+                                     "universe": opts.get("universe", "t2_34")}
+        if start_date:
+            ev_kwargs["start_date"] = start_date
+        result = hooks["evaluate_signal"](
+            hyp_id, spec, _direction((claim.get("target") or {}).get("direction")), **ev_kwargs
+        )
+
+    overlay: dict[str, Any] = {
+        "harness_verdict": result.get("verdict"),
+        "harness_result_file": result.get("result_file"),
+        "harness_reused": reused,
+    }
+    ic = result.get("ic") if isinstance(result.get("ic"), dict) else None
+    if ic:
+        prim = next(iter(ic.values()))
+        if isinstance(prim, dict):
+            overlay["harness_mean_ic"] = prim.get("mean_ic")
+            overlay["harness_nw_t"] = prim.get("nw_t")
+    return hyp_id, overlay
 
 
 def _check_language(claim: dict[str, Any]) -> None:
@@ -90,6 +177,9 @@ def freeze_claim(
     *,
     generator_type: str = "llm",
     historical_intent: bool = False,
+    run_harness: bool = False,
+    harness_hooks: Optional[dict[str, Any]] = None,
+    harness_opts: Optional[dict[str, Any]] = None,
     registry_path: Path = MODEL_REGISTRY,
     claims_path: Path = CLAIMS_JSONL,
     claims_dir: Path = CLAIMS_DIR,
@@ -134,6 +224,16 @@ def freeze_claim(
             "An LLM/pre-cutoff/unknown-cutoff claim is prospective-only; it cannot be "
             "certified on historical data (FuguPRD §1.4, Invariant D)."
         )
+
+    # --- harness wire (Invariant B; Phase 2B) — only for route-eligible claims ---
+    if run_harness and computed_route in HARNESS_OK_ROUTES:
+        hyp_id, overlay = _harness_bridge(
+            claim, computed_route, hooks=harness_hooks, opts=harness_opts
+        )
+        claim["links"]["hypothesis_id"] = hyp_id
+        for k, v in overlay.items():
+            if v is not None:
+                claim[k] = v
 
     # --- sealed rationale (bull case) -> separate file, only its id in the claim ---
     if sealed_rationale is not None:

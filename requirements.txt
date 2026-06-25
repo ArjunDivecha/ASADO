@@ -18,3 +18,4 @@ xlsxwriter>=3.0
 rich>=13.0
 yfinance>=0.2
 cryptography
+pydantic>=2,<3

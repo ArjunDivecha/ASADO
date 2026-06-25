@@ -1,0 +1,28 @@
+# =============================================================================
+# config/model_registry.yaml  —  Discovery Triage model registry (PR-1 STUB)
+# =============================================================================
+# Maps model_id -> {model_version, training_cutoff, ...}. Feeds the provenance
+# classifier's model_training_cutoff (the real PIT boundary for LLM ideas).
+#
+# RULES (FuguPRD §1.4, §6.2; Sakana review):
+# - training_cutoff MUST be sourced from an official model card / provider doc,
+#   NEVER guessed. A null/unknown cutoff forces certification_route =
+#   prospective_only_unknown_cutoff.
+# - Concrete models, versions, availability, retention constraints, and cutoff
+#   evidence are filled in Phase 3 ONLY after the hard docs/API verification gate
+#   passes. No model id here is authoritative until that gate passes.
+# =============================================================================
+version: 1
+default_model: null
+models:
+  # Example shape only — replace after Phase-3 verification. Keys stay null until
+  # a verified source is recorded.
+  verified_model_id:
+    model_version: null
+    training_cutoff: null            # MUST come from the model card; null => unknown-cutoff route
+    training_cutoff_source: null     # URL / doc name / provider reference (evidence)
+    cutoff_retrieved_at: null        # when the cutoff was looked up
+    access_mode: null                # API / subscription / ZDR / non-ZDR / etc.
+certification_routing:
+  unknown_cutoff_route: prospective_only_unknown_cutoff
+  rule: "if training_cutoff is null OR model_id absent -> unknown_cutoff_route"

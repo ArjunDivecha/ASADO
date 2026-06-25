@@ -8,6 +8,7 @@ from typing import Any
 import yaml
 
 from .paths import DISCOVERY_CONFIG
+from .provenance import normalize_visibility_mode
 
 
 class ContextPolicyError(ValueError):
@@ -61,18 +62,22 @@ def build_context_manifest(req: ContextRequest) -> dict[str, Any]:
 
     V1 does not ship raw data to an LLM. It creates a manifest that proves which
     surfaces were allowed/rejected. Outcome-blind mode is enforced here, not by
-    prompt instruction.
+    prompt instruction. The visibility mode is normalized through the SAME
+    normalizer used by provenance, so a PRD alias (`tool_outcome_blind`) cannot
+    skip the enforcement below by failing the literal `in {...}` check.
     """
-    if req.visibility_mode in {"outcome_blind", "frozen_window"}:
+    mode = normalize_visibility_mode(req.visibility_mode)
+    blind = mode in {"outcome_blind", "frozen_window"}
+    if blind:
         assert_outcome_blind(req.requested_surfaces)
     return {
-        "visibility_mode": req.visibility_mode,
+        "visibility_mode": mode,
         "as_of_date": req.as_of_date,
         "model_id": req.model_id,
         "model_training_cutoff": req.model_training_cutoff,
         "purpose": req.purpose,
         "allowed_surfaces": list(req.requested_surfaces),
         "forbidden_surfaces_enforced": _load_forbidden(),
-        "tool_enforced_outcome_blind": req.visibility_mode in {"outcome_blind", "frozen_window"},
+        "tool_enforced_outcome_blind": blind,
         "extra_metadata": req.extra_metadata,
     }

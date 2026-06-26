@@ -20,6 +20,7 @@ PROVENANCE_POLICY = CONFIG_DIR / "claim_provenance_policy.yaml"
 ANALOG_REGISTRY = CONFIG_DIR / "analog_metric_registry.yaml"
 TRIAGE_PROBE_REGISTRY = CONFIG_DIR / "triage_probe_registry.yaml"
 MODEL_REGISTRY = CONFIG_DIR / "model_registry.yaml"
+MODEL_REGISTRY_PATH = MODEL_REGISTRY  # alias consumed by model_registry.py (Codex naming)
 
 # Append-only JSONL ledgers (FuguPRD §20.2)
 RESEARCH_LOOKS = LOOKS_DIR / "research_looks.jsonl"

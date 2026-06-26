@@ -35,24 +35,19 @@ import sys
 from pathlib import Path
 from typing import Any, Optional
 
-import yaml
-
+from .model_registry import load_model_registry, model_metadata
 from .paths import MODEL_REGISTRY
 from .provenance import ProvenanceInput, classify_provenance
 
 
 def model_cutoff(model_id: Optional[str], registry_path: Path = MODEL_REGISTRY) -> Optional[str]:
-    """Return the training_cutoff for model_id from the registry, or None.
-
-    A missing model id, a missing registry, or a null cutoff all return None,
-    which the classifier routes to prospective_only_unknown_cutoff. The cutoff is
-    NEVER guessed here."""
-    if not model_id or not registry_path.exists():
+    """Return the training_cutoff for model_id via the model_registry wrapper (FR7), or
+    None. Missing model id / registry / cutoff all return None, routing to
+    prospective_only_unknown_cutoff. The cutoff is NEVER guessed here."""
+    if not model_id:
         return None
-    data = yaml.safe_load(registry_path.read_text()) or {}
-    models = data.get("models") or {}
-    entry = models.get(model_id) or {}
-    return entry.get("training_cutoff")
+    registry = load_model_registry(registry_path)
+    return model_metadata(model_id, registry).get("training_cutoff")
 
 
 def classify(

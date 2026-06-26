@@ -7,12 +7,11 @@ from typing import Any
 
 import yaml
 
+from .exceptions import ContextPolicyError  # re-exported for back-compat
 from .paths import DISCOVERY_CONFIG
 from .provenance import normalize_visibility_mode
 
-
-class ContextPolicyError(ValueError):
-    """Raised when a discovery context would leak forbidden outcome surfaces."""
+__all__ = ["ContextPolicyError", "ContextRequest", "assert_outcome_blind", "build_context_manifest"]
 
 
 @dataclass

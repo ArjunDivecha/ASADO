@@ -133,9 +133,20 @@ def is_forbidden_token(token: Any) -> bool:
 
 def _scrub_json_obj(obj: Any) -> Any:
     """Recursively drop any dict key naming a forbidden surface/variable (and its
-    whole subtree). Lists/scalars pass through with their children scrubbed."""
+    whole subtree). A string value under a `*_json` key is itself parsed and scrubbed
+    (nested stringified-JSON blobs, e.g. price_state_json -> source_freshness_json).
+    Lists/scalars pass through with their children scrubbed."""
     if isinstance(obj, dict):
-        return {k: _scrub_json_obj(v) for k, v in obj.items() if not is_forbidden_token(k)}
+        out: dict[str, Any] = {}
+        for k, v in obj.items():
+            if is_forbidden_token(k):
+                continue
+            if isinstance(v, str) and str(k).endswith("_json"):
+                v = sanitize_json_blob(v)
+            else:
+                v = _scrub_json_obj(v)
+            out[k] = v
+        return out
     if isinstance(obj, list):
         return [_scrub_json_obj(x) for x in obj]
     return obj

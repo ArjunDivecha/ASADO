@@ -67,3 +67,71 @@ def test_cockpit_posts_existing_view_state_name():
     assert "active_view:CUR?.view||\"overview\"" in source
     assert "active_view:CURRENT" not in source
     assert "active_view:CURRENT" not in live
+
+
+# --- C1 follow-up (red-team 2026-06-26): evidence packet must not carry the combiner ---
+def test_evidence_packet_scrubs_forward_return_combiner():
+    import json
+    data = svc.load_cockpit_data()
+    blob = json.dumps(svc._evidence_packet("Downside if Indonesia keeps falling?", data))
+    assert "COMBINER_RIDGE_DAILY_V1" not in blob
+    assert "combiner_scores_daily" not in blob
+    assert "9.552327532121927e-05" not in blob  # the live leaked value
+
+
+# --- API deterministic nav routing must match the browser (no Opus spend) ---
+def _forbid_opus(monkeypatch):
+    def boom(*a, **k):
+        raise AssertionError("Opus must NOT be called for a deterministic nav command")
+    monkeypatch.setattr(svc, "call_opus_agent", boom)
+
+
+def _post(msg):
+    return client.post("/api/cos/chat", json={"message": msg}).json()
+
+
+def test_research_desk_routes_local_no_opus(monkeypatch):
+    _forbid_opus(monkeypatch)
+    r = _post("Research Desk")
+    assert r["external_agent"] is None
+    assert any(a["type"] == "focus_view" and a["view"] == "desk_discovery" for a in r["ui_actions"])
+
+
+def test_downside_routes_to_tail_not_country(monkeypatch):
+    _forbid_opus(monkeypatch)
+    r = _post("Downside if Indonesia keeps falling?")
+    assert r["external_agent"] is None
+    assert any(a["type"] == "focus_view" and a["view"] == "tail" for a in r["ui_actions"])
+    assert not any(a["type"] == "focus_country" for a in r["ui_actions"])
+
+
+def test_pressure_routes_to_map_layer(monkeypatch):
+    _forbid_opus(monkeypatch)
+    r = _post("Where is pressure building?")
+    assert r["external_agent"] is None
+    assert any(a["type"] == "set_layer" and a["layer"] == "dislocation" for a in r["ui_actions"])
+
+
+def test_full_brief_routes_to_dislo(monkeypatch):
+    _forbid_opus(monkeypatch)
+    r = _post("open the full brief")
+    assert r["external_agent"] is None
+    assert any(a["type"] == "focus_view" and a["view"] == "dislo" for a in r["ui_actions"])
+
+
+def test_real_country_question_still_routes_to_country(monkeypatch):
+    # guard: the nav handlers must NOT steal a genuine country query
+    _forbid_opus(monkeypatch)
+    r = _post("Brazil")
+    assert any(a["type"] == "focus_country" and a["country"] == "Brazil" for a in r["ui_actions"])
+
+
+def test_analytical_question_mentioning_discovery_lab_reaches_opus(monkeypatch):
+    # over-route guard: an analytical question that merely MENTIONS "discovery lab"
+    # must reach Opus, not be force-routed to the Research Desk (anchored matching).
+    def fake_opus(question, data):
+        return "FACT: synthesized analytical answer.", "claude-opus-test"
+    monkeypatch.setattr(svc, "call_opus_agent", fake_opus)
+    r = _post("Which of the discovery lab drafts looks strongest and why?")
+    assert r["external_agent"] == "opus"
+    assert r["model"] == "claude-opus-test"

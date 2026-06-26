@@ -140,7 +140,9 @@ def _validate_actions(data: dict[str, Any], actions: list[UIAction]) -> list[UIA
     valid_countries = _countries(data)
     valid_signals = _signal_names(data)
     valid_gaps = _gap_ids(data)
-    valid_views = {"overview", "health", "signals", "signal", "country", "gap", "dislo", "tail"}
+    valid_views = {"overview", "health", "signals", "signal", "country", "gap", "dislo", "tail",
+                   "desk_discovery", "desk_analogs", "desk_triage", "desk_rulings",
+                   "desk_prospective", "desk_graveyard"}
     valid_layers = {"gap", "return", "dislocation", "signal"}
     out: list[UIAction] = []
     for action in actions:
@@ -274,6 +276,30 @@ def deterministic_answer(question: str, data: dict[str, Any]) -> ChatResponse | 
             latency_ms=int((time.time() - start) * 1000),
         )
 
+    # --- deterministic UI/navigation intents (mirror the browser router; never spend
+    #     Opus on a control command). These MUST precede the country match so e.g.
+    #     "Downside if Indonesia keeps falling?" opens the tail panel, not Indonesia. ---
+    def _nav(view_or_actions: Any, msg: str, layer: str | None = None) -> ChatResponse:
+        acts = [UIAction(type="focus_view", view=view_or_actions)]
+        if layer:
+            acts.append(UIAction(type="set_layer", layer=layer))
+        return ChatResponse(
+            answer_html=msg, answer_text=_plain(msg), mode_used="status",
+            citations=citations, ui_actions=_validate_actions(data, acts),
+            freshness=_freshness(data), latency_ms=int((time.time() - start) * 1000),
+        )
+
+    # ANCHORED (re.fullmatch) so an analytical question that merely MENTIONS "discovery
+    # lab" / "downside" still falls through to Opus — only the short control command routes.
+    qs = q.strip()
+    if re.fullmatch(r"(research desk|discovery lab|analog shelf|under triage|blind rulings?|"
+                    r"prospective( queue)?|graveyard)\??", qs):
+        return _nav("desk_discovery", "Opening the <b>Research Desk</b> — chain-of-custody surfaces: "
+                    "drafts, analogs, triage, blind rulings, prospective queue, graveyard controls.")
+    if re.fullmatch(r"(downside( if .*)?|tail|drawdown|jst tail|the long[- ]cycle tail)\??", qs):
+        return _nav("tail", "The long-cycle <b>tail</b>. Context only — a nominal drawdown mapped to a "
+                    "DM-calibrated distribution; it must clear the harness before any sizing.")
+
     country = _match_country(question, data)
     if country:
         c = ((data.get("countries") or {}).get(country)) or {}
@@ -301,6 +327,18 @@ def deterministic_answer(question: str, data: dict[str, Any]) -> ChatResponse | 
             freshness=_freshness(data),
             latency_ms=int((time.time() - start) * 1000),
         )
+
+    # brief / pressure come AFTER the country match (mirror the browser router order),
+    # so "where is Brazil" opens Brazil but "where is pressure building" opens the map.
+    # Anchored so analytical questions are not stolen from Opus.
+    if re.fullmatch(r"(open the full brief|the brief|tonight'?s brief|the dislocations?|"
+                    r"tonight'?s dislocations?)\??", qs):
+        return _nav("dislo", "Opening tonight's <b>brief</b> — price-discovery gaps first when fresh; "
+                    "raw detector firings remain the drilldown substrate.")
+    if re.fullmatch(r"(where is pressure building|where'?s the pressure|where is the pressure|"
+                    r"pressure|the map|world map)\??", qs):
+        return _nav("overview", "Pressure shows on the <b>map</b> (dislocation layer). Click a country "
+                    "to drill in.", layer="dislocation")
 
     if re.search(r"(weak|signals|registry|verdict|dead|watch|signal)", q):
         sig = data.get("signals") or {}
@@ -384,6 +422,44 @@ def resolve_opus_model() -> str:
     return opus[-1]["id"]
 
 
+# C1 follow-up (red-team 2026-06-26): the COS evidence packet is built from
+# cockpit_data.json, whose gap_engine price_state.source_freshness(_json) still
+# carries the forbidden forward-return-fitted optimizer surface (combiner_scores_daily /
+# COMBINER_RIDGE_DAILY_V1, factor_returns, forward-return vars). Scrub those keys out of
+# the packet BEFORE it reaches Opus. This does NOT touch legitimate COS context (country
+# returns, gaps, harness verdicts) — only the optimizer-output surfaces leak as raw values.
+_FORBIDDEN_EVIDENCE_RE = re.compile(
+    r"combiner|factor_returns|factor_top20|country_factor_attribution|gap_holdout"
+    r"|(^|_)\d+[a-z]{0,2}ret($|_)|forward_return|_ret_lead|fwd_ret",
+    re.IGNORECASE,
+)
+
+
+def _scrub_evidence(obj: Any) -> Any:
+    """Recursively drop any forbidden optimizer-output key (and its subtree); sanitize
+    the contents of nested *_json blob strings the same way."""
+    if isinstance(obj, dict):
+        out: dict[str, Any] = {}
+        for k, v in obj.items():
+            if _FORBIDDEN_EVIDENCE_RE.search(str(k)):
+                continue
+            if isinstance(v, str) and str(k).endswith("_json"):
+                v = _scrub_evidence_json_string(v)
+            out[k] = _scrub_evidence(v)
+        return out
+    if isinstance(obj, list):
+        return [_scrub_evidence(x) for x in obj]
+    return obj
+
+
+def _scrub_evidence_json_string(raw: str) -> str:
+    try:
+        parsed = json.loads(raw)
+    except (ValueError, TypeError):
+        return raw
+    return json.dumps(_scrub_evidence(parsed))
+
+
 def _evidence_packet(question: str, data: dict[str, Any]) -> dict[str, Any]:
     country = _match_country(question, data)
     brief = {}
@@ -392,7 +468,7 @@ def _evidence_packet(question: str, data: dict[str, Any]) -> dict[str, Any]:
     if brief_path.exists():
         text = brief_path.read_text(errors="ignore")
         brief = {"file": str(brief_path), "excerpt": text[:5000]}
-    return {
+    packet = {
         "current_date": "2026-06-24",
         "question": question,
         "epistemic_contract": (data.get("meta") or {}).get("epistemic_contract"),
@@ -406,6 +482,7 @@ def _evidence_packet(question: str, data: dict[str, Any]) -> dict[str, Any]:
         "country_gap": (_country_gap(country, data) if country else None),
         "latest_brief": brief,
     }
+    return _scrub_evidence(packet)
 
 
 def call_opus_agent(question: str, data: dict[str, Any], timeout: int = 90) -> tuple[str, str]:

@@ -90,6 +90,7 @@ from scripts.discovery_triage.paths import (  # noqa: E402
     GRAVEYARD_TRACKING_PATH,
     PROSPECTIVE_QUEUE_PATH,
 )
+from scripts.discovery_triage.surface_loader import sanitize_json_blob  # noqa: E402
 
 # The 34 T2 universe, grouped by region (must match DESIGN_BRIEF / cockpit.html)
 REGIONS = [
@@ -558,9 +559,13 @@ def _gap_row_from_record(row):
         "mechanism_text": row.get("mechanism_text"),
         "invalidation_rule": row.get("invalidation_rule"),
         "world_state": _json_load(row.get("world_state_json"), {}),
-        "price_state": _json_load(row.get("price_state_json"), {}),
+        # C1 follow-up (red-team 2026-06-26): these blobs (built from the old leaky
+        # price_state_daily via the gap-episode passthrough) still carry the forbidden
+        # combiner_scores_daily / COMBINER_RIDGE_DAILY_V1 surface. Scrub before it lands
+        # in cockpit_data.json (which feeds the Chief-of-Staff Opus evidence packet).
+        "price_state": _json_load(sanitize_json_blob(row.get("price_state_json")), {}),
         "source_dislocation_ids": source_ids,
-        "source_freshness": _json_load(row.get("source_freshness_json"), {}),
+        "source_freshness": _json_load(sanitize_json_blob(row.get("source_freshness_json")), {}),
         "scoring_config_version": row.get("scoring_config_version"),
         "scoring_config_hash": row.get("scoring_config_hash"),
         "epistemic_tag": "INFERENCE",

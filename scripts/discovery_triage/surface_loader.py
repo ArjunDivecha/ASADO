@@ -164,8 +164,9 @@ def load_country_snapshot(
     surfaces = surfaces or sorted(ALLOWED_SURFACES)
     owned = False
     if con is None:
-        from scripts.loop.loopdb import loop_connection  # lazy: keeps pure checks DB-free
-        con = loop_connection(read_only=True)
+        import duckdb  # lazy: keeps the pure checks DB-free
+        from .paths import loop_db_path
+        con = duckdb.connect(str(loop_db_path()), read_only=True)  # honors ASADO_DATA_ROOT (FR9)
         owned = True
     try:
         out: dict[str, list[dict[str, Any]]] = {}

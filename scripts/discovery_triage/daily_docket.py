@@ -34,16 +34,13 @@ from pathlib import Path
 from typing import Any, Optional
 
 from .lab_session import DEFAULT_MODEL, _searches, run_lab_session
-from .paths import DOCKETS_DIR
+from .paths import DOCKETS_DIR, loop_db_path
 
 
 def all_searches() -> list[str]:
     return list(_searches().keys())
 
 MIN_CARDS, MAX_CARDS = 3, 10
-# Resolve the loop DB: worktrees don't carry the 119 MB data file, so allow an
-# override to the main checkout's copy.
-_DEFAULT_LOOP_DB = "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/asado_loop.duckdb"
 
 
 def _score_card(d: dict[str, Any]) -> tuple[int, str]:
@@ -155,7 +152,8 @@ def main(argv: Optional[list[str]] = None) -> int:
     ap.add_argument("--search", action="append", dest="searches",
                     default=None, help="repeatable; default = all 5 discovery searches")
     ap.add_argument("--model", default=DEFAULT_MODEL)
-    ap.add_argument("--loop-db", default=os.environ.get("ASADO_LOOP_DB", _DEFAULT_LOOP_DB))
+    ap.add_argument("--loop-db", default=None,
+                    help="loop DB path; default = $ASADO_DATA_ROOT/loop/asado_loop.duckdb")
     ap.add_argument("--nightly", action="store_true",
                     help="nightly mode: no-op unless ASADO_RUN_DISCOVERY_LAB=1 (cost guard)")
     args = ap.parse_args(argv)
@@ -169,10 +167,12 @@ def main(argv: Optional[list[str]] = None) -> int:
         return 0
 
     import duckdb
-    if not Path(args.loop_db).exists():
-        print(f"ERROR: loop DB not found at {args.loop_db}", file=sys.stderr)
+    loop_db = args.loop_db or str(loop_db_path())
+    if not Path(loop_db).exists():
+        print(f"ERROR: loop DB not found at {loop_db} "
+              "(set ASADO_DATA_ROOT to the checkout that holds Data/loop/)", file=sys.stderr)
         return 1
-    con = duckdb.connect(args.loop_db, read_only=True)
+    con = duckdb.connect(loop_db, read_only=True)
     try:
         out, results = build_docket(args.as_of, searches, con=con, model_id=args.model)
     finally:

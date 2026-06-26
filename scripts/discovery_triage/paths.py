@@ -1,10 +1,22 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 CONFIG_DIR = BASE_DIR / "config"
 JOURNAL_DIR = BASE_DIR / "journal"
+
+
+def data_root() -> Path:
+    """Canonical runtime data root (merge PRD FR9). Default <repo>/Data; override with
+    ASADO_DATA_ROOT (e.g. the main checkout's Data when running from a worktree)."""
+    return Path(os.environ.get("ASADO_DATA_ROOT", str(BASE_DIR / "Data"))).expanduser()
+
+
+def loop_db_path() -> Path:
+    """$ASADO_DATA_ROOT/loop/asado_loop.duckdb (resolved at call time)."""
+    return data_root() / "loop" / "asado_loop.duckdb"
 LOOKS_DIR = JOURNAL_DIR / "looks"
 DRAFTS_DIR = JOURNAL_DIR / "drafts"
 CLAIMS_DIR = JOURNAL_DIR / "claims"

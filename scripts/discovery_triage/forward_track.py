@@ -146,8 +146,13 @@ def run_forward_track(
 
 
 def main(argv: list[str] | None = None) -> int:
-    from scripts.loop.loopdb import loop_connection
-    con = loop_connection(read_only=True)
+    import duckdb
+    from .paths import loop_db_path
+    db = loop_db_path()  # honors ASADO_DATA_ROOT (FR9)
+    if not db.exists():
+        print(f"[forward_track] loop DB not found at {db} (set ASADO_DATA_ROOT); nothing to do.")
+        return 0  # optional nightly step — a missing DB is a no-op, not a failure
+    con = duckdb.connect(str(db), read_only=True)
     try:
         returns_for = lambda surface: resolve_return_surface(con, surface)  # noqa: E731
         total: list[dict[str, Any]] = []

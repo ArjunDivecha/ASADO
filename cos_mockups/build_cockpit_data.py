@@ -834,7 +834,10 @@ def read_discovery_lab():
             "route_label": _route_label(route),
             "labels": _epistemic_labels(row),
             "recorded_ts": row.get("recorded_ts"),
-            "members": row.get("members") or [],
+            # members may be plain strings (Claude lab) or objects (Codex lab); the
+            # cockpit memberList reads .proposed_relationship, so wrap bare strings.
+            "members": [m if isinstance(m, dict) else {"proposed_relationship": m}
+                        for m in (row.get("members") or [])],
             "falsification": row.get("falsification") or {},
             "self_falsification": row.get("mythos_self_falsification") or {},
         }

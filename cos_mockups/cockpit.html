@@ -219,7 +219,7 @@
         </section>
         <section class="panel">
           <div class="phead"><div class="ptitle">Known <em>Gaps</em> <span class="where">· measured</span></div>
-            <div class="opt" style="border:1px solid var(--line);border-radius:3px" onclick="ask('open the full brief')">Brief ›</div></div>
+            <div class="opt" style="border:1px solid var(--line);border-radius:3px" onclick="chip('open the full brief')">Brief ›</div></div>
           <div class="pbody" id="dislo"></div>
         </section>
       </div>
@@ -403,12 +403,12 @@ function arr(x){return Array.isArray(x)?x.filter(Boolean):[]}
 function list(items){return arr(items).length?`<ul class="desk-list">${arr(items).map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}
 function memberList(r){return arr(r.members).length?`<div class="desk-section"><h5>Proposed observable relationships</h5><ul class="desk-list">${arr(r.members).map(m=>`<li><span class="desk-id">${esc(m.member_id||m.form||"member")}</span><br>${esc(m.proposed_relationship||m.relationship||m.description||m.status||"No relationship text recorded.")}</li>`).join("")}</ul></div>`:""}
 function falsificationBlock(r){const f=r.falsification||{},sf=r.self_falsification||r.mythos_self_falsification||{};return `${arr(f.fatal_if).length?`<div class="desk-section"><h5>Fatal if</h5>${list(f.fatal_if)}</div>`:""}${arr(f.must_check).length?`<div class="desk-section"><h5>Must check before this becomes a claim</h5>${list(f.must_check)}</div>`:""}${sf.strongest_counterargument?`<div class="desk-section"><h5>Strongest counterargument</h5><p class="narr" style="margin:0">${esc(sf.strongest_counterargument)}</p></div>`:""}${arr(sf.what_would_change_my_mind).length?`<div class="desk-section"><h5>What would change my mind</h5>${list(sf.what_would_change_my_mind)}</div>`:""}`}
-function deskCards(rows,emptyName){if(!rows||!rows.length)return emptyDesk(emptyName);return rows.slice(0,10).map((r,i)=>`<details class="subpanel desk-card" ${i===0?"open":""}><summary><h4>${esc(r.kind||"record")} · ${esc(r.id||"")}</h4><div style="font-family:var(--display);font-size:15px;margin-bottom:7px">${esc(r.title||r.id||"Untitled")}</div><div>${badges([r.status,r.route_label,...(r.labels||[])])}</div><p class="narr" style="margin:5px 0 0">${esc(r.subtitle||"")}</p>${r.recorded_ts?`<div class="muted" style="font-size:10px;margin-top:7px">${esc(r.recorded_ts)}</div>`:""}</summary>${memberList(r)}${falsificationBlock(r)}</details>`).join("")}
+function deskCards(rows,emptyName,counts){if(!rows||!rows.length)return emptyDesk(emptyName);const banner=(counts&&counts.raw>counts.shown)?`<div class="muted" style="font-size:11px;margin-bottom:8px">Showing <b>${counts.shown}</b> of <b>${counts.raw}</b> — ranked by falsification depth; ${counts.dropped} not shown (cap applied in build_cockpit_data, not the browser). <span class="cite">build_cockpit_data</span></div>`:"";return banner+rows.slice(0,10).map((r,i)=>`<details class="subpanel desk-card" ${i===0?"open":""}><summary><h4>${esc(r.kind||"record")} · ${esc(r.id||"")}</h4><div style="font-family:var(--display);font-size:15px;margin-bottom:7px">${esc(r.title||r.id||"Untitled")}</div><div>${badges([r.status,r.route_label,...(r.labels||[])])}</div><p class="narr" style="margin:5px 0 0">${esc(r.subtitle||"")}</p>${r.recorded_ts?`<div class="muted" style="font-size:10px;margin-top:7px">${esc(r.recorded_ts)}</div>`:""}</summary>${memberList(r)}${falsificationBlock(r)}</details>`).join("")}
 
 FVIEWS.desk_discovery={title:()=>`Discovery <em>Lab</em>`,opts:()=>``,render:()=>`
   <div class="eyebrow">Unvalidated drafts · outcome-blind lab</div>
   <p class="narr">LLM-proposed detector families. They are ideas under custody, not alpha.</p>
-  ${deskCards(RESEARCH.discovery_lab,"Discovery Lab")}`};
+  ${deskCards(RESEARCH.discovery_lab,"Discovery Lab",RESEARCH.counts?.discovery_lab)}`};
 FVIEWS.desk_analogs={title:()=>`Analog <em>Shelf</em>`,opts:()=>``,render:()=>`
   <div class="eyebrow">Frozen metric sets · outcomes attach later</div>
   <p class="narr">Analog membership is frozen before any forward outcomes are attached.</p>
@@ -433,7 +433,11 @@ function fan(w,h){const p10=[140,150,120,90,60,40],med=[90,80,55,40,30,24],p90=[
 function valBar(k,pc,what){const col=what==="cheap"?"var(--teal)":"var(--oxblood)";return `<div class="barrow"><div class="k">${k}</div><div class="track"><div class="fill" style="width:${pc}%;background:${col}"></div></div><div class="pc">${pc} <span class="muted">${what}</span></div></div>`}
 
 /* ===== chat ===== */
-function pushMsg(who,html){const m=document.createElement("div");m.className="msg "+(who==="you"?"you":"cos");m.innerHTML=`<div class="who">${who==="you"?"You":"Chief of Staff"}</div><div class="bub">${html}</div>`;thread.appendChild(m);thread.scrollTop=thread.scrollHeight;return m;}
+function pushMsg(who,html){const m=document.createElement("div");m.className="msg "+(who==="you"?"you":"cos");/* user text is untrusted → escape; cos bubbles are app-generated HTML */const body=(who==="you")?esc(html):html;m.innerHTML=`<div class="who">${who==="you"?"You":"Chief of Staff"}</div><div class="bub">${body}</div>`;thread.appendChild(m);thread.scrollTop=thread.scrollHeight;return m;}
+/* chip(): deterministic UI navigation — runs the local router, never spends Opus.
+   Used by the quick-chips, the Brief button, and inline citations. Typed free-text
+   still flows through ask() → Opus. */
+function chip(t){pushMsg("you",t);route(t);}
 function openCountry(n){go("country",{name:n});pushMsg("cos",`Opening <b>${n}</b> into the focus panel — ${COUNTRY[n]?`10Y ${COUNTRY[n].y10}%, reflation`:`${DISLO[n]?DISLO[n]+'; ':''}${DRAW[n]?DRAW[n]+'% drawdown':'no active dislocation'}`}. <span class="cite">country panel</span>`);}
 function openSignal(n){go("signal",{name:n});pushMsg("cos",`<b>${n}</b> — its IC history is in the focus panel. The verdict is the harness's, not mine. <span class="cite">live_signals</span>`);}
 function applyCosActions(actions){
@@ -447,11 +451,28 @@ function applyCosActions(actions){
 }
 async function ask(t){
   pushMsg("you",t);
-  // localOnly only when there is genuinely no API backend (file:// or the static-mock
-  // port 8791). Do NOT force Research-Desk/Discovery-Lab questions to the local router
-  // when served by the FastAPI cos_chat_service — those should reach Opus too.
-  const localOnly=location.protocol==="file:"||location.port==="8791";
-  if(localOnly){return route(t)}
+  const q=t.toLowerCase().trim();
+  // localEnv: no API backend (file:// or the static-mock port 8791) → everything local.
+  const localEnv=location.protocol==="file:"||location.port==="8791";
+  // Deterministic UI/control intents → run the LOCAL router, never spend Opus. The
+  // patterns are anchored (^…$) so they match app-emitted nav strings and short
+  // imperative commands only. A substantive analytical question ("which Discovery Lab
+  // draft is strongest and why") is longer and will NOT match, so it still reaches Opus.
+  const isCountry=Object.keys(ISO).some(c=>c.toLowerCase()===q);
+  const isControl =
+       q.startsWith("open gap ") || q.startsWith("open signal ")
+    || /^(research desk|discovery lab|analog shelf|under triage|blind rulings?|prospective( queue)?|graveyard)$/.test(q)
+    || /^(what should i care about( today)?\??|brief me|today|overview)$/.test(q)
+    || /^(open the full brief|the brief|tonight'?s brief)$/.test(q)
+    || /^(where is pressure building\??|pressure)$/.test(q)
+    || /^((the |all the )?weak signals?)$/.test(q)
+    || /^(health|governance|scorecard|is the system healthy\??)$/.test(q)
+    || /^combiner$/.test(q)
+    || /^(downside( if .*)?|tail|drawdown)$/.test(q)
+    || /^mark the .* thesis$/.test(q)
+    || /^explain stewardship$/.test(q)
+    || isCountry;
+  if(localEnv||isControl){return route(t)}
   const pending=pushMsg("cos",`Asking Opus through the ASADO evidence layer… <span class="cite">/api/cos/chat</span>`);
   const bub=pending.querySelector(".bub");
   const controller=new AbortController();
@@ -476,17 +497,19 @@ function route(t){const q=t.toLowerCase();
   if(/combiner/.test(q)){openSignal("combiner_ridge_daily");return}
   if(/(weak|signals|registry|verdict|dead|all the signal)/.test(q)){go("signals");return pushMsg("cos",`The registry — <b>2 WATCH · 39 WEAK · 31 DEAD</b>. <span class="cite">live_signals</span>`)}
   if(/(research desk|discovery lab|analog shelf|under triage|blind ruling|prospective|graveyard)/.test(q)){go("desk_discovery");return pushMsg("cos",`Opening the Research Desk. These panels are chain-of-custody surfaces: drafts, analogs, triage, blind rulings, prospective queue, and graveyard controls. <span class="cite">journal/*.jsonl</span>`)}
+  /* tail/downside must beat the generic country-name loop below, so
+     "Downside if Indonesia keeps falling?" opens the tail panel, not the Indonesia panel */
+  if(/(downside|tail|drawdown|jst|crash|falling)/.test(q)){go("tail");return pushMsg("cos",`The long-cycle tail. Indonesia's −50% → median +18% but <b class="ox">p10 −22%</b> forward 3y. Context only. <span class="cite">jst_tail_risk</span>`)}
   if(/brazil/.test(q)){openCountry("Brazil");return}
   for(const c of Object.keys(ISO)){if(q.includes(c.toLowerCase())){openCountry(c);return}}
   if(/(disloc|brief|tonight|fired|nightly)/.test(q)){go("dislo");return pushMsg("cos",`Tonight's brief — Chile D1, Korea D2, Indonesia D5. <span class="cite">brief · 2026-06-16</span>`)}
-  if(/(downside|tail|drawdown|risk|jst|crash|falling)/.test(q)){go("tail");return pushMsg("cos",`The long-cycle tail. Indonesia's −50% → median +18% but <b class="ox">p10 −22%</b> forward 3y. Context only. <span class="cite">jst_tail_risk</span>`)}
   if(/(pressure|map|where|flows|world)/.test(q)){go("overview");setLayer("dislocation");return pushMsg("cos",`Pressure is in three places — see the map (dislocation layer): <b class="ox">Chile</b>, <b class="ox">Korea</b>, <b class="ox">Indonesia</b>. Click any to drill in. <span class="cite">brief</span>`)}
   go("overview");pushMsg("cos",`Here's today. Try "the WEAK signals", "Brazil", or "downside if Indonesia keeps falling". <span class="muted">(prototype: scripted)</span>`)}
 $("#q")?.addEventListener("keydown",e=>{if(e.key==="Enter")submitQ()});
 
 /* ===== boot ===== */
 $("#pips").innerHTML=SCORE.map(s=>`<span class="pip ${s[1]}" title="${s[0]}"></span>`).join("");
-$("#chips").innerHTML=["What should I care about today?","Research Desk","Where is pressure building?","The WEAK signals","Brazil","Downside if Indonesia keeps falling?"].map(c=>`<span class="qchip" onclick="ask(\`${c}\`)">${c}</span>`).join("")+`<span class="gkey"><span><b>FACT</b> cited</span><span><b>INFERENCE</b> labelled</span><span><b>UNKNOWN/STALE</b> aloud</span></span>`;
+$("#chips").innerHTML=["What should I care about today?","Research Desk","Where is pressure building?","The WEAK signals","Brazil","Downside if Indonesia keeps falling?"].map(c=>`<span class="qchip" onclick="chip(\`${c}\`)">${c}</span>`).join("")+`<span class="gkey"><span><b>FACT</b> cited</span><span><b>INFERENCE</b> labelled</span><span><b>UNKNOWN/STALE</b> aloud</span></span>`;
 renderMap();renderSigs();renderDislo();
 CUR={view:"overview",params:{}};renderFocus();
 pushMsg("you","What should I care about today?");route("what should I care about today");

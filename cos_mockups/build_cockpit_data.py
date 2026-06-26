@@ -966,14 +966,51 @@ def read_graveyard():
     return rows
 
 
+LAB_CARD_CAP = 10  # cards shown on the Discovery Lab tab; the cap is applied HERE, not in the browser
+
+
+def _score_lab_card(row):
+    """Rank a discovery-lab draft by strict-schema richness (NOT by any outcome — the Lab
+    is outcome-blind). Rewards proposed members + falsification depth + self-falsification.
+    Used only to decide which cards surface when there are more than LAB_CARD_CAP of them."""
+    score = 0.0
+    score += min(len(row.get("members") or []), 6) * 1.0
+    fals = row.get("falsification") or {}
+    if fals.get("fatal_if"):
+        score += 2.0
+    if fals.get("must_check"):
+        score += 2.0
+    sf = row.get("self_falsification") or {}
+    if sf.get("strongest_counterargument"):
+        score += 1.5
+    if sf.get("what_would_change_my_mind"):
+        score += 1.5
+    if row.get("route"):
+        score += 1.0
+    return score
+
+
+def _rank_and_cap_lab(rows, cap=LAB_CARD_CAP):
+    """Return (shown_rows, counts). `rows` arrives recency-desc; a stable sort by score
+    keeps recency as the tiebreak. Counts are explicit so the cockpit can say '10 of 26',
+    rather than silently truncating in the front end."""
+    ranked = sorted(rows, key=_score_lab_card, reverse=True)  # stable → recency tiebreak preserved
+    shown = ranked[:cap]
+    counts = {"raw": len(rows), "shown": len(shown), "dropped": max(0, len(rows) - len(shown))}
+    return shown, counts
+
+
 def read_research_desk():
+    lab_rows = _safe(read_discovery_lab, "research_desk.discovery_lab", [])
+    lab_shown, lab_counts = _rank_and_cap_lab(lab_rows)
     return {
-        "discovery_lab": _safe(read_discovery_lab, "research_desk.discovery_lab", []),
+        "discovery_lab": lab_shown,
         "analog_shelf": _safe(read_analog_shelf, "research_desk.analog_shelf", []),
         "under_triage": _safe(read_under_triage, "research_desk.under_triage", []),
         "blind_rulings": _safe(read_blind_rulings, "research_desk.blind_rulings", []),
         "prospective": _safe(read_prospective, "research_desk.prospective", []),
         "graveyard": _safe(read_graveyard, "research_desk.graveyard", []),
+        "counts": {"discovery_lab": lab_counts},
     }
 
 

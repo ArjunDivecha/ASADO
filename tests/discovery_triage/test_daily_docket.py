@@ -44,6 +44,19 @@ def test_no_padding_below_floor():
     assert "NOT padded" in txt
 
 
+def test_cap_dropped_is_reported_and_accounting_closes():
+    # M1: 12 distinct families → cap to 10, so 2 are cap-dropped and the header must
+    # say so (previously they vanished: raw=12 but only 10 shown with no explanation).
+    drafts = [_draft(f"Country{i}") for i in range(12)]
+    results = [{"drafts": drafts, "dropped": []}]
+    shown, meta = dd.curate(results)
+    assert meta["shown"] == 10 and meta["cap_dropped"] == 2 and meta["raw"] == 12
+    # the accounting closes exactly
+    assert meta["raw"] == meta["collapsed"] + meta["shown"] + meta["cap_dropped"]
+    txt = dd._render("2026-06-24", results)
+    assert "2 dropped by cap" in txt
+
+
 def test_build_docket_robust_to_failing_search(tmp_path, monkeypatch):
     def fake_run(s, as_of, **kw):
         if s == "boom_search":

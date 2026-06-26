@@ -66,3 +66,37 @@ def test_unknown_mode_is_fail_safe_error():
         normalize_visibility_mode("definitely_not_a_mode")
     with pytest.raises(ValueError):
         normalize_visibility_mode("")
+
+
+# --- C2 (red-team 2026-06-26): pit_preregistered cannot bypass the cutoff ----
+def test_harness_still_gets_historical_route():
+    r = route(generator_type="harness", visibility_mode="pit_preregistered")
+    assert r == "standard_harness_then_triage"
+
+
+def test_llm_pit_preregistered_precutoff_without_proof_is_contaminated():
+    # The exact runtime-reproduced bypass: an LLM idea declaring pit_preregistered
+    # with a pre-cutoff window and NO verifiable proof must NOT be historical.
+    r = route(generator_type="llm", visibility_mode="pit_preregistered",
+              model_training_cutoff="2025-03-01", certification_window_start="2010-01-01")
+    assert r == "prospective_only_training_cutoff_contamination"
+
+
+def test_llm_pit_preregistered_postcutoff_without_proof_is_prospective():
+    r = route(generator_type="llm", visibility_mode="pit_preregistered",
+              model_training_cutoff="2025-03-01", certification_window_start="2026-06-01")
+    assert r == "prospective_only_no_tool_enforced_blindness"
+
+
+def test_llm_pit_preregistered_with_verified_proof_is_historical():
+    # A genuine pre-registration artifact dated before the window earns historical cert.
+    r = route(generator_type="llm", visibility_mode="pit_preregistered",
+              model_training_cutoff="2025-03-01", certification_window_start="2024-01-01",
+              pit_proof_ts="2023-06-01")
+    assert r == "standard_harness_then_triage"
+
+
+def test_human_pit_preregistered_without_proof_is_prospective():
+    r = route(generator_type="human", visibility_mode="pit_preregistered",
+              certification_window_start="2026-06-01")
+    assert r == "prospective_only_unverified_preregistration"

@@ -88,6 +88,28 @@ def test_caller_route_is_overridden_by_classifier(tmp_path):
     assert rec["provenance"]["certification_route"] == "prospective_only_training_cutoff_contamination"
 
 
+def test_llm_cannot_launder_via_pit_preregistered(tmp_path):
+    # C2: an LLM claim (model_id present) declaring pit_preregistered with a
+    # pre-cutoff window and no proof must be refused historical certification.
+    p = _paths(tmp_path)
+    bad = claim(window="2026-06-01", vis="pit_preregistered")  # cutoff 2027-01-31 → pre-cutoff
+    with pytest.raises(ClaimGateError):
+        freeze_claim(bad, generator_type="llm", historical_intent=True, **p)
+
+
+def test_llm_cannot_launder_by_relabeling_generator_as_harness(tmp_path):
+    # C2: caller passes generator_type='harness' but the claim carries model_id, so
+    # freeze_claim binds the effective generator to 'llm' and the cutoff still applies.
+    p = _paths(tmp_path)
+    bad = claim(window="2026-06-01", vis="pit_preregistered")
+    with pytest.raises(ClaimGateError):
+        freeze_claim(bad, generator_type="harness", historical_intent=True, **p)
+    # and the computed route on the non-historical path is the contamination route
+    cid, rec = freeze_claim(claim(window="2026-06-01", vis="pit_preregistered"),
+                            generator_type="harness", historical_intent=False, **p)
+    assert rec["provenance"]["certification_route"] == "prospective_only_training_cutoff_contamination"
+
+
 def test_language_gate_rejects_forbidden_vocab(tmp_path):
     p = _paths(tmp_path)
     bad = claim()

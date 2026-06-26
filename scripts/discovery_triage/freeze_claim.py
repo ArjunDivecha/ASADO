@@ -44,7 +44,7 @@ import yaml
 
 from . import schemas
 from .classify_provenance import classify
-from .jsonl_store import append_with_minted_id, write_json
+from .jsonl_store import append_with_minted_id, atomic_write_text, write_json
 from .paths import CLAIMS_DIR, CLAIMS_JSONL, MODEL_REGISTRY, SEALED_DIR
 
 # FuguPRD §24 forbidden vocabulary (unless truly earned). Word-boundary, case-insensitive.
@@ -115,13 +115,21 @@ def freeze_claim(
             "provenance.certification_window_start is required to freeze a claim "
             "(the cutoff gate cannot run without it)."
         )
+    # C2 (red-team 2026-06-26): bind the EFFECTIVE generator to the claim's real
+    # model origin. If a model produced/touched this claim (model_id present), it is
+    # LLM-contaminated regardless of what the caller declares — a caller cannot
+    # relabel an LLM idea as `harness` to skip the model-cutoff PIT boundary.
+    effective_generator = "llm" if prov.get("model_id") else generator_type
     route_info = classify(
-        generator_type=generator_type,
+        generator_type=effective_generator,
         visibility_mode=prov.get("visibility_mode", ""),
         model_id=prov.get("model_id"),
         certification_window_start=prov.get("certification_window_start"),
         tool_enforced_outcome_blind=bool(prov.get("tool_enforced_outcome_blind", False)),
         legacy_tier=prov.get("legacy_tier"),
+        # A pit_preregistered declaration earns historical cert only with a verifiable
+        # proof timestamp predating the window; otherwise the cutoff still applies.
+        pit_proof_ts=prov.get("pit_proof_ts"),
         registry_path=registry_path,
     )
     computed_route = str(route_info.get("certification_route"))
@@ -153,9 +161,7 @@ def freeze_claim(
         sealed_dir.mkdir(parents=True, exist_ok=True)
         sr_id = _next_sr_id(sealed_dir)
         sealed_obj = {"sealed_rationale_id": sr_id, **sealed_rationale}
-        (sealed_dir / f"{sr_id}.yaml").write_text(
-            yaml.safe_dump(sealed_obj, sort_keys=False), encoding="utf-8"
-        )
+        atomic_write_text(sealed_dir / f"{sr_id}.yaml", yaml.safe_dump(sealed_obj, sort_keys=False))
         claim["links"]["sealed_rationale_id"] = sr_id
 
     # --- mint claim id + append (schema-validated inside the lock) ---

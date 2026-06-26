@@ -58,6 +58,7 @@ def classify(
     certification_window_start: Optional[str] = None,
     tool_enforced_outcome_blind: bool = False,
     legacy_tier: Optional[str] = None,
+    pit_proof_ts: Optional[str] = None,
     registry_path: Path = MODEL_REGISTRY,
 ) -> dict[str, Any]:
     cutoff = model_cutoff(model_id, registry_path)
@@ -68,6 +69,7 @@ def classify(
         certification_window_start=certification_window_start,
         tool_enforced_outcome_blind=tool_enforced_outcome_blind,
         legacy_tier=legacy_tier,
+        pit_proof_ts=pit_proof_ts,
     )
     result = dict(classify_provenance(inp))
     result["model_id"] = model_id

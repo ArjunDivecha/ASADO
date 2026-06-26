@@ -33,7 +33,7 @@ from __future__ import annotations
 
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 MeasurementShape = Literal[
     "single_country_event",
@@ -41,6 +41,47 @@ MeasurementShape = Literal[
     "long_short_bucket",
     "analog_set_forward_readout",
 ]
+
+
+# --- strict falsification guarantees (H1 / red-team 2026-06-26) -------------
+# These were previously enforced ONLY in lab_session.validate_card, so a non-Lab
+# writer (make_detector_draft, freeze_claim) could persist a degenerate,
+# non-falsifiable draft/claim that the cockpit then rendered as a "useful" card.
+# Moving the non-empty guarantee into the custody schema makes it structural:
+# EVERY persisted object is falsifiable, regardless of which writer produced it
+# (FuguPRD §10.5/§10.6 / Merge-PRD FR2 / AC3 / Invariant F).
+def _nonempty_items(v: Any) -> list:
+    return [x for x in v if str(x).strip()] if isinstance(v, list) else []
+
+
+def _require_nonempty_list(v: Any, name: str) -> Any:
+    if not _nonempty_items(v):
+        raise ValueError(f"{name} must be a non-empty list")
+    return v
+
+
+def _require_falsification(v: Any) -> Any:
+    if not isinstance(v, dict):
+        raise ValueError("falsification must be a dict with non-empty fatal_if and must_check")
+    for key in ("fatal_if", "must_check"):
+        if not _nonempty_items(v.get(key)):
+            raise ValueError(f"falsification.{key} must be a non-empty list (FuguPRD §10.5 / FR2)")
+    return v
+
+
+def _require_self_falsification(v: Any) -> Any:
+    if not isinstance(v, dict):
+        raise ValueError("mythos_self_falsification must be a dict")
+    sc = v.get("strongest_counterargument")
+    if not isinstance(sc, str) or not sc.strip():
+        raise ValueError(
+            "mythos_self_falsification.strongest_counterargument must be a non-empty string (FR2)"
+        )
+    if not _nonempty_items(v.get("what_would_change_my_mind")):
+        raise ValueError(
+            "mythos_self_falsification.what_would_change_my_mind must be a non-empty list (FR2)"
+        )
+    return v
 
 
 class _Base(BaseModel):
@@ -79,6 +120,21 @@ class DetectorDraft(_Base):
     epistemic_status: list[str] = Field(default_factory=list)
     falsification: dict[str, Any]
     mythos_self_falsification: dict[str, Any]
+
+    @field_validator("members")
+    @classmethod
+    def _v_members(cls, v: Any) -> Any:
+        return _require_nonempty_list(v, "members")
+
+    @field_validator("falsification")
+    @classmethod
+    def _v_falsification(cls, v: Any) -> Any:
+        return _require_falsification(v)
+
+    @field_validator("mythos_self_falsification")
+    @classmethod
+    def _v_self_falsification(cls, v: Any) -> Any:
+        return _require_self_falsification(v)
 
 
 class MechanismGraph(_Base):
@@ -159,6 +215,12 @@ class Claim(_Base):
     falsification: dict[str, Any]
     # overlay (Invariant B) — populated by Phase 2 harness wire / triage
     harness_verdict: Optional[str] = None
+
+    @field_validator("falsification")
+    @classmethod
+    def _v_falsification(cls, v: Any) -> Any:
+        # An "attackable claim" that is not falsifiable defeats the harness (AC3).
+        return _require_falsification(v)
     court_status: Optional[str] = None
     triage_flags: Optional[dict[str, Any]] = None
     power_budget: Optional[dict[str, Any]] = None
@@ -220,6 +282,17 @@ class GraveyardEntry(_Base):
     hypothesis_id: Optional[str] = None
 
 
+class AnalogSet(_Base):
+    # M4 (red-team 2026-06-26): the frozen analog shelf set was written UNVALIDATED.
+    analog_set_id: str
+    metric_id: str
+    target: str
+    frozen: bool = True
+    outcome_blind: bool = True
+    outcomes_attached: bool = False
+    members: list[dict[str, Any]] = Field(default_factory=list)
+
+
 class Readout(_Base):
     record_kind: Literal["readout"] = "readout"
     claim_id: str
@@ -242,6 +315,7 @@ REGISTRY: dict[str, type[BaseModel]] = {
     "blind_ruling": BlindRuling,
     "incubator_entry": IncubatorEntry,
     "graveyard_entry": GraveyardEntry,
+    "analog_set": AnalogSet,
     "readout": Readout,
 }
 

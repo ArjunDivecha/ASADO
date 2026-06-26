@@ -34,6 +34,7 @@ DEPENDENCIES: duckdb (only when actually loading); pure checks need stdlib only.
 """
 from __future__ import annotations
 
+import json
 import re
 from typing import Any, Iterable, Optional
 
@@ -117,6 +118,45 @@ def check_surface(table: str, column: Optional[str] = None) -> bool:
 _check = check_surface
 
 
+def is_forbidden_token(token: Any) -> bool:
+    """True if a JSON key/name names a forbidden outcome surface, a forward-return
+    variable, or matches the forbidden-column regex (e.g. anything containing
+    `combiner`). Used to scrub the CONTENTS of allowlisted `*_json` descriptor
+    columns, which the column-NAME gate alone cannot see into."""
+    t = str(token).strip().lower()
+    if not t:
+        return False
+    if t in FORBIDDEN_SURFACES or t in FORWARD_RETURN_VARIABLES:
+        return True
+    return bool(FORBIDDEN_COLUMN_PATTERNS.search(t))
+
+
+def _scrub_json_obj(obj: Any) -> Any:
+    """Recursively drop any dict key naming a forbidden surface/variable (and its
+    whole subtree). Lists/scalars pass through with their children scrubbed."""
+    if isinstance(obj, dict):
+        return {k: _scrub_json_obj(v) for k, v in obj.items() if not is_forbidden_token(k)}
+    if isinstance(obj, list):
+        return [_scrub_json_obj(x) for x in obj]
+    return obj
+
+
+def sanitize_json_blob(raw: Any) -> Any:
+    """C1 (red-team 2026-06-26): an allowlisted `*_json` descriptor column (e.g.
+    `price_state_daily.source_freshness_json`) can still smuggle a forbidden outcome
+    surface in its CONTENTS — the live `combiner_scores_daily` Ridge-on-forward-returns
+    score was reaching the Lab this way. The column-name allowlist never inspects the
+    blob, so we scrub forbidden keys out of the parsed JSON here, at the data-access
+    layer (FR3 — enforced in code). Non-JSON / null input passes through unchanged."""
+    if not isinstance(raw, str):
+        return raw
+    try:
+        parsed = json.loads(raw)
+    except (ValueError, TypeError):
+        return raw
+    return json.dumps(_scrub_json_obj(parsed))
+
+
 def allowed_columns(table: str, available: Iterable[str]) -> list[str]:
     """Filter `available` columns down to those permitted for `table`."""
     keep: list[str] = []
@@ -149,7 +189,15 @@ def load_surface(con: Any, table: str, as_of: str, *, latest_per_country: bool =
     params = [as_of] if "date" in available else []
     rows = con.execute(sql, params).fetchall()
     names = [d[0] for d in con.description]
-    return [dict(zip(names, r)) for r in rows]
+    json_cols = [c for c in names if c.endswith("_json")]
+    out: list[dict[str, Any]] = []
+    for r in rows:
+        row = dict(zip(names, r))
+        # C1: scrub forbidden-surface keys out of allowlisted *_json descriptor blobs.
+        for c in json_cols:
+            row[c] = sanitize_json_blob(row[c])
+        out.append(row)
+    return out
 
 
 def load_country_snapshot(

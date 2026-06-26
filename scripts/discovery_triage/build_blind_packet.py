@@ -40,6 +40,19 @@ FORBIDDEN_PACKET_KEYS = (
     "bull_case", "generator_rationale", "rationale", "excitement_score",
     "trade_recommendation", "discovery_transcript", "sealed_rationale",
 )
+_FORBIDDEN_PACKET_KEYSET = {k.lower() for k in FORBIDDEN_PACKET_KEYS}
+
+
+def _deep_scrub(obj: Any) -> Any:
+    """H3 (red-team 2026-06-26): drop any §16.3 forbidden key at ANY depth. The old
+    top-level `.pop` left a `bull_case`/`rationale` nested in `neutral_claim` (or any
+    sub-object) reaching the judge — defeating the blind protocol. This recurses."""
+    if isinstance(obj, dict):
+        return {k: _deep_scrub(v) for k, v in obj.items()
+                if str(k).strip().lower() not in _FORBIDDEN_PACKET_KEYSET}
+    if isinstance(obj, list):
+        return [_deep_scrub(x) for x in obj]
+    return obj
 
 
 def _route_allows_history(route: str) -> bool:
@@ -85,7 +98,6 @@ def build_blind_packet(
             "packet excludes historical IC/Sharpe/verdict (Sakana review)."
         )
 
-    # Defense in depth: strip any forbidden key that somehow rode along.
-    for bad in FORBIDDEN_PACKET_KEYS:
-        packet.pop(bad, None)
-    return packet
+    # Defense in depth: recursively strip any forbidden key (top-level OR nested in
+    # neutral_claim/target/expression/triage) that somehow rode along.
+    return _deep_scrub(packet)

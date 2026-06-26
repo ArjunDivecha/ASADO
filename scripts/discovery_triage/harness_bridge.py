@@ -25,7 +25,7 @@ import re
 from typing import Any
 
 from .exceptions import ContextPolicyError, HarnessBridgeError
-from .surface_loader import FORBIDDEN_SURFACES
+from .surface_loader import FORBIDDEN_COLUMN_PATTERNS, FORBIDDEN_SURFACES
 from scripts.harness.evaluate_signal import evaluate_signal
 from scripts.harness.sweep_signals import find_existing, spec_hash
 from scripts.loop.family_registry import resolve_family
@@ -39,7 +39,8 @@ HARNESS_ELIGIBLE_ROUTES = {
     "measured_gap_claim",
 }
 
-FORWARD_RETURN_VARIABLE_RE = re.compile(r"(^|_)(1D|1M|3M|6M|12M)Ret($|_)|NMRet|forward", re.IGNORECASE)
+# Any <n><unit>Ret shape (1DRet, 5DRet, 9MRet, 12MRet…), NMRet, or "forward".
+FORWARD_RETURN_VARIABLE_RE = re.compile(r"(^|_)\d+[a-z]{0,2}ret($|_)|nmret|forward", re.IGNORECASE)
 
 
 def run_harness_bridge(claim: dict[str, Any]) -> dict[str, Any] | None:
@@ -59,9 +60,14 @@ def run_harness_bridge(claim: dict[str, Any]) -> dict[str, Any] | None:
     frequency = claim.get("frequency") or (claim.get("harness") or {}).get("frequency") or "daily"
     horizons = claim.get("horizons") or (claim.get("harness") or {}).get("horizons")
     start_date = claim.get("start_date") or (claim.get("harness") or {}).get("start_date") or "2008-01-01"
-    if start_date == "2008-01-01" and route == "post_cutoff_holdout_testable":
-        # only the post-cutoff holdout window certifies for an LLM idea
-        start_date = (claim.get("provenance") or {}).get("certification_window_start") or start_date
+    if route == "post_cutoff_holdout_testable":
+        # M3 (red-team 2026-06-26): an LLM idea may ONLY be certified on the
+        # post-cutoff holdout window. Clamp the evaluation start to the certification
+        # window — never earlier — even if a caller passes an explicit pre-cutoff
+        # start_date (ISO dates sort lexically, so max() is the later date).
+        window = (claim.get("provenance") or {}).get("certification_window_start")
+        if window:
+            start_date = max(str(start_date), str(window))
     universe = ((claim.get("universe") or {}).get("name")) or "t2_34"
 
     existing = find_existing(family_key, spec_hash(signal_spec, mechanism))
@@ -120,12 +126,27 @@ def _signal_spec(claim: dict[str, Any]) -> dict[str, Any]:
 
 
 def _pre_harness_gate(claim: dict[str, Any], signal_spec: dict[str, Any]) -> None:
-    refs = [str(signal_spec.get("table", "")), str(claim.get("sql", ""))]
+    # H2 (red-team 2026-06-26): evaluate_signal executes signal_spec.sql VERBATIM,
+    # so it MUST be scanned here — previously only signal_spec.table and claim.sql
+    # were, letting a forbidden surface in signal_spec.sql reach the harness.
+    refs = [
+        str(signal_spec.get("table", "")),
+        str(signal_spec.get("sql", "")),
+        str(claim.get("sql", "")),
+    ]
+    for key in ("tables",):
+        v = signal_spec.get(key)
+        if isinstance(v, list):
+            refs.extend(str(x) for x in v)
     refs.extend(str(v) for v in claim.get("variables", []))
-    haystack = " ".join(refs)
+    haystack = " ".join(refs).lower()
     for surface in FORBIDDEN_SURFACES:
-        if surface in haystack:
+        if surface in haystack:  # substring: catches a forbidden surface inside a SQL string
             raise ContextPolicyError(f"pre-harness gate rejected forbidden surface: {surface}")
+    if FORBIDDEN_COLUMN_PATTERNS.search(haystack):
+        raise ContextPolicyError(
+            "pre-harness gate rejected a forbidden column/return pattern in the signal spec/SQL"
+        )
     variable = str(signal_spec.get("variable", ""))
     if FORWARD_RETURN_VARIABLE_RE.search(variable):
         raise ContextPolicyError(f"pre-harness gate rejected forward-return variable: {variable}")

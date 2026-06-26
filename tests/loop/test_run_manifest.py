@@ -95,6 +95,42 @@ def test_missing_output_after_clean_exit_is_fail(tmp_path):
     assert _status_of(m, "s1") == "fail"
 
 
+def test_optional_missing_output_is_soft_not_fail(tmp_path):
+    """H4: an OPTIONAL step that exits 0 with no declared output (e.g. the gated
+    discovery docket leaving only a 0-byte .gitkeep) must NOT red governance."""
+    missing = tmp_path / "nope.gitkeep"  # absent / 0-byte
+    contract = _contract(tmp_path, [{"name": "discovery_docket", "optional": True,
+        "expected_outputs": [{"kind": "file", "path_template": str(missing), "staleness": "existence"}]}])
+    recs = [{"name": "discovery_docket", "rc": 0, "started_ts": _now_iso(), "ended_ts": _now_iso(1)}]
+    m = run_manifest.build_manifest(recs, contract_path=contract, table_count=None)
+    assert _status_of(m, "discovery_docket") == "optional_missing"
+    assert m["fail_steps"] == [] and m["stale_steps"] == [] and m["overall_ok"]
+
+
+def test_optional_stale_output_is_soft_not_stale(tmp_path):
+    """H4: an OPTIONAL step whose committed payload wasn't rewritten this run is soft."""
+    f = tmp_path / "cockpit_data.json"
+    f.write_text("{}")
+    old = (datetime.now() - timedelta(days=1)).timestamp()
+    os.utime(f, (old, old))
+    contract = _contract(tmp_path, [{"name": "build_cockpit_data", "optional": True,
+        "expected_outputs": [{"kind": "file", "path_template": str(f), "staleness": "mtime"}]}])
+    recs = [{"name": "build_cockpit_data", "rc": 0, "started_ts": _now_iso(), "ended_ts": _now_iso(1)}]
+    m = run_manifest.build_manifest(recs, contract_path=contract, table_count=None)
+    assert _status_of(m, "build_cockpit_data") == "optional_stale"
+    assert m["overall_ok"]
+
+
+def test_required_missing_output_still_fails_even_logic_unchanged(tmp_path):
+    """Regression guard: a NON-optional missing output is still a hard fail."""
+    missing = tmp_path / "required.parquet"
+    contract = _contract(tmp_path, [{"name": "s1", "expected_outputs": [
+        {"kind": "file", "path_template": str(missing), "staleness": "existence"}]}])
+    recs = [{"name": "s1", "rc": 0, "started_ts": _now_iso(), "ended_ts": _now_iso(1)}]
+    m = run_manifest.build_manifest(recs, contract_path=contract, table_count=None)
+    assert _status_of(m, "s1") == "fail" and not m["overall_ok"]
+
+
 def test_stale_mtime_after_clean_exit(tmp_path):
     """Exited 0 but the file is from a prior run (mtime < started_ts)."""
     f = tmp_path / "old.parquet"

@@ -49,7 +49,7 @@ import yaml
 
 from . import schemas
 from .classify_provenance import classify
-from .jsonl_store import append_with_minted_id, now_iso
+from .jsonl_store import append_with_minted_id, atomic_write_text, now_iso
 from .paths import DETECTOR_DRAFTS, DISCOVERY_CONFIG, DRAFTS_DIR, RESEARCH_LOOKS
 from .record_look import record_look
 from .surface_loader import check_surface, load_country_snapshot
@@ -151,16 +151,20 @@ def validate_card(card: dict[str, Any]) -> Optional[str]:
     else None. Independent of the tool schema (FR2: enforce again post-response)."""
     if not card.get("family_name"):
         return "missing family_name"
-    if not card.get("members"):
+    if not [m for m in (card.get("members") or []) if str(m).strip()]:
         return "empty members"
     fal = card.get("falsification") or {}
-    if not fal.get("fatal_if") or not fal.get("must_check"):
+    if (not [x for x in (fal.get("fatal_if") or []) if str(x).strip()]
+            or not [x for x in (fal.get("must_check") or []) if str(x).strip()]):
         return "falsification.fatal_if and must_check must both be non-empty"
     sf = card.get("mythos_self_falsification") or {}
-    if not sf.get("strongest_counterargument") or not sf.get("what_would_change_my_mind"):
+    if (not str(sf.get("strongest_counterargument") or "").strip()
+            or not [x for x in (sf.get("what_would_change_my_mind") or []) if str(x).strip()]):
         return "self-falsification strongest_counterargument and what_would_change_my_mind required"
+    # L1 (red-team 2026-06-26): scan the self-falsification block too — forbidden
+    # validation/performance vocab in strongest_counterargument previously slipped past.
     blob = " ".join([str(card.get("summary", "")), " ".join(map(str, card.get("members", []))),
-                     json.dumps(fal)])
+                     json.dumps(fal), json.dumps(sf)])
     if _FORBIDDEN.search(blob):
         return "forbidden validation/performance language"
     return None
@@ -334,8 +338,7 @@ def run_lab_session(
             validate=schemas.validator_for("detector_draft"),
         )
         drafts_dir.mkdir(parents=True, exist_ok=True)
-        (drafts_dir / f"{draft_id}.yaml").write_text(yaml.safe_dump(record, sort_keys=False),
-                                                     encoding="utf-8")
+        atomic_write_text(drafts_dir / f"{draft_id}.yaml", yaml.safe_dump(record, sort_keys=False))
         drafts.append(record)
 
     return {"look_id": look_id, "drafts": drafts, "dropped": dropped,

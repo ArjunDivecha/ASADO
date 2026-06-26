@@ -27,8 +27,11 @@ class LabValidationError(DiscoveryTriageError):
     """A Discovery Lab tool response failed strict-schema / policy validation."""
 
 
-class ProvenanceError(DiscoveryTriageError):
-    """Provenance classification / certification-route failure."""
+class ProvenanceError(DiscoveryTriageError, ValueError):
+    """Provenance classification / certification-route failure.
+
+    Also a ValueError so existing `except ValueError` / `pytest.raises(ValueError)`
+    call sites keep working while the error is now catchable by category (FR8)."""
 
 
 class HarnessBridgeError(DiscoveryTriageError):

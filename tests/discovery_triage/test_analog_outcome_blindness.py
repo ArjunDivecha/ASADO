@@ -48,6 +48,28 @@ def test_unknown_metric_rejected(tmp_path):
                          analog_dir=tmp_path, index_path=tmp_path / "i3.jsonl")
 
 
+@pytest.mark.parametrize("leak_col", ["next_month_return", "factor_return_21d", "ic_21d", "sharpe_252d"])
+def test_generic_outcome_feature_names_rejected(tmp_path, leak_col):
+    # M4: the broadened denylist must reject generic outcome/performance feature names,
+    # not just the surface_loader patterns.
+    df = _features()
+    df[leak_col] = 1.0
+    with pytest.raises(AnalogError):
+        retrieve_analogs("macro_state_v1", "2020-01-01", df,
+                         analog_dir=tmp_path, index_path=tmp_path / f"i_{leak_col}.jsonl")
+
+
+def test_as_of_pit_cut_excludes_future_episodes(tmp_path):
+    # M4: with as_of set, episodes AFTER as_of must not be selectable as analogs.
+    df = _features()  # index 2020-01..2020-12
+    sid, rec = retrieve_analogs("macro_state_v1", "2020-03-01", df, k=10, as_of="2020-04-01",
+                                analog_dir=tmp_path, index_path=tmp_path / "idx.jsonl")
+    keys = [m["key"] for m in rec["members"]]
+    assert keys, "should still find pre-as_of analogs"
+    assert all(k <= "2020-04-01" for k in keys)  # nothing after the as_of date
+    assert "2020-05-01" not in keys and "2020-12-01" not in keys
+
+
 def test_attach_outcomes_keeps_membership_and_is_write_once(tmp_path):
     sid, rec = retrieve_analogs("macro_state_v1", "2020-01-01", _features(), k=4,
                                 analog_dir=tmp_path, index_path=tmp_path / "idx.jsonl")

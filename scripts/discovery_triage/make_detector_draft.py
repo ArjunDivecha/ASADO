@@ -31,7 +31,7 @@ from typing import Any, Optional
 import yaml
 
 from . import schemas
-from .jsonl_store import append_with_minted_id, read_jsonl
+from .jsonl_store import append_with_minted_id, atomic_write_text, read_jsonl
 from .paths import DETECTOR_DRAFTS, DRAFTS_DIR, RESEARCH_LOOKS
 
 
@@ -79,7 +79,5 @@ def make_detector_draft(
         validate=schemas.validator_for("detector_draft"),
     )
     drafts_dir.mkdir(parents=True, exist_ok=True)
-    (drafts_dir / f"{draft_id}.yaml").write_text(
-        yaml.safe_dump(record, sort_keys=False), encoding="utf-8"
-    )
+    atomic_write_text(drafts_dir / f"{draft_id}.yaml", yaml.safe_dump(record, sort_keys=False))
     return draft_id, record

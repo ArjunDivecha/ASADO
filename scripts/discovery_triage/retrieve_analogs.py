@@ -28,14 +28,25 @@ DEPENDENCIES: pandas, pyyaml
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any, Optional
 
 import yaml
 
-from .jsonl_store import append_with_minted_id, now_iso
+from . import schemas
+from .jsonl_store import append_with_minted_id, atomic_write_text, now_iso
 from .paths import ANALOG_DIR, ANALOG_REGISTRY, ANALOG_SETS_INDEX
 from .surface_loader import FORBIDDEN_COLUMN_PATTERNS, FORWARD_RETURN_VARIABLES
+
+# M4 (red-team 2026-06-26): the surface_loader patterns miss generic outcome/
+# performance feature names (next_month_return, factor_return_21d, ic_21d, sharpe…),
+# which must NEVER drive analog selection. This second pass rejects them by name.
+_OUTCOME_FEATURE_RE = re.compile(
+    r"return|(^|_)ret(\d|_|$)|(^|_)ic(\d|_|$)|sharpe|alpha|pnl|profit|drawdown|excess"
+    r"|outcome|forward|future|verdict",
+    re.IGNORECASE,
+)
 
 
 class AnalogError(ValueError):
@@ -56,7 +67,8 @@ def assert_outcome_blind_features(features_df: Any) -> None:
     bad = []
     for col in features_df.columns:
         c = str(col).strip().lower()
-        if c in FORWARD_RETURN_VARIABLES or FORBIDDEN_COLUMN_PATTERNS.search(c):
+        if (c in FORWARD_RETURN_VARIABLES or FORBIDDEN_COLUMN_PATTERNS.search(c)
+                or _OUTCOME_FEATURE_RE.search(c)):
             bad.append(str(col))
     if bad:
         raise AnalogError(
@@ -82,8 +94,20 @@ def retrieve_analogs(
 
     metric = load_metric(metric_id, registry_path)
     assert_outcome_blind_features(features_df)
+    # M4 (red-team 2026-06-26): apply a point-in-time cut. Without it, episodes AFTER
+    # the as_of date could be selected as "analogs" — a look-ahead leak. Dated episodes
+    # later than as_of are dropped; non-date keys are kept (no date to be future).
+    if as_of is not None:
+        cutoff = pd.to_datetime(as_of, errors="coerce")
+        if pd.notna(cutoff):
+            idx_dates = pd.to_datetime(pd.Index(features_df.index), errors="coerce")
+            keep = (idx_dates.isna()) | (idx_dates <= cutoff)
+            features_df = features_df.loc[list(keep)]
     if target_key not in features_df.index:
-        raise AnalogError(f"target_key {target_key!r} not in the feature matrix index")
+        raise AnalogError(
+            f"target_key {target_key!r} not in the feature matrix index "
+            f"(after the as_of={as_of!r} PIT cut, if applied)"
+        )
 
     # rank-normalize each column to [0,1], then Euclidean distance to the target.
     ranked = features_df.rank(pct=True)
@@ -109,11 +133,10 @@ def retrieve_analogs(
             "members": members,
         }
 
-    set_id, record = append_with_minted_id(index_path, "AS", "analog_set_id", build)
+    set_id, record = append_with_minted_id(index_path, "AS", "analog_set_id", build,
+                                           validate=schemas.validator_for("analog_set"))
     analog_dir.mkdir(parents=True, exist_ok=True)
-    (analog_dir / f"{set_id}.yaml").write_text(
-        yaml.safe_dump(record, sort_keys=False), encoding="utf-8"
-    )
+    atomic_write_text(analog_dir / f"{set_id}.yaml", yaml.safe_dump(record, sort_keys=False))
     return set_id, record
 
 

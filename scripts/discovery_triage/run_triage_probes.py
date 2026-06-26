@@ -55,10 +55,25 @@ def target_reentry(claim: dict[str, Any]) -> dict[str, Any]:
     optimizer target, or a forward-return-shaped variable. Note: the claim's
     `target.return_surface` is the legitimate OUTCOME side and is NOT inspected here."""
     fatal: list[str] = []
-    for table in _signal_tables(claim):
-        if str(table).strip().lower() in FORBIDDEN_SURFACES:
-            fatal.append(f"signal table {table!r} is a forbidden outcome surface")
-    for var in claim.get("variables", []) or []:
+    sources = _signal_tables(claim)
+    variables = claim.get("variables", []) or []
+    # L2 (red-team 2026-06-26): fail CLOSED. A claim with no inspectable signal
+    # source cannot be cleared by the leakage probe — refuse rather than pass vacuously.
+    if not sources and not variables:
+        fatal.append("no signal source to inspect (signal_spec/variables missing) — failing closed")
+    for ref in sources:
+        low = str(ref).strip().lower()
+        if not low:
+            continue
+        # H2 (red-team 2026-06-26): substring, not exact-match. `_signal_tables`
+        # includes signal_spec.sql, so a forbidden surface inside a JOIN/SQL string
+        # (e.g. "... FROM combiner_scores_daily") is caught, not just a bare table name.
+        hit = next((s for s in FORBIDDEN_SURFACES if s == low or s in low), None)
+        if hit:
+            fatal.append(f"signal source {ref!r} references forbidden outcome surface {hit!r}")
+        elif FORBIDDEN_COLUMN_PATTERNS.search(low):
+            fatal.append(f"signal source {ref!r} matches a forbidden (forward/return/combiner) pattern")
+    for var in variables:
         v = str(var).strip().lower()
         if v in FORWARD_RETURN_VARIABLES:
             fatal.append(f"variable {var!r} is a forward optimizer target")

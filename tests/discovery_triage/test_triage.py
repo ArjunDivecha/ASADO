@@ -47,6 +47,25 @@ def test_run_triage_passes_clean():
     assert res["status"] == "triage_passed_not_validated"
 
 
+def test_target_reentry_fatal_on_forbidden_surface_in_sql():
+    # H2: a forbidden surface inside a signal_spec.sql JOIN must be caught (substring,
+    # not exact-match) — exact equality previously let this through.
+    c = {"claim_id": "C_x", "variables": ["FX_RR25_1M_Z252"],
+         "signal_spec": {"table": "market_implied_signals",
+                         "sql": "SELECT z FROM market_implied_signals JOIN combiner_scores_daily USING(country)"},
+         "target": {"return_surface": "country_returns_daily",
+                    "measurement_shape": "cross_sectional_rank_ic", "direction": "long_high_signal"}}
+    p = target_reentry(c)
+    assert p["status"] == "fail" and p["fatal"]
+
+
+def test_run_triage_fails_closed_on_empty_claim():
+    # L2: a claim with no inspectable signal source must NOT pass vacuously.
+    res = run_triage({"claim_id": "C_empty"})
+    assert res["status"] == "killed_fatal_leakage"
+    assert res["fatal_failures"]
+
+
 def test_power_budget_band_is_band_not_verdict():
     df = pd.DataFrame(0.0, index=range(120), columns=[f"c{i}" for i in range(20)])
     band = power_budget_band(df, horizon_rows=21)

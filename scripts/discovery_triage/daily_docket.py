@@ -76,6 +76,10 @@ def curate(results: list[dict[str, Any]]) -> tuple[list[tuple[int, str, dict[str
         "raw": len(raw),
         "collapsed": len(raw) - len(best),
         "shown": len(shown),
+        # M1 (red-team 2026-06-26): cards that survived dedupe but were dropped by the
+        # MAX_CARDS cap. Without this the header hid them (raw != collapsed+shown), so
+        # "10 of 26" looked like "26". Accounting now closes: raw = collapsed + shown + cap_dropped.
+        "cap_dropped": len(best) - len(shown),
         "dropped_validation": sum(len(r.get("dropped", [])) for r in results),
         "searches": len([r for r in results if not r.get("error")]),
     }
@@ -92,8 +96,8 @@ def _render(as_of: str, results: list[dict[str, Any]]) -> str:
         "prospective-only until forward evidence accrues.",
         "",
         (f"Cards: {meta['shown']} shown (ranked, cap {MAX_CARDS}) · {meta['raw']} raw candidates "
-         f"· {meta['collapsed']} collapsed by entity · {meta['dropped_validation']} dropped by strict "
-         f"validation · {meta['searches']} searches."),
+         f"· {meta['collapsed']} collapsed by entity · {meta['cap_dropped']} dropped by cap "
+         f"· {meta['dropped_validation']} dropped by strict validation · {meta['searches']} searches."),
         "",
     ]
     for i, (score, why, c) in enumerate(shown, 1):

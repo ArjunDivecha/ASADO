@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Literal
 
+from .exceptions import ProvenanceError
+
 VisibilityMode = Literal["outcome_blind", "frozen_window", "full_retrospective", "legacy_unknown", "human_pretest", "pit_preregistered", "deterministic_detector"]
 GeneratorType = Literal["llm", "human", "deterministic", "harness"]
 
@@ -28,13 +30,13 @@ def normalize_visibility_mode(mode: str | None) -> str:
     to the fail-open `mode in {...}` checks downstream.
     """
     if mode is None or str(mode).strip() == "":
-        raise ValueError("visibility_mode is required")
+        raise ProvenanceError("visibility_mode is required")
     key = str(mode).strip().lower().replace("-", "_").replace(" ", "_")
     if key in CANONICAL_VISIBILITY_MODES:
         return key
     if key in _VISIBILITY_ALIASES:
         return _VISIBILITY_ALIASES[key]
-    raise ValueError(
+    raise ProvenanceError(
         f"unknown visibility_mode {mode!r}; expected one of "
         f"{sorted(CANONICAL_VISIBILITY_MODES)} or a known alias"
     )
@@ -57,6 +59,11 @@ class ProvenanceInput:
     generated_at: str | None = None
     tool_enforced_outcome_blind: bool = False
     legacy_tier: str | None = None
+    # Timestamp of a VERIFIABLE pre-registration artifact (e.g. a pit_proof_registry
+    # entry). A `pit_preregistered` declaration earns historical certification ONLY
+    # when such a proof exists and predates the certification window. Without it, an
+    # LLM claim is still subject to the model-cutoff PIT boundary (C2 / Invariant A).
+    pit_proof_ts: str | None = None
 
 
 def classify_provenance(inp: ProvenanceInput) -> dict[str, str | bool | None]:
@@ -75,13 +82,41 @@ def classify_provenance(inp: ProvenanceInput) -> dict[str, str | bool | None]:
             "historical_certification_allowed": False,
             "reason": "deterministic_gap_is_measured_state_not_alpha",
         }
-    if inp.generator_type == "harness" or vis == "pit_preregistered":
+    if inp.generator_type == "harness":
+        # A harness-generated idea has a machine-counted denominator and is
+        # pre-registered by construction; historical certification is legitimate.
+        # The relabel defense — an LLM claim masquerading as 'harness' — lives in
+        # freeze_claim, which binds generator_type to the claim's real model origin.
         return {
             "provenance_class": "pit_preregistered",
             "certification_route": "standard_harness_then_triage",
             "historical_certification_allowed": True,
-            "reason": "known_denominator_pre_registered",
+            "reason": "harness_known_denominator",
         }
+    if vis == "pit_preregistered":
+        # C2 (red-team 2026-06-26): DECLARING pit_preregistered is not enough — it
+        # earns historical certification ONLY with a verifiable pre-registration
+        # artifact dated strictly BEFORE the certification window. Without that
+        # proof an LLM claim falls through to the model-cutoff PIT boundary below
+        # (so a pre-cutoff window routes prospective); a non-LLM claim is prospective.
+        proof = parse_date(inp.pit_proof_ts)
+        start = parse_date(inp.certification_window_start)
+        if proof is not None and start is not None and proof < start:
+            return {
+                "provenance_class": "pit_preregistered",
+                "certification_route": "standard_harness_then_triage",
+                "historical_certification_allowed": True,
+                "reason": "pit_preregistered_with_verified_proof",
+            }
+        if inp.generator_type != "llm":
+            return {
+                "provenance_class": "pit_preregistered_unproven",
+                "certification_route": "prospective_only_unverified_preregistration",
+                "historical_certification_allowed": False,
+                "reason": "pit_preregistered_without_verified_proof",
+            }
+        # generator_type == "llm" with no valid proof: do NOT short-circuit — fall
+        # through to the LLM cutoff branch (cutoff is the real PIT boundary).
     if vis == "legacy_unknown":
         return {
             "provenance_class": "legacy_unknown",
@@ -145,4 +180,4 @@ def classify_provenance(inp: ProvenanceInput) -> dict[str, str | bool | None]:
             "reason": "outcome_blindness_not_tool_enforced",
         }
 
-    raise ValueError(f"unsupported provenance input: {inp}")
+    raise ProvenanceError(f"unsupported provenance input: {inp}")

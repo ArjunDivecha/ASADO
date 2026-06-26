@@ -145,14 +145,32 @@ def run_forward_track(
     return appended
 
 
-def main(argv: list[str] | None = None) -> int:
+def open_loop_with_warehouse(read_only: bool = True) -> Any:
+    """H5 (red-team 2026-06-26): open the loop DB AND attach the main warehouse
+    read-only as `asado`. `resolve_return_surface('country_returns_daily')` resolves
+    via `asado.t2_factors_daily`, so without this ATTACH the daily readout path raises
+    CatalogException. Honors ASADO_DATA_ROOT (FR9) — NOT loopdb's hardcoded constants."""
     import duckdb
-    from .paths import loop_db_path
+    from .paths import data_root, loop_db_path
+    con = duckdb.connect(str(loop_db_path()), read_only=read_only)
+    main_db = data_root() / "asado.duckdb"
+    if main_db.exists():
+        con.execute(f"ATTACH '{main_db}' AS asado (READ_ONLY)")
+    return con
+
+
+def main(argv: list[str] | None = None) -> int:
+    from .paths import data_root, loop_db_path
     db = loop_db_path()  # honors ASADO_DATA_ROOT (FR9)
     if not db.exists():
         print(f"[forward_track] loop DB not found at {db} (set ASADO_DATA_ROOT); nothing to do.")
         return 0  # optional nightly step — a missing DB is a no-op, not a failure
-    con = duckdb.connect(str(db), read_only=True)
+    main_db = data_root() / "asado.duckdb"
+    if not main_db.exists():
+        print(f"[forward_track] main warehouse not found at {main_db}; the daily return "
+              "surface needs asado.t2_factors_daily — nothing to do.")
+        return 0
+    con = open_loop_with_warehouse(read_only=True)
     try:
         returns_for = lambda surface: resolve_return_surface(con, surface)  # noqa: E731
         total: list[dict[str, Any]] = []

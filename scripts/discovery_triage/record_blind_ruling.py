@@ -29,8 +29,51 @@ from pathlib import Path
 from typing import Any, Optional
 
 from . import schemas
+from .build_blind_packet import build_blind_packet
 from .jsonl_store import append_jsonl, append_with_minted_id, now_iso, read_jsonl
 from .paths import BLIND_RULINGS
+
+# Invariant F (FuguPRD §24): a ruling emits a verdict, never a validation/promotion claim.
+_FORBIDDEN_RULING_LANGUAGE = (
+    "validated alpha", "proven signal", "promoted by mythos", "promote",
+    "trade recommendation", "high-confidence opportunity", "high confidence opportunity",
+    "clean historical certification",
+)
+
+
+class BlindRulingError(ValueError):
+    """Raised when a ruling uses forbidden language or violates the unseal protocol."""
+
+
+def _check_ruling_language(*texts: Any) -> None:
+    blob = " ".join(str(t or "") for t in texts).lower()
+    hits = [p for p in _FORBIDDEN_RULING_LANGUAGE if p in blob]
+    if hits:
+        raise BlindRulingError(
+            f"forbidden vocabulary in blind ruling (FuguPRD §24): {hits}. "
+            "A ruling records a verdict, never a validation/promotion claim."
+        )
+
+
+def rule_on_blind_packet(
+    *,
+    claim: dict[str, Any],
+    triage_result: dict[str, Any],
+    judge: str,
+    decide: Any,
+    harness_stats: Optional[dict[str, Any]] = None,
+    rulings_path: Path = BLIND_RULINGS,
+) -> tuple[str, dict[str, Any]]:
+    """H3 (red-team 2026-06-26): the ENFORCED blind protocol. Builds the blind packet
+    and passes ONLY the packet to `decide` (a callable returning (decision, rationale)),
+    so the generator rationale / bull case can never reach the judge, then records the
+    preliminary ruling. This is the wiring the standalone functions previously lacked."""
+    packet = build_blind_packet(claim, triage_result, harness_stats=harness_stats)
+    decision, rationale = decide(packet)
+    return record_blind_ruling(
+        claim_id=packet.get("claim_id"), judge=judge,
+        decision=decision, rationale=rationale, rulings_path=rulings_path,
+    )
 
 
 def record_blind_ruling(
@@ -42,6 +85,8 @@ def record_blind_ruling(
     rulings_path: Path = BLIND_RULINGS,
 ) -> tuple[str, dict[str, Any]]:
     """Write the preliminary (pre-unseal) blind ruling; returns (ruling_id, record)."""
+    _check_ruling_language(decision, rationale)  # M2: Invariant-F language gate
+
     def build(ruling_id: str) -> dict[str, Any]:
         return {
             "ruling_id": ruling_id,
@@ -64,9 +109,19 @@ def record_unseal(
 ) -> dict[str, Any]:
     """Append the post-unseal event for an existing ruling, computing
     `ruling_changed_after_unseal` against the preliminary decision."""
+    _check_ruling_language(post_unseal_decision)  # M2: Invariant-F language gate
     prelim = None
     for rec in read_jsonl(rulings_path):
-        if rec.get("ruling_id") == ruling_id and (rec.get("blind_ruling") or {}).get("decision"):
+        if rec.get("ruling_id") != ruling_id:
+            continue
+        # M2: one unseal per ruling — a second unseal would silently fold to the
+        # newest, masking a flip-flop. Refuse it.
+        if rec.get("unseal"):
+            raise BlindRulingError(
+                f"ruling {ruling_id!r} has already been unsealed; a second unseal is refused "
+                "(it would mask the recorded post-unseal decision)."
+            )
+        if (rec.get("blind_ruling") or {}).get("decision"):
             prelim = rec
     if prelim is None:
         raise ValueError(f"no preliminary ruling found for {ruling_id!r}")

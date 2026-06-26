@@ -46,22 +46,47 @@ MIN_CARDS, MAX_CARDS = 3, 10
 _DEFAULT_LOOP_DB = "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/asado_loop.duckdb"
 
 
+def _score_card(d: dict[str, Any]) -> tuple[int, str]:
+    """Rank a canonical draft: reward richer relationship sets + clearer falsification +
+    deeper cited evidence; penalize single-relationship dependency (FR4)."""
+    members = d.get("members") or []
+    fal = d.get("falsification") or {}
+    fatal = fal.get("fatal_if") or []
+    must = fal.get("must_check") or []
+    summary = str(d.get("summary", ""))
+    score = (min(len(members), 3) + min(len(fatal), 2) + min(len(must), 2)
+             + min(len(summary) // 220, 3))
+    if len(members) <= 1:
+        score -= 1
+    why = (f"{len(members)} member(s) · {len(fatal)} fatal_if · {len(must)} must_check "
+           f"· {len(summary)} chars evidence")
+    return score, why
+
+
+def curate(results: list[dict[str, Any]]) -> tuple[list[tuple[int, str, dict[str, Any]]], dict[str, int]]:
+    """Dedupe by entity (keep highest-scored), rank, cap. Returns (shown, meta).
+    NEVER pads to the minimum with low-quality cards."""
+    raw = [d for r in results for d in r.get("drafts", [])]
+    best: dict[Any, tuple[int, str, dict[str, Any]]] = {}
+    for d in raw:
+        score, why = _score_card(d)
+        fam = d.get("family_name")
+        if fam not in best or score > best[fam][0]:
+            best[fam] = (score, why, d)
+    ranked = sorted(best.values(), key=lambda x: x[0], reverse=True)
+    shown = ranked[:MAX_CARDS]
+    meta = {
+        "raw": len(raw),
+        "collapsed": len(raw) - len(best),
+        "shown": len(shown),
+        "dropped_validation": sum(len(r.get("dropped", [])) for r in results),
+        "searches": len([r for r in results if not r.get("error")]),
+    }
+    return shown, meta
+
+
 def _render(as_of: str, results: list[dict[str, Any]]) -> str:
-    all_cards: list[dict[str, Any]] = []
-    for r in results:
-        for d in r.get("drafts", []):
-            all_cards.append(d)
-    # Curate (Codex review P2): one card per entity (first/strongest wins), then cap.
-    # The full raw set remains in journal/drafts/ for the cockpit and audit.
-    seen: set = set()
-    cards: list[dict[str, Any]] = []
-    for c in all_cards:
-        key = c.get("family_name")
-        if key in seen:
-            continue
-        seen.add(key)
-        cards.append(c)
-    cards = cards[:MAX_CARDS]
+    shown, meta = curate(results)
     lines = [
         f"# Discovery Docket — {as_of}",
         "",
@@ -69,31 +94,33 @@ def _render(as_of: str, results: list[dict[str, Any]]) -> str:
         "trade. Each card carries its certification route; with a null model cutoff, ideas route "
         "prospective-only until forward evidence accrues.",
         "",
-        f"Cards: {len(cards)} shown (deduped by entity, cap {MAX_CARDS}) of {len(all_cards)} "
-        "drafts generated this run.",
+        (f"Cards: {meta['shown']} shown (ranked, cap {MAX_CARDS}) · {meta['raw']} raw candidates "
+         f"· {meta['collapsed']} collapsed by entity · {meta['dropped_validation']} dropped by strict "
+         f"validation · {meta['searches']} searches."),
         "",
     ]
-    for i, c in enumerate(cards, 1):
-        card = c.get("card", {})
+    for i, (score, why, c) in enumerate(shown, 1):
+        fal = c.get("falsification") or {}
+        sf = c.get("mythos_self_falsification") or {}
         lines += [
-            f"## {i}. [{c.get('object_type')}] {c.get('family_name')}",
+            f"## {i}. {c.get('family_name')}  ·  rank {score}",
             f"**Epistemic status:** {' · '.join(c.get('epistemic_status', []))}",
+            f"*Why ranked:* {why}",
             "",
-            card.get("summary", ""),
+            c.get("summary", ""),
             "",
-            "**Falsification (near-term):** " + "; ".join(card.get("falsification", {}).get("near_term", [])),
-            "",
-            "**Self-falsification — strongest objection:** "
-            + str(card.get("mythos_self_falsification", {}).get("strongest_objection", "")),
-            "**First probe to run:** "
-            + str(card.get("mythos_self_falsification", {}).get("first_probe_to_run", "")),
+            "**Proposed relationships:** " + "; ".join(map(str, c.get("members", []))),
+            "**Fatal if:** " + "; ".join(fal.get("fatal_if", [])),
+            "**Must check:** " + "; ".join(fal.get("must_check", [])),
+            "**Strongest counterargument:** " + str(sf.get("strongest_counterargument", "")),
+            "**What would change my mind:** " + "; ".join(sf.get("what_would_change_my_mind", [])),
             "",
             "---",
             "",
         ]
-    if len(cards) < MIN_CARDS:
-        lines.append(f"> NOTE: only {len(cards)} card(s) emitted — below the {MIN_CARDS} floor "
-                     "(thin run; not padded).")
+    if meta["shown"] < MIN_CARDS:
+        lines.append(f"> NOTE: only {meta['shown']} card(s) cleared strict validation — below the "
+                     f"{MIN_CARDS} floor. NOT padded with low-quality cards.")
     skipped = [r for r in results if r.get("error")]
     if skipped:
         lines += ["", "### Skipped searches"]

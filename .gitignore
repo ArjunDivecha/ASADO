@@ -50,3 +50,10 @@ Thumbs.db
 .cursor/hooks/state/
 .playwright-cli/
 Data/work/
+
+# Discovery Triage runtime journal data (append-only ledgers + frozen artifacts);
+# the directory structure is tracked via .gitkeep, the data is not.
+journal/**/*.jsonl
+journal/**/*.jsonl.lock
+journal/**/*.yaml
+journal/**/*.md

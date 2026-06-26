@@ -1,0 +1,29 @@
+# =============================================================================
+# config/model_registry.yaml  —  Discovery Triage model registry (PR-1 STUB)
+# =============================================================================
+# Maps model_id -> {model_version, training_cutoff, ...}. Feeds the provenance
+# classifier's model_training_cutoff (the real PIT boundary for LLM ideas).
+#
+# RULES (FuguPRD §1.4, §6.2; Sakana review):
+# - training_cutoff MUST be sourced from an official model card / provider doc,
+#   NEVER guessed. A null/unknown cutoff forces certification_route =
+#   prospective_only_unknown_cutoff.
+# - Concrete models, versions, availability, retention constraints, and cutoff
+#   evidence are filled in Phase 3 ONLY after the hard docs/API verification gate
+#   passes. No model id here is authoritative until that gate passes.
+# =============================================================================
+version: 1
+default_model: claude-opus-4-8
+models:
+  claude-opus-4-8:
+    model_version: null
+    training_cutoff: null            # NOT filled — must come from the official Anthropic
+                                     # model card. While null, every historical idea routes to
+                                     # prospective_only_unknown_cutoff (the safe default). Fill it
+                                     # to unlock post-cutoff holdout-testing for forward windows.
+    training_cutoff_source: null     # URL / doc name (evidence) — required before filling cutoff
+    cutoff_retrieved_at: null
+    access_mode: anthropic_api
+certification_routing:
+  unknown_cutoff_route: prospective_only_unknown_cutoff
+  rule: "if training_cutoff is null OR model_id absent -> unknown_cutoff_route"

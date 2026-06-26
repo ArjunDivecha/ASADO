@@ -190,10 +190,17 @@ def classify_step(step: dict[str, Any], rec: Optional[dict[str, Any]], run_date:
             checks.append(_check_table(out["table"], table_count))
 
     results = {c["result"] for c in checks}
+    soft = bool(step.get("optional"))
     if "missing" in results:
-        status = "fail"      # exited 0 but an expected output is absent/empty
+        # H4 (red-team 2026-06-26): honor `optional`. An OPTIONAL step that exits 0
+        # but produced no declared output is a legitimate soft skip — e.g. the nightly
+        # discovery docket no-ops when ASADO_RUN_DISCOVERY_LAB is unset, leaving only a
+        # 0-byte .gitkeep, and build_cockpit_data runs only when the docket does. It must
+        # NOT red governance (REQ-NIGHT-002). A REQUIRED step missing its output stays the
+        # stale-but-green fail. The `optional` flag was recorded but never consulted before.
+        status = "optional_missing" if soft else "fail"
     elif "stale" in results:
-        status = "stale"     # exited 0 but a daily output did not advance
+        status = "optional_stale" if soft else "stale"
     else:
         status = "ok"        # 'unknown' table checks (DB unavailable) do not fail
     return {**base, "status": status, "output_checks": checks}

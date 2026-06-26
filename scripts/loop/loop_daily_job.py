@@ -176,6 +176,19 @@ STEPS = [
     ("collect_news_bridge", [PY, "scripts/loop/collect_news_bridge.py"]),
     ("mark_theses", [PY, "scripts/loop/ledgers.py", "--mark"]),
     ("build_country_returns", [PY, "scripts/loop/build_country_returns.py"]),
+    # Discovery Triage: append forward readouts to the incubator/graveyard rosters.
+    # Runs after build_country_returns (its return surface); optional + no-op until
+    # claims have been routed (see config/governance_contract.yaml).
+    # Run as MODULES (-m), not file paths: these packages use relative imports, so a
+    # bare path invocation crashes with "attempted relative import" (Codex review P1).
+    ("discovery_forward_track", [PY, "-m", "scripts.discovery_triage.forward_track"]),
+    # Discovery Lab daily docket — GATED: --nightly no-ops unless ASADO_RUN_DISCOVERY_LAB=1,
+    # so it never auto-spends on the Anthropic API without explicit opt-in.
+    ("discovery_docket", [PY, "-m", "scripts.discovery_triage.daily_docket", "--nightly"]),
+    # Refresh the cockpit payload (incl. the Research Desk) AFTER the docket, so the
+    # front end actually reflects the latest drafts. Cheap, read-only, no LLM spend.
+    ("build_cockpit_data", [PY, "cos_mockups/build_cockpit_data.py"]),
+    ("make_live_cockpit", [PY, "cos_mockups/make_live_cockpit.py"]),
     ("build_tot_shares", [PY, "scripts/loop/build_tot_shares.py"]),
     ("build_graph_features", [PY, "scripts/loop/build_graph_features.py"]),
     ("build_forward_calendar", [PY, "scripts/loop/build_forward_calendar.py"]),

@@ -67,6 +67,30 @@ steps:
     expected_outputs:
       - {kind: file, path_template: "Data/loop/country_returns_monthly.parquet", staleness: mtime}
 
+  - name: discovery_forward_track
+    governance: false
+    optional: true          # appends forward readouts; no-op until claims are routed
+    expected_outputs:
+      - {kind: file, path_template: "journal/prospective_queue/prospective_queue.jsonl"}
+
+  - name: discovery_docket
+    governance: false
+    optional: true          # GATED: no-op unless ASADO_RUN_DISCOVERY_LAB=1 (Anthropic cost guard)
+    expected_outputs:
+      - {kind: file, path_template: "journal/dockets/.gitkeep"}
+
+  - name: build_cockpit_data
+    governance: false
+    optional: true          # refreshes cockpit payload incl. Research Desk; read-only, no spend
+    expected_outputs:
+      - {kind: file, path_template: "cos_mockups/cockpit_data.json", staleness: mtime}
+
+  - name: make_live_cockpit
+    governance: false
+    optional: true
+    expected_outputs:
+      - {kind: file, path_template: "cos_mockups/cockpit_live.html", staleness: mtime}
+
   - name: build_tot_shares
     governance: false
     optional: true          # 7-day freshness gate: parquet not rewritten nightly

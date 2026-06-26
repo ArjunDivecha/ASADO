@@ -120,6 +120,25 @@
   .chip .tag{font-size:8px;letter-spacing:.12em;background:var(--ink);color:var(--paper-2);padding:2px 6px;border-radius:2px}
   .subpanel{border:1px solid var(--line);border-radius:5px;background:var(--paper-2);padding:13px 15px;margin-top:14px}
   .subpanel h4{margin:0 0 9px;font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+  .desk-nav{display:flex;gap:6px;flex-wrap:wrap;padding:8px 12px;border-bottom:1px solid var(--line-2);background:rgba(251,247,238,.74)}
+  .desk-tab{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--line);border-radius:3px;padding:5px 8px;color:var(--ink-2);background:var(--paper-2);cursor:pointer}
+  .desk-tab:hover{border-color:var(--gold);color:var(--ink)}
+  .desk-tab.on{background:var(--ink);border-color:var(--ink);color:var(--paper-2)}
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:8px;letter-spacing:.09em;text-transform:uppercase;font-weight:600;border-radius:2px;padding:2px 6px;border:1px solid var(--line);margin:0 5px 5px 0}
+  .b-unvalidated{background:rgba(124,45,45,.1);color:var(--oxblood);border-color:rgba(124,45,45,.28)}
+  .b-blind{background:rgba(44,122,107,.12);color:var(--teal);border-color:rgba(44,122,107,.32)}
+  .b-prospective{background:rgba(176,122,18,.12);color:var(--amber);border-color:rgba(176,122,18,.32)}
+  .b-holdout{background:rgba(44,122,107,.14);color:var(--teal);border-color:rgba(44,122,107,.35)}
+  .b-legacy{background:rgba(91,83,69,.1);color:var(--ink-2);border-color:var(--line)}
+  .desk-card{cursor:pointer}
+  .desk-card summary{cursor:pointer;list-style:none}
+  .desk-card summary::-webkit-details-marker{display:none}
+  .desk-section{margin-top:11px;padding-top:10px;border-top:1px solid rgba(188,168,130,.42)}
+  .desk-section h5{font-family:var(--sans);text-transform:uppercase;letter-spacing:.12em;font-size:10px;margin:0 0 7px;color:var(--ink-3);font-weight:600}
+  .desk-list{margin:0;padding-left:17px;font-family:var(--serif);font-size:12.2px;line-height:1.4;color:var(--ink-2)}
+  .desk-list li{margin:0 0 7px}
+  .desk-id{font-family:var(--sans);letter-spacing:.06em;font-size:10px;color:var(--teal);text-transform:uppercase}
+  .empty-state{font-family:var(--serif);font-size:13px;color:var(--ink-3);line-height:1.55;border:1px dashed var(--line);border-radius:5px;padding:14px;background:rgba(251,247,238,.55)}
   table.dt{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
   table.dt th{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);cursor:pointer}
   table.dt th:hover{color:var(--ink)}
@@ -156,6 +175,18 @@
   .qchip{font-family:var(--serif);font-size:12px;color:var(--ink-2);border:1px solid var(--line);border-radius:16px;padding:4px 12px;cursor:pointer;background:var(--paper-2);transition:.15s}
   .qchip:hover{border-color:var(--gold);color:var(--ink);background:var(--paper-3)}
   .gkey{margin-left:auto;font-size:9px;letter-spacing:.04em;color:var(--ink-3);display:flex;gap:13px}.gkey b{color:var(--ink-2);font-weight:600}
+  @media (max-width: 820px){
+    body{overflow:auto}
+    .app{height:auto;min-height:100vh;grid-template-rows:auto auto auto}
+    .ribbon{align-items:flex-start;gap:10px;padding:10px 12px;flex-wrap:wrap}
+    .mast{flex-wrap:wrap;gap:8px}.mast h1{font-size:20px}.ribbon-right{margin-left:0;gap:8px;flex-wrap:wrap}
+    .cockpit{grid-template-columns:1fr;gap:10px;padding:10px 10px 6px;min-height:auto}
+    .left{grid-template-rows:auto auto;gap:10px}.panel-row{grid-template-columns:1fr;gap:10px}
+    .panel{min-height:220px}.panel.focus{min-height:360px}
+    .map-canvas{min-height:220px}.tile{width:56px}
+    .desk-nav{overflow-x:auto;flex-wrap:nowrap}.desk-tab{flex:0 0 auto}
+    .chat{position:relative;padding:9px 10px 12px}.thread{max-height:112px}.gkey{margin-left:0;flex-wrap:wrap}
+  }
 </style>
 </head>
 <body>
@@ -188,8 +219,8 @@
           <div class="pbody" id="sigs"></div>
         </section>
         <section class="panel">
-          <div class="phead"><div class="ptitle">Price-Discovery <em>Gaps</em> <span class="where">· live</span></div>
-            <div class="opt" style="border:1px solid var(--line);border-radius:3px" onclick="ask('open the full brief')">Brief ›</div></div>
+          <div class="phead"><div class="ptitle">Known <em>Gaps</em> <span class="where">· measured</span></div>
+            <div class="opt" style="border:1px solid var(--line);border-radius:3px" onclick="chip('open the full brief')">Brief ›</div></div>
           <div class="pbody" id="dislo"></div>
         </section>
       </div>
@@ -201,6 +232,7 @@
         <div class="ptitle" id="f-title"><span id="f-back"></span> <span id="f-ttl"></span></div>
         <div id="f-opts"></div>
       </div>
+      <div class="desk-nav" id="desk-nav"></div>
       <div class="pbody" id="focus"></div>
     </section>
   </main>
@@ -252,6 +284,7 @@ function _dateShort(d){return (d||"").slice(0,10);}
 // tally in fixed order
 const _t=D.signals?.tally||{};
 const TALLY=[[String(_t.WATCH||0),"WATCH"],[String(_t.WEAK||0),"WEAK"],[String(_t.DEAD||0),"DEAD"],[String(_t.INSUFFICIENT_COVERAGE||0),"INSUFF"]];
+const RESEARCH=D.research_desk||{discovery_lab:[],analog_shelf:[],under_triage:[],blind_rulings:[],prospective:[],graveyard:[]};
 // dislocation feed: top country rows + structural detector tallies
 const _cnt=D.dislocations?.counts||{};
 const DISLOFEED=CR.slice(0,5).map(x=>[x.detector, `${x.entity} · ${x.archetype}`, (x.reading||""), `${x.severity}`, (Math.abs(x.severity)>=2?1:0), x.entity])
@@ -311,11 +344,14 @@ function renderDislo(){const rows=(GAP.status==="fresh"&&GAPFEED.length)?GAPFEED
 let HIST=[],CUR=null;
 function go(view,params={}){if(CUR)HIST.push(CUR);CUR={view,params};SEL=(view==="country")?params.name:SEL;renderFocus();renderMap();}
 function back(){if(HIST.length){CUR=HIST.pop();SEL=(CUR.view==="country")?CUR.params.name:SEL;renderFocus();renderMap();}}
+const DESK_TABS=[["desk_discovery","Discovery Lab"],["desk_analogs","Analogs"],["desk_triage","Triage"],["desk_rulings","Rulings"],["desk_prospective","Prospective"],["desk_graveyard","Graveyard"]];
+function renderDeskNav(){const active=CUR?.view||"overview";$("#desk-nav").innerHTML=DESK_TABS.map(([v,l])=>`<button class="desk-tab ${active===v?'on':''}" onclick="go('${v}')">${l}</button>`).join("")}
 function renderFocus(){const{view,params}=CUR;const V=FVIEWS[view];const f=$("#focus");
   f.scrollTop=0;f.innerHTML=`<div class="fpad reveal">${V.render(params)}</div>`;
   $("#f-back").innerHTML=HIST.length?`<span class="back" onclick="back()">‹</span>`:`<span class="back" style="opacity:.3;cursor:default">‹</span>`;
   $("#f-ttl").innerHTML=V.title(params);
   $("#f-opts").innerHTML=V.opts?V.opts(params):"";
+  renderDeskNav();
 }
 const FVIEWS={};
 
@@ -414,6 +450,37 @@ FVIEWS.tail={title:()=>`Long-cycle <em>Tail</em>`,opts:()=>``,render:()=>`
    <p class="narr">Indonesia's <b class="ox">−50% drawdown</b> maps to a bucket with median <b>+18%</b> but p10 <b class="ox">−22%</b> forward 3y — the once-in-a-century downside the modern sample can't see.</p>
    <p class="narr"><span class="ox">UNKNOWN/STALE.</span> Live drawdown is nominal vs a real, DM-calibrated distribution; Indonesia is an <b>EM-analogy</b>. Context only — must clear the harness before sizing.</p>`};
 
+function badgeClass(label){const x=String(label||"").toLowerCase();if(x.includes("holdout"))return"b-holdout";if(x.includes("blind")||x.includes("outcome"))return"b-blind";if(x.includes("prospective")||x.includes("incubat"))return"b-prospective";if(x.includes("legacy"))return"b-legacy";return"b-unvalidated"}
+function badges(labels){return (labels||["UNVALIDATED"]).slice(0,4).map(l=>`<span class="badge ${badgeClass(l)}">${String(l).replaceAll("_"," ")}</span>`).join("")}
+function emptyDesk(name){return `<div class="empty-state">No ${name} records yet. The Research Desk will show real journal entries here once the corresponding Discovery Triage writer runs; it does not fabricate placeholder ideas.</div>`}
+function esc(x){return String(x??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function arr(x){return Array.isArray(x)?x.filter(Boolean):[]}
+function list(items){return arr(items).length?`<ul class="desk-list">${arr(items).map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}
+function memberList(r){return arr(r.members).length?`<div class="desk-section"><h5>Proposed observable relationships</h5><ul class="desk-list">${arr(r.members).map(m=>`<li><span class="desk-id">${esc(m.member_id||m.form||"member")}</span><br>${esc(m.proposed_relationship||m.relationship||m.description||m.status||"No relationship text recorded.")}</li>`).join("")}</ul></div>`:""}
+function falsificationBlock(r){const f=r.falsification||{},sf=r.self_falsification||r.mythos_self_falsification||{};return `${arr(f.fatal_if).length?`<div class="desk-section"><h5>Fatal if</h5>${list(f.fatal_if)}</div>`:""}${arr(f.must_check).length?`<div class="desk-section"><h5>Must check before this becomes a claim</h5>${list(f.must_check)}</div>`:""}${sf.strongest_counterargument?`<div class="desk-section"><h5>Strongest counterargument</h5><p class="narr" style="margin:0">${esc(sf.strongest_counterargument)}</p></div>`:""}${arr(sf.what_would_change_my_mind).length?`<div class="desk-section"><h5>What would change my mind</h5>${list(sf.what_would_change_my_mind)}</div>`:""}`}
+function deskCards(rows,emptyName,counts){if(!rows||!rows.length)return emptyDesk(emptyName);const banner=(counts&&counts.raw>counts.shown)?`<div class="muted" style="font-size:11px;margin-bottom:8px">Showing <b>${counts.shown}</b> of <b>${counts.raw}</b> — ranked by falsification depth; ${counts.dropped} not shown (cap applied in build_cockpit_data, not the browser). <span class="cite">build_cockpit_data</span></div>`:"";return banner+rows.slice(0,10).map((r,i)=>`<details class="subpanel desk-card" ${i===0?"open":""}><summary><h4>${esc(r.kind||"record")} · ${esc(r.id||"")}</h4><div style="font-family:var(--display);font-size:15px;margin-bottom:7px">${esc(r.title||r.id||"Untitled")}</div><div>${badges([r.status,r.route_label,...(r.labels||[])])}</div><p class="narr" style="margin:5px 0 0">${esc(r.subtitle||"")}</p>${r.recorded_ts?`<div class="muted" style="font-size:10px;margin-top:7px">${esc(r.recorded_ts)}</div>`:""}</summary>${memberList(r)}${falsificationBlock(r)}</details>`).join("")}
+
+FVIEWS.desk_discovery={title:()=>`Discovery <em>Lab</em>`,opts:()=>``,render:()=>`
+  <div class="eyebrow">Unvalidated drafts · outcome-blind lab</div>
+  <p class="narr">LLM-proposed detector families. They are ideas under custody, not alpha.</p>
+  ${deskCards(RESEARCH.discovery_lab,"Discovery Lab",RESEARCH.counts?.discovery_lab)}`};
+FVIEWS.desk_analogs={title:()=>`Analog <em>Shelf</em>`,opts:()=>``,render:()=>`
+  <div class="eyebrow">Frozen metric sets · outcomes attach later</div>
+  <p class="narr">Analog membership is frozen before any forward outcomes are attached.</p>
+  ${deskCards(RESEARCH.analog_shelf,"Analog Shelf")}`};
+FVIEWS.desk_triage={title:()=>`Under <em>Triage</em>`,opts:()=>``,render:()=>`
+  <div class="eyebrow">Frozen claims · probes and expression quality</div>
+  ${deskCards(RESEARCH.under_triage,"Under Triage")}`};
+FVIEWS.desk_rulings={title:()=>`Blind <em>Rulings</em>`,opts:()=>``,render:()=>`
+  <div class="eyebrow">Blind packets only · sealed rationale hidden</div>
+  ${deskCards(RESEARCH.blind_rulings,"Blind Rulings")}`};
+FVIEWS.desk_prospective={title:()=>`Prospective <em>Queue</em>`,opts:()=>``,render:()=>`
+  <div class="eyebrow">Forward incubation · no historical certification</div>
+  ${deskCards(RESEARCH.prospective,"Prospective Queue")}`};
+FVIEWS.desk_graveyard={title:()=>`Graveyard <em>Control</em>`,opts:()=>``,render:()=>`
+  <div class="eyebrow">Killed or quarantined ideas · still forward-tracked</div>
+  ${deskCards(RESEARCH.graveyard,"Graveyard")}`};
+
 /* ===== SVG ===== */
 function spark(w,h,vals,col){const mn=Math.min(...vals),mx=Math.max(...vals),p=6,X=i=>p+i*(w-2*p)/(vals.length-1),Y=v=>h-p-(v-mn)/(mx-mn||1)*(h-2*p);const d=vals.map((v,i)=>`${i?'L':'M'}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`).join(" ");return `<svg width="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><path d="${d} L${X(vals.length-1)} ${h-p} L${X(0)} ${h-p} Z" fill="${col}" opacity=".08"/><path d="${d}" fill="none" stroke="${col}" stroke-width="2"/><circle cx="${X(vals.length-1)}" cy="${Y(vals[vals.length-1])}" r="3" fill="${col}"/></svg>`}
 function lineChart(w,h,vals,col){if(!vals||!vals.length)return `<svg width="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"></svg>`;const mn=Math.min(...vals,0),mx=Math.max(...vals,0),p=8,span=(mx-mn)||1,den=Math.max(vals.length-1,1),X=i=>p+i*(w-2*p)/den,Y=v=>h-p-(v-mn)/span*(h-2*p);const d=vals.map((v,i)=>`${i?'L':'M'}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`).join(" ");let g="";for(let k=0;k<=3;k++){const y=p+k*(h-2*p)/3;g+=`<line x1="${p}" y1="${y}" x2="${w-p}" y2="${y}" stroke="rgba(120,104,72,.16)"/>`}g+=`<line x1="${p}" y1="${Y(0).toFixed(1)}" x2="${w-p}" y2="${Y(0).toFixed(1)}" stroke="rgba(124,45,45,.22)"/>`;return `<svg width="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${g}<path d="${d}" fill="none" stroke="${col}" stroke-width="2.2"/>${vals.map((v,i)=>`<circle cx="${X(i)}" cy="${Y(v)}" r="2.2" fill="${v>=0?col:'var(--oxblood)'}"/>`).join("")}</svg>`}
@@ -421,7 +488,11 @@ function fan(w,h){const p10=[140,150,120,90,60,40],med=[90,80,55,40,30,24],p90=[
 function valBar(k,pc,what){const col=what==="cheap"?"var(--teal)":"var(--oxblood)";return `<div class="barrow"><div class="k">${k}</div><div class="track"><div class="fill" style="width:${pc}%;background:${col}"></div></div><div class="pc">${pc} <span class="muted">${what}</span></div></div>`}
 
 /* ===== chat ===== */
-function pushMsg(who,html){const m=document.createElement("div");m.className="msg "+(who==="you"?"you":"cos");m.innerHTML=`<div class="who">${who==="you"?"You":"Chief of Staff"}</div><div class="bub">${html}</div>`;thread.appendChild(m);thread.scrollTop=thread.scrollHeight;return m;}
+function pushMsg(who,html){const m=document.createElement("div");m.className="msg "+(who==="you"?"you":"cos");/* user text is untrusted → escape; cos bubbles are app-generated HTML */const body=(who==="you")?esc(html):html;m.innerHTML=`<div class="who">${who==="you"?"You":"Chief of Staff"}</div><div class="bub">${body}</div>`;thread.appendChild(m);thread.scrollTop=thread.scrollHeight;return m;}
+/* chip(): deterministic UI navigation — runs the local router, never spends Opus.
+   Used by the quick-chips, the Brief button, and inline citations. Typed free-text
+   still flows through ask() → Opus. */
+function chip(t){pushMsg("you",t);route(t);}
 function openCountry(n){go("country",{name:n});pushMsg("cos",`Opening <b>${n}</b> into the focus panel — ${COUNTRY[n]?`10Y ${COUNTRY[n].y10}%, reflation`:`${DISLO[n]?DISLO[n]+'; ':''}${DRAW[n]?DRAW[n]+'% drawdown':'no active dislocation'}`}. <span class="cite">country panel</span>`);}
 function openSignal(n){ICHOR=null;go("signal",{name:n});pushMsg("cos",`<b>${n}</b> — persisted IC history and latest harness stats are in the focus panel. The verdict is the harness's, not mine. <span class="cite">harness_ic_series</span>`);}
 function openGap(id){const g=GAP_BY_ID[id];if(!g)return;go("gap",{id});pushMsg("cos",`Opening <b>${g.entity} ${g.direction}</b> gap via <b>${g.preferred_ticker||'proxy'}</b>. Absorption: ${g.absorption_state||'unknown'}. <span class="cite">gap_episode_marks</span>`);}
@@ -436,6 +507,28 @@ function applyCosActions(actions){
 }
 async function ask(t){
   pushMsg("you",t);
+  const q=t.toLowerCase().trim();
+  // localEnv: no API backend (file:// or the static-mock port 8791) → everything local.
+  const localEnv=location.protocol==="file:"||location.port==="8791";
+  // Deterministic UI/control intents → run the LOCAL router, never spend Opus. The
+  // patterns are anchored (^…$) so they match app-emitted nav strings and short
+  // imperative commands only. A substantive analytical question ("which Discovery Lab
+  // draft is strongest and why") is longer and will NOT match, so it still reaches Opus.
+  const isCountry=Object.keys(ISO).some(c=>c.toLowerCase()===q);
+  const isControl =
+       q.startsWith("open gap ") || q.startsWith("open signal ")
+    || /^(research desk|discovery lab|analog shelf|under triage|blind rulings?|prospective( queue)?|graveyard)$/.test(q)
+    || /^(what should i care about( today)?\??|brief me|today|overview)$/.test(q)
+    || /^(open the full brief|the brief|tonight'?s brief)$/.test(q)
+    || /^(where is pressure building\??|pressure)$/.test(q)
+    || /^((the |all the )?weak signals?)$/.test(q)
+    || /^(health|governance|scorecard|is the system healthy\??)$/.test(q)
+    || /^combiner$/.test(q)
+    || /^(downside( if .*)?|tail|drawdown)$/.test(q)
+    || /^mark the .* thesis$/.test(q)
+    || /^explain stewardship$/.test(q)
+    || isCountry;
+  if(localEnv||isControl){return route(t)}
   const pending=pushMsg("cos",`Asking Opus through the ASADO evidence layer… <span class="cite">/api/cos/chat</span>`);
   const bub=pending.querySelector(".bub");
   const controller=new AbortController();
@@ -449,7 +542,7 @@ async function ask(t){
     bub.innerHTML=(payload.answer_html||"No answer returned.")+`${payload.external_agent?` <span class="cite">${payload.external_agent}${payload.model?` · ${payload.model}`:""}</span>`:""}`;
   }catch(err){
     clearTimeout(timer);
-    bub.innerHTML=`Chief-of-Staff API unavailable; using local scripted fallback. <span class="cite">${String(err.message||err)}</span>`;
+    bub.innerHTML=`Using the local cockpit router for this view. <span class="cite">static cockpit · ${String(err.message||err)}</span>`;
     route(t);
   }
 }
@@ -461,11 +554,14 @@ function route(t){const q=t.toLowerCase();
   if(/(health|scorecard|governance|amber|red)/.test(q)){go("health");return pushMsg("cos",`Governance is <b>${GOV_OVERALL}</b>; worst dimension wins. <span class="cite">scorecard.json</span>`)}
   if(/combiner/.test(q)){openSignal("combiner_ridge_daily");return}
   if(/(weak|signals|registry|verdict|dead|all the signal)/.test(q)){go("signals");return pushMsg("cos",`The registry — <b>2 WATCH · 39 WEAK · 31 DEAD</b>. <span class="cite">live_signals</span>`)}
+  if(/(research desk|discovery lab|analog shelf|under triage|blind ruling|prospective|graveyard)/.test(q)){go("desk_discovery");return pushMsg("cos",`Opening the Research Desk. These panels are chain-of-custody surfaces: drafts, analogs, triage, blind rulings, prospective queue, and graveyard controls. <span class="cite">journal/*.jsonl</span>`)}
+  /* tail/downside must beat the generic country-name loop below, so
+     "Downside if Indonesia keeps falling?" opens the tail panel, not the Indonesia panel */
+  if(/(downside|tail|drawdown|jst|crash|falling)/.test(q)){go("tail");return pushMsg("cos",`The long-cycle tail. Indonesia's −50% → median +18% but <b class="ox">p10 −22%</b> forward 3y. Context only. <span class="cite">jst_tail_risk</span>`)}
   if(/brazil/.test(q)){openCountry("Brazil");return}
   for(const c of Object.keys(ISO)){if(q.includes(c.toLowerCase())){openCountry(c);return}}
   if(/(gap|price discovery|unabsorbed|absorption|what does price not know)/.test(q)){if(TOP_GAPS[0]){openGap(TOP_GAPS[0].gap_id);return}go("dislo");return pushMsg("cos",`No fresh gap is available; falling back to raw dislocations. <span class="cite">gap_engine</span>`)}
   if(/(disloc|brief|tonight|fired|nightly)/.test(q)){go("dislo");return pushMsg("cos",`The panel lists price-discovery gaps first when fresh; raw detector firings remain the drilldown substrate. <span class="cite">brief · ${D.dislocations?.as_of||""}</span>`)}
-  if(/(downside|tail|drawdown|risk|jst|crash|falling)/.test(q)){go("tail");return pushMsg("cos",`The long-cycle tail. Indonesia's −50% → median +18% but <b class="ox">p10 −22%</b> forward 3y. Context only. <span class="cite">jst_tail_risk</span>`)}
   if(/(pressure|map|where|flows|world)/.test(q)){go("overview");setLayer("dislocation");return pushMsg("cos",`Pressure is in three places — see the map (dislocation layer): <b class="ox">Chile</b>, <b class="ox">Korea</b>, <b class="ox">Indonesia</b>. Click any to drill in. <span class="cite">brief</span>`)}
   go("overview");pushMsg("cos",`Here's today. Try "the WEAK signals", "Brazil", or "downside if Indonesia keeps falling". <span class="muted">(prototype: scripted)</span>`)}
 $("#q")?.addEventListener("keydown",e=>{if(e.key==="Enter")submitQ()});
@@ -476,7 +572,7 @@ document.querySelector(".scorecard .overall").textContent=GOV_OVERALL;
 document.querySelector(".scorecard .overall").style.color=(D.governance?.overall==="red"?"var(--red)":(D.governance?.overall==="green"?"var(--green)":"var(--amber)"));
 document.querySelector(".date b").textContent=GAP.as_of||D.dislocations?.as_of||D.returns?.as_of||"—";
 document.querySelector(".date .muted").textContent=`generated ${D.meta?.generated_ts||"—"} · gap ${GAP.status||"missing"}`;
-$("#chips").innerHTML=["What should I care about today?","Where is pressure building?","The WEAK signals","Brazil","Downside if Indonesia keeps falling?"].map(c=>`<span class="qchip" onclick="ask(\`${c}\`)">${c}</span>`).join("")+`<span class="gkey"><span><b>FACT</b> cited</span><span><b>INFERENCE</b> labelled</span><span><b>UNKNOWN/STALE</b> aloud</span></span>`;
+$("#chips").innerHTML=["What should I care about today?","Research Desk","Where is pressure building?","The WEAK signals","Brazil","Downside if Indonesia keeps falling?"].map(c=>`<span class="qchip" onclick="chip(\`${c}\`)">${c}</span>`).join("")+`<span class="gkey"><span><b>FACT</b> cited</span><span><b>INFERENCE</b> labelled</span><span><b>UNKNOWN/STALE</b> aloud</span></span>`;
 renderMap();renderSigs();renderDislo();
 CUR={view:"overview",params:{}};renderFocus();
 pushMsg("you","What should I care about today?");route("what should I care about today");

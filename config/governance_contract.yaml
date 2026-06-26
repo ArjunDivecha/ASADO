@@ -79,6 +79,18 @@ steps:
     expected_outputs:
       - {kind: file, path_template: "journal/dockets/.gitkeep"}
 
+  - name: build_cockpit_data
+    governance: false
+    optional: true          # refreshes cockpit payload incl. Research Desk; read-only, no spend
+    expected_outputs:
+      - {kind: file, path_template: "cos_mockups/cockpit_data.json", staleness: mtime}
+
+  - name: make_live_cockpit
+    governance: false
+    optional: true
+    expected_outputs:
+      - {kind: file, path_template: "cos_mockups/cockpit_live.html", staleness: mtime}
+
   - name: build_tot_shares
     governance: false
     optional: true          # 7-day freshness gate: parquet not rewritten nightly

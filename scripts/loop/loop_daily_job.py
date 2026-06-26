@@ -185,6 +185,10 @@ STEPS = [
     # Discovery Lab daily docket — GATED: --nightly no-ops unless ASADO_RUN_DISCOVERY_LAB=1,
     # so it never auto-spends on the Anthropic API without explicit opt-in.
     ("discovery_docket", [PY, "-m", "scripts.discovery_triage.daily_docket", "--nightly"]),
+    # Refresh the cockpit payload (incl. the Research Desk) AFTER the docket, so the
+    # front end actually reflects the latest drafts. Cheap, read-only, no LLM spend.
+    ("build_cockpit_data", [PY, "cos_mockups/build_cockpit_data.py"]),
+    ("make_live_cockpit", [PY, "cos_mockups/make_live_cockpit.py"]),
     ("build_tot_shares", [PY, "scripts/loop/build_tot_shares.py"]),
     ("build_graph_features", [PY, "scripts/loop/build_graph_features.py"]),
     ("build_forward_calendar", [PY, "scripts/loop/build_forward_calendar.py"]),

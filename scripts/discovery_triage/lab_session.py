@@ -66,17 +66,23 @@ SYSTEM_PROMPT = (
     "You are a quarantined research physicist inside ASADO's Discovery Lab. You are shown an "
     "OUTCOME-BLIND, point-in-time snapshot of cross-country state surfaces. You DO NOT see "
     "forward returns, PnL, harness verdicts, optimizer outputs, or any realized outcome.\n\n"
-    "Your job is to emit DRAFTS ONLY — non-obvious, falsifiable hypotheses about where price may "
-    "not yet reflect what the data shows. You may NOT claim anything is validated, proven, a trade "
-    "recommendation, or a high-confidence opportunity. Every card MUST include a concrete "
-    "falsification block and a self-falsification block (your strongest objection, the easiest way "
-    "this is leakage, the first probe to run, and the condition under which you would abandon it).\n\n"
-    "Emit 1-6 cards via the emit_discovery_cards tool. Be specific and cite the snapshot."
+    "Your job is to emit DRAFTS ONLY — non-obvious, falsifiable detector-family hypotheses about "
+    "where price may not yet reflect what the data shows. You may NOT claim anything is validated, "
+    "proven, a trade recommendation, or a high-confidence opportunity.\n\n"
+    "Every card MUST include, with NON-EMPTY content:\n"
+    "  - members: 1+ proposed OBSERVABLE relationships the detector family would test.\n"
+    "  - falsification.fatal_if: 1+ conditions that, if true, KILL the idea (leakage, artifact).\n"
+    "  - falsification.must_check: 1+ checks required before this could become a claim.\n"
+    "  - mythos_self_falsification.strongest_counterargument: your best case AGAINST your own idea.\n"
+    "  - mythos_self_falsification.what_would_change_my_mind: 1+ concrete things that would.\n\n"
+    "Emit 1-6 cards via the emit_discovery_cards tool. Be specific and cite the snapshot numbers."
 )
+
+_STR_ARRAY = {"type": "array", "minItems": 1, "items": {"type": "string"}}
 
 CARD_TOOL = {
     "name": "emit_discovery_cards",
-    "description": "Emit 1-6 outcome-blind discovery drafts (never validated claims).",
+    "description": "Emit 1-6 outcome-blind detector-family drafts (never validated claims).",
     "input_schema": {
         "type": "object",
         "properties": {
@@ -86,33 +92,78 @@ CARD_TOOL = {
                     "type": "object",
                     "properties": {
                         "object_type": {"type": "string",
-                                        "enum": ["contradiction_card", "detector_family_draft", "mechanism_graph"]},
-                        "entity": {"type": "string", "description": "country or family name"},
+                                        "enum": ["detector_family_draft", "contradiction_card", "mechanism_graph"]},
+                        "family_name": {"type": "string", "description": "country or detector-family name"},
                         "summary": {"type": "string", "description": "the non-obvious observation/idea"},
+                        "members": {"type": "array", "minItems": 1,
+                                    "items": {"type": "string"},
+                                    "description": "proposed observable relationships to test"},
                         "falsification": {
                             "type": "object",
-                            "properties": {"near_term": {"type": "array", "items": {"type": "string"}},
-                                           "structural": {"type": "array", "items": {"type": "string"}},
-                                           "data_quality": {"type": "array", "items": {"type": "string"}}},
-                            "required": ["near_term"],
+                            "properties": {"fatal_if": _STR_ARRAY, "must_check": _STR_ARRAY},
+                            "required": ["fatal_if", "must_check"],
                         },
                         "mythos_self_falsification": {
                             "type": "object",
-                            "properties": {"strongest_objection": {"type": "string"},
-                                           "easiest_way_this_is_leakage": {"type": "string"},
-                                           "first_probe_to_run": {"type": "string"},
-                                           "condition_under_which_i_would_abandon_this": {"type": "string"}},
-                            "required": ["strongest_objection", "easiest_way_this_is_leakage",
-                                         "first_probe_to_run", "condition_under_which_i_would_abandon_this"],
+                            "properties": {"strongest_counterargument": {"type": "string"},
+                                           "what_would_change_my_mind": _STR_ARRAY},
+                            "required": ["strongest_counterargument", "what_would_change_my_mind"],
                         },
                     },
-                    "required": ["object_type", "entity", "summary", "falsification", "mythos_self_falsification"],
+                    "required": ["object_type", "family_name", "summary", "members",
+                                 "falsification", "mythos_self_falsification"],
                 },
             }
         },
         "required": ["cards"],
     },
 }
+
+
+def normalize_card(card: dict[str, Any]) -> dict[str, Any]:
+    """Migrate legacy Claude card shapes into the canonical contract (TR2): map
+    entity->family_name, near_term->fatal_if, strongest_objection->strongest_counterargument,
+    and {condition_*, first_probe_to_run}->what_would_change_my_mind. Idempotent."""
+    c = dict(card)
+    c["family_name"] = c.get("family_name") or c.get("entity") or "unknown"
+    members = c.get("members") or ([c["summary"]] if c.get("summary") else [])
+    c["members"] = [m for m in members if m]
+
+    fal = dict(c.get("falsification") or {})
+    if not fal.get("fatal_if"):
+        fal["fatal_if"] = fal.get("near_term") or []
+    if not fal.get("must_check"):
+        fal["must_check"] = fal.get("structural") or fal.get("data_quality") or []
+    c["falsification"] = fal
+
+    sf = dict(c.get("mythos_self_falsification") or {})
+    if not sf.get("strongest_counterargument"):
+        sf["strongest_counterargument"] = sf.get("strongest_objection") or ""
+    if not sf.get("what_would_change_my_mind"):
+        sf["what_would_change_my_mind"] = [x for x in (
+            sf.get("condition_under_which_i_would_abandon_this"), sf.get("first_probe_to_run")) if x]
+    c["mythos_self_falsification"] = sf
+    return c
+
+
+def validate_card(card: dict[str, Any]) -> Optional[str]:
+    """Return a rejection reason if the (normalized) card violates the strict contract,
+    else None. Independent of the tool schema (FR2: enforce again post-response)."""
+    if not card.get("family_name"):
+        return "missing family_name"
+    if not card.get("members"):
+        return "empty members"
+    fal = card.get("falsification") or {}
+    if not fal.get("fatal_if") or not fal.get("must_check"):
+        return "falsification.fatal_if and must_check must both be non-empty"
+    sf = card.get("mythos_self_falsification") or {}
+    if not sf.get("strongest_counterargument") or not sf.get("what_would_change_my_mind"):
+        return "self-falsification strongest_counterargument and what_would_change_my_mind required"
+    blob = " ".join([str(card.get("summary", "")), " ".join(map(str, card.get("members", []))),
+                     json.dumps(fal)])
+    if _FORBIDDEN.search(blob):
+        return "forbidden validation/performance language"
+    return None
 
 
 def _searches() -> dict[str, dict[str, Any]]:
@@ -256,13 +307,11 @@ def run_lab_session(
 
     drafts: list[dict[str, Any]] = []
     dropped: list[dict[str, Any]] = []
-    for card in cards:
-        text = f"{card.get('summary', '')} {json.dumps(card.get('falsification', {}))}"
-        if _FORBIDDEN.search(text):
-            dropped.append({"reason": "forbidden_vocabulary", "entity": card.get("entity")})
-            continue
-        if not card.get("falsification") or not card.get("mythos_self_falsification"):
-            dropped.append({"reason": "missing_falsification_block", "entity": card.get("entity")})
+    for raw in cards:
+        card = normalize_card(raw)            # migrate legacy shapes (TR2)
+        reason = validate_card(card)          # strict post-response validation (FR2)
+        if reason:
+            dropped.append({"reason": reason, "family_name": card.get("family_name")})
             continue
 
         def build(draft_id: str, _card=card) -> dict[str, Any]:
@@ -270,14 +319,14 @@ def run_lab_session(
                 "object_type": "detector_family_draft",  # the journal draft envelope
                 "card_type": _card.get("object_type"),    # the card's semantic type
                 "draft_id": draft_id,
-                "family_name": _card.get("entity", "unknown"),
-                "members": [_card.get("summary", "")[:240]],
+                "family_name": _card.get("family_name"),
+                "summary": _card.get("summary", ""),
+                "members": _card.get("members"),
                 "source_look_id": look_id,
                 "certification_route": route,
                 "epistemic_status": epistemic,
                 "falsification": _card.get("falsification"),
                 "mythos_self_falsification": _card.get("mythos_self_falsification"),
-                "card": _card,  # keep the full card for the docket/cockpit
             }
 
         draft_id, record = append_with_minted_id(

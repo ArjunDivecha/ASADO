@@ -503,7 +503,10 @@ function applyCosActions(actions){
 }
 async function ask(t){
   pushMsg("you",t);
-  const localOnly=location.protocol==="file:"||location.port==="8791"||/(research desk|discovery lab|analog shelf|under triage|blind ruling|prospective|graveyard)/i.test(t);
+  // localOnly only when there is genuinely no API backend (file:// or the static-mock
+  // port 8791). Do NOT force Research-Desk/Discovery-Lab questions to the local router
+  // when served by the FastAPI cos_chat_service — those should reach Opus too.
+  const localOnly=location.protocol==="file:"||location.port==="8791";
   if(localOnly){return route(t)}
   const pending=pushMsg("cos",`Asking Opus through the ASADO evidence layer… <span class="cite">/api/cos/chat</span>`);
   const bub=pending.querySelector(".bub");

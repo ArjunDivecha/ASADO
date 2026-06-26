@@ -48,5 +48,7 @@ echo ""
 echo "  Cockpit ready →  http://localhost:${PORT}/cockpit_live.html"
 echo "  (open it, then click the 'Discovery Lab' tab in the focus panel)"
 echo "  Ctrl-C to stop the server."
-cd "$REPO/cos_mockups"
-exec "$PY" -m http.server "$PORT"
+cd "$REPO"
+# Serve via the FastAPI Chief-of-Staff service: it mounts the static cockpit AND the
+# /api/cos/chat endpoint (Opus). Plain http.server cannot answer /api/cos/chat (501).
+exec "$PY" -m uvicorn cos_mockups.cos_chat_service:app --host 127.0.0.1 --port "$PORT"

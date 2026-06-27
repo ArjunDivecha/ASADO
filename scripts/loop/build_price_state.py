@@ -179,10 +179,14 @@ def build(as_of: str | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
                                  ["CONS_GDP_REV3M_12M", "CONS_CPI_REV3M_12M"], as_ts)
             eco = latest_signal(con, "eco_surprise_signals", country,
                                 ["ECO_GROWTH_SURPRISE_Z", "ECO_INFL_SURPRISE_Z"], as_ts)
-            # NOTE (red-team 2026-06-26 / C1): combiner_scores_daily (COMBINER_RIDGE_DAILY_V1)
-            # is a Ridge fit on FORWARD returns — a forbidden outcome surface. It must NOT be
-            # embedded in source_freshness_json, which is allowlisted into the outcome-blind
-            # Discovery Lab snapshot via surface_loader. Removed from the freshness blob below.
+            # combiner_scores_daily (COMBINER_RIDGE_DAILY_V1) is a Ridge fit on FORWARD
+            # returns. It is still computed here for the price_state_surface 'live_signal'
+            # row (a NON-allowlisted table the outcome-blind Discovery Lab cannot read —
+            # price_state_surface is not in surface_loader.ALLOWED_SURFACES). Red-team C1
+            # (2026-06-26) removed it from source_freshness_json below, which IS allowlisted
+            # into the Lab snapshot; it must never go back into the freshness blob.
+            comb = latest_signal(con, "combiner_scores_daily", country,
+                                 ["COMBINER_RIDGE_DAILY_V1"], as_ts)
 
             equity_state = {"return_5d": c5, "return_21d": c21, "return_63d": c63, "return_21d_z": c21_z}
             etf_state = {"ticker": ticker, "alternates": alternates, "return_5d": e5, "return_21d": e21,

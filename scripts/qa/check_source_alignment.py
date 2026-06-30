@@ -349,10 +349,15 @@ def check_warehouse_date_coverage(rep: Report, con, tables: dict[str, list[str]]
     except Exception as exc:  # noqa: BLE001
         rep.add("WARN", "unified_panel date-coverage query failed", str(exc)[:160])
         return
-    hi_max = pd.to_datetime(df["hi"]).max()
-    for _, r in df.iterrows():
+    # Clamp each source's max date to today: projection feeds (demographics_dip
+    # runs to 2100, imf_weo to 2031) carry forecast horizons, not real data
+    # recency, and would otherwise make every actual feed look ~74yr stale.
+    today = pd.Timestamp.now().normalize()
+    hi_eff = pd.to_datetime(df["hi"]).clip(upper=today)
+    hi_max = hi_eff.max()
+    for (_, r), hi_clamped in zip(df.iterrows(), hi_eff):
         grain = "monthly" if r["som_frac"] > 0.95 else ("daily/mixed" if r["som_frac"] < 0.2 else "mixed")
-        staleness = (hi_max - pd.to_datetime(r["hi"])).days
+        staleness = (hi_max - hi_clamped).days
         level = "WARN" if staleness > 120 else "PASS"
         rep.add(level, f"source '{r['source']}': {r['lo']} .. {r['hi']} "
                        f"({int(r['ndates'])} dates, {grain})",

@@ -54,7 +54,8 @@
       "wb": "CHN",
       "fred_epu": "CHNEPU",
       "gpr": "CHN",
-      "epu_col": "China"
+      "epu_col": "China",
+      "gdelt_label": "China A"
     },
     "ChinaH": {
       "iso2": "CN",
@@ -65,7 +66,8 @@
       "wb": "CHN",
       "fred_epu": "CHNEPU",
       "gpr": "CHN",
-      "epu_col": "China"
+      "epu_col": "China",
+      "gdelt_label": "China H"
     },
     "Denmark": {
       "iso2": "DK",
@@ -197,7 +199,8 @@
       "wb": "USA",
       "fred_epu": "USEPUINDXD",
       "gpr": "USA",
-      "epu_col": "United States"
+      "epu_col": "United States",
+      "gdelt_label": "U.S. NASDAQ"
     },
     "Netherlands": {
       "iso2": "NL",

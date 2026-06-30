@@ -98,12 +98,22 @@ T2_UNIVERSE = {
 
 # GDELT display labels -> canonical T2 names. GDELT pivots on country_iso3 and
 # uses its own header labels (see scripts/gdelt_ingest/export_country_sentiment_workbook.py
-# COUNTRY_BUCKETS); these three differ from the T2 Master headers.
-GDELT_TO_T2 = {
-    "China A": "ChinaA",
-    "China H": "ChinaH",
-    "U.S. NASDAQ": "NASDAQ",
-}
+# COUNTRY_BUCKETS); a few differ from the T2 Master headers. Derived from the
+# single source of truth (config/country_mapping.json `gdelt_label` fields) so
+# this checker can never drift from the live gdelt_normalize.py remap.
+def _load_gdelt_to_t2(mapping_path: Path = CONFIG_PATH) -> dict[str, str]:
+    try:
+        payload = json.loads(Path(mapping_path).read_text())
+    except (OSError, ValueError):
+        return {}
+    return {
+        meta["gdelt_label"]: country
+        for country, meta in payload.get("countries", {}).items()
+        if meta.get("gdelt_label")
+    }
+
+
+GDELT_TO_T2 = _load_gdelt_to_t2()
 
 # Sleeves that share an underlying sovereign. A source that keys on ISO3 cannot
 # distinguish the members of each group.

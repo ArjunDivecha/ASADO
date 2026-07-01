@@ -1,0 +1,138 @@
+{
+  "status": "complete",
+  "overall_status": "FAIL - stopped at Gate 3 own-country lead",
+  "features": [
+    "12-1MTR_CS",
+    "REER_CS",
+    "RSI14_CS",
+    "Best PE _CS",
+    "Inflation_CS",
+    "Best ROE_CS"
+  ],
+  "countries": [
+    "Australia",
+    "Brazil",
+    "Canada",
+    "Chile",
+    "ChinaA",
+    "ChinaH",
+    "Denmark",
+    "France",
+    "Germany",
+    "Hong Kong",
+    "India",
+    "Indonesia",
+    "Italy",
+    "Japan",
+    "Korea",
+    "Malaysia",
+    "Mexico",
+    "NASDAQ",
+    "Netherlands",
+    "Philippines",
+    "Poland",
+    "Saudi Arabia",
+    "Singapore",
+    "South Africa",
+    "Spain",
+    "Sweden",
+    "Switzerland",
+    "Taiwan",
+    "Thailand",
+    "Turkey",
+    "U.K.",
+    "U.S.",
+    "US SmallCap",
+    "Vietnam"
+  ],
+  "conventions": {
+    "return_alignment": "signal[t] pairs with build_forward_returns 1MRet[t]/3MRet[t]",
+    "standardization": "per-country expanding z-score, min 24 months",
+    "walk_forward": "annual refit; train on dates before prediction year",
+    "adverse_state_mapping": "training-window forward 1MRet state mean, rank 0 is worst/adverse"
+  },
+  "gates": {
+    "gate1_persistence": {
+      "pass": true,
+      "median_weighted_persist_1m": 0.9258944912273717,
+      "adverse_duration_ge_3m_share": 1.0,
+      "thresholds": {
+        "median_weighted_persist_1m_min": 0.75,
+        "adverse_duration_ge_3m_share_min": 0.6
+      }
+    },
+    "gate2_volatility": {
+      "pass": true,
+      "median_corr": 0.12397045852815029,
+      "median_abs_corr": 0.15169728877710606,
+      "volatility_state_flag": false,
+      "threshold_flag_abs_corr_gt": 0.7
+    },
+    "gate3_lead": {
+      "pass": false,
+      "best_signal_for_gate": "dP_adverse",
+      "metric_summaries": [
+        {
+          "signal": "P_adverse",
+          "n_valid": 34,
+          "n_negative_1m": 11,
+          "sign_test_p_1m": 0.9878467449452728,
+          "median_spearman_1m": 0.0402780584411433,
+          "sign_condition_pass": false,
+          "median_condition_pass": false
+        },
+        {
+          "signal": "dP_adverse",
+          "n_valid": 34,
+          "n_negative_1m": 17,
+          "sign_test_p_1m": 0.5679168797796592,
+          "median_spearman_1m": -0.0032398818101785315,
+          "sign_condition_pass": false,
+          "median_condition_pass": false
+        }
+      ],
+      "aggregate_spread_bottom_minus_top_P_adverse_1MRet_mean": -0.0068180983362180385,
+      "aggregate_spread_bottom_minus_top_P_adverse_1MRet_median": -0.004658928721680524,
+      "spread_condition_pass": false,
+      "thresholds": {
+        "negative_country_count_min": 23,
+        "sign_test_p_max": 0.05,
+        "median_spearman_max": -0.1,
+        "spread_mean_min_decimal_return": 0.005
+      }
+    }
+  },
+  "full_sample_diagnostic": {
+    "pass": false,
+    "best_signal_for_gate": "dP_adverse",
+    "metric_summaries": [
+      {
+        "signal": "P_adverse",
+        "n_valid": 34,
+        "n_negative_1m": 28,
+        "sign_test_p_1m": 9.756279177963734e-05,
+        "median_spearman_1m": -0.028296326573146537,
+        "sign_condition_pass": true,
+        "median_condition_pass": false
+      },
+      {
+        "signal": "dP_adverse",
+        "n_valid": 34,
+        "n_negative_1m": 23,
+        "sign_test_p_1m": 0.028806336456909776,
+        "median_spearman_1m": -0.04953734949924627,
+        "sign_condition_pass": true,
+        "median_condition_pass": false
+      }
+    ],
+    "aggregate_spread_bottom_minus_top_P_adverse_1MRet_mean": 0.006669557652684303,
+    "aggregate_spread_bottom_minus_top_P_adverse_1MRet_median": 0.004684949538831577,
+    "spread_condition_pass": true,
+    "thresholds": {
+      "negative_country_count_min": 23,
+      "sign_test_p_max": 0.05,
+      "median_spearman_max": -0.1,
+      "spread_mean_min_decimal_return": 0.005
+    }
+  }
+}

@@ -1,0 +1,77 @@
+# Source alignment report
+
+- [PASS] T2 uses 34 labels, all present in canonical config — (config lists 43 total; 9 extra not in T2 universe)
+- [WARN] GDELT raw labels differ from T2 (rename required before join) — GDELT-only: ['China A', 'China H', 'U.S. NASDAQ']
+- [PASS] GDELT reconciles to T2 country set after known rename map — map={'China A': 'ChinaA', 'China H': 'ChinaH', 'U.S. NASDAQ': 'NASDAQ'}
+- [PASS] T2 dates are all monthly first-of-month — 2000-02-01 .. 2026-04-01 (315 months)
+- [PASS] GDELT dates are all monthly first-of-month — 2015-03-01 .. 2026-04-01 (134 months)
+- [PASS] GDELT date axis is a clean subset of T2 (full overlap) — overlap = 134 months
+- [PASS] T2 distinguishes China sovereign sleeves — ['ChinaA', 'ChinaH']
+- [PASS] T2 distinguishes USA sovereign sleeves — ['U.S.', 'NASDAQ', 'US SmallCap']
+- [WARN] GDELT broadcasts ONE value across China sovereign sleeves (no sleeve resolution) — ['China A', 'China H'] are bit-identical -> a date x country join duplicates sentiment
+- [WARN] GDELT broadcasts ONE value across USA sovereign sleeves (no sleeve resolution) — ['U.S.', 'U.S. NASDAQ', 'US SmallCap'] are bit-identical -> a date x country join duplicates sentiment
+- [PASS] All 58 T2 sheets share one identical date x country frame
+- [PASS] bloomberg_factors: country labels clean — 34 countries, all in the 34 T2 universe
+- [PASS] country_factor_attribution: country labels clean — 34 countries, all in the 34 T2 universe
+- [WARN] country_reference: 9 off-universe country labels — e.g. ['Austria', 'Belgium', 'Finland', 'Greece', 'Ireland', 'New Zealand', 'Norway', 'Portugal', 'Russian Federation']
+- [PASS] daily_calendar: country labels clean — 34 countries, all in the 34 T2 universe
+- [WARN] demographics_dip: 9 off-universe country labels — e.g. ['Austria', 'Belgium', 'Finland', 'Greece', 'Ireland', 'New Zealand', 'Norway', 'Portugal', 'Russian Federation']
+- [WARN] extended_factors: 9 off-universe country labels — e.g. ['Austria', 'Belgium', 'Finland', 'Greece', 'Ireland', 'New Zealand', 'Norway', 'Portugal', 'Russian Federation']
+- [WARN] external_factors: 9 off-universe country labels — e.g. ['Austria', 'Belgium', 'Finland', 'Greece', 'Ireland', 'New Zealand', 'Norway', 'Portugal', 'Russian Federation']
+- [PASS] factor_top20_membership: country labels clean — 34 countries, all in the 34 T2 universe
+- [WARN] feature_panel: 9 off-universe country labels — e.g. ['Austria', 'Belgium', 'Finland', 'Greece', 'Ireland', 'New Zealand', 'Norway', 'Portugal', 'Russian Federation']
+- [PASS] gdelt_factors_daily: country labels clean — 34 countries, all in the 34 T2 universe
+- [PASS] gdelt_panel: country labels clean — 34 countries, all in the 34 T2 universe
+- [WARN] imf_factors: 9 off-universe country labels — e.g. ['Austria', 'Belgium', 'Finland', 'Greece', 'Ireland', 'New Zealand', 'Norway', 'Portugal', 'Russian Federation']
+- [PASS] jst_macrohistory: country labels clean — 13 countries, all in the 34 T2 universe; missing 21: ['Brazil', 'Chile', 'ChinaA', 'ChinaH', 'Hong Kong', 'India']
+- [WARN] macrostructure_factors: 9 off-universe country labels — e.g. ['Austria', 'Belgium', 'Finland', 'Greece', 'Ireland', 'New Zealand', 'Norway', 'Portugal', 'Russian Federation']
+- [WARN] normalized_panel: 9 off-universe country labels — e.g. ['Austria', 'Belgium', 'Finland', 'Greece', 'Ireland', 'New Zealand', 'Norway', 'Portugal', 'Russian Federation']
+- [PASS] predmkt_country_spillover: country labels clean — 25 countries, all in the 34 T2 universe; missing 9: ['Denmark', 'France', 'Hong Kong', 'Italy', 'Malaysia', 'Netherlands']
+- [WARN] predmkt_signals_daily: 1 off-universe country labels — e.g. ['__GLOBAL__']
+- [PASS] t2_factors_daily: country labels clean — 34 countries, all in the 34 T2 universe
+- [PASS] t2_factors_monthly_from_daily: country labels clean — 34 countries, all in the 34 T2 universe
+- [PASS] t2_levels_daily: country labels clean — 34 countries, all in the 34 T2 universe
+- [PASS] t2_master: country labels clean — 34 countries, all in the 34 T2 universe
+- [PASS] t2_raw: country labels clean — 34 countries, all in the 34 T2 universe
+- [WARN] unified_panel: 9 off-universe country labels — e.g. ['Austria', 'Belgium', 'Finland', 'Greece', 'Ireland', 'New Zealand', 'Norway', 'Portugal', 'Russian Federation']
+- [WARN] source 'bis_credit': 2000-03-01 00:00:00 .. 2025-09-01 00:00:00 (103 dates, monthly) — 302d behind newest source
+- [WARN] source 'bis_debt_service': 2000-03-01 00:00:00 .. 2025-09-01 00:00:00 (103 dates, monthly) — 302d behind newest source
+- [PASS] source 'bis_policy_rate': 2000-01-01 00:00:00 .. 2026-06-01 00:00:00 (318 dates, monthly)
+- [WARN] source 'bis_property': 2000-03-01 00:00:00 .. 2025-12-01 00:00:00 (104 dates, monthly) — 211d behind newest source
+- [PASS] source 'bis_reer': 2000-01-01 00:00:00 .. 2026-04-01 00:00:00 (316 dates, monthly)
+- [PASS] source 'bloomberg': 1975-12-01 00:00:00 .. 2026-06-01 00:00:00 (343 dates, monthly)
+- [PASS] source 'demographics_dip': 1950-12-01 00:00:00 .. 2100-12-01 00:00:00 (151 dates, monthly)
+- [PASS] source 'ecb_fx': 2000-01-01 00:00:00 .. 2026-05-01 00:00:00 (317 dates, monthly)
+- [WARN] source 'eia': 2000-12-01 00:00:00 .. 2025-12-01 00:00:00 (26 dates, monthly) — 211d behind newest source
+- [WARN] source 'epu': 1985-01-01 00:00:00 .. 2025-11-01 00:00:00 (491 dates, monthly) — 241d behind newest source
+- [WARN] source 'faostat': 2010-12-01 00:00:00 .. 2024-12-01 00:00:00 (15 dates, monthly) — 576d behind newest source
+- [PASS] source 'fred': 2000-01-01 00:00:00 .. 2026-05-01 00:00:00 (317 dates, monthly)
+- [PASS] source 'gdelt': 2015-09-01 00:00:00 .. 2026-07-01 00:00:00 (131 dates, monthly)
+- [PASS] source 'gpr': 1985-01-01 00:00:00 .. 2026-05-01 00:00:00 (497 dates, monthly)
+- [WARN] source 'ilostat': 2000-12-01 00:00:00 .. 2025-12-01 00:00:00 (26 dates, monthly) — 211d behind newest source
+- [WARN] source 'imf_bop': 2005-12-01 00:00:00 .. 2024-12-01 00:00:00 (20 dates, monthly) — 576d behind newest source
+- [PASS] source 'imf_cpi': 2000-01-01 00:00:00 .. 2026-04-01 00:00:00 (316 dates, monthly)
+- [PASS] source 'imf_er': 2000-01-01 00:00:00 .. 2026-05-01 00:00:00 (317 dates, monthly)
+- [WARN] source 'imf_fsi': 2001-03-01 00:00:00 .. 2025-12-01 00:00:00 (100 dates, monthly) — 211d behind newest source
+- [WARN] source 'imf_itg': 2000-01-01 00:00:00 .. 2026-03-01 00:00:00 (315 dates, monthly) — 121d behind newest source
+- [WARN] source 'imf_ls': 2000-01-01 00:00:00 .. 2026-03-01 00:00:00 (315 dates, monthly) — 121d behind newest source
+- [PASS] source 'imf_mfs_cbs': 1997-12-01 00:00:00 .. 2026-04-01 00:00:00 (341 dates, monthly)
+- [PASS] source 'imf_mfs_ir': 2000-01-01 00:00:00 .. 2026-04-01 00:00:00 (316 dates, monthly)
+- [PASS] source 'imf_weo': 1980-12-01 00:00:00 .. 2031-12-01 00:00:00 (52 dates, monthly)
+- [PASS] source 'macrostructure_derived': 1997-12-01 00:00:00 .. 2026-06-01 00:00:00 (325 dates, monthly)
+- [WARN] source 'ndgain': 1995-12-01 00:00:00 .. 2023-12-01 00:00:00 (29 dates, monthly) — 942d behind newest source
+- [PASS] source 'oecd': 2000-01-01 00:00:00 .. 2026-05-01 00:00:00 (317 dates, monthly)
+- [PASS] source 'oecd_bci': 2000-01-01 00:00:00 .. 2026-05-01 00:00:00 (317 dates, monthly)
+- [PASS] source 'oecd_cci': 2000-01-01 00:00:00 .. 2026-05-01 00:00:00 (317 dates, monthly)
+- [WARN] source 'oecd_household_dashboard': 2010-12-01 00:00:00 .. 2025-12-01 00:00:00 (16 dates, monthly) — 211d behind newest source
+- [WARN] source 'oecd_institutional_investors': 2010-03-01 00:00:00 .. 2025-12-01 00:00:00 (64 dates, monthly) — 211d behind newest source
+- [PASS] source 'ofac': 2026-06-01 00:00:00 .. 2026-06-01 00:00:00 (1 dates, monthly)
+- [WARN] source 'portfolio_ownership': 1997-12-01 00:00:00 .. 2024-12-01 00:00:00 (25 dates, monthly) — 576d behind newest source
+- [WARN] source 'qpsd': 1995-03-01 00:00:00 .. 2025-12-01 00:00:00 (124 dates, monthly) — 211d behind newest source
+- [PASS] source 't2': 2000-02-01 00:00:00 .. 2026-06-01 00:00:00 (317 dates, monthly)
+- [PASS] source 't2_raw': 2000-02-01 00:00:00 .. 2026-06-01 00:00:00 (317 dates, monthly)
+- [WARN] source 'undp_hdi': 1990-12-01 00:00:00 .. 2023-12-01 00:00:00 (34 dates, monthly) — 942d behind newest source
+- [WARN] source 'worldbank': 2000-12-01 00:00:00 .. 2025-12-01 00:00:00 (26 dates, monthly) — 211d behind newest source
+- [PASS] sentinel Australia SOV_10Y_YIELD_PCT = 4.748 (expected 4.767 +/- 2.0)
+- [PASS] sentinel Canada SOV_10Y_YIELD_PCT = 3.384 (expected 3.385 +/- 2.0)
+- [PASS] pair 'sov10y_loop_vs_bbg': all 32 countries agree (max gap 1.095 <= 2.0)

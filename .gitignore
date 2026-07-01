@@ -49,6 +49,7 @@ Thumbs.db
 # Editor / tool local state
 .cursor/hooks/state/
 .playwright-cli/
+.playwright-mcp/
 Data/work/
 
 # Discovery Triage runtime journal data (append-only ledgers + frozen artifacts);

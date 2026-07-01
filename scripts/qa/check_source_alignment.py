@@ -1,0 +1,511 @@
+"""
+=============================================================================
+SCRIPT NAME: scripts/qa/check_source_alignment.py
+=============================================================================
+
+INPUT FILES:
+- Data/T2 Master.xlsx       :: original T2 country-factor source workbook
+- Data/GDELT.xlsx           :: original GDELT country-sentiment source workbook
+- config/country_mapping.json :: canonical country name -> identifier crosswalk
+- Data/asado.duckdb         :: (optional) main warehouse; enables warehouse checks
+- Data/loop/asado_loop.duckdb :: (optional) loop DB; enables loop-vs-warehouse pairs
+- config/cross_source.yaml  :: (optional) curated sentinels + redundant-source pairs
+
+OUTPUT:
+- Console report (one line per check, PASS / WARN / FAIL)
+- Optional markdown report via --out <path>
+
+VERSION: 1.0
+LAST UPDATED: 2026-06-30
+AUTHOR: Arjun Divecha (built by agent session)
+
+DESCRIPTION:
+Stand-alone alignment / reconciliation check. With only the repo workbooks
+present (a fresh GitHub clone — asado.duckdb is gitignored) it runs the
+WORKBOOK CHECKS. When the warehouse is present (running locally in Windsurf)
+it ALSO runs the WAREHOUSE CHECKS.
+
+WORKBOOK CHECKS (always; T2 Master.xlsx + GDELT.xlsx):
+  1. COUNTRY NAMING  - the exact country label strings used by each source,
+     and whether they reconcile to the canonical T2 names after a known
+     rename map. Mismatched labels are the classic silent-join bug.
+  2. DATE GRAIN      - that every source is monthly first-of-month, and that
+     one source's date axis is a clean subset of the other's (full overlap).
+  3. SLEEVE RESOLUTION - whether a source actually distinguishes the
+     market sleeves (ChinaA vs ChinaH; U.S. vs NASDAQ vs US SmallCap) or
+     broadcasts one sovereign value to all of them. GDELT broadcasts; T2
+     does not. A date x country join is then duplicating, not aligning.
+  4. INTERNAL CONSISTENCY - that every sheet inside T2 Master shares one
+     identical (date axis x country columns) frame.
+
+WAREHOUSE CHECKS (only when Data/asado.duckdb exists):
+  5. COUNTRY LABELS PER TABLE - for every tidy table carrying a `country`
+     column, the distinct country strings vs the canonical 34-name T2
+     universe. Off-universe labels = naming drift / a source not remapped.
+  6. DATE COVERAGE PER SOURCE - min/max date, distinct-date count and the
+     monthly-vs-daily grain per `source` value (in unified_panel when present,
+     else per table). Surfaces stale / short / mis-grained feeds.
+  7. CROSS-SOURCE VALUE AGREEMENT - the curated redundant-series PAIRS and
+     SENTINELS from config/cross_source.yaml (the GSAB defense): two
+     independent sources for the same series must agree per country, and
+     hand-verified anchors must hold. A large per-country gap = a series
+     tracking the wrong entity.
+
+Exit code is non-zero if any FAIL-level check trips, so it can gate CI / a
+local pre-commit.
+
+DEPENDENCIES:
+- pandas, openpyxl (workbook checks); duckdb, pyyaml (warehouse checks)
+
+USAGE:
+  python scripts/qa/check_source_alignment.py
+  python scripts/qa/check_source_alignment.py --out Data/reports/source_alignment.md
+  # warehouse checks auto-run if Data/asado.duckdb exists; override paths:
+  python scripts/qa/check_source_alignment.py --duckdb Data/asado.duckdb \
+      --loop-duckdb Data/loop/asado_loop.duckdb
+=============================================================================
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+import pandas as pd
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+DATA_DIR = BASE_DIR / "Data"
+CONFIG_PATH = BASE_DIR / "config" / "country_mapping.json"
+T2_WORKBOOK = DATA_DIR / "T2 Master.xlsx"
+GDELT_WORKBOOK = DATA_DIR / "GDELT.xlsx"
+DUCKDB_PATH = DATA_DIR / "asado.duckdb"
+LOOP_DUCKDB_PATH = DATA_DIR / "loop" / "asado_loop.duckdb"
+CROSS_SOURCE_YAML = BASE_DIR / "config" / "cross_source.yaml"
+
+# The canonical 34-country T2 universe (authoritative for membership; see
+# scripts/loop/loopdb.py T2_UNIVERSE). config/country_mapping.json holds 43
+# names because non-T2 extras leak in from multi-country sources.
+T2_UNIVERSE = {
+    "Australia", "Brazil", "Canada", "Chile", "ChinaA", "ChinaH", "Denmark",
+    "France", "Germany", "Hong Kong", "India", "Indonesia", "Italy", "Japan",
+    "Korea", "Malaysia", "Mexico", "NASDAQ", "Netherlands", "Philippines",
+    "Poland", "Saudi Arabia", "Singapore", "South Africa", "Spain", "Sweden",
+    "Switzerland", "Taiwan", "Thailand", "Turkey", "U.K.", "U.S.",
+    "US SmallCap", "Vietnam",
+}
+
+# GDELT display labels -> canonical T2 names. GDELT pivots on country_iso3 and
+# uses its own header labels (see scripts/gdelt_ingest/export_country_sentiment_workbook.py
+# COUNTRY_BUCKETS); these three differ from the T2 Master headers.
+GDELT_TO_T2 = {
+    "China A": "ChinaA",
+    "China H": "ChinaH",
+    "U.S. NASDAQ": "NASDAQ",
+}
+
+# Sleeves that share an underlying sovereign. A source that keys on ISO3 cannot
+# distinguish the members of each group.
+SLEEVE_GROUPS = [
+    ("China sovereign", ["ChinaA", "ChinaH"]),
+    ("USA sovereign", ["U.S.", "NASDAQ", "US SmallCap"]),
+]
+
+
+class Report:
+    def __init__(self) -> None:
+        self.lines: list[str] = []
+        self.failed = False
+
+    def add(self, level: str, title: str, detail: str = "") -> None:
+        if level == "FAIL":
+            self.failed = True
+        line = f"[{level:4}] {title}"
+        if detail:
+            line += f"\n         {detail}"
+        self.lines.append(line)
+        print(line)
+
+    def to_markdown(self) -> str:
+        out = ["# Source alignment report", ""]
+        for line in self.lines:
+            out.append("- " + line.replace("\n         ", " — ").strip())
+        return "\n".join(out) + "\n"
+
+
+def _canonical_countries() -> list[str]:
+    cfg = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+    return list(cfg["countries"].keys())
+
+
+def _first_col_to_date_index(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.rename(columns={df.columns[0]: "date"})
+    df["date"] = pd.to_datetime(df["date"])
+    return df.set_index("date")
+
+
+def _country_columns(df: pd.DataFrame) -> list[str]:
+    return [c for c in df.columns if not str(c).startswith("Unnamed")]
+
+
+def check_country_naming(rep: Report) -> tuple[set[str], set[str]]:
+    canon = set(_canonical_countries())
+    t2 = pd.read_excel(T2_WORKBOOK, "1MRet")
+    t2_cols = set(_country_columns(_first_col_to_date_index(t2)))
+    g = pd.read_excel(GDELT_WORKBOOK, "monthly_metronome")
+    g_cols = set(_country_columns(_first_col_to_date_index(g)))
+
+    # T2 vs canonical config
+    extra_canon = canon - t2_cols
+    if t2_cols - canon:
+        rep.add("FAIL", "T2 labels not in canonical config",
+                f"{sorted(t2_cols - canon)}")
+    else:
+        rep.add("PASS", f"T2 uses {len(t2_cols)} labels, all present in canonical config",
+                f"(config lists {len(canon)} total; {len(extra_canon)} extra not in T2 universe)")
+
+    # GDELT raw labels vs T2
+    raw_diff = g_cols - t2_cols
+    if raw_diff:
+        rep.add("WARN", "GDELT raw labels differ from T2 (rename required before join)",
+                f"GDELT-only: {sorted(raw_diff)}")
+    # GDELT after rename
+    g_mapped = {GDELT_TO_T2.get(c, c) for c in g_cols}
+    if g_mapped == t2_cols:
+        rep.add("PASS", "GDELT reconciles to T2 country set after known rename map",
+                f"map={GDELT_TO_T2}")
+    else:
+        rep.add("FAIL", "GDELT does NOT reconcile to T2 even after rename",
+                f"GDELT-only: {sorted(g_mapped - t2_cols)}; T2-only: {sorted(t2_cols - g_mapped)}")
+    return t2_cols, g_cols
+
+
+def check_date_grain(rep: Report) -> None:
+    t2 = _first_col_to_date_index(pd.read_excel(T2_WORKBOOK, "1MRet"))
+    g = _first_col_to_date_index(pd.read_excel(GDELT_WORKBOOK, "monthly_metronome"))
+
+    for name, df in (("T2", t2), ("GDELT", g)):
+        if (df.index.day == 1).all():
+            rep.add("PASS", f"{name} dates are all monthly first-of-month",
+                    f"{df.index.min().date()} .. {df.index.max().date()} ({len(df.index)} months)")
+        else:
+            bad = [d.date() for d in df.index[df.index.day != 1]][:5]
+            rep.add("FAIL", f"{name} has non-first-of-month dates", f"e.g. {bad}")
+
+    missing = g.index.difference(t2.index)
+    if len(missing) == 0:
+        rep.add("PASS", "GDELT date axis is a clean subset of T2 (full overlap)",
+                f"overlap = {len(g.index.intersection(t2.index))} months")
+    else:
+        rep.add("FAIL", "GDELT has dates absent from T2",
+                f"{[d.date() for d in missing][:10]}")
+
+
+def check_sleeve_resolution(rep: Report) -> None:
+    # T2: sleeves must be distinct return series.
+    t2 = _first_col_to_date_index(pd.read_excel(T2_WORKBOOK, "1MRet"))
+    for label, members in SLEEVE_GROUPS:
+        present = [m for m in members if m in t2.columns]
+        identical = all(t2[present[0]].equals(t2[m]) for m in present[1:])
+        if identical and len(present) > 1:
+            rep.add("WARN", f"T2 sleeves identical for {label} (expected distinct)",
+                    f"{present}")
+        else:
+            rep.add("PASS", f"T2 distinguishes {label} sleeves", f"{present}")
+
+    # GDELT: maps members to one ISO3 -> identical broadcast. Flag as caveat.
+    g = _first_col_to_date_index(pd.read_excel(GDELT_WORKBOOK, "monthly_metronome"))
+    inv = {v: k for k, v in GDELT_TO_T2.items()}
+    for label, members in SLEEVE_GROUPS:
+        g_members = [inv.get(m, m) for m in members]
+        present = [m for m in g_members if m in g.columns]
+        if len(present) <= 1:
+            continue
+        identical = all(g[present[0]].equals(g[m]) for m in present[1:])
+        if identical:
+            rep.add("WARN",
+                    f"GDELT broadcasts ONE value across {label} sleeves (no sleeve resolution)",
+                    f"{present} are bit-identical -> a date x country join duplicates sentiment")
+        else:
+            rep.add("PASS", f"GDELT distinguishes {label} sleeves", f"{present}")
+
+
+def check_t2_internal(rep: Report) -> None:
+    xl = pd.ExcelFile(T2_WORKBOOK)
+    base_dates: set | None = None
+    base_cols: set | None = None
+    issues: list[str] = []
+    for sheet in xl.sheet_names:
+        df = xl.parse(sheet)
+        if df.empty:
+            continue
+        try:
+            df = _first_col_to_date_index(df)
+        except (ValueError, TypeError):
+            continue
+        dates = set(df.index)
+        cols = set(_country_columns(df))
+        if base_dates is None:
+            base_dates, base_cols = dates, cols
+            continue
+        if cols != base_cols:
+            issues.append(f"{sheet}: country columns differ "
+                          f"(+{sorted(cols - base_cols)} -{sorted(base_cols - cols)})")
+        if dates != base_dates:
+            issues.append(f"{sheet}: date axis differs ({len(dates)} vs {len(base_dates)})")
+    if issues:
+        rep.add("FAIL", "T2 sheets are not internally aligned",
+                "; ".join(issues[:10]))
+    else:
+        rep.add("PASS",
+                f"All {len(xl.sheet_names)} T2 sheets share one identical date x country frame")
+
+
+# --------------------------------------------------------------------------- #
+# Warehouse checks (only run when Data/asado.duckdb is present)
+# --------------------------------------------------------------------------- #
+
+def _open_warehouse(duckdb_path: Path, loop_path: Path | None):
+    """Open a read-only connection.
+
+    If the loop DB exists we connect to it and ATTACH the main warehouse as
+    `asado` (matching scripts/loop/loopdb.py), so both worlds are queryable and
+    the loop-vs-warehouse pairs in cross_source.yaml resolve. Otherwise connect
+    straight to the main warehouse; loop-side checks then SKIP.
+
+    Returns (con, refs) where refs maps the cross_source.yaml `db` token
+    ('asado' / 'loop') to a SQL table-name prefix, or None if unavailable.
+    """
+    import duckdb
+
+    if loop_path and loop_path.exists():
+        con = duckdb.connect(str(loop_path), read_only=True)
+        con.execute(f"ATTACH '{duckdb_path}' AS asado (READ_ONLY)")
+        # loop tables live in the connected catalog (default search path)
+        return con, {"asado": "asado.", "loop": ""}
+    con = duckdb.connect(str(duckdb_path), read_only=True)
+    return con, {"asado": "", "loop": None}
+
+
+def _warehouse_tables(con) -> dict[str, list[str]]:
+    """Return {table_name: [column_names]} for tables in the main warehouse."""
+    rows = con.execute("SHOW ALL TABLES").fetchall()
+    cols = [d[0] for d in con.description]
+    db_i, name_i, colnames_i = cols.index("database"), cols.index("name"), cols.index("column_names")
+    out: dict[str, list[str]] = {}
+    for r in rows:
+        # main warehouse catalog is 'asado' when attached, else the file stem.
+        if r[db_i] in ("asado", DUCKDB_PATH.stem):
+            out[r[name_i]] = list(r[colnames_i])
+    return out
+
+
+def check_warehouse_country_labels(rep: Report, con, tables: dict[str, list[str]]) -> None:
+    checked = 0
+    for table, columns in sorted(tables.items()):
+        if "country" not in columns:
+            continue
+        checked += 1
+        try:
+            vals = {r[0] for r in con.execute(
+                f'SELECT DISTINCT country FROM {_MAIN_PREFIX}"{table}"').fetchall()
+                if r[0] is not None}
+        except Exception as exc:  # noqa: BLE001
+            rep.add("WARN", f"{table}: could not read country column", str(exc)[:160])
+            continue
+        off = sorted(vals - T2_UNIVERSE)
+        missing = sorted(T2_UNIVERSE - vals)
+        # gdelt_raw_daily is the deliberate 249-country off-universe bridge.
+        if not off:
+            detail = f"{len(vals)} countries, all in the 34 T2 universe"
+            if missing:
+                detail += f"; missing {len(missing)}: {missing[:6]}"
+            rep.add("PASS", f"{table}: country labels clean", detail)
+        elif table == "gdelt_raw_daily":
+            rep.add("PASS", f"{table}: {len(off)} off-universe labels (expected 249-country bridge)")
+        else:
+            rep.add("WARN", f"{table}: {len(off)} off-universe country labels",
+                    f"e.g. {off[:10]}")
+    if checked == 0:
+        rep.add("WARN", "No warehouse tables with a `country` column found")
+
+
+def check_warehouse_date_coverage(rep: Report, con, tables: dict[str, list[str]]) -> None:
+    if "unified_panel" in tables and "source" in tables["unified_panel"]:
+        target, by = "unified_panel", "source"
+    else:
+        target, by = None, None
+    if target is None:
+        rep.add("WARN", "unified_panel not found; skipping per-source date coverage")
+        return
+    try:
+        df = con.execute(
+            f'SELECT {by} AS source, MIN(date) lo, MAX(date) hi, '
+            f'COUNT(DISTINCT date) ndates, '
+            f'AVG(CASE WHEN EXTRACT(day FROM date)=1 THEN 1 ELSE 0 END) som_frac '
+            f'FROM {_MAIN_PREFIX}"{target}" GROUP BY 1 ORDER BY 1'
+        ).fetchdf()
+    except Exception as exc:  # noqa: BLE001
+        rep.add("WARN", "unified_panel date-coverage query failed", str(exc)[:160])
+        return
+    # Clamp each source's max date to today: projection feeds (demographics_dip
+    # runs to 2100, imf_weo to 2031) carry forecast horizons, not real data
+    # recency, and would otherwise make every actual feed look ~74yr stale.
+    today = pd.Timestamp.now().normalize()
+    hi_eff = pd.to_datetime(df["hi"]).clip(upper=today)
+    hi_max = hi_eff.max()
+    for (_, r), hi_clamped in zip(df.iterrows(), hi_eff):
+        grain = "monthly" if r["som_frac"] > 0.95 else ("daily/mixed" if r["som_frac"] < 0.2 else "mixed")
+        staleness = (hi_max - hi_clamped).days
+        level = "WARN" if staleness > 120 else "PASS"
+        rep.add(level, f"source '{r['source']}': {r['lo']} .. {r['hi']} "
+                       f"({int(r['ndates'])} dates, {grain})",
+                f"{staleness}d behind newest source" if staleness > 120 else "")
+
+
+def check_cross_source_pairs(rep: Report, con, refs: dict[str, str | None]) -> None:
+    try:
+        import yaml
+    except ImportError:
+        rep.add("WARN", "pyyaml not installed; skipping cross_source.yaml checks")
+        return
+    if not CROSS_SOURCE_YAML.exists():
+        rep.add("WARN", f"{CROSS_SOURCE_YAML.name} not found; skipping curated checks")
+        return
+    cfg = yaml.safe_load(CROSS_SOURCE_YAML.read_text(encoding="utf-8"))
+
+    def ref(db: str, table: str) -> str | None:
+        prefix = refs.get(db)
+        if prefix is None:
+            return None
+        return f'{prefix}"{table}"'
+
+    # --- sentinels: most-recent value within recent_days vs expected +/- tol ---
+    for s in cfg.get("sentinels", []):
+        tbl = ref(s["db"], s["table"])
+        if tbl is None:
+            rep.add("WARN", f"sentinel {s['country']}/{s['variable']}: db '{s['db']}' unavailable")
+            continue
+        try:
+            row = con.execute(
+                f'SELECT value FROM {tbl} WHERE country = ? AND variable = ? '
+                f'AND date >= (CURRENT_DATE - INTERVAL {int(s.get("recent_days",60))} DAY) '
+                f'AND value IS NOT NULL ORDER BY date DESC LIMIT 1',
+                [s["country"], s["variable"]]).fetchone()
+        except Exception as exc:  # noqa: BLE001
+            rep.add("WARN", f"sentinel {s['country']}/{s['variable']} query failed", str(exc)[:160])
+            continue
+        if row is None:
+            rep.add("WARN", f"sentinel {s['country']}/{s['variable']}: no recent value")
+            continue
+        diff = abs(row[0] - s["expected"])
+        lvl = "PASS" if diff <= s["tol"] else "FAIL"
+        rep.add(lvl, f"sentinel {s['country']} {s['variable']} = {row[0]:.3f} "
+                     f"(expected {s['expected']} +/- {s['tol']})",
+                "" if lvl == "PASS" else "HARD STOP: silent corruption / wrong entity")
+
+    # --- pairs: per-country median |a-b| over recent_months, vs threshold_abs ---
+    for p in cfg.get("pairs", []):
+        a, b = p["a"], p["b"]
+        ta, tb = ref(a["db"], a["table"]), ref(b["db"], b["table"])
+        if ta is None or tb is None:
+            rep.add("WARN", f"pair '{p['name']}': a db '{a['db']}' or b db '{b['db']}' unavailable")
+            continue
+        months = int(p.get("recent_months", 6))
+        thr = float(p["threshold_abs"])
+        try:
+            df = con.execute(
+                f'WITH a AS (SELECT date, country, value v FROM {ta} '
+                f'  WHERE variable = ? AND date >= (CURRENT_DATE - INTERVAL {months} MONTH)), '
+                f'     b AS (SELECT date, country, value v FROM {tb} '
+                f'  WHERE variable = ? AND date >= (CURRENT_DATE - INTERVAL {months} MONTH)) '
+                f'SELECT a.country, MEDIAN(ABS(a.v - b.v)) gap, COUNT(*) n '
+                f'FROM a JOIN b USING (date, country) GROUP BY 1 ORDER BY gap DESC',
+                [a["variable"], b["variable"]]).fetchdf()
+        except Exception as exc:  # noqa: BLE001
+            rep.add("WARN", f"pair '{p['name']}' query failed", str(exc)[:160])
+            continue
+        if df.empty:
+            rep.add("WARN", f"pair '{p['name']}': no overlapping (date,country) rows")
+            continue
+        breaches = df[df["gap"] > thr]
+        if breaches.empty:
+            rep.add("PASS", f"pair '{p['name']}': all {len(df)} countries agree "
+                            f"(max gap {df['gap'].max():.3f} <= {thr})")
+        else:
+            worst = "; ".join(f"{r.country} {r.gap:.2f}" for r in breaches.head(8).itertuples())
+            rep.add("FAIL", f"pair '{p['name']}': {len(breaches)} countries disagree > {thr}",
+                    f"GSAB-shape (series tracking wrong entity?): {worst}")
+
+
+def run_warehouse_checks(rep: Report, duckdb_path: Path, loop_path: Path | None) -> None:
+    global _MAIN_PREFIX
+    try:
+        import duckdb  # noqa: F401
+    except ImportError:
+        rep.add("WARN", "duckdb not installed; skipping warehouse checks")
+        return
+    con, refs = _open_warehouse(duckdb_path, loop_path)
+    _MAIN_PREFIX = refs["asado"] or ""
+    try:
+        tables = _warehouse_tables(con)
+        print("\n=== Warehouse: country labels per table ===")
+        check_warehouse_country_labels(rep, con, tables)
+        print("\n=== Warehouse: date coverage per source ===")
+        check_warehouse_date_coverage(rep, con, tables)
+        print("\n=== Warehouse: cross-source value agreement (cross_source.yaml) ===")
+        check_cross_source_pairs(rep, con, refs)
+    finally:
+        con.close()
+
+
+_MAIN_PREFIX = ""
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--out", type=Path, default=None,
+                        help="optional path to write a markdown report")
+    parser.add_argument("--duckdb", type=Path, default=None,
+                        help="path to asado.duckdb (default: Data/asado.duckdb if present)")
+    parser.add_argument("--loop-duckdb", type=Path, default=None,
+                        help="path to asado_loop.duckdb (default: Data/loop/asado_loop.duckdb if present)")
+    parser.add_argument("--no-warehouse", action="store_true",
+                        help="skip warehouse checks even if the DB exists")
+    args = parser.parse_args()
+
+    for path in (T2_WORKBOOK, GDELT_WORKBOOK, CONFIG_PATH):
+        if not path.exists():
+            print(f"ERROR: required input missing: {path}", file=sys.stderr)
+            return 2
+
+    rep = Report()
+    print("=== Country naming ===")
+    check_country_naming(rep)
+    print("\n=== Date grain ===")
+    check_date_grain(rep)
+    print("\n=== Sleeve resolution ===")
+    check_sleeve_resolution(rep)
+    print("\n=== T2 internal consistency ===")
+    check_t2_internal(rep)
+
+    duckdb_path = args.duckdb or (DUCKDB_PATH if DUCKDB_PATH.exists() else None)
+    loop_path = args.loop_duckdb or (LOOP_DUCKDB_PATH if LOOP_DUCKDB_PATH.exists() else None)
+    if args.no_warehouse or duckdb_path is None:
+        if duckdb_path is None and not args.no_warehouse:
+            print("\n(warehouse checks skipped: Data/asado.duckdb not present)")
+    else:
+        run_warehouse_checks(rep, duckdb_path, loop_path)
+
+    if args.out:
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_text(rep.to_markdown(), encoding="utf-8")
+        print(f"\nWrote {args.out}")
+
+    print("\nRESULT:", "FAIL" if rep.failed else "OK (warnings are by-design caveats)")
+    return 1 if rep.failed else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

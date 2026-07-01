@@ -640,3 +640,30 @@ on Claude Design comps -> import via Vercel MCP -> bind to window.COCKPIT_DATA.
 ---
 SESSION END: 2026-06-20 | loop hardening merged to main, governance GREEN 7/7
 ---
+
+---
+SESSION START: 2026-06-25 | Agent: Fugu Ultra via Codex
+---
+
+## Session Summary
+Created top-level `FuguPRD.md` to consolidate the decided ASADO Discovery Triage direction after Fugu/Codex/Opus critiques and the added Mythos-class model assumption.
+
+## What Was Captured
+- Current gap engine is the **Known Gap Monitor**, not final ASADO intelligence.
+- Product center is **Mythos Discovery Lab**; disbelief is chain of custody.
+- Mythos is treated as a quarantined research physicist, not an oracle.
+- Model training cutoff is the real PIT boundary for LLM-generated ideas.
+- Tool-outcome-blind context is necessary but not sufficient for clean certification.
+- Pre-cutoff Mythos ideas route to prospective/post-cutoff evidence, not ordinary historical validation.
+- Required components: tool-enforced context builder, research look ledger, model-cutoff provenance classifier, claim freezer, minimal triage battery, blind human ruling, prospective incubator, graveyard control arm, research desk cockpit.
+- Optional prosecutors are deferred until the minimal triage workflow has real evidence.
+
+## Files Written
+- `FuguPRD.md` — 1,620-line consolidated PRD for ASADO Discovery Triage for Mythos-class models.
+
+## Verification
+- Confirmed the file exists at the ASADO repo root and includes the final corrected slogan: "Muse in quarantine. Measurement in code. Judgment under blindfold. Evidence accumulated forward."
+
+---
+SESSION END: 2026-06-25 | Agent: Fugu Ultra via Codex
+---

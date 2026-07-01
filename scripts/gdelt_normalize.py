@@ -63,20 +63,41 @@ NOTES:
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import os
 from pathlib import Path
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
 
 T2_GDELT_DIR = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/gdelt")
+COUNTRY_MAPPING = Path(__file__).resolve().parent.parent / "config" / "country_mapping.json"
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-GDELT_TO_T2_COUNTRY = {"U.S. NASDAQ": "NASDAQ", "China A": "ChinaA", "China H": "ChinaH"}
+
+def _load_gdelt_to_t2(mapping_path: Path = COUNTRY_MAPPING) -> Dict[str, str]:
+    """Build the {GDELT workbook label -> canonical T2 name} remap from the
+    single source of truth (config/country_mapping.json). Only the few sleeves
+    whose GDELT.xlsx column header differs from their T2 name carry a
+    `gdelt_label` field (e.g. "China A" -> "ChinaA"); every other column is
+    already canonical and maps to itself."""
+    try:
+        payload = json.loads(Path(mapping_path).read_text())
+    except (OSError, ValueError) as exc:  # noqa: BLE001
+        logger.warning("Could not load %s (%s); GDELT label remap is empty.", mapping_path, exc)
+        return {}
+    return {
+        meta["gdelt_label"]: country
+        for country, meta in payload.get("countries", {}).items()
+        if meta.get("gdelt_label")
+    }
+
+
+GDELT_TO_T2_COUNTRY = _load_gdelt_to_t2()
 GDELT_SKIP_SHEETS = frozenset({"README", "README_VARIABLES"})
 NORMALIZED_T2_CSV = "Normalized_T2_MasterCSV.csv"
 OUTPUT_CSV = "GDELT_Factors_MasterCSV.csv"

@@ -6,7 +6,7 @@ import pytest
 
 from scripts.discovery_triage import harness_bridge
 from scripts.discovery_triage.exceptions import ContextPolicyError
-from tests.discovery_triage.fixtures import valid_claim
+from fixtures import valid_claim
 
 
 def harness_claim():

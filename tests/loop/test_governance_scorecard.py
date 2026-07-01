@@ -42,11 +42,46 @@ def test_dimensions_come_from_contract():
     assert [d["name"] for d in sc["dimensions"]] == names
 
 
-def test_cross_source_minimal_never_green():
+def test_cross_source_minimal_is_status_driven_from_contract():
+    # A7/cross_source_minimal was made STATUS-DRIVEN in commit 8295530 (green when
+    # sentinels + pair checks pass AND coverage >= 90%, amber on partial/pair, red
+    # on hard breach). It is therefore NO LONGER amber-by-design: amber_by_design is
+    # read straight from the contract spec (currently false) and its effective colour
+    # is driven by the live cross_source_status.json, not hard-coded to never-green.
+    contract = yaml.safe_load((BASE_DIR / "config" / "governance_contract.yaml").read_text())
+    spec = next(s for s in contract["scorecard_dimensions"] if s["name"] == "cross_source_minimal")
+
     sc = gs.build_scorecard()
     cs = next(d for d in sc["dimensions"] if d["name"] == "cross_source_minimal")
-    assert cs["amber_by_design"] is True
-    assert cs["effective"] in ("amber", "red")  # never green in Phase A
+
+    # amber_by_design mirrors the contract (single source of truth), whatever it is.
+    assert cs["amber_by_design"] is bool(spec.get("amber_by_design", False))
+
+    # When there is no hard/pair breach AND coverage clears the green threshold,
+    # the dimension legitimately drives GREEN (this is the whole point of making
+    # it status-driven). When a breach or sub-threshold coverage forces amber/red,
+    # it must not be green. Assert the builder's actual status-driven contract.
+    # Mirror the builder's own status source (build_governance_scorecard._dim_*):
+    # the dimension reads Data/loop/governance/cross_source_status.json, so the test
+    # reads the exact same artifact to validate the status-driven outcome.
+    status_path = gs.GOV_DIR / "cross_source_status.json"
+    if status_path.exists():
+        import json as _json
+        st = _json.loads(status_path.read_text())
+    else:
+        st = None
+    if cs["status"] == "green":
+        assert st is not None
+        assert not st.get("hard_breach") and not st.get("pair_breach")
+        assert float(st.get("coverage_fraction") or 0.0) >= gs.CROSS_SOURCE_GREEN_COVERAGE
+        assert cs["effective"] == "green"
+    else:
+        # If no live status file exists, the builder reports "blind" (never green).
+        assert cs["effective"] in ("amber", "red", "blind")
+        assert cs["effective"] != "green"
+        if st is not None:
+            assert (st.get("hard_breach") or st.get("pair_breach")
+                    or float(st.get("coverage_fraction") or 0.0) < gs.CROSS_SOURCE_GREEN_COVERAGE)
 
 
 def test_blind_dimension_never_green_and_overall_valid():

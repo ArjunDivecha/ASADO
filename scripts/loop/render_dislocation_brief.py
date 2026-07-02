@@ -1,10 +1,19 @@
 #!/usr/bin/env python3
-"""Insert the Price-Discovery Gap pilot section into the latest dislocation brief."""
+"""Insert the Price-Discovery Gap pilot section into the latest dislocation brief.
+
+v1.1 (2026-07-01, PRD W6): the final write is ATOMIC (temp file + os.replace in
+the same directory) and self-asserting — after writing, the file is re-read and
+must contain exactly one GAP_ENGINE_TOP_START/END marker pair (or none when
+render_top_gaps=false). A renderer dying mid-write can no longer leave the
+brief truncated or marker-less; an assembly bug exits non-zero so the loop job
+fails the step loudly instead of shipping a half-assembled brief.
+"""
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -207,6 +216,29 @@ def insert_section(original: str, section: str) -> str:
     return "\n".join(out).rstrip() + "\n"
 
 
+def atomic_write(path: Path, text: str) -> None:
+    """Write via temp file + os.replace so a mid-write death never truncates the brief."""
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(text)
+    os.replace(tmp, path)
+
+
+def assert_markers(path: Path, expect_section: bool) -> None:
+    """Post-write assert (PRD W6): fail loudly if the brief's gap markers are wrong."""
+    text = path.read_text()
+    n_start, n_end = text.count(START), text.count(END)
+    if expect_section and not (n_start == 1 and n_end == 1):
+        raise RuntimeError(
+            f"post-write assert failed: expected exactly one gap marker pair in {path}, "
+            f"found START={n_start} END={n_end}"
+        )
+    if not expect_section and (n_start or n_end):
+        raise RuntimeError(
+            f"post-write assert failed: render_top_gaps=false but gap markers remain in {path} "
+            f"(START={n_start} END={n_end})"
+        )
+
+
 def render(as_of: str | None = None, dry_run: bool = False) -> Path:
     con = loop_connection()
     try:
@@ -218,7 +250,8 @@ def render(as_of: str | None = None, dry_run: bool = False) -> Path:
         if not cfg.get("feature_flags", {}).get("render_top_gaps", True):
             cleaned = strip_existing(path.read_text())
             if not dry_run:
-                path.write_text(cleaned)
+                atomic_write(path, cleaned)
+                assert_markers(path, expect_section=False)
                 log(f"render_top_gaps=false; removed gap section if present: {path}")
             else:
                 print(cleaned)
@@ -226,8 +259,9 @@ def render(as_of: str | None = None, dry_run: bool = False) -> Path:
         section = render_section(con, date)
         rendered = insert_section(path.read_text(), section)
         if not dry_run:
-            path.write_text(rendered)
-            log(f"brief updated: {path}")
+            atomic_write(path, rendered)
+            assert_markers(path, expect_section=True)
+            log(f"brief updated (atomic write + marker assert OK): {path}")
         else:
             print(rendered)
         return path

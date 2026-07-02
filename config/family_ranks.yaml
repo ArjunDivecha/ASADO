@@ -1,0 +1,152 @@
+# =============================================================================
+# FILE: config/family_ranks.yaml
+# =============================================================================
+#
+# INPUT FILES: none (this file IS the source of truth for the family panel).
+# CONSUMED BY:
+#   - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/loop/build_family_ranks.py
+#     (nightly: builds the tidy loop table `family_ranks_daily`)
+#   - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/cos_mockups/build_cockpit_data.py
+#     (reads verdict/IC metadata for the Consensus Matrix column headers)
+#
+# VERSION: 1.0
+# LAST UPDATED: 2026-07-01
+# AUTHOR: Arjun Divecha (built by agent session, Frontend Alpha Rethink PRD §4.2)
+#
+# DESCRIPTION:
+# The registry of validated signal FAMILIES that power the cockpit's Consensus
+# Matrix (P2) and Edge Board (P1). This is the first increment of the unified
+# signal panel (data-structure audit R1): one row per family, declaring the
+# source loop table, variable, REGISTERED direction, harness verdict + stats,
+# and the registered universe. build_family_ranks.py converts each family's
+# latest cross-section into ranks; nothing here is re-derived or re-optimized.
+#
+# EPISTEMIC RULES (do not weaken):
+# - direction comes from the REGISTERED sweep spec (config/sweeps/*.yaml),
+#   never from re-fitting. higher_is_better = high value ranks long.
+# - verdict/ic/nw_t are the harness's numbers for the cited hypothesis_id.
+#   The cockpit displays them verbatim; it never upgrades them.
+# - `count_in_agreement: false` families are shown but EXCLUDED from the
+#   cross-family agreement count (the combiner is trained on several of the
+#   other columns — counting it would double-count; ToT is an untested
+#   detector substrate, context not a validated rank).
+# - universe = the registered honest universe. Countries outside it get NO
+#   rank row for that family (absence is honest, not zero).
+# =============================================================================
+
+config_version: family_ranks_v1_2026_07_01
+
+families:
+  - key: combiner
+    label: "Ridge combiner"
+    table: combiner_scores_daily
+    variable: COMBINER_RIDGE_DAILY_V1
+    direction: higher_is_better
+    hypothesis_id: H_20260612_054
+    verdict: WEAK
+    ic: 0.0574
+    nw_t: 10.73
+    horizon: 5d
+    count_in_agreement: false     # outcome-trained composite of the other columns
+    note: "In-sample-selected components (2026-06); a ceiling, not proof. Shown as the LEAN column, never counted as an independent vote."
+    universe: "Australia,Brazil,Canada,Chile,ChinaA,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,Netherlands,Philippines,Poland,Singapore,South Africa,Spain,Sweden,Switzerland,Thailand,Turkey,U.K.,U.S.,Vietnam"
+
+  - key: leadlag
+    label: "Lead-lag 5d gap"
+    table: leadlag_features_daily
+    variable: LL_LEADER_GAP_5D
+    direction: higher_is_better
+    hypothesis_id: H_20260612_049
+    verdict: WEAK
+    ic: 0.0568
+    nw_t: 8.48
+    horizon: 5d
+    count_in_agreement: true
+    note: "Structural followers only (Asia+Europe); U.S. leads but is never led."
+    universe: "Australia,ChinaA,ChinaH,Hong Kong,India,Indonesia,Japan,Korea,Malaysia,Netherlands,Philippines,Singapore,Switzerland,Taiwan,Thailand,U.K."
+
+  - key: graph_twohop
+    label: "PIT two-hop trade gap"
+    table: graph_features_pit_daily
+    variable: GRAPHP_TWOHOP_TRADE_GAP_21D
+    direction: higher_is_better
+    hypothesis_id: H_20260612_035
+    verdict: WEAK
+    ic: 0.0249
+    nw_t: 4.40
+    horizon: 5d
+    count_in_agreement: true
+    note: "Point-in-time edge vintages; survived the PIT re-test."
+    universe: "Australia,Brazil,Canada,Chile,ChinaA,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,Netherlands,Philippines,Poland,Saudi Arabia,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K.,U.S.,Vietnam"
+
+  - key: graph_bank
+    label: "PIT bank-neighbor gap"
+    table: graph_features_pit_daily
+    variable: GRAPHP_BANK_NBR_RET_GAP_21D
+    direction: higher_is_better
+    hypothesis_id: H_20260612_041
+    verdict: WEAK
+    ic: 0.034
+    nw_t: 4.46
+    horizon: 5d
+    count_in_agreement: true
+    note: "BIS LBS banking-exposure neighbors; PIT vintages."
+    universe: "Australia,Brazil,Canada,Chile,Denmark,France,Germany,Hong Kong,Italy,Japan,Korea,Mexico,Netherlands,Philippines,South Africa,Spain,Sweden,Switzerland,Taiwan,U.K.,U.S."
+
+  - key: twins
+    label: "Fundamental-twin divergence"
+    table: similarity_features_daily
+    variable: SIM_NBR_RET_GAP_21D
+    direction: higher_is_better
+    hypothesis_id: H_20260612_042
+    verdict: WEAK
+    ic: 0.0281
+    nw_t: 5.64
+    horizon: 5d
+    count_in_agreement: true
+    note: "Top-5 cosine fundamental twins (month-end factor vectors, PIT)."
+    universe: "Australia,Brazil,Canada,Chile,ChinaA,ChinaH,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,NASDAQ,Netherlands,Philippines,Poland,Saudi Arabia,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K.,U.S.,US SmallCap,Vietnam"
+
+  - key: cpi_rev
+    label: "ECFC CPI revision (reflation)"
+    table: consensus_signals
+    variable: CONS_CPI_REV3M_12M
+    direction: higher_is_better
+    hypothesis_id: H_20260612_032
+    verdict: WEAK
+    ic: 0.0388
+    nw_t: 2.31
+    horizon: 1m
+    frequency: monthly
+    count_in_agreement: true
+    note: "Reflation lens: upward CPI consensus revisions -> relative outperformance. Monthly cadence — as-of lags the daily columns."
+    universe: "Australia,Brazil,Canada,Chile,ChinaA,ChinaH,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,NASDAQ,Netherlands,Philippines,Poland,Saudi Arabia,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K.,U.S.,US SmallCap,Vietnam"
+
+  - key: etf_contra
+    label: "ETF-flow contrarian"
+    table: etf_flow_signals
+    variable: ETF_FLOW_21D_Z
+    direction: lower_is_better
+    hypothesis_id: H_20260612_046
+    verdict: WEAK
+    ic: 0.0119
+    nw_t: 2.20
+    horizon: 5d
+    count_in_agreement: true
+    note: "FLIPPED registration: stretched 21d inflows mark dumb-money chasing -> underperformance. IC/NW-t shown in the registered (contrarian) direction."
+    universe: "Australia,Brazil,Canada,Chile,ChinaA,ChinaH,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,NASDAQ,Netherlands,Philippines,Poland,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K.,U.S.,US SmallCap,Vietnam"
+
+  - key: tot_impulse
+    label: "ToT impulse z"
+    table: derived            # computed in build_family_ranks.py (D1 substrate, ungated)
+    variable: TOT_IMPULSE_Z36M
+    direction: higher_is_better
+    hypothesis_id: null
+    verdict: UNTESTED
+    ic: null
+    nw_t: null
+    horizon: 21d
+    frequency: monthly
+    count_in_agreement: false   # detector substrate, never harness-registered as a rank
+    note: "D1's terms-of-trade impulse (Comtrade net shares x Pink Sheet 3m returns, z vs 36m) WITHOUT the equity/REER quiet gates. Context column — no harness verdict exists."
+    universe: "Australia,Brazil,Canada,Chile,ChinaA,ChinaH,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,NASDAQ,Netherlands,Philippines,Poland,Saudi Arabia,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K.,U.S.,US SmallCap,Vietnam"

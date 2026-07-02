@@ -6,13 +6,16 @@ SCRIPT NAME: build_normalized_panel.py
 
 INPUT FILES:
 - Data/asado.duckdb   (expects unified_panel from setup_duckdb.py)
+- scripts/loop/loopdb.py  (T2_UNIVERSE — the canonical 34-country list for the
+  feature_panel_t2 view; country_mapping.json has 43 entries and is NOT it)
 
 OUTPUT FILES:
 - DuckDB table: normalized_panel
 - DuckDB view:  feature_panel
+- DuckDB view:  feature_panel_t2  (feature_panel restricted to the 34 T2 names)
 
-VERSION: 1.0
-LAST UPDATED: 2026-04-19
+VERSION: 1.1
+LAST UPDATED: 2026-07-01
 AUTHOR: Arjun Divecha
 
 DESCRIPTION:
@@ -22,6 +25,12 @@ Design:
   - unified_panel remains the raw analytical warehouse
   - normalized_panel stores ASADO-generated normalized variants
   - feature_panel is the query-facing union of raw + normalized rows
+  - feature_panel_t2 (v1.1, audit R3 2026-07-01) is feature_panel filtered to
+    the canonical 34-country T2 universe. Multi-country sources leak non-T2
+    names (Austria, Greece, ...) into feature_panel — 43 distinct countries as
+    of the audit — so every consumer had to re-filter by hand. feature_panel_t2
+    is the documented DEFAULT for analysis consumers; raw feature_panel remains
+    for coverage QA.
 
 Normalization outputs:
   - _CS  same-date cross-sectional z-scores across countries
@@ -51,6 +60,30 @@ DB_PATH = BASE_DIR / "Data" / "asado.duckdb"
 
 NORMALIZED_TABLE = "normalized_panel"
 FEATURE_VIEW = "feature_panel"
+FEATURE_VIEW_T2 = "feature_panel_t2"
+
+
+def load_t2_names() -> List[str]:
+    """The canonical 34 T2 country names.
+
+    NOTE: config/country_mapping.json is NOT the T2 universe — it carries 43
+    entries (the 34 T2 names plus 9 auxiliary source-mapping countries such as
+    Austria/Greece/Norway), which is exactly how non-T2 names leak into
+    feature_panel. The single source of truth for the 34 is
+    scripts/loop/loopdb.py::T2_UNIVERSE.
+    """
+    import sys
+
+    if str(BASE_DIR) not in sys.path:
+        sys.path.insert(0, str(BASE_DIR))
+    from scripts.loop.loopdb import T2_UNIVERSE
+
+    names = list(T2_UNIVERSE)
+    if len(names) != 34:
+        raise SystemExit(
+            f"loopdb.T2_UNIVERSE has {len(names)} countries, expected 34 — refusing to build {FEATURE_VIEW_T2}"
+        )
+    return names
 
 # Sources already normalized upstream or intentionally excluded from the
 # canonical ASADO-generated z-score layer.
@@ -295,6 +328,7 @@ def build_normalized_features(con: duckdb.DuckDBPyConnection) -> pd.DataFrame:
 
 
 def write_outputs(con: duckdb.DuckDBPyConnection, normalized: pd.DataFrame) -> None:
+    con.execute(f"DROP VIEW IF EXISTS {FEATURE_VIEW_T2}")
     con.execute(f"DROP VIEW IF EXISTS {FEATURE_VIEW}")
     con.execute(f"DROP TABLE IF EXISTS {NORMALIZED_TABLE}")
 
@@ -347,6 +381,19 @@ def write_outputs(con: duckdb.DuckDBPyConnection, normalized: pd.DataFrame) -> N
         """
     )
 
+    # R3 (2026-07-01): the documented default consumer surface. feature_panel
+    # leaks non-T2 countries from multi-country sources; this view pins the
+    # canonical 34-name universe so consumers stop re-filtering by hand.
+    t2_quoted = ", ".join("'" + n.replace("'", "''") + "'" for n in load_t2_names())
+    con.execute(
+        f"""
+        CREATE VIEW {FEATURE_VIEW_T2} AS
+        SELECT date, country, value, variable, source
+        FROM {FEATURE_VIEW}
+        WHERE country IN ({t2_quoted})
+        """
+    )
+
     con.execute(
         f"CREATE INDEX IF NOT EXISTS idx_{NORMALIZED_TABLE}_ctry_date ON {NORMALIZED_TABLE}(country, date)"
     )
@@ -392,6 +439,15 @@ def check_outputs() -> None:
                 f"SELECT COUNT(DISTINCT variable) FROM {FEATURE_VIEW}"
             ).fetchone()[0]
             print(f"{FEATURE_VIEW}: {feature_rows:,} rows, {feature_vars} variables")
+
+        views = {row[0] for row in con.execute("SELECT view_name FROM duckdb_views()").fetchall()}
+        if FEATURE_VIEW_T2 in views:
+            t2_rows, t2_countries = con.execute(
+                f"SELECT COUNT(*), COUNT(DISTINCT country) FROM {FEATURE_VIEW_T2}"
+            ).fetchone()
+            print(f"{FEATURE_VIEW_T2}: {t2_rows:,} rows, {t2_countries} countries (must be <= 34)")
+        else:
+            print(f"{FEATURE_VIEW_T2}: MISSING — rerun build_normalized_panel.py")
 
         print("\nSample normalized variables:")
         sample = con.execute(
@@ -440,10 +496,14 @@ def main() -> None:
         norm_vars = con.execute(f"SELECT COUNT(DISTINCT variable) FROM {NORMALIZED_TABLE}").fetchone()[0]
         feature_count = con.execute(f"SELECT COUNT(*) FROM {FEATURE_VIEW}").fetchone()[0]
         feature_vars = con.execute(f"SELECT COUNT(DISTINCT variable) FROM {FEATURE_VIEW}").fetchone()[0]
+        t2_count, t2_countries = con.execute(
+            f"SELECT COUNT(*), COUNT(DISTINCT country) FROM {FEATURE_VIEW_T2}"
+        ).fetchone()
 
         print(f"  unified_panel:    {raw_count:,} rows, {raw_vars} variables")
         print(f"  normalized_panel: {norm_count:,} rows, {norm_vars} variables")
         print(f"  feature_panel:    {feature_count:,} rows, {feature_vars} variables")
+        print(f"  feature_panel_t2: {t2_count:,} rows, {t2_countries} countries (T2-only default view)")
 
         sample = con.execute(
             f"""

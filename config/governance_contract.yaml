@@ -10,9 +10,14 @@
 #     (A8, future: reads `scorecard_dimensions` below — NOT a separate hand list —
 #      so the run-manifest expectations and the scorecard dimensions cannot drift)
 #
-# VERSION: 1.0
-# LAST UPDATED: 2026-06-17
+# VERSION: 1.2
+# LAST UPDATED: 2026-07-01
 # AUTHOR: Arjun Divecha (built by agent session, Governance Layer PRD v1.2, item A1)
+#   v1.1: added check_loop_schema (data-structures audit R5 — consumer-column
+#         drift guard over config/loop_schema_contract.yaml)
+#   v1.2: Frontend Alpha Rethink Phase 2 — build_family_ranks (required),
+#         build_fable_connections (optional, API-gated) and the final
+#         refresh_cockpit_data / refresh_live_cockpit pair (optional)
 #
 # DESCRIPTION:
 # The SINGLE source-controlled list of (a) every nightly loop step and the
@@ -45,7 +50,7 @@
 # =============================================================================
 
 schema_version: 1
-contract_version: "1.0"
+contract_version: "1.2"
 
 # Step names MUST match scripts/loop/loop_daily_job.py STEPS exactly.
 steps:
@@ -235,6 +240,13 @@ steps:
     expected_outputs:
       - {kind: file, path_template: "Data/loop/combiner_scores_daily.parquet", staleness: mtime}
 
+  - name: build_family_ranks
+    governance: false
+    optional: false
+    expected_outputs:
+      - {kind: file, path_template: "Data/loop/family_ranks_daily.parquet", staleness: mtime}
+      - {kind: loop_db_table, table: family_ranks_daily}
+
   - name: write_graph_discoveries
     governance: false
     optional: true          # Neo4j must be up; no file output (rc-only)
@@ -294,6 +306,12 @@ steps:
       - {kind: loop_db_table, table: hypothesis_ledger}
       - {kind: loop_db_table, table: thesis_ledger}
 
+  - name: check_loop_schema
+    governance: true          # R5 (2026-07-01): consumer-column drift guard
+    optional: true            # exit 2 = optional BBG-fed table absent (PARTIAL)
+    expected_outputs:
+      - {kind: file, path_template: "Data/loop/governance/loop_schema_status.json", staleness: mtime}
+
   - name: calibration_report
     governance: true         # A5 by-model slice, calibration-as-governance
     optional: false
@@ -306,6 +324,25 @@ steps:
     expected_outputs:
       # Also DATA-AS-OF dated (filename = last returns date, not wall-clock).
       - {kind: file, glob: "Data/loop/risk_reports/jst_tail_risk_*.xlsx", staleness: mtime}
+
+  - name: build_fable_connections
+    governance: false
+    optional: true            # one Anthropic API call; key-missing/skip -> exit 2 PARTIAL
+    expected_outputs:
+      # DATA-AS-OF dated; existence only (a skipped night must not red the loop).
+      - {kind: file, path_template: "Data/loop/fable/connections_latest.json", staleness: existence}
+
+  - name: refresh_cockpit_data
+    governance: false
+    optional: true            # final cockpit payload rebuild (post-run state)
+    expected_outputs:
+      - {kind: file, path_template: "cos_mockups/cockpit_data.json", staleness: mtime}
+
+  - name: refresh_live_cockpit
+    governance: false
+    optional: true
+    expected_outputs:
+      - {kind: file, path_template: "cos_mockups/cockpit_live.html", staleness: mtime}
 
 # -----------------------------------------------------------------------------
 # Scorecard dimensions (A8 reads THIS list, not a separate hand list).

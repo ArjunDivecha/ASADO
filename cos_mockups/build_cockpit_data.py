@@ -11,9 +11,16 @@ INPUT FILES (all read-only):
       * harness_results          — skeptic-harness verdict summaries
       * harness_ic_series        — per-date rank-IC paths for signal details
       * combiner_scores_daily    — COMBINER_RIDGE_DAILY_V1 cross-sectional score per country
+      * family_ranks_daily       — cross-family rank panel (Consensus Matrix, PRD §4.2)
+      * sov_rating_changes       — dated rating events (Edge Board event triggers)
+      * sovereign_signals        — CDS curve slope (fresh-inversion event triggers)
       * country_returns_monthly  — latest monthly return per T2 country (map 'return' layer)
       * thesis_ledger            — open PAPER theses
       * etf_prices_daily + etf_t2_map — best-effort trailing drawdown (tail dots); optional
+- /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/config/family_ranks.yaml
+    Family registry metadata (labels, verdicts, registered ICs) for the matrix headers.
+- /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/fable/connections_latest.json
+    The nightly Fable connection-finding pass (CONJECTURE surface); missing -> empty state.
 - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/governance/governance_scorecard.json
     The nightly governance scorecard (overall + 7 dimensions).
 - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/dislocations/brief_YYYY_MM_DD.md
@@ -27,9 +34,19 @@ OUTPUT FILES:
     Single JSON the cockpit UI binds to. Shape documented in build_payload() and
     intended to mirror the panels in cockpit.html / DESIGN_BRIEF.md.
 
-VERSION: 1.0
-LAST UPDATED: 2026-06-19
+VERSION: 1.1
+LAST UPDATED: 2026-07-01
 AUTHOR: Arjun Divecha / Claude Code
+
+v1.1 (2026-07-01, Frontend Alpha Rethink PRD Phase 2):
+- consensus: the Consensus Matrix read-model over family_ranks_daily —
+  per-family ranks, quintile agreement votes (combiner excluded: it is
+  outcome-trained on the other columns), conflict flags, edge score.
+- edge_board: the P1 selector — governance exception, open gaps by LIVE
+  tension, consensus extremes, fresh event triggers (rating changes, CDS
+  curve inversions), theses near horizon; dedupe entity|direction; cap 5.
+- fable: the non-deterministic Fable connections pass (CONJECTURE only,
+  built by scripts/loop/build_fable_connections.py).
 
 DESCRIPTION:
 Produces the live data payload for the ASADO "Chief of Staff" cockpit by reading
@@ -72,6 +89,7 @@ from datetime import datetime
 from pathlib import Path
 
 import duckdb
+import pandas as pd
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR))
@@ -79,6 +97,8 @@ DATA_ROOT = Path(os.environ.get("ASADO_DATA_ROOT", BASE_DIR / "Data")).expanduse
 LOOP_DB = DATA_ROOT / "loop" / "asado_loop.duckdb"
 GOV_JSON = DATA_ROOT / "loop" / "governance" / "governance_scorecard.json"
 DISLO_DIR = DATA_ROOT / "dislocations"
+FAMILY_CONFIG = BASE_DIR / "config" / "family_ranks.yaml"
+FABLE_JSON = DATA_ROOT / "loop" / "fable" / "connections_latest.json"
 OUT_JSON = BASE_DIR / "cos_mockups" / "cockpit_data.json"
 
 from scripts.discovery_triage.jsonl_store import read_jsonl  # noqa: E402
@@ -758,6 +778,343 @@ def latest_brief():
 
 
 # --------------------------------------------------------------------------- #
+# PRD Phase 2 §4.2 — the Consensus Matrix read-model (family_ranks_daily)
+# --------------------------------------------------------------------------- #
+def _family_meta():
+    import yaml
+    cfg = yaml.safe_load(FAMILY_CONFIG.read_text())
+    return {f["key"]: f for f in cfg.get("families", [])}
+
+
+def read_consensus(con, latest_dislo=None):
+    """Countries x validated-family ranks + quintile agreement votes.
+
+    Rules (epistemic contract):
+    - ranks come straight from family_ranks_daily (registered directions,
+      registered universes; rank 1 = strongest LONG lean).
+    - agreement votes count ONLY families with count_in_agreement: true —
+      the combiner is outcome-trained on the other columns (double-count)
+      and tot_impulse is an untested detector substrate (no verdict).
+    - a country outside a family's registered universe gets NO cell,
+      never a fake middle rank.
+    """
+    if not _table_exists(con, "family_ranks_daily"):
+        return {"status": "missing", "as_of": None, "families": [], "matrix": {},
+                "agreement": {}, "conflicts": [], "leaders": {"long": [], "short": []}}
+    meta = _family_meta()
+    df = con.execute("""
+        WITH latest AS (
+            SELECT family, max(date) AS date FROM family_ranks_daily GROUP BY family
+        )
+        SELECT f.family, f.date, f.country, f.score, f.rank, f.universe_n
+        FROM family_ranks_daily f JOIN latest l
+          ON f.family = l.family AND f.date = l.date
+    """).fetchdf()
+    if df.empty:
+        return {"status": "empty", "as_of": None, "families": [], "matrix": {},
+                "agreement": {}, "conflicts": [], "leaders": {"long": [], "short": []}}
+
+    families = []
+    for key, g in df.groupby("family"):
+        m = meta.get(key, {})
+        families.append({
+            "key": key,
+            "label": m.get("label", key),
+            "verdict": m.get("verdict"),
+            "ic": m.get("ic"),
+            "nw_t": m.get("nw_t"),
+            "horizon": m.get("horizon"),
+            "direction": m.get("direction"),
+            "count_in_agreement": bool(m.get("count_in_agreement")),
+            "note": m.get("note"),
+            "hypothesis_id": m.get("hypothesis_id"),
+            "as_of": _date_str(g["date"].iloc[0]),
+            "n": int(g["universe_n"].iloc[0]),
+        })
+    # stable column order: config order first, then any strays
+    order = list(meta.keys())
+    families.sort(key=lambda f: order.index(f["key"]) if f["key"] in order else 99)
+
+    matrix = {}
+    for r in df.itertuples(index=False):
+        matrix.setdefault(r.country, {})[r.family] = {
+            "rank": int(r.rank),
+            "n": int(r.universe_n),
+            "score": _clean_num(r.score, 4),
+        }
+
+    voting = {f["key"] for f in families if f["count_in_agreement"]}
+    agreement = {}
+    for country, cells in matrix.items():
+        long_fams, short_fams, eligible = [], [], 0
+        for fam, cell in cells.items():
+            if fam not in voting:
+                continue
+            eligible += 1
+            q = max(1, math.ceil(cell["n"] * 0.2))
+            if cell["rank"] <= q:
+                long_fams.append(fam)
+            elif cell["rank"] > cell["n"] - q:
+                short_fams.append(fam)
+        edge = (len(long_fams) - len(short_fams)) / eligible if eligible else 0.0
+        agreement[country] = {
+            "long": len(long_fams), "short": len(short_fams), "eligible": eligible,
+            "long_families": long_fams, "short_families": short_fams,
+            "edge": _clean_num(edge, 3),
+            "conflict": bool(long_fams and short_fams),
+        }
+    conflicts = [{"country": c, "long_families": a["long_families"],
+                  "short_families": a["short_families"]}
+                 for c, a in agreement.items() if a["conflict"]]
+    ranked = sorted(agreement.items(), key=lambda kv: -(kv[1]["edge"] or 0))
+    leaders = {
+        "long": [{"country": c, "edge": a["edge"], "votes": a["long"]}
+                 for c, a in ranked[:5] if (a["edge"] or 0) > 0],
+        "short": [{"country": c, "edge": a["edge"], "votes": a["short"]}
+                  for c, a in ranked[::-1][:5] if (a["edge"] or 0) < 0],
+    }
+    # freshness vs the dislocation clock uses DAILY families only (monthly
+    # columns lag by construction and must not mark the whole matrix stale)
+    daily_asof = [f["as_of"] for f in families
+                  if f["key"] not in {"cpi_rev", "tot_impulse"} and f["as_of"]]
+    as_of = max(daily_asof) if daily_asof else None
+    status = "fresh"
+    if latest_dislo is not None and as_of is not None and str(as_of) < str(latest_dislo):
+        status = "stale"
+    return {"status": status, "as_of": as_of, "families": families, "matrix": matrix,
+            "agreement": agreement, "conflicts": conflicts, "leaders": leaders,
+            "voting_note": "Agreement counts exclude the combiner (outcome-trained "
+                           "on the other columns) and the untested ToT column."}
+
+
+# --------------------------------------------------------------------------- #
+# PRD Phase 2 §4.3 — Edge Board event-trigger readers + selector
+# --------------------------------------------------------------------------- #
+EVENT_WINDOW_DAYS = 14      # rating changes count as "fresh" this long
+INVERSION_LOOKBACK = 10     # a CDS inversion is fresh if slope was positive within N rows
+
+
+def read_event_triggers(con, as_of=None):
+    """Fresh event-window opportunities from the validated event studies:
+    rating changes (downgrade EM -0.9%@5d; upgrades also drift negative) and
+    NEW CDS 5s1s curve inversions (-4.5% CAR @63d, 41 events)."""
+    events = []
+    anchor = pd.Timestamp(str(as_of)) if as_of else pd.Timestamp.now()
+    if _table_exists(con, "sov_rating_changes"):
+        df = con.execute(
+            "SELECT date, country, agency, old_score, new_score, delta "
+            "FROM sov_rating_changes WHERE date >= ? ORDER BY date DESC",
+            [(anchor - pd.Timedelta(days=EVENT_WINDOW_DAYS)).date()],
+        ).fetchdf()
+        for r in df.itertuples(index=False):
+            kind = "downgrade" if (r.delta or 0) < 0 else "upgrade"
+            events.append({
+                "kind": f"rating_{kind}",
+                "entity": r.country,
+                "direction": "short",   # both studied drifts are negative
+                "date": _date_str(r.date),
+                "detail": f"{r.agency} {kind} {int(r.old_score)}→{int(r.new_score)}",
+                "study": ("downgrade −0.9%@5d EM (t≈−2.0, n=73)" if kind == "downgrade"
+                          else "upgrades ALSO drift −2.4%@63d (n=45)"),
+            })
+    if _table_exists(con, "sovereign_signals"):
+        df = con.execute("""
+            WITH s AS (
+                SELECT date, country, value,
+                       row_number() OVER (PARTITION BY country ORDER BY date DESC) AS rn
+                FROM sovereign_signals WHERE variable = 'SOV_CDS_SLOPE_BP'
+            )
+            SELECT country,
+                   max(CASE WHEN rn = 1 THEN value END) AS latest_slope,
+                   max(CASE WHEN rn = 1 THEN date END) AS latest_date,
+                   max(CASE WHEN rn > 1 AND rn <= ? AND value > 0 THEN 1 ELSE 0 END) AS was_positive
+            FROM s WHERE rn <= ? GROUP BY country
+        """, [INVERSION_LOOKBACK, INVERSION_LOOKBACK]).fetchdf()
+        for r in df.itertuples(index=False):
+            if r.latest_slope is not None and r.latest_slope < 0 and r.was_positive:
+                events.append({
+                    "kind": "cds_inversion",
+                    "entity": r.country,
+                    "direction": "short",
+                    "date": _date_str(r.latest_date),
+                    "detail": f"5s1s CDS slope {round(float(r.latest_slope))}bp — fresh inversion",
+                    "study": "CDS curve inversion −4.5% CAR @63d (t=−2.4, n=41)",
+                })
+    return events
+
+
+def read_expiring_theses(con, as_of=None, within_days=5):
+    """Open theses within `within_days` of their registered horizon."""
+    if not _table_exists(con, "thesis_ledger"):
+        return []
+    anchor = pd.Timestamp(str(as_of)) if as_of else pd.Timestamp.now()
+    df = con.execute(
+        "SELECT thesis_id, entity, direction, horizon_days, open_date, "
+        "probability, invalidation_level FROM thesis_ledger WHERE status = 'open'"
+    ).fetchdf()
+    out = []
+    for r in df.itertuples(index=False):
+        if r.open_date is None or r.horizon_days is None:
+            continue
+        days_left = int(r.horizon_days) - (anchor - pd.Timestamp(str(r.open_date))).days
+        if days_left <= within_days:
+            out.append({
+                "thesis_id": r.thesis_id, "entity": r.entity, "direction": r.direction,
+                "days_left": days_left,
+                "invalidation_level": r.invalidation_level,
+                "probability": _clean_num(r.probability, 2),
+            })
+    return sorted(out, key=lambda t: t["days_left"])
+
+
+def build_edge_board(gov, gap_engine, consensus, events, expiring, cap=5):
+    """§4.3 — merge candidates from all claim surfaces; dedupe by
+    entity|direction; rank by live edge x freshness; cap 5. A governance
+    exception still claims slot ①. repriced_against gaps are excluded (they
+    live in the lifecycle strip, not the board)."""
+    slots = []
+    if gov.get("overall") and str(gov["overall"]).lower() != "green":
+        amber = [d for d in gov.get("dimensions", [])
+                 if d.get("status") and d["status"].lower() != "green"]
+        by_design = [d for d in amber if d.get("amber_by_design")]
+        lead = (by_design or amber or [{}])[0]
+        honest = " — honest, not broken" if (by_design and len(amber) == len(by_design)) else ""
+        slots.append({
+            "kind": "governance", "rank_score": 9.9,
+            "entity": None, "direction": None,
+            "headline": f"Governance is {str(gov['overall']).upper()}{honest}",
+            "why": f"{lead.get('name', 'a dimension')}: {lead.get('detail', '')}".strip(": "),
+            "agreement_line": None, "wrong_if": None,
+            "epistemic_tag": "FACT",
+            "source": "governance_scorecard.json",
+            "route": {"view": "health"},
+        })
+
+    candidates = []
+    agreement = (consensus or {}).get("agreement", {})
+
+    def agree_line(entity):
+        a = agreement.get(entity)
+        if not a or not a.get("eligible"):
+            return None
+        return (f"{a['long']} of {a['eligible']} families lean long · "
+                f"{a['short']} lean short" + (" · CONFLICT" if a.get("conflict") else ""))
+
+    if (gap_engine or {}).get("status") == "fresh":
+        for g in (gap_engine.get("top") or []):
+            if g.get("status") not in (None, "open"):
+                continue
+            if g.get("absorption_state") == "repriced_against":
+                continue          # lifecycle strip material, never a card
+            tension = g.get("tension_score_current") or 0.0
+            candidates.append({
+                "kind": "gap", "rank_score": min(1.0, tension / 0.65),
+                "entity": g.get("entity"), "direction": g.get("direction"),
+                "headline": f"{g.get('entity')} {str(g.get('direction') or '').upper()}"
+                            + (f" via {g['preferred_ticker']}" if g.get("preferred_ticker") else "")
+                            + (f" · {g['horizon_bucket']}" if g.get("horizon_bucket") else ""),
+                "why": f"{g.get('gap_class', 'gap')} · live tension {tension} "
+                       f"(opened {g.get('tension_score_at_open') or '—'}) · "
+                       f"day {g.get('days_active') or '—'} · "
+                       f"{g.get('mechanism_text') or 'world-state vs price-state tension open'}",
+                "agreement_line": agree_line(g.get("entity")),
+                "wrong_if": g.get("invalidation_rule"),
+                "epistemic_tag": "INFERENCE",
+                "source": f"gap_episode_marks · {gap_engine.get('as_of')}",
+                "route": {"view": "gap", "gap_id": g.get("gap_id"), "name": g.get("entity")},
+            })
+
+    for country, a in agreement.items():
+        votes = max(a.get("long", 0), a.get("short", 0))
+        if votes < 3 or a.get("conflict"):
+            continue
+        direction = "long" if a["long"] >= a["short"] else "short"
+        fams = a["long_families"] if direction == "long" else a["short_families"]
+        candidates.append({
+            "kind": "consensus", "rank_score": abs(a.get("edge") or 0),
+            "entity": country, "direction": direction,
+            "headline": f"{country} {direction.upper()} · family consensus",
+            "why": f"{votes} of {a['eligible']} validated families rank {country} in their "
+                   f"{'top' if direction == 'long' else 'bottom'} quintile "
+                   f"({', '.join(fams)}). Thin, real edges — WEAK verdicts, stated honestly.",
+            "agreement_line": agree_line(country),
+            "wrong_if": "half the supporting families drop the extreme quintile",
+            "epistemic_tag": "INFERENCE",
+            "source": f"family_ranks_daily · {(consensus or {}).get('as_of')}",
+            "route": {"view": "consensus", "name": country},
+        })
+
+    for ev in events or []:
+        candidates.append({
+            "kind": "event", "rank_score": 0.55,
+            "entity": ev["entity"], "direction": ev["direction"],
+            "headline": f"{ev['entity']} {ev['direction'].upper()} · {ev['kind'].replace('_', ' ')}",
+            "why": f"{ev['detail']} ({ev['date']}). Validated event study: {ev['study']}.",
+            "agreement_line": agree_line(ev["entity"]),
+            "wrong_if": "the studied post-event drift window closes without follow-through",
+            "epistemic_tag": "INFERENCE",
+            "source": "sov_rating_changes / sovereign_signals",
+            "route": {"view": "country", "name": ev["entity"]},
+        })
+
+    for th in expiring or []:
+        candidates.append({
+            "kind": "thesis", "rank_score": 0.4,
+            "entity": th["entity"], "direction": th["direction"],
+            "headline": f"{th['entity']} thesis at horizon · {th['thesis_id']}",
+            "why": f"Open {str(th['direction']).upper()} thesis is {abs(th['days_left'])} day(s) "
+                   f"{'past' if th['days_left'] < 0 else 'from'} its registered horizon — "
+                   "mark or close it; unresolved theses poison calibration.",
+            "agreement_line": agree_line(th["entity"]),
+            "wrong_if": f"invalidation level {th.get('invalidation_level') or 'unrecorded'}",
+            "epistemic_tag": "FACT",
+            "source": "thesis_ledger",
+            "route": {"view": "country", "name": th["entity"]},
+        })
+
+    candidates.sort(key=lambda c: -c["rank_score"])
+    seen = set()
+    for c in candidates:
+        key = (c.get("entity"), c.get("direction"))
+        if c.get("entity") and key in seen:
+            continue
+        seen.add(key)
+        slots.append(c)
+        if len(slots) >= cap:
+            break
+    return {"as_of": (gap_engine or {}).get("as_of") or (consensus or {}).get("as_of"),
+            "slots": slots[:cap],
+            "selection_note": "governance exception first; then gaps by LIVE tension, "
+                              "consensus extremes (≥3 families), fresh event windows, "
+                              "expiring theses — dedup by entity|direction, cap 5."}
+
+
+# --------------------------------------------------------------------------- #
+# The Fable connections surface (CONJECTURE; built nightly by
+# scripts/loop/build_fable_connections.py — read here, never generated here)
+# --------------------------------------------------------------------------- #
+def read_fable():
+    if not FABLE_JSON.exists():
+        return {"status": "missing", "as_of": None, "model": None, "connections": [],
+                "note": "No Fable connections artifact yet — run "
+                        "scripts/loop/build_fable_connections.py."}
+    payload = json.loads(FABLE_JSON.read_text())
+    conns = payload.get("connections") or []
+    for c in conns:
+        c["epistemic_tag"] = "CONJECTURE"   # non-negotiable label
+    return {
+        "status": "fresh" if conns else "empty",
+        "as_of": payload.get("as_of"),
+        "generated_ts": payload.get("generated_ts"),
+        "model": payload.get("model"),
+        "connections": conns,
+        "note": payload.get("note") or
+                "Non-deterministic synthesis. CONJECTURE only: nothing here is a "
+                "verdict or a trade; every claim must go through the Lab/harness.",
+    }
+
+
+# --------------------------------------------------------------------------- #
 # §1.2 — the three-slot "Today" promotion rule
 # --------------------------------------------------------------------------- #
 def build_today(gov, signals, dislo, gap_engine=None):
@@ -1020,15 +1377,17 @@ def read_research_desk():
 
 
 # --------------------------------------------------------------------------- #
-def build_map(returns_map, dislo, combiner, drawdowns, gap_engine=None):
+def build_map(returns_map, dislo, combiner, drawdowns, gap_engine=None, consensus=None):
     dislo_entities = {x["entity"]: x for x in dislo["country_ranked"]}
     gap_by_country = (gap_engine or {}).get("by_country", {})
+    agreement = (consensus or {}).get("agreement", {})
     regions = []
     for reg, cs in REGIONS:
         tiles = []
         for c in cs:
             d = dislo_entities.get(c)
             g = (gap_by_country.get(c) or {}).get("primary")
+            a = agreement.get(c)
             tiles.append({
                 "country": c,
                 "iso": ISO.get(c, c[:3].upper()),
@@ -1043,6 +1402,10 @@ def build_map(returns_map, dislo, combiner, drawdowns, gap_engine=None):
                 "gap_tension": g.get("tension_score_current") if g else None,
                 "gap_absorption": g.get("absorption_state") if g else None,
                 "gap_ticker": g.get("preferred_ticker") if g else None,
+                # Edge layer (PRD Phase 2): cross-family agreement score
+                "edge": a.get("edge") if a else None,
+                "edge_votes": (f"{a['long']}L/{a['short']}S of {a['eligible']}" if a else None),
+                "edge_conflict": a.get("conflict") if a else None,
             })
         regions.append({"region": reg, "tiles": tiles})
     return regions
@@ -1083,6 +1446,15 @@ def build_payload():
                      {"as_of": None, "scores": {}, "leaders": [], "ic_series": None})
     payload["combiner"] = combiner
 
+    consensus = _safe(lambda: read_consensus(con, dislo.get("as_of")), "consensus",
+                      {"status": "missing", "as_of": None, "families": [], "matrix": {},
+                       "agreement": {}, "conflicts": [], "leaders": {"long": [], "short": []}})
+    payload["consensus"] = consensus
+
+    payload["fable"] = _safe(read_fable, "fable",
+                             {"status": "missing", "as_of": None, "model": None,
+                              "connections": []})
+
     ret_asof, returns_map = _safe(lambda: read_returns(con), "returns", (None, {}))
     payload["returns"] = {"as_of": ret_asof, "by_country": returns_map}
 
@@ -1096,8 +1468,14 @@ def build_payload():
 
     payload["brief"] = _safe(latest_brief, "brief", None)
 
-    payload["map"] = build_map(returns_map, dislo, combiner, drawdowns, gap_engine)
+    payload["map"] = build_map(returns_map, dislo, combiner, drawdowns, gap_engine, consensus)
     payload["today"] = build_today(gov, signals, dislo, gap_engine)
+
+    events = _safe(lambda: read_event_triggers(con, dislo.get("as_of")), "event_triggers", [])
+    expiring = _safe(lambda: read_expiring_theses(con, dislo.get("as_of")), "expiring_theses", [])
+    payload["edge_board"] = _safe(
+        lambda: build_edge_board(gov, gap_engine, consensus, events, expiring),
+        "edge_board", {"as_of": None, "slots": []})
 
     con.close()
     return payload

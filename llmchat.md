@@ -667,3 +667,223 @@ Created top-level `FuguPRD.md` to consolidate the decided ASADO Discovery Triage
 ---
 SESSION END: 2026-06-25 | Agent: Fugu Ultra via Codex
 ---
+
+---
+SESSION START: 2026-07-01 | Agent: Cursor (Fable 5)
+---
+
+## Session Summary
+Four-part audit requested by Arjun after the Jun-22→Jul-01 changes (gap engine,
+discovery triage, live cockpit). All deliverables are docs — no code changed.
+
+## Deliverables
+1. `docs/PRD_Update_Pipeline_Correctness_Efficiency_2026_07_01.md` — daily/monthly
+   audit + PRD (W1–W12). Highest findings: chained loop killed at 1200s parent
+   timeout (observed 06-26); --resume skips by stage NAME only; monthly_update
+   ALWAYS exits 0 and has no step timeouts; TRIPLE same-day BBG batch on 07-01
+   (05:47/09:33/13:53 in bbg_quota_log.csv — no freshness gate);
+   check_source_alignment.py built but wired to nothing.
+2. `docs/AUDIT_DATA_STRUCTURES_2026_07_01.md` — verdict: ingestion/isolation
+   strong (0 leaks verified live), consumption fragmented. R1–R6: unified PIT
+   signal_panel_daily + forward_returns_daily join surface are the missing
+   structures; feature_panel has 43 countries (caller-discipline filtering);
+   variable registry barely covers loop signals.
+3. `docs/AUDIT_FRONTEND_2026_07_01.md` — cockpit problems w/ file:line. Lead:
+   tension_score_current is a COPY of tension_score_at_open
+   (build_gap_episodes.py:565) so all 5 headline gaps are repriced_against yet
+   still headline; "100% unabsorbed" shown alongside repriced_against; Tail +
+   Brief views are 100%/partly mock; chat route() recites June mock numbers;
+   setHor() dropped by make_live_cockpit (ReferenceError); warehouse-string XSS
+   sinks remain; no refresh mechanism.
+4. `docs/PRD_Frontend_Alpha_Rethink_2026_07_01.md` — content redesign around
+   "what does the data know that price doesn't": Edge Board (live tension, all
+   claim surfaces), Consensus Matrix (34 countries × validated families — the
+   missing prediction surface), Gap Lifecycle strip, Strategic Desk (monthly
+   clock: valuation/revisions/JST), Scoreboard (holdout/calibration/IC-since-
+   registration/graveyard), conflict→Discovery-Lab bridge. Backend deltas §4.1–4.7
+   (4.1 = fix live tension; 4.2 family_ranks_daily = first slice of R1).
+
+## Verification notes
+- Live browser session against 127.0.0.1:8800 confirmed bindings + defects.
+- Loop DB queried read-only: 22 open gaps, 21/22 marks repriced_against,
+  gap_holdout_daily 533 rows since 06-22, tally 1 WATCH/21 WEAK/16 INSUFF/20 DEAD.
+- Schedules read from live LaunchAgents: predmkt 04:30, daily 05:30 wkdays,
+  loop standalone 06:45, heartbeat 12:45 — docs say 06:30/07:30, both stale.
+- Monthly full run today: all steps OK, 2671s.
+
+## Not done (by design)
+- No code fixes applied; no commit (left for Arjun). Recommended first fixes:
+  pipeline W1/W2/W3 + front-end audit items 1–3 (live tension, absorption
+  display, setHor).
+
+---
+SESSION END: 2026-07-01 | Agent: Cursor (Fable 5)
+---
+
+---
+SESSION START: 2026-07-01 (PM) | Agent: Cursor (Fable 5)
+---
+
+## Session: implement the first three audits (pipeline + data structures + frontend)
+
+Arjun: "implement the first three and let's have a discussion about the redesign."
+All Phase-1 pipeline items, the frontend priority fixes, and the two small data-
+structure items are implemented and verified; the redesign
+(PRD_Frontend_Alpha_Rethink_2026_07_01.md) is deliberately untouched pending
+discussion.
+
+## Pipeline (PRD_Update_Pipeline_Correctness_Efficiency)
+- W1 daily_update.py: chained loop stage now bounded at 7200s.
+- W2 daily_update.py: --resume skips only if stage NAME + script sha1/mtime +
+  argv all match the checkpoint (stage_fingerprint/resume_match; v1.2).
+- W3a monthly_update.py: REAL exit codes — 0 OK / 1 step failed / 2 aborted
+  (was: always 0). W3b: every step bounded via run_bounded (default 3600s,
+  BBG 5400s, GDELT ingest 7200s); TIMEOUT is a distinct step status. v1.3.
+- W6 render_dislocation_brief.py: atomic os.replace write + post-render
+  marker self-assert (exactly-one START/END when section expected).
+- W8 scripts/qa/check_source_alignment.py v1.1 (canonical Data/work paths;
+  future-labeled GDELT month = WARN not FAIL; T2 sheet date-axis diff = WARN)
+  wired into BOTH orchestrators as advisory stages — failures print WARN and
+  never abort (calibration period).
+
+## Gap engine (audit F1 — the content-correctness lead)
+- gap_engine_common.py: new tension_current() — marks re-score tension live
+  from open components + current expression/crowding/staleness/data-quality,
+  scaled by absorption state; repriced_against hard-capped at 0.30 (below the
+  0.35 promotion floor) and further scaled by |absorption_index|.
+- build_gap_episodes.py calls it at mark time (tension_score_current was
+  previously a COPY of tension_score_at_open). config gap_engine.yaml bumped
+  to gap_engine_v2_2026_07_01 with mark_scoring block. 3 new unit tests.
+- Verified live re-rank: repriced_against gaps now score ~0.10–0.19 and the
+  U.K. unabsorbed gap (89%) headlines instead.
+
+## Frontend (make_live_cockpit.py v1.1 — F2–F7, B2/B3/B5 from the audit)
+- F2 absPhrase(): repriced_against never renders "N% unabsorbed" — shows the
+  signed absorption index; gap detail view gets a "⚑ Repricing against" callout.
+- F3 setHor() restored (was ReferenceError on horizon toggles).
+- F4 Brief view: live as-of/row-count + live drawdown footer + brief-file
+  pointer; Tail view: live drawdowns, fan labelled "static DM calibration
+  shape", honest UNKNOWN/STALE caveat.
+- F5 route()/openCountry(): tally from TALLY, pressure leaders from
+  country_ranked, tail from live DRAW, "reflation" and "(prototype:
+  scripted)" removed.
+- F6 esc()/qs() on warehouse-string sinks + quote-safe onclick args.
+- F7 neutral ribbon boot HTML; Return* staleness asterisk when returns lag
+  gaps >35d; stale-tab poll (5min) shows a reload banner on new generated_ts.
+- B3 INSUFF badge; B5 producer-error banner; B2 pluralization/rounding/title.
+- Generator now FAILS LOUDLY on anchor drift (REQUIRED/FORBIDDEN token gate)
+  + new cos_mockups/test_make_live_cockpit.py (17 tests: every onclick fn
+  defined, no mock narration leaks, absPhrase ordering).
+- F8 cos_chat_service.py: current_date now wall-clock (was hardcoded
+  2026-06-24), data_as_of added, fallback=False on successful Opus answers;
+  COCKPIT_DATA_CONTRACT.md v1.1 documents gap_engine + research_desk + error.
+
+## Data structures (audit R3 + R5)
+- R3: feature_panel_t2 view (feature_panel ∩ canonical 34; source of truth =
+  loopdb.T2_UNIVERSE — country_mapping.json has 43 entries and is NOT the T2
+  list). Built by build_normalized_panel.py v1.1 + created in the live DB now
+  (3.32M rows/34 countries vs 3.55M/43). Documented default for consumers.
+- R5: config/loop_schema_contract.yaml (30 tables, consumer-read columns,
+  optional flags for BBG-fed) + scripts/qa/check_loop_schema.py (declared ⊆
+  actual; exit 1 drift / 2 optional-missing / 0 ok; status JSON to
+  Data/loop/governance/). New nightly step check_loop_schema after
+  fold_ledgers; governance_contract.yaml v1.1 registers it (STEPS↔contract
+  sync verified; step runs green via --only).
+
+## Verification
+- 145 tests pass (tests/loop + all cockpit suites). All touched scripts compile.
+- Cockpit payload + page regenerated; live browser check on 127.0.0.1:8800:
+  setHor works, feed shows "repriced against · index −0.45" style rows, brief/
+  tail/gap views live, router narrations live, fallback honest.
+- Chat service restarted under venv; /api/cos/chat deterministic route OK.
+- NOTE: governance scorecard is RED on config_guard only — governance_contract
+  .yaml edited and uncommitted (honest). Clears on commit.
+
+## Not done (by design)
+- The redesign (PRD_Frontend_Alpha_Rethink) — discussion opened with Arjun.
+- R1/R2/R4/R6 (signal_panel_daily, forward_returns_daily, registry semantics)
+  deferred: they ARE the redesign's backend and should follow that decision.
+
+---
+SESSION END: 2026-07-01 (PM) | Agent: Cursor (Fable 5)
+---
+
+---
+SESSION START: 2026-07-02 00:15 PDT | Agent: Cursor (Fable 5)
+---
+
+### Session Summary
+Built Frontend Alpha Rethink Phase 2 end-to-end: family_ranks_daily (R1 first
+slice) → Consensus Matrix + Edge Board in the cockpit, plus the user-requested
+"Fable's Desk" — a nightly NON-DETERMINISTIC claude-fable-5 pass over a
+custody-scrubbed DuckDB+Neo4j evidence packet that emits CONJECTURE-tagged
+cross-surface connections.
+
+### Decisions Made
+- Edge Board (P1) replaces "Today" as default focus view + chat answer of
+  record when it has slots; legacy overview kept as fallback.
+- Agreement votes count ONLY count_in_agreement families — combiner
+  (outcome-trained) and ToT impulse (UNTESTED) render as context columns
+  marked "°", never votes. Quintile = ceil(n*0.2) per registered universe.
+- Fable output is CONJECTURE, a 4th epistemic tag (legend: "CONJECTURE
+  quarantined"); read_fable() force-overwrites any tag in the artifact.
+  Evidence packet scrubs combiner/factor_returns/forward-return keys (same
+  regex family as C1) and drops packet_family_ranks' combiner column.
+- Fable API call uses FORCED TOOL USE (record_connections tool, strict JSON
+  schema) — free-form JSON from the model broke on unescaped quotes.
+  MAX_OUTPUT_TOKENS 12000, timeout 600s, ≤1 call/night, skips if today's
+  artifact exists; ASADO_SKIP_FABLE=1 or no key → exit 2 (optional step).
+
+### Architecture / Design
+- config/family_ranks.yaml — 8 families (combiner, leadlag, graph_twohop,
+  graph_bank, twins, cpi_rev, etf_contra, tot_impulse) with verdict/IC/
+  universe; tot_impulse recomputed in-builder from tot_trade_shares ×
+  commodity_panel (z vs 36m, min 24 obs).
+- scripts/loop/build_family_ranks.py → loop table family_ranks_daily
+  (date, family, country, score, oriented_score, rank, universe_n; rank 1 =
+  strongest LONG lean under the REGISTERED direction; <5-country dates drop).
+- scripts/loop/build_fable_connections.py → Data/loop/fable/
+  connections_YYYY_MM_DD.json + connections_latest.json (+ packet_*.json).
+- build_cockpit_data.py v1.1: read_consensus / read_event_triggers /
+  read_expiring_theses / build_edge_board / read_fable; map tiles carry
+  edge/edge_votes/edge_conflict; payload sections consensus, edge_board, fable.
+- make_live_cockpit.py v1.2: FVIEWS.edge/consensus/fable, Edge map layer
+  (default when consensus fresh; "Signal" retitled "Lean"), desk tabs gain
+  Edge Board/Consensus/Fable's Desk, router intents, chips, parity anchors.
+- cos_chat_service.py: edge/consensus/fable views+layer validated; anchored
+  nav intents; today-intent → Edge Board; evidence packet adds
+  consensus_families/leaders/conflicts, country_family_ranks, edge_board,
+  fable_conjectures_UNVALIDATED (system prompt: label it CONJECTURE).
+- loop_daily_job.py v1.3 (37 steps): build_family_ranks (required, after
+  build_combiner), build_fable_connections (optional, after JST), then
+  refresh_cockpit_data + refresh_live_cockpit LAST so the page reflects
+  tonight's run. governance_contract v1.2 + loop_schema_contract v1.1 synced.
+
+### Verification
+- 216 tests pass (18 new in tests/loop/test_phase2_frontend.py: rank
+  orientation, voting exclusions, board selection/dedupe/cap, CONJECTURE
+  forcing, scrub, chat intents).
+- Live Fable run produced 7 connections (e.g. Netherlands melt-up vs −3.7σ
+  inflation miss + dead-last family ranks; Indonesia model-consensus-long vs
+  crowded-flow stop) — rendered in browser with falsifiable checks.
+- Browser-verified on 127.0.0.1:8800: Edge Board default with governance-RED
+  slot ①, matrix with votes/conflicts (10 conflicts), Fable cards, Edge map
+  layer default with ▲/▼/✕ glyphs; chat intents return correct ui_actions.
+
+### Constraints & Gotchas
+- family_ranks check(): DuckDB reserves "rows" as an alias — use n_rows.
+- pydantic + SourceFileLoader: register module in sys.modules BEFORE
+  exec_module or UIAction forward refs fail (test _load helper does this).
+- Governance stays RED on config_guard until the session's config edits are
+  committed (honest, by design).
+
+### What To Build Next
+1. PRD Phase 2 remainder: live tension recompute (§4.1), lifecycle strip (P3),
+   autopsy stats per gap class (§4.4), P2 conflict → Discovery Lab dossier.
+2. Phase 3 (Strategic Desk P4, Scoreboard P5) still undiscussed with Arjun.
+3. Consider a family-key → harness-registry-name map so matrix column headers
+   can open the single-signal IC view directly.
+
+---
+SESSION END: 2026-07-02 00:45 PDT | Agent: Cursor (Fable 5)
+---

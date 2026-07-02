@@ -35,6 +35,7 @@ from scripts.loop.gap_engine_common import (  # noqa: E402
     staleness_penalty,
     status_novelty_score,
     table_exists,
+    tension_current,
 )
 from scripts.loop.loopdb import T2_UNIVERSE, loop_connection  # noqa: E402
 
@@ -546,8 +547,22 @@ def build_marks_and_closures(con, as_ts: pd.Timestamp, cfg: dict[str, Any]) -> t
                 "notes": "Auto-closed after price absorption threshold cleared.",
             })
         has_price = bool(p)
-        expr_q, _, _ = expression_quality(pd.Series(p) if has_price else None)
+        expr_q, _, data_pen = expression_quality(pd.Series(p) if has_price else None)
         crowd = crowding_penalty(pd.Series(p) if has_price else None)
+        # Live tension (gap_engine_v2): re-scored with today's expression /
+        # crowding / staleness / absorption instead of copying the open score
+        # forward. repriced_against episodes are forced below the promotion
+        # floor so the cockpit and brief never headline a falsified gap.
+        tension_now = tension_current(
+            {
+                "severity_score": ep.get("severity_score_at_open"),
+                "novelty_score": ep.get("novelty_score_at_open"),
+                "validation_prior_score": ep.get("validation_prior_score_at_open"),
+                "catalyst_nearness_score": ep.get("catalyst_nearness_score_at_open"),
+                "etf_drag_score": ep.get("etf_drag_score_at_open"),
+            },
+            cfg, days_active, max_age, state, idx, expr_q, crowd, data_pen,
+        )
         marks.append({
             "gap_id": ep["gap_id"],
             "date": str(as_ts.date()),
@@ -562,7 +577,7 @@ def build_marks_and_closures(con, as_ts: pd.Timestamp, cfg: dict[str, Any]) -> t
             "price_absorption_index": idx,
             "unabsorbed_fraction": unabs,
             "absorption_state": state,
-            "tension_score_current": ep["tension_score_at_open"],
+            "tension_score_current": tension_now,
             "days_active": days_active,
             "expression_quality_current": expr_q,
             "crowding_penalty_current": crowd,

@@ -37,8 +37,8 @@ OUTPUT FILES:
     - Data/asado.duckdb daily tables (via build_daily_panels.py)
     - Data/logs/daily_update_YYYY_MM_DD_HHMMSS.log
 
-VERSION: 1.1
-LAST UPDATED: 2026-06-10
+VERSION: 1.2
+LAST UPDATED: 2026-07-01
 AUTHOR: Arjun Divecha (built by Claude Code)
 
 DEPENDENCIES: pandas, numpy, duckdb, neo4j; OpusBloomberg conda env for the pull.
@@ -61,11 +61,20 @@ NOTES:
       --resume skips stages already completed today, so a failure at stage 7
       no longer costs a full re-run of stages 1-6 (including the ~3 min
       Bloomberg pull).
+    - RESUME FINGERPRINTS (2026-07-01, v1.2): checkpoints now record the
+      stage script's sha1 + argv. --resume skips a stage ONLY if the script
+      content and arguments match the checkpoint — editing a stage script (or
+      changing its flags) invalidates its checkpoint for the day. Legacy
+      plain-"OK" checkpoints never match and are re-run.
+    - The chained loop stage carries an explicit 7200s timeout (v1.2): the
+      41-step loop routinely runs 40-75 min and the old 1200s default killed
+      it mid-run on 2026-06-26.
 =============================================================================
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -87,6 +96,37 @@ from scripts.loop.procutil import run_bounded  # noqa: E402
 # Absolute conda path: launchd's PATH lacks /opt/homebrew/bin, and a bare
 # "conda" raised FileNotFoundError that killed the loop on 2026-06-11.
 CONDA = shutil.which("conda") or "/opt/homebrew/bin/conda"
+
+
+def stage_fingerprint(script: str, flags: list) -> dict:
+    """Fingerprint a stage for --resume (2026-07-01, PRD W2).
+
+    A checkpoint is only trustworthy if the stage that produced it is the SAME
+    stage: same script content, same arguments. Matching is on script_sha1 +
+    argv (content is what matters — Dropbox can touch mtimes without changing
+    bytes); mtime is recorded for humans reading the progress file.
+    """
+    path = SCRIPTS_DIR / script
+    try:
+        return {
+            "script_mtime": int(path.stat().st_mtime),
+            "script_sha1": hashlib.sha1(path.read_bytes()).hexdigest()[:12],
+            "argv": list(flags),
+        }
+    except OSError:
+        return {"script_mtime": None, "script_sha1": None, "argv": list(flags)}
+
+
+def resume_match(prev, fp: dict) -> bool:
+    """True only if the checkpoint is OK AND fingerprints the same stage.
+    Legacy string checkpoints ("OK") carry no fingerprint — never skip on them."""
+    return (
+        isinstance(prev, dict)
+        and prev.get("status") == "OK"
+        and prev.get("script_sha1") is not None
+        and prev.get("script_sha1") == fp["script_sha1"]
+        and prev.get("argv") == fp["argv"]
+    )
 
 
 def run_step(name, script, flags, log_file, conda=False, timeout=None):
@@ -142,12 +182,12 @@ def main() -> int:
 
     print(f"{'='*60}\n  ASADO DAILY UPDATE\n  Started: {datetime.now():%Y-%m-%d %H:%M:%S}\n  Log: {log_file}")
     if args.resume and done:
-        print(f"  Resume: {len(done)} stage(s) already OK today will be skipped")
+        print(f"  Resume: {len(done)} checkpoint(s) found today — skipped only if script+args unchanged")
     print("=" * 60)
     results = []
     t_start = time.time()
 
-    # ── declarative stage list (name, script, flags, conda, enabled[, timeout]) ─────
+    # ── declarative stage list (name, script, flags, conda, enabled[, timeout[, advisory]]) ─
     full = not args.t2_only
     stages = [
         ("T2: daily Bloomberg pull (live blpapi)", "collect_t2_bloomberg.py", ["--daily"], True,
@@ -166,30 +206,53 @@ def main() -> int:
          full and not args.skip_gdelt),
         ("DB: build daily panels", "build_daily_panels.py", ["--rebuild", "--no-backup"], False,
          full and not args.skip_db),
+        # ADVISORY (2026-07-01, PRD W8): source-alignment QA. Runs after the DB
+        # is rebuilt; a failure is reported as WARN and NEVER aborts the
+        # pipeline or flips the exit code (upgrade to gating after 2 quiet weeks).
+        ("QA: source alignment (advisory)", "qa/check_source_alignment.py", [], False,
+         full and not args.skip_db, 900, True),
         ("Graph: Neo4j refresh", "setup_neo4j.py", [], False,
          full and not args.skip_neo4j),
         # Loop chained LAST on purpose (2026-06-10): the standalone launchd loop
         # job used to run BEFORE this pipeline finished, so detectors scanned
         # yesterday's tables. As the final stage it always sees fresh data.
+        # Explicit 7200s budget (2026-07-01): the 41-step loop routinely takes
+        # 40-75 min, and the 1200s non-conda default killed it mid-run on
+        # 2026-06-26. The loop job bounds each of its own steps internally;
+        # this parent timeout is only a runaway safety net.
         ("Loop: Layer 1 (dislocations + brief)", "loop/loop_daily_job.py", [], False,
-         full and not args.skip_db and not args.skip_loop),
+         full and not args.skip_db and not args.skip_loop, 7200),
     ]
 
     aborted_at = None
     for stage in stages:
         name, script, flags, conda, enabled = stage[:5]
         timeout = stage[5] if len(stage) > 5 else None
+        advisory = stage[6] if len(stage) > 6 else False
         if not enabled:
             continue
-        if args.resume and done.get(name) == "OK":
-            print(f"\n  [RESUME] skipping '{name}' (already OK today)", flush=True)
+        fp = stage_fingerprint(script, flags)
+        if args.resume and resume_match(done.get(name), fp):
+            print(f"\n  [RESUME] skipping '{name}' (already OK today, same script+args)", flush=True)
             results.append({"name": name, "status": "OK", "elapsed": 0.0, "rc": 0,
                             "skipped_resume": True})
             continue
+        if args.resume and done.get(name):
+            print(f"\n  [RESUME] NOT skipping '{name}' — checkpoint exists but "
+                  f"script/args changed since it was written (re-running).", flush=True)
         r = run_step(name, script, flags, log_file, conda=conda, timeout=timeout)
+        if advisory and r["status"] != "OK":
+            # Advisory steps report but never gate: downgrade to WARN,
+            # keep going, keep the exit code clean.
+            r["status"] = "WARN"
+            r["advisory"] = True
+            print(f"\n  [ADVISORY] '{name}' reported issues (see log) — continuing.", flush=True)
         results.append(r)
         if r["status"] == "OK":
-            done[name] = "OK"
+            done[name] = {"status": "OK", **fp}
+            progress_file.write_text(json.dumps(done, indent=2))
+        elif r["status"] == "WARN":
+            done[name] = {"status": "WARN", **fp}
             progress_file.write_text(json.dumps(done, indent=2))
         else:
             # FAIL-FAST: downstream stages must never run on stale upstream
@@ -207,7 +270,7 @@ def main() -> int:
     for r in results:
         tag = " (resumed-skip)" if r.get("skipped_resume") else ""
         print(f"  [{r['status']:>6}] {r['name']:<42} {r['elapsed']:.1f}s{tag}")
-    failed = [r for r in results if r["status"] != "OK"]
+    failed = [r for r in results if r["status"] not in ("OK", "WARN")]
     if aborted_at:
         print(f"\n  ABORTED at '{aborted_at}' — rerun with --resume to continue.")
     print(f"\n  {'ALL STEPS OK' if not failed else f'{len(failed)} STEP(S) FAILED'}\n  Log: {log_file}")

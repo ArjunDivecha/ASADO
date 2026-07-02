@@ -141,9 +141,10 @@ def _validate_actions(data: dict[str, Any], actions: list[UIAction]) -> list[UIA
     valid_signals = _signal_names(data)
     valid_gaps = _gap_ids(data)
     valid_views = {"overview", "health", "signals", "signal", "country", "gap", "dislo", "tail",
+                   "edge", "consensus", "fable",
                    "desk_discovery", "desk_analogs", "desk_triage", "desk_rulings",
                    "desk_prospective", "desk_graveyard"}
-    valid_layers = {"gap", "return", "dislocation", "signal"}
+    valid_layers = {"edge", "gap", "return", "dislocation", "signal"}
     out: list[UIAction] = []
     for action in actions:
         if action.type == "focus_country" and action.country in valid_countries:
@@ -203,16 +204,21 @@ def deterministic_answer(question: str, data: dict[str, Any]) -> ChatResponse | 
     start = time.time()
 
     if re.search(r"(what should i|care about|brief me|three things|priorit|matter|today|overview)", q):
-        today = data.get("today") or []
+        # Phase 2 (2026-07-01): the Edge Board replaces "Today" as the answer
+        # of record whenever it has slots; the legacy today list is the fallback.
+        slots = (data.get("edge_board") or {}).get("slots") or []
+        rows = slots or (data.get("today") or [])
+        view = "edge" if slots else "overview"
         bits = []
-        actions = [UIAction(type="focus_view", view="overview")]
-        for row in today[:3]:
+        actions = [UIAction(type="focus_view", view=view)]
+        for row in rows[:5 if slots else 3]:
             headline = _esc(row.get("headline"))
             why = _esc(row.get("why"))
             bits.append(f"<b>{headline}</b><br>{why}")
         if not bits:
             bits.append("No promoted cockpit items are available in the current payload.")
-        html_answer = "Today:<br><br>" + "<br><br>".join(bits)
+        label = "The Edge Board" if slots else "Today"
+        html_answer = f"{label}:<br><br>" + "<br><br>".join(bits)
         return ChatResponse(
             answer_html=html_answer,
             answer_text=_plain(html_answer),
@@ -299,6 +305,26 @@ def deterministic_answer(question: str, data: dict[str, Any]) -> ChatResponse | 
     if re.fullmatch(r"(downside( if .*)?|tail|drawdown|jst tail|the long[- ]cycle tail)\??", qs):
         return _nav("tail", "The long-cycle <b>tail</b>. Context only — a nominal drawdown mapped to a "
                     "DM-calibrated distribution; it must clear the harness before any sizing.")
+    # Phase 2 (2026-07-01): Edge Board / Consensus Matrix / Fable's Desk navigation.
+    if re.fullmatch(r"((the )?edge board|top claims|ranked claims|the board)\??", qs):
+        return _nav("edge", "The <b>Edge Board</b> — ranked claims from every surface (gaps, family "
+                    "consensus, event windows, expiring theses); a governance exception always claims ①.")
+    if re.fullmatch(r"((the )?consensus( matrix)?|who do the families like\??|family ranks|"
+                    r"what conflicts today|the conflicts)\??", qs):
+        cons = data.get("consensus") or {}
+        leaders = (cons.get("leaders") or {}).get("long") or []
+        lead_txt = (f" Strongest long agreement: <b>{_esc(leaders[0].get('country'))}</b> "
+                    f"({leaders[0].get('votes')} votes)." if leaders else "")
+        n_conf = len(cons.get("conflicts") or [])
+        return _nav("consensus", f"The <b>Consensus Matrix</b> — {len(cons.get('families') or [])} "
+                    f"validated families, quintile votes, {n_conf} conflict(s) flagged.{lead_txt} "
+                    "Verdicts are the harness's, never mine.")
+    if re.fullmatch(r"(fable('?s desk)?|fable'?s? connections?|what does fable see)\??", qs):
+        fable = data.get("fable") or {}
+        n = len(fable.get("connections") or [])
+        return _nav("fable", f"<b>Fable's Desk</b> — {n} cross-surface conjecture(s) from the nightly "
+                    "non-deterministic pass. Everything there is <b>CONJECTURE</b> until the "
+                    "Lab/harness clears it.")
 
     country = _match_country(question, data)
     if country:
@@ -468,8 +494,12 @@ def _evidence_packet(question: str, data: dict[str, Any]) -> dict[str, Any]:
     if brief_path.exists():
         text = brief_path.read_text(errors="ignore")
         brief = {"file": str(brief_path), "excerpt": text[:5000]}
+    # current_date: real wall-clock date (F8, 2026-07-01). Was hardcoded
+    # "2026-06-24", which told Opus it was June while the payload said July.
     packet = {
-        "current_date": "2026-06-24",
+        "current_date": datetime.now(timezone.utc).date().isoformat(),
+        "data_as_of": ((data.get("gap_engine") or {}).get("as_of"))
+        or ((data.get("dislocations") or {}).get("as_of")),
         "question": question,
         "epistemic_contract": (data.get("meta") or {}).get("epistemic_contract"),
         "freshness": _freshness(data),
@@ -480,6 +510,19 @@ def _evidence_packet(question: str, data: dict[str, Any]) -> dict[str, Any]:
         "country": country,
         "country_snapshot": ((data.get("countries") or {}).get(country) if country else None),
         "country_gap": (_country_gap(country, data) if country else None),
+        # Phase 2 (2026-07-01): family consensus + edge board + Fable conjectures.
+        # The scrubber below still strips combiner cells/keys before Opus sees them.
+        "consensus_families": (data.get("consensus") or {}).get("families") or [],
+        "consensus_leaders": (data.get("consensus") or {}).get("leaders") or {},
+        "consensus_conflicts": (data.get("consensus") or {}).get("conflicts") or [],
+        "country_family_ranks": (((data.get("consensus") or {}).get("matrix") or {}).get(country)
+                                 if country else None),
+        "edge_board": ((data.get("edge_board") or {}).get("slots") or [])[:5],
+        "fable_conjectures_UNVALIDATED": [
+            {k: c.get(k) for k in ("title", "entities", "direction_hint", "mechanism",
+                                   "falsifiable_check", "confidence", "horizon")}
+            for c in ((data.get("fable") or {}).get("connections") or [])[:7]
+        ],
         "latest_brief": brief,
     }
     return _scrub_evidence(packet)
@@ -497,6 +540,8 @@ def call_opus_agent(question: str, data: dict[str, Any], timeout: int = 90) -> t
         "Use FACT for directly supplied evidence, INFERENCE for synthesis, and UNKNOWN/STALE "
         "when evidence is missing or stale. Do not give trade instructions. Do not invent tables, "
         "values, citations, or verdicts. Harness verdicts are owned by the harness, not by you. "
+        "Anything under fable_conjectures_UNVALIDATED is machine CONJECTURE from a nightly "
+        "non-deterministic pass — if you use it, label it CONJECTURE and never present it as fact. "
         "Keep the answer concise and useful for a portfolio/research cockpit. Return plain text only."
     )
     user = (
@@ -579,7 +624,9 @@ def chat(request: ChatRequest) -> ChatResponse:
             mode_used="research",
             model=model,
             external_agent="opus",
-            fallback=True,
+            # fallback=False on a SUCCESSFUL Opus answer (F8, 2026-07-01) —
+            # this flag marks degraded responses only.
+            fallback=False,
             citations=[
                 _citation("opus_evidence_packet", "cockpit_data + latest brief", (data.get("gap_engine") or {}).get("as_of"))
             ],

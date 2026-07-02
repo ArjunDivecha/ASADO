@@ -138,6 +138,66 @@ def score_tension(components: dict[str, float], cfg: dict[str, Any]) -> float:
     return clamp(positive - negative)
 
 
+def _finite(value: Any, fallback: float = 0.0) -> float:
+    """Coerce None/NaN to a fallback so NaN never leaks through clamp()."""
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return fallback
+    if v != v:
+        return fallback
+    return v
+
+
+def tension_current(
+    open_components: dict[str, Any],
+    cfg: dict[str, Any],
+    days_active: int | None,
+    max_age_days: int,
+    absorption_state_label: str,
+    absorption_index: float | None,
+    expression_quality_now: float,
+    crowding_penalty_now: float,
+    data_quality_penalty_now: float,
+) -> float:
+    """Mark-time tension score (gap_engine_v2, 2026-07-01).
+
+    Re-scores an open episode with what is knowable NOW instead of copying
+    tension_score_at_open forward:
+      - expression quality / crowding / data quality are replaced with today's
+        values; staleness is recomputed from days_active;
+      - severity and novelty stay at-open (world-state as measured when the
+        episode opened; aging is handled by the staleness penalty);
+      - the result is then scaled by the absorption state:
+          unabsorbed / insufficient_signal -> full score
+          partially_absorbed / absorbed / decayed -> remaining fraction (1 - index)
+          repriced_against -> hard-capped BELOW promotion.min_tension_score
+            (mark_scoring.repriced_against_cap) and shrunk further the deeper
+            the price moves against the mechanism. A gap the market is actively
+            rejecting must never outrank a live one.
+    """
+    comps = {
+        "severity_score": _finite(open_components.get("severity_score")),
+        "novelty_score": _finite(open_components.get("novelty_score")),
+        "validation_prior_score": _finite(open_components.get("validation_prior_score")),
+        "catalyst_nearness_score": _finite(open_components.get("catalyst_nearness_score")),
+        "etf_drag_score": _finite(open_components.get("etf_drag_score")),
+        "expression_quality_score": _finite(expression_quality_now),
+        "crowding_penalty_score": _finite(crowding_penalty_now),
+        "staleness_penalty_score": staleness_penalty(days_active, max_age_days),
+        "data_quality_penalty_score": _finite(data_quality_penalty_now),
+    }
+    base = score_tension(comps, cfg)
+    idx = _finite(absorption_index, 0.0)
+    if absorption_state_label == "repriced_against":
+        cap = float(cfg.get("mark_scoring", {}).get("repriced_against_cap", 0.30))
+        against = clamp(abs(idx))  # index <= -1 means fully repriced against
+        return clamp(min(base, cap) * (1.0 - against))
+    if absorption_state_label in ("partially_absorbed", "absorbed", "decayed"):
+        return clamp(base * clamp(1.0 - idx))
+    return base
+
+
 def expected_move(gap_class: str, horizon_bucket: str, severity: float, direction: str,
                   cfg: dict[str, Any]) -> tuple[float, float, str]:
     em = cfg.get("expected_move", {})

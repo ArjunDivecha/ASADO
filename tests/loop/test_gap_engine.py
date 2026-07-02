@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import pandas as pd
 
-from scripts.loop.gap_engine_common import absorption_state, stable_hash
+from scripts.loop.gap_engine_common import (
+    absorption_state,
+    load_gap_config,
+    stable_hash,
+    tension_current,
+)
 from scripts.loop.loopdb import LOOP_DB
 from scripts.loop.render_dislocation_brief import (
     START,
@@ -36,6 +41,49 @@ def test_absorption_state_provisional_mapping_states():
     idx, _, state = absorption_state(-0.01, 0.02, 0.005, 2.0)
     assert state == "repriced_against"
     assert idx == -0.5
+
+
+_OPEN_COMPONENTS = {
+    "severity_score": 1.0,
+    "novelty_score": 1.0,
+    "validation_prior_score": 0.65,
+    "catalyst_nearness_score": 0.35,
+    "etf_drag_score": 0.0,
+}
+
+
+def test_tension_current_forces_repriced_against_below_promotion_floor():
+    cfg, _ = load_gap_config()
+    floor = float(cfg["promotion"]["min_tension_score"])
+    fresh = tension_current(_OPEN_COMPONENTS, cfg, 1, 63, "unabsorbed", 0.1, 0.95, 0.1, 0.0)
+    against = tension_current(_OPEN_COMPONENTS, cfg, 1, 63, "repriced_against", -0.5, 0.95, 0.1, 0.0)
+    deep = tension_current(_OPEN_COMPONENTS, cfg, 1, 63, "repriced_against", -2.0, 0.95, 0.1, 0.0)
+    assert fresh > floor
+    assert against < floor
+    assert deep == 0.0
+    assert against < fresh
+
+
+def test_tension_current_scales_by_remaining_absorption_and_staleness():
+    cfg, _ = load_gap_config()
+    fresh = tension_current(_OPEN_COMPONENTS, cfg, 1, 63, "unabsorbed", 0.1, 0.95, 0.1, 0.0)
+    partial = tension_current(_OPEN_COMPONENTS, cfg, 1, 63, "partially_absorbed", 0.5, 0.95, 0.1, 0.0)
+    absorbed = tension_current(_OPEN_COMPONENTS, cfg, 1, 63, "absorbed", 1.0, 0.95, 0.1, 0.0)
+    stale = tension_current(_OPEN_COMPONENTS, cfg, 60, 63, "unabsorbed", 0.1, 0.95, 0.1, 0.0)
+    assert 0.0 < partial < fresh
+    assert absorbed == 0.0
+    assert stale < fresh
+
+
+def test_tension_current_is_nan_safe():
+    cfg, _ = load_gap_config()
+    nan = float("nan")
+    got = tension_current(
+        {k: nan for k in _OPEN_COMPONENTS}, cfg, None, 63,
+        "unabsorbed", nan, nan, nan, nan,
+    )
+    assert got == got  # not NaN
+    assert 0.0 <= got <= 1.0
 
 
 def test_renderer_section_is_idempotent():

@@ -48,8 +48,8 @@ OUTPUT FILES:
 - docs/factor_reference.md                        (via build_factor_reference.py)
 - Data/logs/monthly_update_YYYY_MM_DD.log         (this run's log)
 
-VERSION: 1.2
-LAST UPDATED: 2026-04-29
+VERSION: 1.3
+LAST UPDATED: 2026-07-01
 AUTHOR: Arjun Divecha
 
 DESCRIPTION:
@@ -119,6 +119,10 @@ NOTES:
 - Total runtime: ~12-18 minutes depending on API response times
 - Safe to re-run — every step is idempotent
 - Log file saved automatically for each run
+- EXIT CODES (v1.3, 2026-07-01): 0 = all steps OK; 1 = one or more steps
+  FAILED (steps still run to completion — resilience is per-step, but the
+  process no longer lies to launchd/callers with exit 0); 2 = aborted at the
+  --skip-bloomberg stale-master freshness gate.
 =============================================================================
 """
 
@@ -137,6 +141,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SCRIPTS_DIR = BASE_DIR / "scripts"
 LOG_DIR = BASE_DIR / "Data" / "logs"
 PYTHON = sys.executable
+
+# Bounded subprocess execution (v1.3, 2026-07-01): a wedged collector or a
+# hung Bloomberg session must never hang the whole monthly run indefinitely.
+sys.path.insert(0, str(BASE_DIR))
+from scripts.loop.procutil import run_bounded  # noqa: E402
+
+# Per-step wall-clock budgets (seconds). Generous — these are runaway safety
+# nets, not performance targets. Longest observed step in the 2026-07-01 full
+# run was well under 30 min; anything past these bounds is a hang.
+STEP_TIMEOUT_DEFAULT = 3600      # ordinary collectors / DB rebuilds
+STEP_TIMEOUT_BBG = 5400          # Bloomberg pulls under conda
+STEP_TIMEOUT_GDELT_INGEST = 7200 # GKG fetch can crawl on a slow network
 
 NEO4J_HOST = "localhost"
 NEO4J_BOLT_PORT = 7687
@@ -214,9 +230,11 @@ def setup_logging():
 
 
 def run_step(name: str, script: str, args: list, log_file: Path,
-             cwd: Path | None = None) -> dict:
+             cwd: Path | None = None, timeout: float | None = None) -> dict:
     """
-    Run a pipeline step as a subprocess.
+    Run a pipeline step as a bounded subprocess (v1.3: run_bounded kills the
+    whole process group after `timeout` seconds — default STEP_TIMEOUT_DEFAULT
+    — so one wedged step can never hang the monthly run).
 
     script may be an absolute path (for external T2 pipeline scripts) or a
     path relative to SCRIPTS_DIR (for ASADO scripts).
@@ -237,17 +255,21 @@ def run_step(name: str, script: str, args: list, log_file: Path,
     print(f"{'─' * 60}")
 
     start = time.time()
-    result = subprocess.run(
+    result = run_bounded(
         cmd,
-        capture_output=True,
-        text=True,
+        timeout=timeout or STEP_TIMEOUT_DEFAULT,
         cwd=run_cwd,
         env={**os.environ, "PYTHONUNBUFFERED": "1"},
     )
     elapsed = time.time() - start
 
     output = result.stdout + result.stderr
-    status = "OK" if result.returncode == 0 else "FAILED"
+    if result.returncode == 0:
+        status = "OK"
+    elif getattr(result, "timed_out", False):
+        status = "TIMEOUT"
+    else:
+        status = "FAILED"
 
     print(output)
 
@@ -282,21 +304,26 @@ def print_summary(results: list, total_elapsed: float, log_file: Path):
 
     all_ok = True
     for r in results:
-        icon = "OK  " if r["status"] == "OK" else "FAIL"
-        print(f"  [{icon}]  {r['name']:35s}  {r['elapsed']:6.1f}s")
-        if r["status"] != "OK":
+        if r["status"] == "OK":
+            icon = "OK  "
+        elif r.get("advisory"):
+            icon = "WARN"
+        else:
+            icon = "FAIL"
             all_ok = False
+        print(f"  [{icon}]  {r['name']:35s}  {r['elapsed']:6.1f}s")
 
     print()
     print(f"  Total elapsed: {total_elapsed:.1f}s ({total_elapsed / 60:.1f} min)")
     print(f"  Log file:      {log_file}")
     print()
 
+    hard_failed = [r["name"] for r in results
+                   if r["status"] != "OK" and not r.get("advisory")]
     if all_ok:
         print("  ALL STEPS COMPLETED SUCCESSFULLY.")
     else:
-        failed = [r["name"] for r in results if r["status"] != "OK"]
-        print(f"  WARNING: {len(failed)} step(s) had errors: {', '.join(failed)}")
+        print(f"  WARNING: {len(hard_failed)} step(s) had errors: {', '.join(hard_failed)}")
         print("  Check the log file for details.")
 
     print("=" * 60)
@@ -306,12 +333,12 @@ def print_summary(results: list, total_elapsed: float, log_file: Path):
         f.write("FINAL SUMMARY\n")
         f.write("=" * 60 + "\n")
         for r in results:
-            icon = "OK  " if r["status"] == "OK" else "FAIL"
+            icon = ("OK  " if r["status"] == "OK"
+                    else "WARN" if r.get("advisory") else "FAIL")
             f.write(f"  [{icon}]  {r['name']:35s}  {r['elapsed']:6.1f}s\n")
         f.write(f"\nTotal elapsed: {total_elapsed:.1f}s\n")
-        if not all_ok:
-            failed = [r["name"] for r in results if r["status"] != "OK"]
-            f.write(f"FAILED STEPS: {', '.join(failed)}\n")
+        if hard_failed:
+            f.write(f"FAILED STEPS: {', '.join(hard_failed)}\n")
 
 
 def neo4j_is_reachable() -> bool:
@@ -509,7 +536,7 @@ def main():
             print("  Re-run WITHOUT --skip-bloomberg so Program 6a regenerates it")
             print("  from live blpapi (Bloomberg Terminal must be up on Parallels).")
             print("=" * 60)
-            return
+            return 2
 
     total_start = time.time()
     results = []
@@ -573,7 +600,8 @@ def main():
         if not args.collectors_only and not args.dry_run:
             verify_duckdb()
         print_summary(results, total_elapsed, log_file)
-        return
+        return 1 if any(r["status"] != "OK" and not r.get("advisory")
+                        for r in results) else 0
 
     # ── Stage 1: Data Collection ──────────────────────────────────────
     if not args.db_only:
@@ -664,13 +692,14 @@ def main():
             print(f"{'─' * 60}")
 
             bbg_start = time.time()
-            bbg_result = subprocess.run(
-                bbg_cmd, capture_output=True, text=True, cwd=str(BASE_DIR),
+            bbg_result = run_bounded(
+                bbg_cmd, timeout=STEP_TIMEOUT_BBG, cwd=str(BASE_DIR),
                 env={**os.environ, "PYTHONUNBUFFERED": "1"},
             )
             bbg_elapsed = time.time() - bbg_start
             bbg_output = bbg_result.stdout + bbg_result.stderr
-            bbg_status = "OK" if bbg_result.returncode == 0 else "FAILED"
+            bbg_status = ("OK" if bbg_result.returncode == 0
+                          else "TIMEOUT" if bbg_result.timed_out else "FAILED")
             print(bbg_output)
 
             with open(log_file, "a") as f:
@@ -709,13 +738,14 @@ def main():
             print(f"{'─' * 60}")
 
             t2bbg_start = time.time()
-            t2bbg_result = subprocess.run(
-                t2bbg_cmd, capture_output=True, text=True, cwd=str(BASE_DIR),
+            t2bbg_result = run_bounded(
+                t2bbg_cmd, timeout=STEP_TIMEOUT_BBG, cwd=str(BASE_DIR),
                 env={**os.environ, "PYTHONUNBUFFERED": "1"},
             )
             t2bbg_elapsed = time.time() - t2bbg_start
             t2bbg_output = t2bbg_result.stdout + t2bbg_result.stderr
-            t2bbg_status = "OK" if t2bbg_result.returncode == 0 else "FAILED"
+            t2bbg_status = ("OK" if t2bbg_result.returncode == 0
+                            else "TIMEOUT" if t2bbg_result.timed_out else "FAILED")
             print(t2bbg_output)
 
             with open(log_file, "a") as f:
@@ -825,6 +855,7 @@ def main():
             "gdelt_ingest/build_fullhistory_workbook.py",
             gdelt_ingest_flags,
             log_file,
+            timeout=STEP_TIMEOUT_GDELT_INGEST,
         ))
         # Hand the freshly-built monthly workbook to the normalize/optimizer work dir.
         import shutil
@@ -986,6 +1017,21 @@ def main():
             log_file
         ))
 
+        # ADVISORY (2026-07-01, PRD W8): source-alignment QA after the DB is
+        # fully rebuilt. A failure is downgraded to WARN — it reports in the
+        # summary but never fails the run (upgrade to gating once quiet).
+        qa_result = run_step(
+            "QA: source alignment (advisory)",
+            "qa/check_source_alignment.py",
+            [],
+            log_file,
+            timeout=900,
+        )
+        if qa_result["status"] != "OK":
+            qa_result["status"] = "WARN"
+            qa_result["advisory"] = True
+        results.append(qa_result)
+
         # Stage 2 prediction-market layer (Kalshi + Polymarket), additive.
         # Runs after daily factor surfaces are rebuilt so variable_meta can
         # be upserted with fresh prediction-market signal names.
@@ -1077,6 +1123,13 @@ def main():
     # ── Summary ───────────────────────────────────────────────────────
     print_summary(results, total_elapsed, log_file)
 
+    # Real exit code (v1.3, 2026-07-01): steps still run to completion —
+    # per-step resilience is unchanged — but a run with any FAILED step must
+    # not report success to launchd/CI/callers. FAIL IS FAIL. Advisory steps
+    # (source-alignment QA) warn without flipping the exit code.
+    return 1 if any(r["status"] != "OK" and not r.get("advisory")
+                    for r in results) else 0
+
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

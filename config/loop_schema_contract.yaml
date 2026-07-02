@@ -1,0 +1,162 @@
+# =============================================================================
+# FILE: config/loop_schema_contract.yaml
+# =============================================================================
+#
+# INPUT FILES: none (this file IS the consumer-column contract).
+# CONSUMED BY:
+#   - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/qa/check_loop_schema.py
+#     (nightly QA step `check_loop_schema` in scripts/loop/loop_daily_job.py)
+#
+# VERSION: 1.1
+# LAST UPDATED: 2026-07-01
+# AUTHOR: Arjun Divecha (agent session, data-structures audit R5 2026-07-01)
+#   v1.1: added family_ranks_daily (Frontend Alpha Rethink Phase 2)
+#
+# DESCRIPTION:
+# Loop-DB tables are DROP+CREATE per loader with no schema versioning — a
+# loader edit can silently rename/drop a column that downstream consumers
+# (build_dislocations, build_cockpit_data, the harness, event studies) rely
+# on. This file declares, per table, the columns consumers actually read.
+# The nightly checker asserts DECLARED ⊆ ACTUAL (additive columns are always
+# fine). Column lists were snapshotted from the live loop DB on 2026-07-01.
+#
+# RULES:
+#   - required table missing         -> FAIL (exit 1)
+#   - declared column missing        -> FAIL (exit 1), even on optional tables
+#   - optional table missing         -> PARTIAL (exit 2) — BBG-down nights etc.
+#   - table present with extra cols  -> OK (additive changes are non-breaking)
+#
+# When a loader intentionally changes a schema, update this file IN THE SAME
+# commit — that is the point: the change becomes visible and reviewed.
+# =============================================================================
+
+schema_version: 1
+contract_version: "1.1"
+
+# The canonical tidy schema shared by signal tables.
+_tidy: &tidy [date, country, value, variable, source]
+
+tables:
+  # ---- core engine surfaces (required) --------------------------------------
+  dislocation_daily:
+    optional: false
+    columns: [date, dislocation_id, detector, archetype, entity, direction,
+              severity, components_json, regime_context, status, first_seen,
+              days_active, resolution_note]
+  gap_episodes:
+    optional: false
+    columns: [gap_id, episode_key, entity, direction, gap_class, horizon_days,
+              horizon_bucket, source_dislocation_ids, mechanism_text,
+              preferred_ticker, proxy_type, currency_basis, invalidation_rule,
+              tension_score_at_open, scoring_config_version,
+              scoring_config_hash, status, opened_at, closed_at, close_reason]
+  gap_episode_marks:
+    optional: false
+    columns: [gap_id, date, mark_window, entity, preferred_ticker,
+              realized_etf_return, realized_country_return, realized_move,
+              expected_move, expected_move_source, price_absorption_index,
+              unabsorbed_fraction, absorption_state, tension_score_current,
+              days_active, expression_quality_current,
+              crowding_penalty_current, source_freshness_json]
+  gap_episode_expression:
+    optional: false
+    columns: [gap_id, ticker, is_primary, proxy_type, currency_basis,
+              expense_ratio_bps, dollar_adv_21d, liquidity_tier,
+              expression_quality, reason]
+  gap_holdout_daily:
+    optional: false
+    columns: [date, candidate_id, gap_id, entity, gap_class, direction,
+              horizon_bucket, eligible, promoted, tension_score_at_selection,
+              random_shadow_score, reason_not_promoted]
+  price_state_daily:
+    optional: false
+    columns: [date, country, preferred_ticker, proxy_type, liquidity_tier,
+              currency_basis, basis_gap_21d, basis_gap_z, price_state_summary,
+              source_freshness_json]
+  price_state_surface:
+    optional: false
+    columns: [date, country, surface, state_score, direction_hint,
+              freshness_date, lag_policy, state_json]
+  harness_results:
+    optional: false
+    columns: [hypothesis_id, family_key, run_ts, frequency, verdict,
+              primary_horizon, mean_ic, nw_t, deflated_sharpe, result_file]
+  hypothesis_ledger:
+    optional: false
+    columns: [hypothesis_id, created_ts, author, archetype, family_key,
+              mechanism_text, status, verdict, effective_verdict]
+  thesis_ledger:
+    optional: false
+    columns: [thesis_id, opened_ts, author, paper, entity, direction,
+              horizon_days, probability, open_date, status, close_date,
+              realized_return, outcome]
+  thesis_marks:
+    optional: false
+    columns: [thesis_id, mark_date, cum_return, days_open]
+  country_returns_monthly:
+    optional: false
+    columns: [date, country, return_1m]
+  forward_calendar:
+    optional: false
+    columns: [event_id, event_date, label, category, severity, is_global,
+              countries_affected]
+  combiner_scores_daily:
+    optional: false
+    columns: *tidy
+  graph_features_pit_daily:
+    optional: false
+    columns: *tidy
+  similarity_features_daily:
+    optional: false
+    columns: *tidy
+  leadlag_features_daily:
+    optional: false
+    columns: *tidy
+  valuation_monthly:
+    optional: false
+    columns: *tidy
+  weo_revisions:
+    optional: false
+    columns: [vintage, vintage_date, country, target_year, variable, value,
+              prev_vintage, prev_value, revision]
+  tot_trade_shares:
+    optional: false
+    columns: [country, category, export_share, import_share, net_share,
+              export_year, import_year, fetched_ts]
+  loop_variable_meta:
+    optional: false
+    columns: [variable, source, frequency, description,
+              publication_lag_months, pit_weights_start]
+  family_ranks_daily:
+    optional: false
+    columns: [date, family, country, score, oriented_score, rank, universe_n]
+
+  # ---- BBG-fed / environment-gated surfaces (optional: table may be absent
+  #      on a fresh machine, but if present the columns must hold) ------------
+  sovereign_daily:
+    optional: true
+    columns: *tidy
+  sovereign_signals:
+    optional: true
+    columns: *tidy
+  market_implied_signals:
+    optional: true
+    columns: *tidy
+  eco_surprise_signals:
+    optional: true
+    columns: *tidy
+  consensus_signals:
+    optional: true
+    columns: *tidy
+  foreign_flows_daily:
+    optional: true
+    columns: *tidy
+  etf_flow_signals:
+    optional: true
+    columns: [date, country, etf, value, variable, source]
+  cot_signals:
+    optional: true
+    columns: [date, commodity, net_pct_oi, net_pct_oi_z52w]
+  sov_rating_changes:
+    optional: true
+    columns: [date, country, agency, old_score, new_score, delta]

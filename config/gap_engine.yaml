@@ -1,10 +1,17 @@
-# ASADO Price-Discovery Gap Engine v1 configuration.
+# ASADO Price-Discovery Gap Engine configuration.
 #
-# This file is part of the v1 pre-registration. Changing scoring weights,
+# This file is part of the pre-registration. Changing scoring weights,
 # thresholds, expected-move mappings, or holdout gates requires a config version
 # bump so old gap episodes and holdout rows remain auditable.
+#
+# v2 (2026-07-01): tension_score_current on daily marks is now RE-SCORED live
+# (expression/crowding/staleness/data-quality recomputed at mark time, then
+# scaled by absorption state) instead of copying tension_score_at_open forward.
+# repriced_against episodes are hard-capped below promotion.min_tension_score
+# via mark_scoring.repriced_against_cap. OPEN-time promotion scoring is
+# unchanged, so holdout rows remain comparable across v1/v2.
 
-config_version: gap_engine_v1_2026_06_24
+config_version: gap_engine_v2_2026_07_01
 
 feature_flags:
   render_top_gaps: true
@@ -45,6 +52,12 @@ score_weights:
   crowding: 0.08
   staleness: 0.08
   data_quality: 0.07
+
+# Mark-time (daily re-scoring) parameters — see tension_current() in
+# scripts/loop/gap_engine_common.py. The cap MUST stay below
+# promotion.min_tension_score so a falsified gap can never be headlined.
+mark_scoring:
+  repriced_against_cap: 0.30
 
 score_defaults:
   validation_prior_neutral: 0.50

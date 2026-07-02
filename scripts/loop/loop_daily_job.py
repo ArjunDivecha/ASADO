@@ -21,9 +21,11 @@ OUTPUT FILES:
   (A1 governance run manifest: per-step ok/fail/stale/partial/skipped + the
   governance-contract hash; written fail-soft after the STEPS loop)
 
-VERSION: 1.2
-LAST UPDATED: 2026-06-12 (graph machine: PIT graph features, fundamental
-              twins, lead-lag network, ridge combiner, Neo4j write-back)
+VERSION: 1.3
+LAST UPDATED: 2026-07-01 (Frontend Alpha Rethink Phase 2: build_family_ranks
+              after the combiner; build_fable_connections (non-deterministic
+              CONJECTURE pass, API-gated) + a FINAL cockpit payload/page
+              refresh so the front end reflects tonight's run, not last night's)
 AUTHOR: Arjun Divecha (built by agent session, Alpha-Hunting Loop Phase 2)
 
 DESCRIPTION:
@@ -107,6 +109,15 @@ com.arjundivecha.asado-loop-daily) in this order:
                             (PRD 6.3; PARTIAL-stamped until >= 10 closed theses)
  33. build_jst_risk_report - dated JST long-cycle tail-risk report (xlsx + PDF)
                             in Data/loop/risk_reports/ (read-only; context only)
+ 34. build_family_ranks   - cross-family rank panel family_ranks_daily (runs
+                            just after build_combiner in the actual sequence;
+                            Consensus Matrix / Edge Board substrate)
+ 35. build_fable_connections - non-deterministic Fable pass: bounded warehouse
+                            + Neo4j packet -> claude-fable-5 -> CONJECTURE
+                            connections JSON (optional; ASADO_SKIP_FABLE=1 skips)
+ 36. refresh_cockpit_data / refresh_live_cockpit - FINAL cockpit rebuild so the
+                            payload reflects tonight's run (the early build
+                            after the docket only served the morning read)
 
 Each step runs in its own subprocess with the house per-source isolation
 pattern: one failing step does not stop the rest, but ANY failure makes the
@@ -256,6 +267,11 @@ STEPS = [
     # AFTER the three feature builders and load_etf_flows/load_consensus/
     # load_eco_surprise, which feed it.
     ("build_combiner", [PY, "scripts/loop/build_combiner.py"]),
+    # Cross-family rank panel (PRD Frontend Alpha Rethink §4.2): converts each
+    # validated family's latest cross-section into ranks -> family_ranks_daily
+    # (the Consensus Matrix / Edge Board substrate). Must run AFTER
+    # build_combiner and the feature/loader steps it re-presents.
+    ("build_family_ranks", [PY, "scripts/loop/build_family_ranks.py"]),
     # Push discovered SIMILAR_TO / LEADS edges + combiner ranks into Neo4j.
     ("write_graph_discoveries", [PY, "scripts/loop/write_graph_discoveries.py"]),
     ("build_dislocations", [PY, "scripts/loop/build_dislocations.py"]),
@@ -274,6 +290,12 @@ STEPS = [
     # capped at 12 GDELT pulls, D8 excluded).
     ("build_evidence_packs", [PY, "scripts/loop/build_evidence_packs.py"]),
     ("fold_ledgers", [PY, "scripts/loop/ledgers.py", "--rebuild"]),
+    # Consumer-column schema QA (audit R5, 2026-07-01): loop tables are
+    # DROP+CREATE with no versioning; this asserts every column consumers
+    # read still exists (contract: config/loop_schema_contract.yaml). Runs
+    # after fold_ledgers so ledger tables are checked post-rebuild. Exit 1 =
+    # real drift; exit 2 = optional (BBG-fed) table absent, PARTIAL.
+    ("check_loop_schema", [PY, "scripts/qa/check_loop_schema.py"]),
     # Calibration report (PRD 6.3): regenerates the current month's report
     # nightly from the folded ledgers; stamps itself PARTIAL until >= 10
     # closed theses exist (Phase 4 gate). Must run AFTER fold_ledgers.
@@ -283,6 +305,20 @@ STEPS = [
     # p10 the modern sample can't see). Dated xlsx + PDF in Data/loop/risk_reports/.
     # Pure reporting (no warehouse writes, no signal) — safe as the final step.
     ("build_jst_risk_report", [PY, "scripts/loop/build_jst_risk_report.py"]),
+    # Fable connections (the one deliberately NON-deterministic step): bounded
+    # custody-scrubbed warehouse+Neo4j packet -> claude-fable-5 -> 3-7
+    # CONJECTURE cross-surface connections in Data/loop/fable/. One API call
+    # (~25KB in / <=12K tokens out). ASADO_SKIP_FABLE=1 or missing key -> exit 2
+    # PARTIAL. Runs AFTER dislocations/gaps/family ranks so it sees tonight's
+    # state; optional in the governance contract (API-down never reds the loop).
+    ("build_fable_connections", [PY, "scripts/loop/build_fable_connections.py"]),
+    # Final cockpit refresh: the early build_cockpit_data (after the docket)
+    # serves the morning read quickly, but everything this run just produced —
+    # dislocations, gap marks, family ranks, the Fable pass — postdates it.
+    # Rebuild payload + page as the true last step; the browser's stale-tab
+    # poll (A8) picks the refresh up automatically.
+    ("refresh_cockpit_data", [PY, "cos_mockups/build_cockpit_data.py"]),
+    ("refresh_live_cockpit", [PY, "cos_mockups/make_live_cockpit.py"]),
 ]
 
 

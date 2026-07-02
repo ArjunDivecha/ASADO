@@ -109,10 +109,13 @@ You are Fable, the connection-finding engine of the ASADO macro warehouse — \
 one question: what does the data know that is NOT embedded in the price?
 
 You receive tonight's bounded evidence packet: cross-family signal ranks, \
-detector dislocations, open price-discovery gaps, sovereign credit / FX-vol / \
-macro-surprise extremes, commodity impulses, the forward event calendar, and \
-the relationship graph (bilateral trade partners, fundamental twins, lead-lag \
-edges). Deterministic detectors already scan each surface alone. Your job is \
+Triptych point-in-time conditional-history priors (which factor decile each \
+country sits in and what that decile historically preceded — PRIORS, not \
+evidence), detector dislocations, open price-discovery gaps, sovereign \
+credit / FX-vol / macro-surprise extremes, commodity impulses, the forward \
+event calendar, and the relationship graph (bilateral trade partners, \
+fundamental twins, lead-lag edges). Deterministic detectors already scan \
+each surface alone. Your job is \
 the part they cannot do: find NON-OBVIOUS connections that only appear when \
 you join surfaces — transmission chains through the trade/banking graph, \
 second-order effects, tension between what different markets are pricing, \
@@ -160,7 +163,7 @@ CONNECTIONS_TOOL = {
                                       "enum": ["families", "gaps", "sovereign", "fx_vol",
                                                "surprises", "commodities", "graph",
                                                "calendar", "flows", "returns",
-                                               "dislocations"]},
+                                               "dislocations", "triptych"]},
                         },
                         "direction_hint": {"type": "string",
                                            "enum": ["long", "short", "relative", "unclear"]},
@@ -255,6 +258,25 @@ def packet_family_ranks(con) -> dict:
     for r in df.itertuples(index=False):
         out.setdefault(r.country, {})[r.family] = f"{int(r.rank)}/{int(r.universe_n)}"
     return out
+
+
+def packet_triptych(con) -> list[dict]:
+    """Top Triptych PIT priors (2026-07-02). Conditional history, PRIOR only —
+    the queue is already PIT-thresholded and custody-safe (no forward-return
+    keys; bucket averages are historical conditional means, not live returns)."""
+    if not _table_exists(con, "triptych_review_queue"):
+        return []
+    df = con.execute("""
+        SELECT country, factor, normalization, return_mode, horizon_months,
+               current_decile, implied_direction,
+               round(confidence_score, 2) AS confidence,
+               round(ic_t_stat, 1) AS ic_t,
+               round(cur_bucket_hit_rate, 2) AS hist_hit_rate
+        FROM triptych_review_queue
+        WHERE threshold_mode = 'pit'
+        ORDER BY priority DESC LIMIT 12
+    """).fetchdf()
+    return df.to_dict("records")
 
 
 def packet_dislocations(con) -> list[dict]:
@@ -398,6 +420,11 @@ def build_packet(con) -> dict:
                              "graph_twohop, graph_bank, twins, cpi_rev (monthly), "
                              "etf_contra (contrarian), tot_impulse (untested context).",
         "family_ranks": _block(lambda: packet_family_ranks(con), "family_ranks", {}),
+        "triptych_priors_note": "PIT conditional-history priors from the nightly "
+                                "factor-bucket sweep: current decile of each factor's "
+                                "own point-in-time distribution + what that decile "
+                                "historically preceded. PRIORS for triage, not evidence.",
+        "triptych_priors": _block(lambda: packet_triptych(con), "triptych", []),
         "dislocations_tonight": _block(lambda: packet_dislocations(con), "dislocations", []),
         "open_gap_episodes": _block(lambda: packet_gaps(con), "gaps", []),
         "sovereign": _block(lambda: packet_sovereign(con), "sovereign", {}),

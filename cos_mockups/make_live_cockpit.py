@@ -12,9 +12,15 @@ OUTPUT FILES:
 - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/cos_mockups/cockpit_live.html
     The same cockpit, wired to real data via window.COCKPIT_DATA (cockpit_data.js).
 
-VERSION: 1.2
-LAST UPDATED: 2026-07-01
+VERSION: 1.3
+LAST UPDATED: 2026-07-02
 AUTHOR: Arjun Divecha / Claude Code
+
+v1.3 (2026-07-02, Triptych Prediction Prior Layer):
+- Triptych Priors view (FVIEWS.triptych) — the nightly PIT review queue with
+  deep links into the visual tool; desk tab + chip + router intent
+- Country letter gains a "Conditional history" section: the country's top-3
+  PIT priors from the scan (epistemic tag PRIOR — triage, never evidence)
 
 DESCRIPTION:
 Transforms cockpit.html into a TRUE-DATA prototype by (1) injecting a
@@ -159,6 +165,8 @@ const EDGE_AGREE=CONS.agreement||{};
 const _consFresh=()=>CONS.status==="fresh"||CONS.status==="stale";
 const EDGEB=D.edge_board||{as_of:null,slots:[]};
 const FABLE=D.fable||{status:"missing",as_of:null,model:null,connections:[]};
+// Triptych Prediction Prior Layer (2026-07-02): PIT conditional-history priors
+const TRIP=D.triptych||{status:"missing",as_of:null,queue:[],by_country:{}};
 '''
 html = html[:start] + adapter + html[end:]
 
@@ -236,6 +244,7 @@ FVIEWS.country={title:p=>{const r=(COUNTRY[p.name]||{}).reg;return `${p.name}${r
      <div class="stat"><div class="v">${_sgn(c.s210,2)}</div><div class="k">2s10s</div></div></div>
    ${c.cape!=null?valBar("CAPE percentile",c.cape,c.cape<50?"cheap":"rich"):""}${c.erp!=null?valBar("ERP percentile",c.erp,c.erp<50?"cheap":"rich"):""}
    ${th?`<div style="margin-top:14px"><span class="chip" onclick="ask('mark the ${p.name} thesis')"><span class="tag">${th.paper?'PAPER':'LIVE'}</span> ${th.id} · ${(th.direction||'').toUpperCase()} ${p.name} · <b class="muted">p=${th.probability??'—'}</b></span></div>`:''}
+   ${(TRIP.by_country[p.name]||[]).length?`<div class="subpanel"><h4>Conditional history · Triptych PIT priors</h4><div style="overflow-x:auto"><table class="dt"><thead><tr><th>Factor</th><th style="text-align:right">Sig</th><th style="text-align:right">Hor</th><th style="text-align:right">Now</th><th style="text-align:right">Lean</th><th style="text-align:right">Fwd·hist</th><th style="text-align:right">Conf</th><th style="text-align:right">IC-t</th><th style="text-align:right">Tool</th></tr></thead><tbody>${TRIP.by_country[p.name].map(r=>tripRow(r,false)).join("")}</tbody></table></div><p class="narr" style="margin:6px 0 0;font-size:11px"><span class="cite">PRIOR</span> what this factor's own PIT history says about ${esc(p.name)} from today's reading — triage input, never evidence.</p></div>`:""}
    ${dd?`<div class="keyrow" onclick="ask('downside if it keeps falling')"><span class="sw" style="background:var(--oxblood)"></span>JST tail · ${dd}% trailing drawdown →</div>`:""}`}};'''
 html = html.replace(old_country, new_country)
 
@@ -469,13 +478,35 @@ FVIEWS.fable={title:()=>`Fable's <em>Desk</em>`,opts:()=>``,render:()=>{
     <div class="desk-section"><h5>Why non-obvious</h5><p class="narr" style="margin:0">${esc(c.why_non_obvious||"")}</p></div>
     <div class="desk-section"><h5>Falsifiable check</h5><p class="narr" style="margin:0">${esc(c.falsifiable_check||"")}</p></div>
     <div class="muted" style="font-size:10px;margin-top:7px">surfaces: ${(c.surfaces||[]).map(esc).join(", ")} · horizon ${esc(c.horizon||"—")} · ${esc(c.id||"")}</div></details>`).join("")}};
+
+/* ===== Triptych priors (2026-07-02) — PIT conditional history, PRIOR only ===== */
+function tripDir(d){return d==="long"?'<b class="tl">LONG</b>':(d==="short"?'<b class="ox">SHORT</b>':esc(d||"—"))}
+function tripRow(r,showC){return `<tr onclick="openCountry('${qs(r.country)}')">
+  ${showC?`<td style="font-family:var(--serif);font-size:12.5px">${esc(r.country)}</td>`:""}
+  <td>${esc(r.factor)}${r.factor_table!=="t2_raw"?' <span class="muted" title="warehouse factor (ASADO-only, no tool view)">°</span>':""}</td>
+  <td class="num" title="${esc(r.normalization)} · ${esc(r.return_mode)}">${esc((r.normalization||"").replace("history_z","z").replace("cross_var_pct","xs"))}/${esc((r.return_mode||"").slice(0,3))}</td>
+  <td class="num">${r.horizon_months}M</td><td class="num">D${r.current_decile??"—"}</td>
+  <td class="num">${tripDir(r.implied_direction)}</td>
+  <td class="num" title="bucket avg fwd ${r.cur_bucket_avg_fwd!=null?(r.cur_bucket_avg_fwd*100).toFixed(1)+'%':'—'} · hit ${r.cur_bucket_hit_rate!=null?Math.round(r.cur_bucket_hit_rate*100)+'%':'—'} · n=${r.cur_bucket_n??'—'}">${r.cur_bucket_avg_fwd!=null?((r.cur_bucket_avg_fwd>=0?"+":"")+(r.cur_bucket_avg_fwd*100).toFixed(1)+"%"):"—"}</td>
+  <td class="num">${r.confidence_score!=null?r.confidence_score.toFixed(2):"—"}</td>
+  <td class="num">${r.ic_t_stat!=null?r.ic_t_stat.toFixed(1):"—"}</td>
+  <td class="num">${r.triptych_url?`<a href="${esc(r.triptych_url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--teal);text-decoration:none" title="open in the Triptych visual tool">⧉</a>`:"—"}</td></tr>`}
+FVIEWS.triptych={title:()=>`Triptych <em>Priors</em>`,opts:()=>``,render:()=>{
+  if(TRIP.status==="missing")return `<p class="narr"><span class="ox">UNKNOWN.</span> No Triptych scan in this payload — run scripts/loop/build_triptych_scan.py, then rebuild cockpit_data. <span class="cite">triptych</span></p>`;
+  const q=TRIP.queue||[];
+  const head=`<div class="eyebrow">Conditional-history review queue · PIT deciles · ${TRIP.as_of||"—"}</div>
+  <p class="narr"><span class="cite">PRIOR</span> ${esc(TRIP.note||"")} Every factor × country × horizon in the warehouse is swept nightly; these are the strongest point-in-time setups whose current reading sits at a decile edge. ° = warehouse factor (no visual-tool view); ⧉ = open in Triptych.</p>`;
+  if(!q.length)return head+`<p class="narr">The scan ran but nothing cleared the queue gates tonight (records ≥60, |IC-t| ≥2, R² ≥0.4, decile edge, confidence ≥0.2).</p>`;
+  return head+`<div style="overflow-x:auto"><table class="dt"><thead><tr><th>Country</th><th>Factor</th><th style="text-align:right">Sig</th><th style="text-align:right">Hor</th><th style="text-align:right">Now</th><th style="text-align:right">Lean</th><th style="text-align:right">Fwd·hist</th><th style="text-align:right">Conf</th><th style="text-align:right">IC-t</th><th style="text-align:right">Tool</th></tr></thead><tbody>
+  ${q.map(r=>tripRow(r,true)).join("")}</tbody></table></div>
+  <p class="narr" style="margin-top:10px"><span class="ox">Discipline.</span> A prior guides triage and horizon choice — it is <b>not evidence</b>. Anything acted on still goes through the Lab/harness. <span class="cite">triptych_review_queue · build_triptych_scan</span></p>`}};
 '''
 html = html.replace('FVIEWS.dislo={title:()=>`The <em>Brief</em>`', phase2_views + '\nFVIEWS.dislo={title:()=>`The <em>Brief</em>`')
 
 # (c) Persistent nav: the three new views join the desk tabs, in front.
 html = html.replace(
     'const DESK_TABS=[["desk_discovery","Discovery Lab"],',
-    'const DESK_TABS=[["edge","Edge Board"],["consensus","Consensus"],["fable","Fable\\u2019s Desk"],["desk_discovery","Discovery Lab"],'
+    'const DESK_TABS=[["edge","Edge Board"],["consensus","Consensus"],["triptych","Triptych"],["fable","Fable\\u2019s Desk"],["desk_discovery","Discovery Lab"],'
 )
 
 # (d) Boot into the Edge Board when it has slots (P1 replaces "Today").
@@ -491,13 +522,14 @@ html = html.replace(
     '''  if(/(edge board|the board|top claims|best ideas|ranked claims|conviction)/.test(q)){go("edge");return pushMsg("cos",`The Edge Board — ranked claims from every surface (gaps, family consensus, event windows, expiring theses); a governance exception always claims ①. <span class="cite">edge_board · ${EDGEB.as_of||""}</span>`)}
   if(/(consensus|matrix|famil(y|ies)|who do the families|agree|conflict)/.test(q)){go("consensus");const _cl=(CONS.leaders?.long||[])[0];return pushMsg("cos",`The Consensus Matrix — ${(CONS.families||[]).length} validated families, quintile votes, conflicts flagged.${_cl?` Strongest long agreement: <b class="tl">${esc(_cl.country)}</b> (${_cl.votes} votes).`:""} <span class="cite">family_ranks_daily · ${CONS.as_of||""}</span>`)}
   if(/(fable|big.?brain|connection|conjecture|non.?deterministic)/.test(q)){go("fable");return pushMsg("cos",`Fable's Desk — ${(FABLE.connections||[]).length} cross-surface conjecture(s) from the nightly pass. Everything there is <b>CONJECTURE</b> until the Lab/harness clears it. <span class="cite">fable_connections · ${FABLE.as_of||""}</span>`)}
+  if(/(triptych|prior|conditional history|history says|bucket|decile)/.test(q)){go("triptych");const _tq=(TRIP.queue||[]).length;return pushMsg("cos",`Triptych priors — ${_tq} setup(s) cleared the PIT queue gates tonight. Point-in-time conditional history: a <b>PRIOR</b> for triage, never evidence. <span class="cite">triptych_review_queue · ${TRIP.as_of||""}</span>`)}
   if(/(what should i|care about|brief me|three things|priorit|matter|today|overview)/.test(q)){if((EDGEB.slots||[]).length){go("edge");return pushMsg("cos",`The Edge Board is in the focus panel — ${EDGEB.slots.length} ranked claim(s) tonight, governance exception first. <span class="cite">edge_board · ${EDGEB.as_of||""}</span>`)}go("overview");return pushMsg("cos",`Today is in the focus panel. The third card is now a price-discovery gap when the gap engine is fresh. <span class="cite">cockpit_data</span>`)}'''
 )
 
 # (f) Chips + epistemic legend: new entry points, CONJECTURE quarantined.
 html = html.replace(
     '$("#chips").innerHTML=["What should I care about today?","Research Desk","Where is pressure building?","The WEAK signals","Brazil","Downside if Indonesia keeps falling?"]',
-    '$("#chips").innerHTML=["What should I care about today?","The Edge Board","Consensus Matrix","Fable\\u2019s desk","Where is pressure building?","The WEAK signals","Research Desk"]'
+    '$("#chips").innerHTML=["What should I care about today?","The Edge Board","Consensus Matrix","Triptych priors","Fable\\u2019s desk","Where is pressure building?","The WEAK signals"]'
 )
 html = html.replace(
     '<span class="gkey"><span><b>FACT</b> cited</span><span><b>INFERENCE</b> labelled</span><span><b>UNKNOWN/STALE</b> aloud</span></span>',
@@ -605,6 +637,8 @@ REQUIRED = [
     "FVIEWS.edge=",                # P1: the Edge Board view
     "FVIEWS.consensus=",           # P2: the Consensus Matrix view
     "FVIEWS.fable=",               # Fable's Desk view
+    "FVIEWS.triptych=",            # Triptych PIT priors view (2026-07-02)
+    "function tripRow(",           # Triptych row renderer (queue + country letter)
     "function edgeColor(",         # Edge map layer coloring
     "function edgeRoute(",         # board card routing
     "function famInfo(",           # matrix column header drilldown

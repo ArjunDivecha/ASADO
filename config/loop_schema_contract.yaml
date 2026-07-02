@@ -7,9 +7,10 @@
 #   - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/qa/check_loop_schema.py
 #     (nightly QA step `check_loop_schema` in scripts/loop/loop_daily_job.py)
 #
-# VERSION: 1.1
+# VERSION: 1.2
 # LAST UPDATED: 2026-07-01
 # AUTHOR: Arjun Divecha (agent session, data-structures audit R5 2026-07-01)
+#   v1.2: added triptych_scan + triptych_review_queue (Triptych Prior Layer)
 #   v1.1: added family_ranks_daily (Frontend Alpha Rethink Phase 2)
 #
 # DESCRIPTION:
@@ -130,6 +131,19 @@ tables:
   family_ranks_daily:
     optional: false
     columns: [date, family, country, score, oriented_score, rank, universe_n]
+  triptych_scan:
+    optional: false
+    columns: [as_of, factor, factor_table, country, normalization, return_mode,
+              horizon_months, threshold_mode, n_records, current_signal,
+              current_decile, spread_top_minus_bottom, slope_per_bucket,
+              r_squared, ic_spearman, ic_t_stat, cur_bucket_n,
+              cur_bucket_avg_fwd, cur_bucket_hit_rate, implied_direction,
+              confidence_score, confidence_notes, triptych_url]
+  triptych_review_queue:
+    optional: false
+    columns: [as_of, factor, factor_table, country, normalization, return_mode,
+              horizon_months, threshold_mode, current_decile, implied_direction,
+              confidence_score, priority, triptych_url]
 
   # ---- BBG-fed / environment-gated surfaces (optional: table may be absent
   #      on a fresh machine, but if present the columns must hold) ------------

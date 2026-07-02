@@ -16,6 +16,7 @@ INPUT FILES (all read-only):
       * sovereign_signals        — CDS curve slope (fresh-inversion event triggers)
       * country_returns_monthly  — latest monthly return per T2 country (map 'return' layer)
       * thesis_ledger            — open PAPER theses
+      * triptych_review_queue + triptych_scan — Triptych PIT priors (v1.2)
       * etf_prices_daily + etf_t2_map — best-effort trailing drawdown (tail dots); optional
 - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/config/family_ranks.yaml
     Family registry metadata (labels, verdicts, registered ICs) for the matrix headers.
@@ -34,9 +35,16 @@ OUTPUT FILES:
     Single JSON the cockpit UI binds to. Shape documented in build_payload() and
     intended to mirror the panels in cockpit.html / DESIGN_BRIEF.md.
 
-VERSION: 1.1
-LAST UPDATED: 2026-07-01
+VERSION: 1.2
+LAST UPDATED: 2026-07-02
 AUTHOR: Arjun Divecha / Claude Code
+
+v1.2 (2026-07-02, Triptych Prediction Prior Layer):
+- triptych: review queue + per-country conditional-history priors from the
+  ASADO-native Triptych scan (loop tables triptych_review_queue /
+  triptych_scan; PIT thresholds only — full-sample rows are descriptive and
+  never surface as priors). Each row carries a deep link into the visual
+  Triptych tool for t2 factors.
 
 v1.1 (2026-07-01, Frontend Alpha Rethink PRD Phase 2):
 - consensus: the Consensus Matrix read-model over family_ranks_daily —
@@ -1115,6 +1123,80 @@ def read_fable():
 
 
 # --------------------------------------------------------------------------- #
+# Triptych conditional-history priors (v1.2 — Triptych Prediction Prior Layer)
+# --------------------------------------------------------------------------- #
+_TRIPTYCH_ROW_KEYS = [
+    "factor", "factor_table", "country", "normalization", "return_mode",
+    "horizon_months", "current_decile", "implied_direction", "n_records",
+    "cur_bucket_n", "cur_bucket_avg_fwd", "cur_bucket_hit_rate",
+    "ic_t_stat", "r_squared", "spread_top_minus_bottom",
+    "confidence_score", "confidence_notes", "triptych_url",
+]
+
+
+def _triptych_row(rec: dict) -> dict:
+    out = {}
+    for k in _TRIPTYCH_ROW_KEYS:
+        v = rec.get(k)
+        if isinstance(v, float):
+            if math.isnan(v):
+                v = None
+            else:
+                v = round(v, 4)
+        out[k] = v
+    out["epistemic_tag"] = "PRIOR"   # PIT conditional history: a prior, not evidence
+    return out
+
+
+def read_triptych(con):
+    """Review queue + per-country best PIT priors from the nightly scan.
+
+    Epistemic contract: everything here is PIT-thresholded conditional
+    HISTORY — a prior for triage, never evidence. Full-sample rows never
+    surface (build_triptych_scan zeroes their confidence and the queue
+    filters them; the WHERE below is defense in depth)."""
+    if not _table_exists(con, "triptych_review_queue"):
+        return {"status": "missing", "as_of": None, "queue": [], "by_country": {},
+                "note": "No Triptych scan yet — run scripts/loop/build_triptych_scan.py."}
+    queue_df = con.execute("""
+        SELECT * FROM triptych_review_queue
+        WHERE threshold_mode = 'pit'
+        ORDER BY priority DESC
+    """).fetchdf()
+    as_of = str(queue_df["as_of"].max()) if not queue_df.empty else None
+
+    by_country: dict[str, list] = {}
+    if _table_exists(con, "triptych_scan"):
+        per = con.execute("""
+            SELECT * FROM (
+                SELECT *, row_number() OVER (
+                    PARTITION BY country ORDER BY confidence_score DESC,
+                    abs(ic_t_stat) DESC
+                ) AS rn
+                FROM triptych_scan
+                WHERE threshold_mode = 'pit'
+                  AND confidence_score >= 0.30
+                  AND abs(ic_t_stat) >= 2.0
+                  AND implied_direction IN ('long', 'short')
+                  AND n_records >= 60
+            ) WHERE rn <= 3
+        """).fetchdf()
+        for _, rec in per.iterrows():
+            by_country.setdefault(rec["country"], []).append(_triptych_row(rec.to_dict()))
+        if as_of is None and not per.empty:
+            as_of = str(per["as_of"].max())
+
+    return {
+        "status": "fresh" if (not queue_df.empty or by_country) else "empty",
+        "as_of": as_of,
+        "queue": [_triptych_row(r.to_dict()) for _, r in queue_df.iterrows()],
+        "by_country": by_country,
+        "note": "PIT conditional-history PRIORS (expanding thresholds, no lookahead). "
+                "A prior guides triage; it is NOT evidence — the harness still decides.",
+    }
+
+
+# --------------------------------------------------------------------------- #
 # §1.2 — the three-slot "Today" promotion rule
 # --------------------------------------------------------------------------- #
 def build_today(gov, signals, dislo, gap_engine=None):
@@ -1454,6 +1536,10 @@ def build_payload():
     payload["fable"] = _safe(read_fable, "fable",
                              {"status": "missing", "as_of": None, "model": None,
                               "connections": []})
+
+    payload["triptych"] = _safe(lambda: read_triptych(con), "triptych",
+                                {"status": "missing", "as_of": None,
+                                 "queue": [], "by_country": {}})
 
     ret_asof, returns_map = _safe(lambda: read_returns(con), "returns", (None, {}))
     payload["returns"] = {"as_of": ret_asof, "by_country": returns_map}

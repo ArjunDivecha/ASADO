@@ -340,6 +340,18 @@ state lives in a **separate DuckDB** — `Data/loop/asado_loop.duckdb` — so mo
    ETF-positioning and COT context sections). D10 (A10, live 2026-06-11) fires on
    FX-options-vs-equity conflicts: options stress unpriced by equity, or equity stress unconfirmed
    by options. D6 stays blocked until predmkt history accumulates.
+29b. `build_triptych_scan.py` — **the Triptych prior layer** (2026-07-02, ASADO-native port of
+   the Triptych visual tool's analytics kernel): exhaustive sweep of every `t2_raw` factor +
+   the warehouse variables declared in `config/triptych_scan.yaml` × 34 countries ×
+   3 normalizations (raw / expanding-z / cross-country-z) × 2 return modes (absolute/relative)
+   × 6 horizons, in BOTH threshold modes — **pit** (point-in-time expanding deciles, no
+   lookahead → the prior surface, PRD 7.3 confidence) and **full** (full-sample descriptive,
+   confidence hard-zeroed). → `triptych_scan` + `triptych_review_queue` tables, `triptych_priors`
+   view, parquets in `Data/loop/`. Kernel: `scripts/loop/triptych_kernel.py` (line-verified
+   parity with the tool's core.js; PIT canaries in `tests/loop/test_triptych.py`). Surfaces:
+   cockpit "Triptych" desk tab + country-letter priors, Fable packet block, MCP tools
+   `triptych_link` / `triptych_prior_snapshot` / `triptych_queue`. Deep links into the visual
+   tool (https://triptych-one.vercel.app) via `scripts/triptych_tool_link.py`. ~10 s, all cores.
 30. `build_evidence_packs.py` — freezes GDELT headlines for tonight's fired dislocations.
 31. `ledgers.py --rebuild` — folds the JSONL ledgers into loop-DB tables.
 32. `calibration_report.py` — regenerates the current-month calibration report (PARTIAL-stamped

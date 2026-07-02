@@ -1,0 +1,220 @@
+diff --git a/frontend/app.py b/frontend/app.py
+index 183888b..1cc620e 100644
+--- a/frontend/app.py
++++ b/frontend/app.py
+@@ -28,6 +28,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
+ sys.path.insert(0, str(BASE_DIR))
+ 
+ DB_PATH = BASE_DIR / "Data" / "asado.duckdb"
++LOOP_DB_PATH = BASE_DIR / "Data" / "loop" / "asado_loop.duckdb"
++TRIPTYCH_OPP_PQ = BASE_DIR / "Data" / "loop" / "triptych_opportunity_scan.parquet"
+ TRADE_PQ = BASE_DIR / "Data" / "processed" / "bilateral_trade_matrix.parquet"
+ BANK_PQ = BASE_DIR / "Data" / "processed" / "bilateral_banking_matrix.parquet"
+ 
+@@ -114,6 +116,24 @@ def get_banking_matrix():
+         return pd.DataFrame()
+     return pd.read_parquet(BANK_PQ)
+ 
++@st.cache_data(ttl=1800)
++def get_triptych_opportunities():
++    """Latest Triptych opportunity scan rows, ranked by ASADO discovery score."""
++    if TRIPTYCH_OPP_PQ.exists():
++        return pd.read_parquet(TRIPTYCH_OPP_PQ)
++    if LOOP_DB_PATH.exists():
++        try:
++            con = duckdb.connect(str(LOOP_DB_PATH), read_only=True)
++            df = con.execute("""
++                SELECT * FROM triptych_opportunity_scan
++                ORDER BY rank_score DESC
++            """).fetchdf()
++            con.close()
++            return df
++        except Exception:
++            return pd.DataFrame()
++    return pd.DataFrame()
++
+ @st.cache_data(ttl=3600)
+ def get_latest_factors():
+     from scripts.db_bridge import AsadoDB
+@@ -142,6 +162,71 @@ def _safe_float(val, decimals=1):
+     except (TypeError, ValueError):
+         return None
+ 
++
++def _pct_str(val, decimals=1):
++    try:
++        if pd.isna(val):
++            return "n/a"
++        return f"{float(val) * 100:.{decimals}f}%"
++    except (TypeError, ValueError):
++        return "n/a"
++
++
++def _render_triptych_opportunity_detail(row):
++    """Render one opportunity detail panel inside a modal or inline fallback."""
++    country = row.get("country", "")
++    factor = row.get("factor", "")
++    horizon = int(row.get("horizon_months", 0) or 0)
++    st.markdown(f"#### {country} / {factor}")
++    st.caption(
++        f"{horizon}M {row.get('return_mode', '')} returns | "
++        f"{row.get('normalization', '')} | current decile {int(row.get('current_decile', 0) or 0)}"
++    )
++
++    col1, col2, col3, col4 = st.columns(4)
++    col1.metric("Slope / bucket", _pct_str(row.get("slope_per_bucket")))
++    col2.metric("R-squared", f"{float(row.get('r_squared', 0) or 0):.2f}")
++    col3.metric("Endpoint edge", _pct_str(row.get("bucket_edge_spread")))
++    col4.metric("Sample size", f"{int(row.get('sample_size', 0) or 0):,}")
++
++    endpoint_df = pd.DataFrame({
++        "Bucket": ["Bucket 1", "Bucket 10"],
++        "Forward Return": [row.get("bucket_1_avg"), row.get("bucket_10_avg")],
++    })
++    colors = ["#5fa27c" if v >= 0 else "#bd756e" for v in endpoint_df["Forward Return"]]
++    fig = go.Figure(go.Bar(
++        x=endpoint_df["Bucket"],
++        y=endpoint_df["Forward Return"],
++        marker_color=colors,
++        text=[_pct_str(v) for v in endpoint_df["Forward Return"]],
++        textposition="outside",
++    ))
++    fig.update_layout(
++        title="Endpoint Decile Forward Returns",
++        height=260,
++        margin=dict(t=44, b=24, l=30, r=20),
++        yaxis_tickformat=".0%",
++        paper_bgcolor="rgba(0,0,0,0)",
++        plot_bgcolor="rgba(0,0,0,0)",
++        font=dict(color="#E5E7EB", size=11),
++    )
++    st.plotly_chart(fig, use_container_width=True)
++
++    st.info(
++        "Discovery scan only: this row comes from full-sample thresholds. "
++        "Use the visual to inspect the setup, then require PIT recomputation and ASADO validation before treating it as evidence."
++    )
++    url = row.get("triptych_url", "")
++    if url:
++        st.link_button("Open full Triptych visual", url, use_container_width=True)
++        st.components.v1.html(
++            f"""
++            <iframe src="{url}" style="width:100%;height:520px;border:1px solid #334155;border-radius:8px;background:white;"></iframe>
++            """,
++            height=540,
++            scrolling=True,
++        )
++
+ @st.cache_data(ttl=3600)
+ def get_country_meta():
+     """Neo4j keys: name, iso3, dm_em, region (all AS-aliased)."""
+@@ -276,8 +361,8 @@ with st.sidebar:
+ 
+ # ── Tabs ──────────────────────────────────────────────────────────
+ 
+-tab_update, tab_dashboard, tab_trade, tab_banking, tab_similarity, tab_factors, tab_ask, tab_query = st.tabs([
+-    "Monthly Update", "Dashboard", "Trade Network", "Banking Exposure", "Similarity",
++tab_update, tab_dashboard, tab_opportunities, tab_trade, tab_banking, tab_similarity, tab_factors, tab_ask, tab_query = st.tabs([
++    "Monthly Update", "Dashboard", "Opportunities", "Trade Network", "Banking Exposure", "Similarity",
+     "Factor Explorer", "Ask ASADO", "Free Query",
+ ])
+ 
+@@ -393,7 +478,68 @@ with tab_dashboard:
+         st.dataframe(coverage, use_container_width=True, height=400)
+ 
+ # =================================================================
+-# TAB 2 - Trade Network
++# TAB 3 - Triptych Opportunities
++# =================================================================
++
++with tab_opportunities:
++    st.markdown("### Triptych Opportunity Scan")
++    opps = get_triptych_opportunities()
++    if opps.empty:
++        st.warning(
++            "No Triptych opportunity scan found. Run "
++            "`python scripts/loop/build_triptych_opportunity_scan.py --check`."
++        )
++    else:
++        filtered = opps.copy()
++        countries_available = ["All Countries"] + sorted(filtered["country"].dropna().unique().tolist())
++        c_filter = st.selectbox("Country filter", countries_available, key="triptych_country_filter")
++        if c_filter != "All Countries":
++            filtered = filtered[filtered["country"] == c_filter]
++
++        horizon_options = ["All Horizons"] + [str(int(x)) for x in sorted(filtered["horizon_months"].dropna().unique())]
++        h_filter = st.selectbox("Horizon filter", horizon_options, key="triptych_horizon_filter")
++        if h_filter != "All Horizons":
++            filtered = filtered[filtered["horizon_months"] == int(h_filter)]
++
++        show_cols = [
++            "country", "factor", "normalization", "return_mode", "horizon_months",
++            "current_decile", "slope_per_bucket", "r_squared", "bucket_edge_spread",
++            "sample_size", "rank_score",
++        ]
++        display = filtered[show_cols].head(100).copy()
++        display["slope_per_bucket"] = display["slope_per_bucket"].map(_pct_str)
++        display["bucket_edge_spread"] = display["bucket_edge_spread"].map(_pct_str)
++        display["r_squared"] = display["r_squared"].map(lambda x: f"{float(x):.2f}")
++        display["rank_score"] = display["rank_score"].map(lambda x: f"{float(x):.4f}")
++        display.columns = [
++            "Country", "Factor", "Normalization", "Return Mode", "Horizon",
++            "Current Decile", "Slope / Bucket", "R-squared",
++            "Endpoint Edge", "Sample Size", "Rank Score",
++        ]
++        st.dataframe(display, use_container_width=True, hide_index=True, height=360)
++
++        labels = [
++            f"#{i + 1} {r.country} / {r.factor} | {int(r.horizon_months)}M | decile {int(r.current_decile)} | R2 {float(r.r_squared):.2f}"
++            for i, r in filtered.head(100).reset_index(drop=True).iterrows()
++        ]
++        if labels:
++            selected_label = st.selectbox("Inspect setup", labels, key="triptych_selected_setup")
++            selected_idx = labels.index(selected_label)
++            selected_row = filtered.head(100).reset_index(drop=True).iloc[selected_idx].to_dict()
++
++            if hasattr(st, "dialog"):
++                @st.dialog("Triptych Opportunity")
++                def _triptych_dialog(row):
++                    _render_triptych_opportunity_detail(row)
++
++                if st.button("Open popup", type="primary"):
++                    _triptych_dialog(selected_row)
++            else:
++                with st.expander("Opportunity popup", expanded=True):
++                    _render_triptych_opportunity_detail(selected_row)
++
++# =================================================================
++# TAB 4 - Trade Network
+ # =================================================================
+ 
+ with tab_trade:
+diff --git a/scripts/loop/loop_daily_job.py b/scripts/loop/loop_daily_job.py
+index a6e181e..74a15b9 100644
+--- a/scripts/loop/loop_daily_job.py
++++ b/scripts/loop/loop_daily_job.py
+@@ -83,10 +83,13 @@ com.arjundivecha.asado-loop-daily) in this order:
+                             inflation surprise composites)
+  24. build_dislocations   - run all detectors, persist statuses, render brief
+                             (brief includes the next-30-day catalyst section)
+- 25. build_evidence_packs - freeze GDELT headlines for tonight's fired
++ 25. build_triptych_opportunity_scan - read Triptych's all-combo scan workbook,
++                            rank current descriptive opportunity setups, and
++                            write report/table artifacts for UI review
++ 26. build_evidence_packs - freeze GDELT headlines for tonight's fired
+                             dislocations (PRD P4 v1; permanent packs + 14d table)
+- 26. ledgers --rebuild    - fold JSONL ledgers into loop-DB tables
+- 27. calibration_report   - regenerate current-month calibration report
++ 27. ledgers --rebuild    - fold JSONL ledgers into loop-DB tables
++ 28. calibration_report   - regenerate current-month calibration report
+                             (PRD 6.3; PARTIAL-stamped until >= 10 closed theses)
+ 
+ Each step runs in its own subprocess with the house per-source isolation
+@@ -175,6 +178,7 @@ STEPS = [
+      [CONDA, "run", "-p", BBG_ENV, "python", "scripts/loop/collect_eco_surprise_bbg.py"]),
+     ("load_eco_surprise", [PY, "scripts/loop/load_eco_surprise.py"]),
+     ("build_dislocations", [PY, "scripts/loop/build_dislocations.py"]),
++    ("build_triptych_opportunity_scan", [PY, "scripts/loop/build_triptych_opportunity_scan.py"]),
+     # Evidence packs MUST run after build_dislocations: they freeze headlines
+     # for the countries whose dislocations fired in tonight's run (PRD P4 v1;
+     # capped at 12 GDELT pulls, D8 excluded).

@@ -10,11 +10,13 @@
 #     (A8, future: reads `scorecard_dimensions` below — NOT a separate hand list —
 #      so the run-manifest expectations and the scorecard dimensions cannot drift)
 #
-# VERSION: 1.2
+# VERSION: 1.3
 # LAST UPDATED: 2026-07-01
 # AUTHOR: Arjun Divecha (built by agent session, Governance Layer PRD v1.2, item A1)
 #   v1.1: added check_loop_schema (data-structures audit R5 — consumer-column
 #         drift guard over config/loop_schema_contract.yaml)
+#   v1.3: Triptych Prediction Prior Layer — build_triptych_scan (required;
+#         PIT + full-sample factor/country/horizon sweep -> scan + queue)
 #   v1.2: Frontend Alpha Rethink Phase 2 — build_family_ranks (required),
 #         build_fable_connections (optional, API-gated) and the final
 #         refresh_cockpit_data / refresh_live_cockpit pair (optional)
@@ -50,7 +52,7 @@
 # =============================================================================
 
 schema_version: 1
-contract_version: "1.2"
+contract_version: "1.3"
 
 # Step names MUST match scripts/loop/loop_daily_job.py STEPS exactly.
 steps:
@@ -287,6 +289,15 @@ steps:
     optional: false
     expected_outputs:
       - {kind: file, glob: "Data/dislocations/brief_*.md", staleness: mtime}
+
+  - name: build_triptych_scan
+    governance: false
+    optional: false
+    expected_outputs:
+      - {kind: file, path_template: "Data/loop/triptych_scan.parquet", staleness: mtime}
+      - {kind: file, path_template: "Data/loop/triptych_review_queue.parquet", staleness: mtime}
+      - {kind: loop_db_table, table: triptych_scan}
+      - {kind: loop_db_table, table: triptych_review_queue}
 
   - name: check_cross_source
     governance: true         # A7 GSAB defense: sentinels + cross-source pairs

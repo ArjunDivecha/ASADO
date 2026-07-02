@@ -887,3 +887,71 @@ cross-surface connections.
 ---
 SESSION END: 2026-07-02 00:45 PDT | Agent: Cursor (Fable 5)
 ---
+
+---
+SESSION START: 2026-07-02 01:15 PDT | Agent: Cursor (Fable 5)
+Topic: Triptych Prediction Prior Layer — full ingestion (overnight, user-approved PRD)
+---
+
+### What Was Done
+- Ported the Triptych visual tool's analytics kernel into ASADO
+  (scripts/loop/triptych_kernel.py, line-verified vs the tool's core.js):
+  Welford expanding z (population var), self-excluded cross-country z,
+  linear-interp decile thresholds, PIT expanding-window bucketing
+  (36-obs warm-up, insert-before-assign), overlap-adjusted bucket t / Spearman
+  IC, bucket-run OLS. is_forbidden_signal() refuses the 1MRet family.
+- New nightly step 29b build_triptych_scan.py (after render_dislocation_brief,
+  before check_cross_source): DuckDB-fed sweep of all 52 t2_raw factors + 28
+  config-declared warehouse variables (config/triptych_scan.yaml) x 34
+  countries x 3 norms x 2 return modes x 6 horizons x BOTH threshold modes
+  (pit = prior surface w/ PRD 7.3 confidence; full = descriptive, conf
+  hard-zeroed). 165,642 rows / 81,582 PIT in ~10 s (ProcessPool, all cores).
+  -> loop tables triptych_scan + triptych_review_queue (+ triptych_priors
+  view), parquet-first in Data/loop/.
+- Review queue (PRD 8): PIT-only gates (n>=60, cur-bucket n>=8, |IC-t|>=2,
+  R2>=0.4, decile edge <=2 / >=9, conf>=0.2), per-(country,factor) dedupe,
+  cap 25, priority = conf x |IC-t| x R2; Triptych deep links on t2 rows.
+- Cockpit: read_triptych in build_cockpit_data (queue + top-3 by_country),
+  "Triptych" desk tab + tripRow renderer + chat intent in make_live_cockpit,
+  country letter gains "Conditional history" section. cos_chat_service:
+  triptych view whitelisted, nav intent (anchored fullmatch), evidence packet
+  gains triptych_priors_PIT with a PRIOR-labelling system rule.
+- Fable: packet_triptych block (top 12 queue rows, custody-safe keys) +
+  "triptych" added to the surfaces enum + system prompt mention.
+- MCP: triptych_link / triptych_prior_snapshot(country) / triptych_queue.
+- Contracts: governance v1.3 (build_triptych_scan required, 4 expected
+  outputs), loop_schema_contract v1.2 (both tables). README nightly list.
+- Worktree cleanup (user-approved): salvaged triptych_tool_link.py + workflow
+  doc into main, archived the old xlsx-based opportunity scan + full patch in
+  docs/salvage/, removed ASADO-Triptych worktree + empty ASADO_worktrees/.
+
+### Verification
+- Parity vs the live tool (India/REER PIT hz 12M rel, all history): decile 1,
+  bucket n 20, avg fwd +25.5%, hit 100%, IC -0.41, spread -27.3% — all match.
+- 20 new tests in tests/loop/test_triptych.py (PIT no-lookahead canaries incl.
+  full-sample sensitivity control, core.js parity units, queue gates,
+  full-sample conf=0 invariant, chat routing); 183 cockpit+loop tests green.
+- loop_daily_job --only build_triptych_scan runs green through the
+  orchestrator; browser-verified on 127.0.0.1:8799 (tab renders 25 queue rows,
+  Taiwan letter shows 3 priors, route('triptych priors') -> view+message).
+
+### Constraints & Gotchas
+- The Triptych app's own slope_r2_scan.py xlsx is FULL-SAMPLE ONLY — never
+  ingest it as a prior; the ASADO scan replaces it (PIT computed natively).
+- Full-sample rows may NEVER carry confidence (finalize() hard-zeroes; queue
+  filters threshold_mode='pit'; cockpit reader re-filters — defense in depth).
+- Global-broadcast factors (VIX etc.): cross_var_pct skipped automatically
+  (degenerate cross-section detector: per-date std < 1e-12 on >90% of dates).
+- triptych_url only on t2_raw factors (the tool serves the T2 workbook).
+
+### What To Build Next
+1. Register the strongest scan families in the harness (Copper-z/Taiwan 6M
+   rel; REER decile extremes) — NOT done: registration burns family trials,
+   Arjun's call.
+2. Consider a triptych_priors ablation in the combiner (PRD Phase 6).
+3. Warehouse factor list in config/triptych_scan.yaml is a starter 28 —
+   prune/extend to taste.
+
+---
+SESSION END: 2026-07-02 02:25 PDT | Agent: Cursor (Fable 5)
+---

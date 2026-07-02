@@ -118,6 +118,12 @@ com.arjundivecha.asado-loop-daily) in this order:
  36. refresh_cockpit_data / refresh_live_cockpit - FINAL cockpit rebuild so the
                             payload reflects tonight's run (the early build
                             after the docket only served the morning read)
+ 37. build_triptych_scan  - ASADO-native Triptych sweep (runs right after the
+                            brief render in the actual sequence): PIT + full
+                            deciles for every t2_raw + config-declared
+                            warehouse factor x country x horizon ->
+                            triptych_scan / triptych_review_queue /
+                            triptych_priors (PIT-only prior surface)
 
 Each step runs in its own subprocess with the house per-source isolation
 pattern: one failing step does not stop the rest, but ANY failure makes the
@@ -282,6 +288,12 @@ STEPS = [
     ("build_price_state", [PY, "scripts/loop/build_price_state.py"]),
     ("build_gap_episodes", [PY, "scripts/loop/build_gap_episodes.py"]),
     ("render_dislocation_brief", [PY, "scripts/loop/render_dislocation_brief.py"]),
+    # Triptych scan (Prediction Prior Layer PRD): exhaustive PIT + full-sample
+    # bucket sweep of every t2_raw factor + the config-declared warehouse
+    # variables against forward country returns -> triptych_scan /
+    # triptych_review_queue / triptych_priors view (~30 s, all cores, main DB
+    # read-only). PIT rows are the prior surface; full rows are descriptive.
+    ("build_triptych_scan", [PY, "scripts/loop/build_triptych_scan.py"]),
     # Cross-source consistency (A7 — the GSAB defense): sentinels (hard stop)
     # + redundant-pair agreement. Exits non-zero only on a sentinel mismatch.
     ("check_cross_source", [PY, "scripts/loop/check_cross_source.py"]),

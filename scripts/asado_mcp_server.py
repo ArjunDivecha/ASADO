@@ -1727,6 +1727,123 @@ def open_thesis(
     return {"thesis_id": tid, "status": "open", "paper": True}
 
 
+# --------------------------------------------------------------------------- #
+# Triptych Prediction Prior Layer (2026-07-02)
+# --------------------------------------------------------------------------- #
+@mcp.tool(
+    description=(
+        "Build a shareable URL into the Triptych visual factor-timing workbench "
+        "for one country/factor pair (T2 factor sheets only). Defaults to PIT "
+        "thresholds. Use to eyeball a setup before registering a hypothesis."
+    )
+)
+def triptych_link(
+    factor: str,
+    country: str,
+    normalization: str = "history_z",
+    return_mode: str = "relative",
+    horizon: int = 12,
+    history_range: str = "all",
+    thresholds: str = "pit",
+) -> dict[str, Any]:
+    from scripts.triptych_tool_link import build_triptych_url
+
+    url = build_triptych_url(
+        factor=factor, country=country, normalization=normalization,
+        return_mode=return_mode, horizon=horizon,
+        history_range=history_range, thresholds=thresholds, buckets=10,
+    )
+    return {"url": url, "thresholds": thresholds,
+            "note": "pit = point-in-time deciles (no lookahead); full = descriptive."}
+
+
+@mcp.tool(
+    description=(
+        "Triptych PIT prior snapshot for one country (or one country/factor pair): "
+        "which decile of each factor's own point-in-time distribution the country "
+        "sits in today, and what that decile historically preceded (bucket avg "
+        "forward return, hit rate, IC t-stat, confidence). PRIORS for triage - "
+        "never evidence; the harness owns validation."
+    )
+)
+def triptych_prior_snapshot(
+    country: str,
+    factor: Optional[str] = None,
+    min_confidence: float = 0.2,
+    max_rows: int = 25,
+) -> dict[str, Any]:
+    import duckdb as _duckdb
+
+    from scripts.loop.loopdb import LOOP_DB
+
+    con = _duckdb.connect(str(LOOP_DB), read_only=True)
+    try:
+        sql = """
+            SELECT as_of, factor, factor_table, normalization, return_mode,
+                   horizon_months, current_decile, implied_direction, n_records,
+                   cur_bucket_n, round(cur_bucket_avg_fwd, 4) AS hist_avg_fwd,
+                   round(cur_bucket_hit_rate, 3) AS hist_hit_rate,
+                   round(ic_t_stat, 2) AS ic_t, round(r_squared, 3) AS r2,
+                   round(confidence_score, 3) AS confidence, confidence_notes,
+                   triptych_url
+            FROM triptych_scan
+            WHERE threshold_mode = 'pit' AND country = ?
+              AND confidence_score >= ?
+        """
+        params: list[Any] = [country, float(min_confidence)]
+        if factor:
+            sql += " AND factor = ?"
+            params.append(factor)
+        sql += " ORDER BY confidence_score DESC, abs(ic_t_stat) DESC"
+        df = con.execute(sql, params).fetchdf()
+    finally:
+        con.close()
+    return {
+        "country": country,
+        "epistemic_tag": "PRIOR",
+        "note": "PIT conditional history (expanding thresholds, no lookahead). "
+                "A prior guides triage; it is NOT evidence.",
+        "result": _frame_payload(df, max_rows=max_rows),
+    }
+
+
+@mcp.tool(
+    description=(
+        "The current Triptych review queue: the strongest point-in-time "
+        "factor/country setups whose latest reading sits at a decile edge "
+        "(nightly sweep of every warehouse factor x country x horizon). "
+        "Each row carries a deep link into the visual tool for t2 factors."
+    )
+)
+def triptych_queue(max_rows: int = 25) -> dict[str, Any]:
+    import duckdb as _duckdb
+
+    from scripts.loop.loopdb import LOOP_DB
+
+    con = _duckdb.connect(str(LOOP_DB), read_only=True)
+    try:
+        df = con.execute("""
+            SELECT as_of, country, factor, factor_table, normalization,
+                   return_mode, horizon_months, current_decile,
+                   implied_direction,
+                   round(cur_bucket_avg_fwd, 4) AS hist_avg_fwd,
+                   round(cur_bucket_hit_rate, 3) AS hist_hit_rate,
+                   round(ic_t_stat, 2) AS ic_t, round(r_squared, 3) AS r2,
+                   round(confidence_score, 3) AS confidence,
+                   round(priority, 4) AS priority, triptych_url
+            FROM triptych_review_queue
+            ORDER BY priority DESC
+        """).fetchdf()
+    finally:
+        con.close()
+    return {
+        "epistemic_tag": "PRIOR",
+        "note": "PIT conditional-history priors, queue-gated (records >= 60, "
+                "|IC-t| >= 2, R2 >= 0.4, decile edge). Triage input, never evidence.",
+        "result": _frame_payload(df, max_rows=max_rows),
+    }
+
+
 def main() -> None:
     try:
         mcp.run(transport="stdio")

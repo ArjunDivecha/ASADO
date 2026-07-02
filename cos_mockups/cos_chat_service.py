@@ -141,7 +141,7 @@ def _validate_actions(data: dict[str, Any], actions: list[UIAction]) -> list[UIA
     valid_signals = _signal_names(data)
     valid_gaps = _gap_ids(data)
     valid_views = {"overview", "health", "signals", "signal", "country", "gap", "dislo", "tail",
-                   "edge", "consensus", "fable",
+                   "edge", "consensus", "fable", "triptych",
                    "desk_discovery", "desk_analogs", "desk_triage", "desk_rulings",
                    "desk_prospective", "desk_graveyard"}
     valid_layers = {"edge", "gap", "return", "dislocation", "signal"}
@@ -325,6 +325,14 @@ def deterministic_answer(question: str, data: dict[str, Any]) -> ChatResponse | 
         return _nav("fable", f"<b>Fable's Desk</b> — {n} cross-surface conjecture(s) from the nightly "
                     "non-deterministic pass. Everything there is <b>CONJECTURE</b> until the "
                     "Lab/harness clears it.")
+    # Triptych Prediction Prior Layer (2026-07-02): the PIT review queue.
+    if re.fullmatch(r"((the )?triptych( priors?| queue)?|conditional history|"
+                    r"what does history say( today)?|the review queue)\??", qs):
+        trip = data.get("triptych") or {}
+        n_q = len(trip.get("queue") or [])
+        return _nav("triptych", f"<b>Triptych priors</b> — {n_q} setup(s) cleared the PIT queue "
+                    "gates tonight. Point-in-time conditional history from the nightly "
+                    "factor × country × horizon sweep: a <b>PRIOR</b> for triage, never evidence.")
 
     country = _match_country(question, data)
     if country:
@@ -523,6 +531,13 @@ def _evidence_packet(question: str, data: dict[str, Any]) -> dict[str, Any]:
                                    "falsifiable_check", "confidence", "horizon")}
             for c in ((data.get("fable") or {}).get("connections") or [])[:7]
         ],
+        # Triptych PIT priors (2026-07-02): conditional history, PRIOR not evidence.
+        "triptych_priors_PIT": {
+            "note": (data.get("triptych") or {}).get("note"),
+            "queue": ((data.get("triptych") or {}).get("queue") or [])[:10],
+            "country_priors": (((data.get("triptych") or {}).get("by_country") or {}).get(country)
+                               if country else None),
+        },
         "latest_brief": brief,
     }
     return _scrub_evidence(packet)
@@ -542,6 +557,8 @@ def call_opus_agent(question: str, data: dict[str, Any], timeout: int = 90) -> t
         "values, citations, or verdicts. Harness verdicts are owned by the harness, not by you. "
         "Anything under fable_conjectures_UNVALIDATED is machine CONJECTURE from a nightly "
         "non-deterministic pass — if you use it, label it CONJECTURE and never present it as fact. "
+        "Anything under triptych_priors_PIT is point-in-time conditional HISTORY (a bucket prior) — "
+        "if you use it, label it PRIOR: it guides triage and horizon choice but is never evidence. "
         "Keep the answer concise and useful for a portfolio/research cockpit. Return plain text only."
     )
     user = (

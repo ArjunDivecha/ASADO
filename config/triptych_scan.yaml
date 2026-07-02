@@ -1,0 +1,78 @@
+# =============================================================================
+# FILE: config/triptych_scan.yaml
+# =============================================================================
+# The Triptych scan registry: which factor variables are swept by
+# scripts/loop/build_triptych_scan.py, and the selection thresholds for the
+# review queue. This is the ASADO-native replacement for the Triptych app's
+# slope_r2_scan.py (which read t2_master.json full-sample only) — the ASADO
+# scan reads DuckDB directly and computes BOTH threshold modes:
+#   pit  : point-in-time deciles (no lookahead — the predictive surface)
+#   full : full-sample deciles (descriptive only — matches the visual tool's
+#          default scan; NEVER carries prior confidence)
+#
+# VERSION: 1.0   LAST UPDATED: 2026-07-02
+#
+# t2 factors: every t2_raw variable EXCEPT the return spine and any
+# forward-return variable is swept automatically — no listing needed here.
+# The `warehouse_factors` block below EXTENDS the sweep to non-T2 warehouse
+# variables (the whole point of moving the scan inside ASADO). Add a line to
+# add a factor; the nightly scan picks it up. table = main-DB table, variable
+# = exact variable name. Global-broadcast series (same value tiled to all 34
+# countries, e.g. FRED_VIX) are legitimate conditioning variables — Triptych's
+# own Oil/Gold/Copper sheets are the same shape — but their cross_var_pct
+# normalization is degenerate and is skipped automatically.
+# =============================================================================
+
+return_variable: "Tot Return Index"    # t2_raw sheet used as the return spine
+
+# Scan grid (mirrors the Triptych tool's options)
+horizons: [1, 3, 6, 12, 24, 36]
+normalizations: [raw, history_z, cross_var_pct]
+return_modes: [absolute, relative]
+
+warehouse_factors:
+  # --- external (Program 1) ---
+  - {table: external_factors, variable: EPU}
+  - {table: external_factors, variable: GPR}
+  - {table: external_factors, variable: BIS_REER}
+  - {table: external_factors, variable: BIS_Credit_GDP_Gap}
+  - {table: external_factors, variable: BIS_Property_Price}
+  - {table: external_factors, variable: OECD_CLI}
+  # --- extended (Program 2) ---
+  - {table: extended_factors, variable: BIS_DSR_Private}
+  - {table: extended_factors, variable: BIS_Policy_Rate}
+  - {table: extended_factors, variable: OECD_BCI}
+  - {table: extended_factors, variable: OECD_CCI}
+  - {table: extended_factors, variable: FRED_VIX}            # global broadcast
+  - {table: extended_factors, variable: FRED_USD_Broad_Index} # global broadcast
+  # --- IMF (Program 3) ---
+  - {table: imf_factors, variable: IMF_CPI_Inflation_YoY}
+  - {table: imf_factors, variable: IMF_Govt_Bond_Yield}
+  - {table: imf_factors, variable: IMF_Money_Market_Rate}
+  - {table: imf_factors, variable: IMF_Export_Price_Index}
+  - {table: imf_factors, variable: IMF_Import_Price_Index}
+  - {table: imf_factors, variable: IMF_XRate_LCU_per_USD}
+  # --- macrostructure (Program 5) ---
+  - {table: macrostructure_factors, variable: MS_CentralBank_BalanceSheet_GDP}
+  - {table: macrostructure_factors, variable: MS_Public_Debt_Total_Pct_GDP}
+  - {table: macrostructure_factors, variable: MS_CentralBank_SovDebt_Share}
+  # --- Bloomberg (Program 6) ---
+  - {table: bloomberg_factors, variable: BBG_CDS_5Y}
+  - {table: bloomberg_factors, variable: BBG_Govt_Bond_10Y}
+  - {table: bloomberg_factors, variable: BBG_Yield_Curve_10Y2Y}
+  - {table: bloomberg_factors, variable: BBG_WIRP_ImpliedRate}
+  - {table: bloomberg_factors, variable: BBG_ECFC_CPI}
+  - {table: bloomberg_factors, variable: MS_Passive_AUM_to_MarketCap}
+  - {table: bloomberg_factors, variable: MS_ETF_NetFlow_to_MarketCap}
+
+# Review-queue selection (PIT rows only — full-sample rows never qualify)
+queue:
+  min_records: 60            # bucketed observations in the whole combo
+  min_bucket_obs: 8          # observations in the CURRENT bucket
+  min_abs_ic_t: 2.0          # overlap-adjusted Spearman IC t-stat
+  min_r2: 0.40               # monotonicity of the bucket run
+  extreme_low_decile: 2      # current decile must be <= this ...
+  extreme_high_decile: 9     # ... or >= this (edge of the distribution)
+  min_confidence: 0.20       # PRD 7.3 deterministic prior confidence
+  per_pair_cap: 1            # best row per (country, factor)
+  cap: 25                    # PRD 8: max queue length

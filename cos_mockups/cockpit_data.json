@@ -1,12 +1,12 @@
 {
   "meta": {
-    "generated_ts": "2026-07-02T00:31:37",
+    "generated_ts": "2026-07-02T00:52:39",
     "generator": "cos_mockups/build_cockpit_data.py 1.0",
     "epistemic_contract": "FACT cited · INFERENCE labelled · UNKNOWN/STALE aloud · nothing is a trade until the harness clears it"
   },
   "governance": {
-    "overall": "red",
-    "as_of": "2026-07-01T16:34:09",
+    "overall": "green",
+    "as_of": "2026-07-02T00:52:39",
     "dimensions": [
       {
         "name": "run_manifest",
@@ -52,13 +52,13 @@
       },
       {
         "name": "config_guard",
-        "status": "red",
+        "status": "green",
         "amber_by_design": false,
-        "detail": "uncommitted/dirty trust-roots: ['config/governance_contract.yaml']",
+        "detail": "all trust-root YAMLs committed",
         "evidence": "git"
       }
     ],
-    "repo_dirty": true
+    "repo_dirty": false
   },
   "research_desk": {
     "discovery_lab": [
@@ -2315,16 +2315,16 @@
         }
       },
       {
-        "id": "H_20260612_055",
+        "id": "H_20260612_049",
         "name": "leadlag_2026_06",
-        "run_ts": "2026-06-12T20:44:46+00:00",
+        "run_ts": "2026-06-12T21:08:17+00:00",
         "frequency": "daily",
         "verdict": "WEAK",
         "horizon": "5d",
         "ic": 0.0568,
         "nw_t": 8.48,
         "deflated_sharpe": -0.136,
-        "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/harness_runs/H_20260612_055_20260612_134446.json",
+        "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/harness_runs/H_20260612_049_20260612_140817.json",
         "ic_horizons": {
           "5d": {
             "mean_ic": 0.0568,
@@ -4062,16 +4062,16 @@
         }
       },
       {
-        "id": "H_20260612_049",
+        "id": "H_20260612_055",
         "name": "leadlag_2026_06",
-        "run_ts": "2026-06-12T21:08:17+00:00",
+        "run_ts": "2026-06-12T20:44:46+00:00",
         "frequency": "daily",
         "verdict": "WEAK",
         "horizon": "5d",
         "ic": 0.0568,
         "nw_t": 8.48,
         "deflated_sharpe": -0.136,
-        "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/harness_runs/H_20260612_049_20260612_140817.json",
+        "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/harness_runs/H_20260612_055_20260612_134446.json",
         "ic_horizons": {
           "5d": {
             "mean_ic": 0.0568,
@@ -107288,15 +107288,15 @@
     ],
     "matrix": {
       "Australia": {
-        "graph_bank": {
-          "rank": 6,
-          "n": 21,
-          "score": 0.0175
-        },
         "graph_twohop": {
           "rank": 11,
           "n": 30,
           "score": 0.0093
+        },
+        "graph_bank": {
+          "rank": 6,
+          "n": 21,
+          "score": 0.0175
         },
         "combiner": {
           "rank": 12,
@@ -107330,15 +107330,15 @@
         }
       },
       "Brazil": {
-        "graph_bank": {
-          "rank": 4,
-          "n": 21,
-          "score": 0.0272
-        },
         "graph_twohop": {
           "rank": 9,
           "n": 30,
           "score": 0.0126
+        },
+        "graph_bank": {
+          "rank": 4,
+          "n": 21,
+          "score": 0.0272
         },
         "combiner": {
           "rank": 5,
@@ -107367,15 +107367,15 @@
         }
       },
       "Canada": {
-        "graph_bank": {
-          "rank": 10,
-          "n": 21,
-          "score": 0.0053
-        },
         "graph_twohop": {
           "rank": 14,
           "n": 30,
           "score": 0.0014
+        },
+        "graph_bank": {
+          "rank": 10,
+          "n": 21,
+          "score": 0.0053
         },
         "combiner": {
           "rank": 16,
@@ -107404,15 +107404,15 @@
         }
       },
       "Chile": {
-        "graph_bank": {
-          "rank": 11,
-          "n": 21,
-          "score": -0.0041
-        },
         "graph_twohop": {
           "rank": 18,
           "n": 30,
           "score": -0.0163
+        },
+        "graph_bank": {
+          "rank": 11,
+          "n": 21,
+          "score": -0.0041
         },
         "combiner": {
           "rank": 10,
@@ -107438,660 +107438,6 @@
           "rank": 10,
           "n": 34,
           "score": -0.5087
-        }
-      },
-      "Denmark": {
-        "graph_bank": {
-          "rank": 17,
-          "n": 21,
-          "score": -0.0404
-        },
-        "graph_twohop": {
-          "rank": 24,
-          "n": 30,
-          "score": -0.0423
-        },
-        "combiner": {
-          "rank": 28,
-          "n": 29,
-          "score": -0.0026
-        },
-        "twins": {
-          "rank": 31,
-          "n": 34,
-          "score": -0.0586
-        },
-        "cpi_rev": {
-          "rank": 25,
-          "n": 33,
-          "score": 0.0933
-        },
-        "etf_contra": {
-          "rank": 7,
-          "n": 33,
-          "score": -0.8518
-        },
-        "tot_impulse": {
-          "rank": 21,
-          "n": 34,
-          "score": -2.3055
-        }
-      },
-      "France": {
-        "graph_bank": {
-          "rank": 15,
-          "n": 21,
-          "score": -0.0102
-        },
-        "graph_twohop": {
-          "rank": 21,
-          "n": 30,
-          "score": -0.0224
-        },
-        "combiner": {
-          "rank": 23,
-          "n": 29,
-          "score": -0.0011
-        },
-        "twins": {
-          "rank": 23,
-          "n": 34,
-          "score": -0.0082
-        },
-        "cpi_rev": {
-          "rank": 8,
-          "n": 33,
-          "score": 0.2417
-        },
-        "etf_contra": {
-          "rank": 13,
-          "n": 33,
-          "score": -0.1107
-        },
-        "tot_impulse": {
-          "rank": 30,
-          "n": 34,
-          "score": -2.4302
-        }
-      },
-      "Germany": {
-        "graph_bank": {
-          "rank": 2,
-          "n": 21,
-          "score": 0.0409
-        },
-        "graph_twohop": {
-          "rank": 6,
-          "n": 30,
-          "score": 0.0225
-        },
-        "combiner": {
-          "rank": 19,
-          "n": 29,
-          "score": -0.0003
-        },
-        "twins": {
-          "rank": 7,
-          "n": 34,
-          "score": 0.0434
-        },
-        "cpi_rev": {
-          "rank": 31,
-          "n": 33,
-          "score": -0.0083
-        },
-        "etf_contra": {
-          "rank": 27,
-          "n": 33,
-          "score": 1.8375
-        },
-        "tot_impulse": {
-          "rank": 27,
-          "n": 34,
-          "score": -2.3761
-        }
-      },
-      "Hong Kong": {
-        "graph_bank": {
-          "rank": 1,
-          "n": 21,
-          "score": 0.0677
-        },
-        "graph_twohop": {
-          "rank": 3,
-          "n": 30,
-          "score": 0.0711
-        },
-        "combiner": {
-          "rank": 3,
-          "n": 29,
-          "score": 0.001
-        },
-        "leadlag": {
-          "rank": 6,
-          "n": 15,
-          "score": 0.0223
-        },
-        "twins": {
-          "rank": 5,
-          "n": 34,
-          "score": 0.0537
-        },
-        "cpi_rev": {
-          "rank": 15,
-          "n": 33,
-          "score": 0.13
-        },
-        "etf_contra": {
-          "rank": 23,
-          "n": 33,
-          "score": 1.5153
-        },
-        "tot_impulse": {
-          "rank": 11,
-          "n": 34,
-          "score": -0.7819
-        }
-      },
-      "Italy": {
-        "graph_bank": {
-          "rank": 13,
-          "n": 21,
-          "score": -0.0064
-        },
-        "graph_twohop": {
-          "rank": 22,
-          "n": 30,
-          "score": -0.0266
-        },
-        "combiner": {
-          "rank": 14,
-          "n": 29,
-          "score": 0.0001
-        },
-        "twins": {
-          "rank": 24,
-          "n": 34,
-          "score": -0.0093
-        },
-        "cpi_rev": {
-          "rank": 7,
-          "n": 33,
-          "score": 0.2458
-        },
-        "etf_contra": {
-          "rank": 32,
-          "n": 33,
-          "score": 3.2017
-        },
-        "tot_impulse": {
-          "rank": 33,
-          "n": 34,
-          "score": -2.49
-        }
-      },
-      "Japan": {
-        "graph_bank": {
-          "rank": 12,
-          "n": 21,
-          "score": -0.0055
-        },
-        "graph_twohop": {
-          "rank": 20,
-          "n": 30,
-          "score": -0.018
-        },
-        "combiner": {
-          "rank": 11,
-          "n": 29,
-          "score": 0.0003
-        },
-        "leadlag": {
-          "rank": 7,
-          "n": 15,
-          "score": 0.0185
-        },
-        "twins": {
-          "rank": 21,
-          "n": 34,
-          "score": -0.0042
-        },
-        "cpi_rev": {
-          "rank": 26,
-          "n": 33,
-          "score": 0.0583
-        },
-        "etf_contra": {
-          "rank": 21,
-          "n": 33,
-          "score": 0.7079
-        },
-        "tot_impulse": {
-          "rank": 31,
-          "n": 34,
-          "score": -2.441
-        }
-      },
-      "Korea": {
-        "graph_bank": {
-          "rank": 5,
-          "n": 21,
-          "score": 0.0187
-        },
-        "graph_twohop": {
-          "rank": 7,
-          "n": 30,
-          "score": 0.0221
-        },
-        "combiner": {
-          "rank": 24,
-          "n": 29,
-          "score": -0.0014
-        },
-        "leadlag": {
-          "rank": 13,
-          "n": 15,
-          "score": -0.0179
-        },
-        "twins": {
-          "rank": 8,
-          "n": 34,
-          "score": 0.043
-        },
-        "cpi_rev": {
-          "rank": 11,
-          "n": 33,
-          "score": 0.1833
-        },
-        "etf_contra": {
-          "rank": 16,
-          "n": 33,
-          "score": 0.1381
-        },
-        "tot_impulse": {
-          "rank": 26,
-          "n": 34,
-          "score": -2.3487
-        }
-      },
-      "Mexico": {
-        "graph_bank": {
-          "rank": 8,
-          "n": 21,
-          "score": 0.0108
-        },
-        "graph_twohop": {
-          "rank": 10,
-          "n": 30,
-          "score": 0.0099
-        },
-        "combiner": {
-          "rank": 18,
-          "n": 29,
-          "score": -0.0002
-        },
-        "twins": {
-          "rank": 19,
-          "n": 34,
-          "score": 0.0037
-        },
-        "cpi_rev": {
-          "rank": 32,
-          "n": 33,
-          "score": -0.0125
-        },
-        "etf_contra": {
-          "rank": 12,
-          "n": 33,
-          "score": -0.2076
-        },
-        "tot_impulse": {
-          "rank": 34,
-          "n": 34,
-          "score": -2.744
-        }
-      },
-      "Netherlands": {
-        "graph_bank": {
-          "rank": 21,
-          "n": 21,
-          "score": -0.112
-        },
-        "graph_twohop": {
-          "rank": 30,
-          "n": 30,
-          "score": -0.1305
-        },
-        "combiner": {
-          "rank": 29,
-          "n": 29,
-          "score": -0.0044
-        },
-        "leadlag": {
-          "rank": 15,
-          "n": 15,
-          "score": -0.0437
-        },
-        "twins": {
-          "rank": 33,
-          "n": 34,
-          "score": -0.1095
-        },
-        "cpi_rev": {
-          "rank": 9,
-          "n": 33,
-          "score": 0.2417
-        },
-        "etf_contra": {
-          "rank": 22,
-          "n": 33,
-          "score": 1.2789
-        },
-        "tot_impulse": {
-          "rank": 23,
-          "n": 34,
-          "score": -2.3249
-        }
-      },
-      "Philippines": {
-        "graph_bank": {
-          "rank": 20,
-          "n": 21,
-          "score": -0.0856
-        },
-        "graph_twohop": {
-          "rank": 29,
-          "n": 30,
-          "score": -0.0939
-        },
-        "combiner": {
-          "rank": 6,
-          "n": 29,
-          "score": 0.0007
-        },
-        "leadlag": {
-          "rank": 2,
-          "n": 15,
-          "score": 0.0512
-        },
-        "twins": {
-          "rank": 34,
-          "n": 34,
-          "score": -0.1121
-        },
-        "cpi_rev": {
-          "rank": 1,
-          "n": 33,
-          "score": 1.6458
-        },
-        "etf_contra": {
-          "rank": 10,
-          "n": 33,
-          "score": -0.2986
-        },
-        "tot_impulse": {
-          "rank": 32,
-          "n": 34,
-          "score": -2.4579
-        }
-      },
-      "South Africa": {
-        "graph_bank": {
-          "rank": 3,
-          "n": 21,
-          "score": 0.0378
-        },
-        "graph_twohop": {
-          "rank": 8,
-          "n": 30,
-          "score": 0.0212
-        },
-        "combiner": {
-          "rank": 9,
-          "n": 29,
-          "score": 0.0005
-        },
-        "twins": {
-          "rank": 12,
-          "n": 34,
-          "score": 0.0292
-        },
-        "cpi_rev": {
-          "rank": 6,
-          "n": 33,
-          "score": 0.2833
-        },
-        "etf_contra": {
-          "rank": 4,
-          "n": 33,
-          "score": -1.0659
-        },
-        "tot_impulse": {
-          "rank": 13,
-          "n": 34,
-          "score": -1.6886
-        }
-      },
-      "Spain": {
-        "graph_bank": {
-          "rank": 19,
-          "n": 21,
-          "score": -0.0485
-        },
-        "graph_twohop": {
-          "rank": 28,
-          "n": 30,
-          "score": -0.0697
-        },
-        "combiner": {
-          "rank": 22,
-          "n": 29,
-          "score": -0.001
-        },
-        "twins": {
-          "rank": 30,
-          "n": 34,
-          "score": -0.0527
-        },
-        "cpi_rev": {
-          "rank": 4,
-          "n": 33,
-          "score": 0.29
-        },
-        "etf_contra": {
-          "rank": 26,
-          "n": 33,
-          "score": 1.6973
-        },
-        "tot_impulse": {
-          "rank": 22,
-          "n": 34,
-          "score": -2.3209
-        }
-      },
-      "Sweden": {
-        "graph_bank": {
-          "rank": 7,
-          "n": 21,
-          "score": 0.0145
-        },
-        "graph_twohop": {
-          "rank": 12,
-          "n": 30,
-          "score": 0.0079
-        },
-        "combiner": {
-          "rank": 25,
-          "n": 29,
-          "score": -0.0016
-        },
-        "twins": {
-          "rank": 16,
-          "n": 34,
-          "score": 0.0178
-        },
-        "cpi_rev": {
-          "rank": 33,
-          "n": 33,
-          "score": -0.0167
-        },
-        "etf_contra": {
-          "rank": 8,
-          "n": 33,
-          "score": -0.6665
-        },
-        "tot_impulse": {
-          "rank": 15,
-          "n": 34,
-          "score": -2.1036
-        }
-      },
-      "Switzerland": {
-        "graph_bank": {
-          "rank": 18,
-          "n": 21,
-          "score": -0.0418
-        },
-        "graph_twohop": {
-          "rank": 27,
-          "n": 30,
-          "score": -0.05
-        },
-        "combiner": {
-          "rank": 26,
-          "n": 29,
-          "score": -0.0017
-        },
-        "leadlag": {
-          "rank": 12,
-          "n": 15,
-          "score": -0.0127
-        },
-        "twins": {
-          "rank": 27,
-          "n": 34,
-          "score": -0.0212
-        },
-        "cpi_rev": {
-          "rank": 30,
-          "n": 33,
-          "score": 0.0
-        },
-        "etf_contra": {
-          "rank": 29,
-          "n": 33,
-          "score": 2.6935
-        },
-        "tot_impulse": {
-          "rank": 9,
-          "n": 34,
-          "score": 0.6706
-        }
-      },
-      "Taiwan": {
-        "graph_bank": {
-          "rank": 16,
-          "n": 21,
-          "score": -0.0204
-        },
-        "leadlag": {
-          "rank": 3,
-          "n": 15,
-          "score": 0.0428
-        },
-        "twins": {
-          "rank": 10,
-          "n": 34,
-          "score": 0.0332
-        },
-        "cpi_rev": {
-          "rank": 24,
-          "n": 33,
-          "score": 0.1
-        },
-        "etf_contra": {
-          "rank": 6,
-          "n": 33,
-          "score": -0.8999
-        },
-        "tot_impulse": {
-          "rank": 25,
-          "n": 34,
-          "score": -2.3417
-        }
-      },
-      "U.K.": {
-        "graph_bank": {
-          "rank": 14,
-          "n": 21,
-          "score": -0.0081
-        },
-        "graph_twohop": {
-          "rank": 17,
-          "n": 30,
-          "score": -0.0115
-        },
-        "combiner": {
-          "rank": 17,
-          "n": 29,
-          "score": -0.0001
-        },
-        "twins": {
-          "rank": 18,
-          "n": 34,
-          "score": 0.0096
-        },
-        "cpi_rev": {
-          "rank": 10,
-          "n": 33,
-          "score": 0.1875
-        },
-        "etf_contra": {
-          "rank": 28,
-          "n": 33,
-          "score": 1.994
-        },
-        "tot_impulse": {
-          "rank": 29,
-          "n": 34,
-          "score": -2.4128
-        }
-      },
-      "U.S.": {
-        "graph_bank": {
-          "rank": 9,
-          "n": 21,
-          "score": 0.0078
-        },
-        "graph_twohop": {
-          "rank": 16,
-          "n": 30,
-          "score": -0.0078
-        },
-        "combiner": {
-          "rank": 7,
-          "n": 29,
-          "score": 0.0006
-        },
-        "twins": {
-          "rank": 9,
-          "n": 34,
-          "score": 0.0333
-        },
-        "cpi_rev": {
-          "rank": 21,
-          "n": 33,
-          "score": 0.1067
-        },
-        "etf_contra": {
-          "rank": 17,
-          "n": 33,
-          "score": 0.2055
-        },
-        "tot_impulse": {
-          "rank": 4,
-          "n": 34,
-          "score": 2.1424
         }
       },
       "ChinaA": {
@@ -108129,6 +107475,159 @@
           "rank": 18,
           "n": 34,
           "score": -2.256
+        }
+      },
+      "Denmark": {
+        "graph_twohop": {
+          "rank": 24,
+          "n": 30,
+          "score": -0.0423
+        },
+        "graph_bank": {
+          "rank": 17,
+          "n": 21,
+          "score": -0.0404
+        },
+        "combiner": {
+          "rank": 28,
+          "n": 29,
+          "score": -0.0026
+        },
+        "twins": {
+          "rank": 31,
+          "n": 34,
+          "score": -0.0586
+        },
+        "cpi_rev": {
+          "rank": 25,
+          "n": 33,
+          "score": 0.0933
+        },
+        "etf_contra": {
+          "rank": 7,
+          "n": 33,
+          "score": -0.8518
+        },
+        "tot_impulse": {
+          "rank": 21,
+          "n": 34,
+          "score": -2.3055
+        }
+      },
+      "France": {
+        "graph_twohop": {
+          "rank": 21,
+          "n": 30,
+          "score": -0.0224
+        },
+        "graph_bank": {
+          "rank": 15,
+          "n": 21,
+          "score": -0.0102
+        },
+        "combiner": {
+          "rank": 23,
+          "n": 29,
+          "score": -0.0011
+        },
+        "twins": {
+          "rank": 23,
+          "n": 34,
+          "score": -0.0082
+        },
+        "cpi_rev": {
+          "rank": 8,
+          "n": 33,
+          "score": 0.2417
+        },
+        "etf_contra": {
+          "rank": 13,
+          "n": 33,
+          "score": -0.1107
+        },
+        "tot_impulse": {
+          "rank": 30,
+          "n": 34,
+          "score": -2.4302
+        }
+      },
+      "Germany": {
+        "graph_twohop": {
+          "rank": 6,
+          "n": 30,
+          "score": 0.0225
+        },
+        "graph_bank": {
+          "rank": 2,
+          "n": 21,
+          "score": 0.0409
+        },
+        "combiner": {
+          "rank": 19,
+          "n": 29,
+          "score": -0.0003
+        },
+        "twins": {
+          "rank": 7,
+          "n": 34,
+          "score": 0.0434
+        },
+        "cpi_rev": {
+          "rank": 31,
+          "n": 33,
+          "score": -0.0083
+        },
+        "etf_contra": {
+          "rank": 27,
+          "n": 33,
+          "score": 1.8375
+        },
+        "tot_impulse": {
+          "rank": 27,
+          "n": 34,
+          "score": -2.3761
+        }
+      },
+      "Hong Kong": {
+        "graph_twohop": {
+          "rank": 3,
+          "n": 30,
+          "score": 0.0711
+        },
+        "graph_bank": {
+          "rank": 1,
+          "n": 21,
+          "score": 0.0677
+        },
+        "combiner": {
+          "rank": 3,
+          "n": 29,
+          "score": 0.001
+        },
+        "leadlag": {
+          "rank": 6,
+          "n": 15,
+          "score": 0.0223
+        },
+        "twins": {
+          "rank": 5,
+          "n": 34,
+          "score": 0.0537
+        },
+        "cpi_rev": {
+          "rank": 15,
+          "n": 33,
+          "score": 0.13
+        },
+        "etf_contra": {
+          "rank": 23,
+          "n": 33,
+          "score": 1.5153
+        },
+        "tot_impulse": {
+          "rank": 11,
+          "n": 34,
+          "score": -0.7819
         }
       },
       "India": {
@@ -108200,6 +107699,127 @@
           "score": 1.2453
         }
       },
+      "Italy": {
+        "graph_twohop": {
+          "rank": 22,
+          "n": 30,
+          "score": -0.0266
+        },
+        "graph_bank": {
+          "rank": 13,
+          "n": 21,
+          "score": -0.0064
+        },
+        "combiner": {
+          "rank": 14,
+          "n": 29,
+          "score": 0.0001
+        },
+        "twins": {
+          "rank": 24,
+          "n": 34,
+          "score": -0.0093
+        },
+        "cpi_rev": {
+          "rank": 7,
+          "n": 33,
+          "score": 0.2458
+        },
+        "etf_contra": {
+          "rank": 32,
+          "n": 33,
+          "score": 3.2017
+        },
+        "tot_impulse": {
+          "rank": 33,
+          "n": 34,
+          "score": -2.49
+        }
+      },
+      "Japan": {
+        "graph_twohop": {
+          "rank": 20,
+          "n": 30,
+          "score": -0.018
+        },
+        "graph_bank": {
+          "rank": 12,
+          "n": 21,
+          "score": -0.0055
+        },
+        "combiner": {
+          "rank": 11,
+          "n": 29,
+          "score": 0.0003
+        },
+        "leadlag": {
+          "rank": 7,
+          "n": 15,
+          "score": 0.0185
+        },
+        "twins": {
+          "rank": 21,
+          "n": 34,
+          "score": -0.0042
+        },
+        "cpi_rev": {
+          "rank": 26,
+          "n": 33,
+          "score": 0.0583
+        },
+        "etf_contra": {
+          "rank": 21,
+          "n": 33,
+          "score": 0.7079
+        },
+        "tot_impulse": {
+          "rank": 31,
+          "n": 34,
+          "score": -2.441
+        }
+      },
+      "Korea": {
+        "graph_twohop": {
+          "rank": 7,
+          "n": 30,
+          "score": 0.0221
+        },
+        "graph_bank": {
+          "rank": 5,
+          "n": 21,
+          "score": 0.0187
+        },
+        "combiner": {
+          "rank": 24,
+          "n": 29,
+          "score": -0.0014
+        },
+        "leadlag": {
+          "rank": 13,
+          "n": 15,
+          "score": -0.0179
+        },
+        "twins": {
+          "rank": 8,
+          "n": 34,
+          "score": 0.043
+        },
+        "cpi_rev": {
+          "rank": 11,
+          "n": 33,
+          "score": 0.1833
+        },
+        "etf_contra": {
+          "rank": 16,
+          "n": 33,
+          "score": 0.1381
+        },
+        "tot_impulse": {
+          "rank": 26,
+          "n": 34,
+          "score": -2.3487
+        }
+      },
       "Malaysia": {
         "graph_twohop": {
           "rank": 5,
@@ -108235,6 +107855,127 @@
           "rank": 12,
           "n": 34,
           "score": -0.9362
+        }
+      },
+      "Mexico": {
+        "graph_twohop": {
+          "rank": 10,
+          "n": 30,
+          "score": 0.0099
+        },
+        "graph_bank": {
+          "rank": 8,
+          "n": 21,
+          "score": 0.0108
+        },
+        "combiner": {
+          "rank": 18,
+          "n": 29,
+          "score": -0.0002
+        },
+        "twins": {
+          "rank": 19,
+          "n": 34,
+          "score": 0.0037
+        },
+        "cpi_rev": {
+          "rank": 32,
+          "n": 33,
+          "score": -0.0125
+        },
+        "etf_contra": {
+          "rank": 12,
+          "n": 33,
+          "score": -0.2076
+        },
+        "tot_impulse": {
+          "rank": 34,
+          "n": 34,
+          "score": -2.744
+        }
+      },
+      "Netherlands": {
+        "graph_twohop": {
+          "rank": 30,
+          "n": 30,
+          "score": -0.1305
+        },
+        "graph_bank": {
+          "rank": 21,
+          "n": 21,
+          "score": -0.112
+        },
+        "combiner": {
+          "rank": 29,
+          "n": 29,
+          "score": -0.0044
+        },
+        "leadlag": {
+          "rank": 15,
+          "n": 15,
+          "score": -0.0437
+        },
+        "twins": {
+          "rank": 33,
+          "n": 34,
+          "score": -0.1095
+        },
+        "cpi_rev": {
+          "rank": 9,
+          "n": 33,
+          "score": 0.2417
+        },
+        "etf_contra": {
+          "rank": 22,
+          "n": 33,
+          "score": 1.2789
+        },
+        "tot_impulse": {
+          "rank": 23,
+          "n": 34,
+          "score": -2.3249
+        }
+      },
+      "Philippines": {
+        "graph_twohop": {
+          "rank": 29,
+          "n": 30,
+          "score": -0.0939
+        },
+        "graph_bank": {
+          "rank": 20,
+          "n": 21,
+          "score": -0.0856
+        },
+        "combiner": {
+          "rank": 6,
+          "n": 29,
+          "score": 0.0007
+        },
+        "leadlag": {
+          "rank": 2,
+          "n": 15,
+          "score": 0.0512
+        },
+        "twins": {
+          "rank": 34,
+          "n": 34,
+          "score": -0.1121
+        },
+        "cpi_rev": {
+          "rank": 1,
+          "n": 33,
+          "score": 1.6458
+        },
+        "etf_contra": {
+          "rank": 10,
+          "n": 33,
+          "score": -0.2986
+        },
+        "tot_impulse": {
+          "rank": 32,
+          "n": 34,
+          "score": -2.4579
         }
       },
       "Poland": {
@@ -108328,6 +108069,159 @@
           "score": -2.227
         }
       },
+      "South Africa": {
+        "graph_twohop": {
+          "rank": 8,
+          "n": 30,
+          "score": 0.0212
+        },
+        "graph_bank": {
+          "rank": 3,
+          "n": 21,
+          "score": 0.0378
+        },
+        "combiner": {
+          "rank": 9,
+          "n": 29,
+          "score": 0.0005
+        },
+        "twins": {
+          "rank": 12,
+          "n": 34,
+          "score": 0.0292
+        },
+        "cpi_rev": {
+          "rank": 6,
+          "n": 33,
+          "score": 0.2833
+        },
+        "etf_contra": {
+          "rank": 4,
+          "n": 33,
+          "score": -1.0659
+        },
+        "tot_impulse": {
+          "rank": 13,
+          "n": 34,
+          "score": -1.6886
+        }
+      },
+      "Spain": {
+        "graph_twohop": {
+          "rank": 28,
+          "n": 30,
+          "score": -0.0697
+        },
+        "graph_bank": {
+          "rank": 19,
+          "n": 21,
+          "score": -0.0485
+        },
+        "combiner": {
+          "rank": 22,
+          "n": 29,
+          "score": -0.001
+        },
+        "twins": {
+          "rank": 30,
+          "n": 34,
+          "score": -0.0527
+        },
+        "cpi_rev": {
+          "rank": 4,
+          "n": 33,
+          "score": 0.29
+        },
+        "etf_contra": {
+          "rank": 26,
+          "n": 33,
+          "score": 1.6973
+        },
+        "tot_impulse": {
+          "rank": 22,
+          "n": 34,
+          "score": -2.3209
+        }
+      },
+      "Sweden": {
+        "graph_twohop": {
+          "rank": 12,
+          "n": 30,
+          "score": 0.0079
+        },
+        "graph_bank": {
+          "rank": 7,
+          "n": 21,
+          "score": 0.0145
+        },
+        "combiner": {
+          "rank": 25,
+          "n": 29,
+          "score": -0.0016
+        },
+        "twins": {
+          "rank": 16,
+          "n": 34,
+          "score": 0.0178
+        },
+        "cpi_rev": {
+          "rank": 33,
+          "n": 33,
+          "score": -0.0167
+        },
+        "etf_contra": {
+          "rank": 8,
+          "n": 33,
+          "score": -0.6665
+        },
+        "tot_impulse": {
+          "rank": 15,
+          "n": 34,
+          "score": -2.1036
+        }
+      },
+      "Switzerland": {
+        "graph_twohop": {
+          "rank": 27,
+          "n": 30,
+          "score": -0.05
+        },
+        "graph_bank": {
+          "rank": 18,
+          "n": 21,
+          "score": -0.0418
+        },
+        "combiner": {
+          "rank": 26,
+          "n": 29,
+          "score": -0.0017
+        },
+        "leadlag": {
+          "rank": 12,
+          "n": 15,
+          "score": -0.0127
+        },
+        "twins": {
+          "rank": 27,
+          "n": 34,
+          "score": -0.0212
+        },
+        "cpi_rev": {
+          "rank": 30,
+          "n": 33,
+          "score": 0.0
+        },
+        "etf_contra": {
+          "rank": 29,
+          "n": 33,
+          "score": 2.6935
+        },
+        "tot_impulse": {
+          "rank": 9,
+          "n": 34,
+          "score": 0.6706
+        }
+      },
       "Thailand": {
         "graph_twohop": {
           "rank": 15,
@@ -108397,6 +108291,80 @@
           "score": -2.177
         }
       },
+      "U.K.": {
+        "graph_twohop": {
+          "rank": 17,
+          "n": 30,
+          "score": -0.0115
+        },
+        "graph_bank": {
+          "rank": 14,
+          "n": 21,
+          "score": -0.0081
+        },
+        "combiner": {
+          "rank": 17,
+          "n": 29,
+          "score": -0.0001
+        },
+        "twins": {
+          "rank": 18,
+          "n": 34,
+          "score": 0.0096
+        },
+        "cpi_rev": {
+          "rank": 10,
+          "n": 33,
+          "score": 0.1875
+        },
+        "etf_contra": {
+          "rank": 28,
+          "n": 33,
+          "score": 1.994
+        },
+        "tot_impulse": {
+          "rank": 29,
+          "n": 34,
+          "score": -2.4128
+        }
+      },
+      "U.S.": {
+        "graph_twohop": {
+          "rank": 16,
+          "n": 30,
+          "score": -0.0078
+        },
+        "graph_bank": {
+          "rank": 9,
+          "n": 21,
+          "score": 0.0078
+        },
+        "combiner": {
+          "rank": 7,
+          "n": 29,
+          "score": 0.0006
+        },
+        "twins": {
+          "rank": 9,
+          "n": 34,
+          "score": 0.0333
+        },
+        "cpi_rev": {
+          "rank": 21,
+          "n": 33,
+          "score": 0.1067
+        },
+        "etf_contra": {
+          "rank": 17,
+          "n": 33,
+          "score": 0.2055
+        },
+        "tot_impulse": {
+          "rank": 4,
+          "n": 34,
+          "score": 2.1424
+        }
+      },
       "Vietnam": {
         "graph_twohop": {
           "rank": 23,
@@ -108427,6 +108395,38 @@
           "rank": 28,
           "n": 34,
           "score": -2.3874
+        }
+      },
+      "Taiwan": {
+        "graph_bank": {
+          "rank": 16,
+          "n": 21,
+          "score": -0.0204
+        },
+        "leadlag": {
+          "rank": 3,
+          "n": 15,
+          "score": 0.0428
+        },
+        "twins": {
+          "rank": 10,
+          "n": 34,
+          "score": 0.0332
+        },
+        "cpi_rev": {
+          "rank": 24,
+          "n": 33,
+          "score": 0.1
+        },
+        "etf_contra": {
+          "rank": 6,
+          "n": 33,
+          "score": -0.8999
+        },
+        "tot_impulse": {
+          "rank": 25,
+          "n": 34,
+          "score": -2.3417
         }
       },
       "ChinaH": {
@@ -108543,6 +108543,19 @@
         "edge": 0.0,
         "conflict": false
       },
+      "ChinaA": {
+        "long": 3,
+        "short": 0,
+        "eligible": 5,
+        "long_families": [
+          "graph_twohop",
+          "twins",
+          "etf_contra"
+        ],
+        "short_families": [],
+        "edge": 0.6,
+        "conflict": false
+      },
       "Denmark": {
         "long": 1,
         "short": 2,
@@ -108571,8 +108584,8 @@
         "short": 2,
         "eligible": 5,
         "long_families": [
-          "graph_bank",
           "graph_twohop",
+          "graph_bank",
           "twins"
         ],
         "short_families": [
@@ -108587,13 +108600,39 @@
         "short": 0,
         "eligible": 6,
         "long_families": [
-          "graph_bank",
           "graph_twohop",
+          "graph_bank",
           "twins"
         ],
         "short_families": [],
         "edge": 0.5,
         "conflict": false
+      },
+      "India": {
+        "long": 0,
+        "short": 1,
+        "eligible": 4,
+        "long_families": [],
+        "short_families": [
+          "graph_twohop"
+        ],
+        "edge": -0.25,
+        "conflict": false
+      },
+      "Indonesia": {
+        "long": 3,
+        "short": 1,
+        "eligible": 5,
+        "long_families": [
+          "graph_twohop",
+          "leadlag",
+          "twins"
+        ],
+        "short_families": [
+          "etf_contra"
+        ],
+        "edge": 0.4,
+        "conflict": true
       },
       "Italy": {
         "long": 1,
@@ -108630,6 +108669,21 @@
         "edge": 0.0,
         "conflict": true
       },
+      "Malaysia": {
+        "long": 3,
+        "short": 1,
+        "eligible": 5,
+        "long_families": [
+          "graph_twohop",
+          "twins",
+          "etf_contra"
+        ],
+        "short_families": [
+          "cpi_rev"
+        ],
+        "edge": 0.4,
+        "conflict": true
+      },
       "Mexico": {
         "long": 0,
         "short": 1,
@@ -108647,8 +108701,8 @@
         "eligible": 6,
         "long_families": [],
         "short_families": [
-          "graph_bank",
           "graph_twohop",
+          "graph_bank",
           "leadlag",
           "twins"
         ],
@@ -108664,150 +108718,11 @@
           "cpi_rev"
         ],
         "short_families": [
-          "graph_bank",
           "graph_twohop",
+          "graph_bank",
           "twins"
         ],
         "edge": -0.167,
-        "conflict": true
-      },
-      "South Africa": {
-        "long": 3,
-        "short": 0,
-        "eligible": 5,
-        "long_families": [
-          "graph_bank",
-          "cpi_rev",
-          "etf_contra"
-        ],
-        "short_families": [],
-        "edge": 0.6,
-        "conflict": false
-      },
-      "Spain": {
-        "long": 1,
-        "short": 3,
-        "eligible": 5,
-        "long_families": [
-          "cpi_rev"
-        ],
-        "short_families": [
-          "graph_bank",
-          "graph_twohop",
-          "twins"
-        ],
-        "edge": -0.4,
-        "conflict": true
-      },
-      "Sweden": {
-        "long": 0,
-        "short": 1,
-        "eligible": 5,
-        "long_families": [],
-        "short_families": [
-          "cpi_rev"
-        ],
-        "edge": -0.2,
-        "conflict": false
-      },
-      "Switzerland": {
-        "long": 0,
-        "short": 4,
-        "eligible": 6,
-        "long_families": [],
-        "short_families": [
-          "graph_bank",
-          "graph_twohop",
-          "cpi_rev",
-          "etf_contra"
-        ],
-        "edge": -0.667,
-        "conflict": false
-      },
-      "Taiwan": {
-        "long": 2,
-        "short": 0,
-        "eligible": 5,
-        "long_families": [
-          "leadlag",
-          "etf_contra"
-        ],
-        "short_families": [],
-        "edge": 0.4,
-        "conflict": false
-      },
-      "U.K.": {
-        "long": 0,
-        "short": 1,
-        "eligible": 5,
-        "long_families": [],
-        "short_families": [
-          "etf_contra"
-        ],
-        "edge": -0.2,
-        "conflict": false
-      },
-      "U.S.": {
-        "long": 0,
-        "short": 0,
-        "eligible": 5,
-        "long_families": [],
-        "short_families": [],
-        "edge": 0.0,
-        "conflict": false
-      },
-      "ChinaA": {
-        "long": 3,
-        "short": 0,
-        "eligible": 5,
-        "long_families": [
-          "graph_twohop",
-          "twins",
-          "etf_contra"
-        ],
-        "short_families": [],
-        "edge": 0.6,
-        "conflict": false
-      },
-      "India": {
-        "long": 0,
-        "short": 1,
-        "eligible": 4,
-        "long_families": [],
-        "short_families": [
-          "graph_twohop"
-        ],
-        "edge": -0.25,
-        "conflict": false
-      },
-      "Indonesia": {
-        "long": 3,
-        "short": 1,
-        "eligible": 5,
-        "long_families": [
-          "graph_twohop",
-          "leadlag",
-          "twins"
-        ],
-        "short_families": [
-          "etf_contra"
-        ],
-        "edge": 0.4,
-        "conflict": true
-      },
-      "Malaysia": {
-        "long": 3,
-        "short": 1,
-        "eligible": 5,
-        "long_families": [
-          "graph_twohop",
-          "twins",
-          "etf_contra"
-        ],
-        "short_families": [
-          "cpi_rev"
-        ],
-        "edge": 0.4,
         "conflict": true
       },
       "Poland": {
@@ -108845,6 +108760,59 @@
         "edge": -0.4,
         "conflict": true
       },
+      "South Africa": {
+        "long": 3,
+        "short": 0,
+        "eligible": 5,
+        "long_families": [
+          "graph_bank",
+          "cpi_rev",
+          "etf_contra"
+        ],
+        "short_families": [],
+        "edge": 0.6,
+        "conflict": false
+      },
+      "Spain": {
+        "long": 1,
+        "short": 3,
+        "eligible": 5,
+        "long_families": [
+          "cpi_rev"
+        ],
+        "short_families": [
+          "graph_twohop",
+          "graph_bank",
+          "twins"
+        ],
+        "edge": -0.4,
+        "conflict": true
+      },
+      "Sweden": {
+        "long": 0,
+        "short": 1,
+        "eligible": 5,
+        "long_families": [],
+        "short_families": [
+          "cpi_rev"
+        ],
+        "edge": -0.2,
+        "conflict": false
+      },
+      "Switzerland": {
+        "long": 0,
+        "short": 4,
+        "eligible": 6,
+        "long_families": [],
+        "short_families": [
+          "graph_twohop",
+          "graph_bank",
+          "cpi_rev",
+          "etf_contra"
+        ],
+        "edge": -0.667,
+        "conflict": false
+      },
       "Thailand": {
         "long": 1,
         "short": 2,
@@ -108870,6 +108838,26 @@
         "edge": 0.25,
         "conflict": false
       },
+      "U.K.": {
+        "long": 0,
+        "short": 1,
+        "eligible": 5,
+        "long_families": [],
+        "short_families": [
+          "etf_contra"
+        ],
+        "edge": -0.2,
+        "conflict": false
+      },
+      "U.S.": {
+        "long": 0,
+        "short": 0,
+        "eligible": 5,
+        "long_families": [],
+        "short_families": [],
+        "edge": 0.0,
+        "conflict": false
+      },
       "Vietnam": {
         "long": 0,
         "short": 2,
@@ -108880,6 +108868,18 @@
           "cpi_rev"
         ],
         "edge": -0.5,
+        "conflict": false
+      },
+      "Taiwan": {
+        "long": 2,
+        "short": 0,
+        "eligible": 5,
+        "long_families": [
+          "leadlag",
+          "etf_contra"
+        ],
+        "short_families": [],
+        "edge": 0.4,
         "conflict": false
       },
       "ChinaH": {
@@ -108931,12 +108931,23 @@
       {
         "country": "Germany",
         "long_families": [
-          "graph_bank",
           "graph_twohop",
+          "graph_bank",
           "twins"
         ],
         "short_families": [
           "cpi_rev",
+          "etf_contra"
+        ]
+      },
+      {
+        "country": "Indonesia",
+        "long_families": [
+          "graph_twohop",
+          "leadlag",
+          "twins"
+        ],
+        "short_families": [
           "etf_contra"
         ]
       },
@@ -108959,40 +108970,6 @@
         ]
       },
       {
-        "country": "Philippines",
-        "long_families": [
-          "leadlag",
-          "cpi_rev"
-        ],
-        "short_families": [
-          "graph_bank",
-          "graph_twohop",
-          "twins"
-        ]
-      },
-      {
-        "country": "Spain",
-        "long_families": [
-          "cpi_rev"
-        ],
-        "short_families": [
-          "graph_bank",
-          "graph_twohop",
-          "twins"
-        ]
-      },
-      {
-        "country": "Indonesia",
-        "long_families": [
-          "graph_twohop",
-          "leadlag",
-          "twins"
-        ],
-        "short_families": [
-          "etf_contra"
-        ]
-      },
-      {
         "country": "Malaysia",
         "long_families": [
           "graph_twohop",
@@ -109004,6 +108981,18 @@
         ]
       },
       {
+        "country": "Philippines",
+        "long_families": [
+          "leadlag",
+          "cpi_rev"
+        ],
+        "short_families": [
+          "graph_twohop",
+          "graph_bank",
+          "twins"
+        ]
+      },
+      {
         "country": "Singapore",
         "long_families": [
           "cpi_rev"
@@ -109012,6 +109001,17 @@
           "graph_twohop",
           "twins",
           "etf_contra"
+        ]
+      },
+      {
+        "country": "Spain",
+        "long_families": [
+          "cpi_rev"
+        ],
+        "short_families": [
+          "graph_twohop",
+          "graph_bank",
+          "twins"
         ]
       },
       {
@@ -109033,12 +109033,12 @@
           "votes": 2
         },
         {
-          "country": "South Africa",
+          "country": "ChinaA",
           "edge": 0.6,
           "votes": 3
         },
         {
-          "country": "ChinaA",
+          "country": "South Africa",
           "edge": 0.6,
           "votes": 3
         },
@@ -109070,12 +109070,12 @@
           "votes": 2
         },
         {
-          "country": "Singapore",
+          "country": "Spain",
           "edge": -0.4,
           "votes": 3
         },
         {
-          "country": "Spain",
+          "country": "Singapore",
           "edge": -0.4,
           "votes": 3
         }
@@ -109519,11 +109519,11 @@
     }
   },
   "drawdowns": {
-    "ChinaH": -21.3,
-    "South Africa": -21.1,
-    "Indonesia": -40.1,
     "Chile": -15.5,
-    "Brazil": -17.4
+    "Brazil": -17.4,
+    "Indonesia": -40.1,
+    "ChinaH": -21.3,
+    "South Africa": -21.1
   },
   "brief": {
     "file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/dislocations/brief_2026_06_30.md",
@@ -110136,15 +110136,6 @@
   ],
   "today": [
     {
-      "kind": "governance",
-      "headline": "Governance is RED",
-      "why": "config_guard: uncommitted/dirty trust-roots: ['config/governance_contract.yaml']",
-      "source": "governance_scorecard.json",
-      "route": {
-        "view": "health"
-      }
-    },
-    {
       "kind": "gap",
       "headline": "U.K. short gap via EWU",
       "why": "G2 · unabsorbed · 89% unabsorbed · 21d. U.K. short: terms-of-trade impulse is extreme while ETF/country price-state has not fully repriced.",
@@ -110159,21 +110150,6 @@
   "edge_board": {
     "as_of": "2026-06-30",
     "slots": [
-      {
-        "kind": "governance",
-        "rank_score": 9.9,
-        "entity": null,
-        "direction": null,
-        "headline": "Governance is RED",
-        "why": "config_guard: uncommitted/dirty trust-roots: ['config/governance_contract.yaml']",
-        "agreement_line": null,
-        "wrong_if": null,
-        "epistemic_tag": "FACT",
-        "source": "governance_scorecard.json",
-        "route": {
-          "view": "health"
-        }
-      },
       {
         "kind": "gap",
         "rank_score": 0.7353846153846153,
@@ -110197,7 +110173,7 @@
         "entity": "Netherlands",
         "direction": "short",
         "headline": "Netherlands SHORT · family consensus",
-        "why": "4 of 6 validated families rank Netherlands in their bottom quintile (graph_bank, graph_twohop, leadlag, twins). Thin, real edges — WEAK verdicts, stated honestly.",
+        "why": "4 of 6 validated families rank Netherlands in their bottom quintile (graph_twohop, graph_bank, leadlag, twins). Thin, real edges — WEAK verdicts, stated honestly.",
         "agreement_line": "0 of 6 families lean long · 4 lean short",
         "wrong_if": "half the supporting families drop the extreme quintile",
         "epistemic_tag": "INFERENCE",
@@ -110213,7 +110189,7 @@
         "entity": "Switzerland",
         "direction": "short",
         "headline": "Switzerland SHORT · family consensus",
-        "why": "4 of 6 validated families rank Switzerland in their bottom quintile (graph_bank, graph_twohop, cpi_rev, etf_contra). Thin, real edges — WEAK verdicts, stated honestly.",
+        "why": "4 of 6 validated families rank Switzerland in their bottom quintile (graph_twohop, graph_bank, cpi_rev, etf_contra). Thin, real edges — WEAK verdicts, stated honestly.",
         "agreement_line": "0 of 6 families lean long · 4 lean short",
         "wrong_if": "half the supporting families drop the extreme quintile",
         "epistemic_tag": "INFERENCE",
@@ -110221,6 +110197,22 @@
         "route": {
           "view": "consensus",
           "name": "Switzerland"
+        }
+      },
+      {
+        "kind": "consensus",
+        "rank_score": 0.6,
+        "entity": "ChinaA",
+        "direction": "long",
+        "headline": "ChinaA LONG · family consensus",
+        "why": "3 of 5 validated families rank ChinaA in their top quintile (graph_twohop, twins, etf_contra). Thin, real edges — WEAK verdicts, stated honestly.",
+        "agreement_line": "3 of 5 families lean long · 0 lean short",
+        "wrong_if": "half the supporting families drop the extreme quintile",
+        "epistemic_tag": "INFERENCE",
+        "source": "family_ranks_daily · 2026-06-30",
+        "route": {
+          "view": "consensus",
+          "name": "ChinaA"
         }
       },
       {

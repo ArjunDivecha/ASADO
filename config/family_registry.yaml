@@ -6,8 +6,8 @@
 #   scripts/loop/ledgers.py (register_hypothesis, family_trial_count) and
 #   scripts/harness/evaluate_signal.py (the deflated-Sharpe trial count N).
 #
-# VERSION: 1.0
-# LAST UPDATED: 2026-06-17
+# VERSION: 1.1
+# LAST UPDATED: 2026-07-02 (added triptych_prior — Triptych PIT queue rule)
 # AUTHOR: Arjun Divecha (built by agent session, Governance Layer PRD v1.2, item A5)
 #
 # DESCRIPTION:
@@ -34,7 +34,7 @@
 # mutually unambiguous.
 # =============================================================================
 
-version: "1.0"
+version: "1.1"
 
 families:
   network_spillover:
@@ -72,3 +72,7 @@ families:
   momentum_sanity:
     description: "Trailing-momentum sanity checks AND the forward-return look-ahead canary (12MRet)."
     variable_prefixes: ["12-1MTR", "120DTR", "12MRet", "1MRet", "3MRet", "6MRet"]
+
+  triptych_prior:
+    description: "Triptych PIT conditional-history priors: walk-forward aggregates of the review-queue rule (decile-conditional forward-return leans over the factor scan grid)."
+    variable_prefixes: ["TRIPTYCH_"]

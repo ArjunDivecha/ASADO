@@ -955,3 +955,53 @@ Topic: Triptych Prediction Prior Layer — full ingestion (overnight, user-appro
 ---
 SESSION END: 2026-07-02 02:25 PDT | Agent: Cursor (Fable 5)
 ---
+
+---
+SESSION START: 2026-07-02 17:00 PDT | Agent: Cursor (Fable 5)
+---
+
+## Triptych queue rule: registered + harness-tested -> DEAD
+
+User approved registering the queue-membership rule (option 1 from the
+morning discussion: one hypothesis, the epistemically cleanest).
+
+### What was built
+- config/family_registry.yaml v1.1: new canonical family `triptych_prior`
+  (prefix TRIPTYCH_) — trust-root edit, deliberate classification.
+- scripts/loop/build_triptych_signal.py: walk-forward reconstruction of the
+  review-queue rule. At each month T since 2004: records restricted to
+  completed forward windows (record date <= T-h), running PIT thresholds
+  (insert-then-assign, kernel-identical), current signal = latest factor obs
+  <= T-1 (one-month availability embargo; factor labels are as-labeled, not
+  as-published), live queue gates verbatim from config/triptych_scan.yaml,
+  per-(country,factor) dedupe; country value = sum(direction x confidence).
+  Global cap 25 deliberately NOT applied (review-workload device, pre-declared
+  deviation). -> loop table triptych_signal_monthly
+  (TRIPTYCH_QUEUE_LEAN + TRIPTYCH_QUEUE_N), parquet-first. ~2 min, 14 cores.
+- No-lookahead canary: --truncate-input 2020-12 vs full run — overlapping
+  values bit-identical (max abs diff 0.0).
+
+### The verdict (FAIL IS FAIL)
+- H_20260702_001, family triptych_prior, trial 1, primary horizon 1m,
+  publication_lag_months=0 (spine is end-of-month market data; factor
+  freshness embargoed inside the builder).
+- DEAD. 1m mean IC -0.0034 (NW-t -0.24), 3m -0.0087 (-0.42), 6m -0.0039
+  (-0.15); gross LS Sharpe -0.26; negative in 3 of 4 subperiods; 221 months,
+  full 34-country coverage; breakeven cost negative.
+- Reading: decile-conditional history extremes, aggregated exactly the way
+  the live queue selects them, carry NO cross-sectional next-month edge
+  2008-2026. The conditional histories are real descriptions of the past but
+  do not generalize out-of-window at the aggregate-rule level.
+
+### Consequences
+- Triptych priors remain CONTEXT/PRIOR-tier everywhere (cockpit letter, Fable
+  packet PRIOR label, MCP) — correct as built; nothing to demote.
+- Do NOT add the lean to the combiner. Any re-test variant (different gates,
+  confidence-weighted subset, single-family rules) = NEW trial charged to
+  family triptych_prior.
+- Ledger: hyp_register + hyp_verdict appended; result JSON in
+  Data/loop/harness_runs/H_20260702_001_20260702_170758.json.
+
+---
+SESSION END: 2026-07-02 17:20 PDT | Agent: Cursor (Fable 5)
+---

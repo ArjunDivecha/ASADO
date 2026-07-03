@@ -124,6 +124,11 @@ import time
 from pathlib import Path
 
 import duckdb
+
+try:
+    from scripts.duckdb_lock_guard import guarded_connect
+except ImportError:  # run as `python scripts/<name>.py` (scripts/ is sys.path[0])
+    from duckdb_lock_guard import guarded_connect
 import pandas as pd
 
 BASE_DIR = Path(__file__).parent.parent
@@ -1006,7 +1011,7 @@ def check_database():
         print(f"Database not found at {DB_PATH}")
         return
 
-    con = duckdb.connect(str(DB_PATH), read_only=True)
+    con = guarded_connect(DB_PATH, read_only=True)
     print(f"Database: {DB_PATH}")
     print(f"File size: {DB_PATH.stat().st_size / 1e6:.1f} MB")
     print()
@@ -1130,7 +1135,7 @@ def main():
         DB_PATH.unlink()
         print("Removed existing database (clean rebuild)")
 
-    con = duckdb.connect(str(DB_PATH))
+    con = guarded_connect(DB_PATH)
 
     total = 0
     total += load_t2_master(con)

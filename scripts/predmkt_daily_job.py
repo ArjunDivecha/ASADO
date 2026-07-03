@@ -77,30 +77,16 @@ COLLECTOR = BASE_DIR / "scripts" / "build_predmkt_panel.py"
 
 sys.path.insert(0, str(BASE_DIR))
 from scripts.loop.procutil import run_bounded  # noqa: E402  bounded subprocess helper
-
-# Transient DuckDB contention markers — the 06:30 predmkt job writes the MAIN
-# warehouse read-write and can collide with the 07:30 loop's read-only ATTACH
-# or a monthly setup_duckdb.py rebuild. Retry those; re-raise deterministic ones.
-_RETRYABLE_DB = ("lock", "being used by another", "io error",
-                 "could not set lock", "conflicting lock")
+from scripts.duckdb_lock_guard import guarded_connect  # noqa: E402
 
 
 def _connect_retry(read_only: bool = False):
-    """Open the main warehouse with bounded retry on transient write-lock/IO
-    contention (2/4/8/16s). Deterministic errors are re-raised immediately."""
-    last = None
-    for attempt, wait in enumerate([0, 2, 4, 8, 16]):
-        try:
-            if wait:
-                time.sleep(wait)
-            return duckdb.connect(str(DB_PATH), read_only=read_only)
-        except Exception as exc:  # noqa: BLE001
-            last = exc
-            if not any(m in str(exc).lower() for m in _RETRYABLE_DB):
-                raise
-            if attempt < 4:
-                log(f"DB busy (attempt {attempt + 1}): {exc}; retrying in {[2,4,8,16][attempt]}s")
-    raise last
+    """Open the main warehouse via the lock guard: kills idle sandbox-kernel
+    lock squatters (e.g. ~/.claude-science kernels — these blocked the job on
+    2026-07-02/03), waits out legitimate holders (the 07:30 loop's read-only
+    ATTACH, a monthly setup_duckdb.py rebuild), and fails loudly only after
+    the wait budget is exhausted."""
+    return guarded_connect(DB_PATH, read_only=read_only)
 
 # Tables with a snapshot_date column get date-aware restore; meta tables are
 # restored whole only when entirely missing from the DB.

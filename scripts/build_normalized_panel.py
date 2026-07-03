@@ -53,6 +53,11 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 import duckdb
+
+try:
+    from scripts.duckdb_lock_guard import guarded_connect
+except ImportError:  # run as `python scripts/<name>.py` (scripts/ is sys.path[0])
+    from duckdb_lock_guard import guarded_connect
 import pandas as pd
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -410,7 +415,7 @@ def check_outputs() -> None:
         print(f"Database not found at {DB_PATH}")
         return
 
-    con = duckdb.connect(str(DB_PATH), read_only=True)
+    con = guarded_connect(DB_PATH, read_only=True)
     try:
         tables = {row[0] for row in con.execute("SHOW TABLES").fetchall()}
         if NORMALIZED_TABLE not in tables:
@@ -485,7 +490,7 @@ def main() -> None:
     print("=" * 60)
     print(f"Database: {DB_PATH}")
 
-    con = duckdb.connect(str(DB_PATH))
+    con = guarded_connect(DB_PATH)
     try:
         normalized = build_normalized_features(con)
         write_outputs(con, normalized)

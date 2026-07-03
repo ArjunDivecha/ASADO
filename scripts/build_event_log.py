@@ -42,6 +42,11 @@ from datetime import date, datetime
 from pathlib import Path
 
 import duckdb
+
+try:
+    from scripts.duckdb_lock_guard import guarded_connect
+except ImportError:  # run as `python scripts/<name>.py` (scripts/ is sys.path[0])
+    from duckdb_lock_guard import guarded_connect
 import yaml
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -303,7 +308,7 @@ def main():
         sys.exit(1)
 
     print(f"\n  Connecting to: {DB_PATH}")
-    con = duckdb.connect(str(DB_PATH))
+    con = guarded_connect(DB_PATH)
 
     print("  Creating event_log table ...")
     create_table(con)

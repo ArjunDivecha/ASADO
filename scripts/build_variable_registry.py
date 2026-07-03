@@ -111,6 +111,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import duckdb
+
+try:
+    from scripts.duckdb_lock_guard import guarded_connect
+except ImportError:  # run as `python scripts/<name>.py` (scripts/ is sys.path[0])
+    from duckdb_lock_guard import guarded_connect
 import pandas as pd
 import yaml
 
@@ -292,7 +297,7 @@ def _returns_role(variable: str, source: str, surface: str) -> str:
 def scan_facts() -> pd.DataFrame:
     """Scan every in-scope surface and return one facts row per (variable, surface)."""
     rows: List[Dict[str, Any]] = []
-    con = duckdb.connect(str(DB_PATH), read_only=True)
+    con = guarded_connect(DB_PATH, read_only=True)
     try:
         # 1. feature_panel — the monthly query-facing union (raw + normalized)
         df = con.execute(
@@ -531,7 +536,7 @@ CURATED_COLUMNS = [
 
 
 def write_db(entries: List[Dict[str, Any]], facts: pd.DataFrame) -> None:
-    con = duckdb.connect(str(DB_PATH))
+    con = guarded_connect(DB_PATH)
     try:
         # curated table
         cols_sql = ", ".join(f'"{c}" {t}' for c, t in CURATED_COLUMNS)

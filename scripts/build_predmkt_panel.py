@@ -96,6 +96,11 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import duckdb
+
+try:
+    from scripts.duckdb_lock_guard import guarded_connect
+except ImportError:  # run as `python scripts/<name>.py` (scripts/ is sys.path[0])
+    from duckdb_lock_guard import guarded_connect
 import pandas as pd
 import requests
 import yaml
@@ -1829,7 +1834,7 @@ def _run_check_mode(markets: list[dict[str, Any]]) -> int:
     if not DB_PATH.exists():
         print(f"\nDuckDB missing: {DB_PATH}")
         return 1
-    con = duckdb.connect(str(DB_PATH), read_only=True)
+    con = guarded_connect(DB_PATH, read_only=True)
     try:
         _print_stats(con)
     finally:
@@ -1960,7 +1965,7 @@ def main() -> int:
 
     try:
         _backup_database(no_backup=args.no_backup)
-        con = duckdb.connect(str(DB_PATH))
+        con = guarded_connect(DB_PATH)
         con.execute("SET memory_limit = '8GB'")
         con.execute("SET threads = 8")
         _create_tables(con, rebuild=args.rebuild)

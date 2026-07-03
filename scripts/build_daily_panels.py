@@ -97,6 +97,11 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import duckdb
+
+try:
+    from scripts.duckdb_lock_guard import guarded_connect
+except ImportError:  # run as `python scripts/<name>.py` (scripts/ is sys.path[0])
+    from duckdb_lock_guard import guarded_connect
 import pandas as pd
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
@@ -773,7 +778,7 @@ def check_existing_tables() -> None:
     if not DB_PATH.exists():
         log.error("Database not found: %s", DB_PATH)
         return
-    con = duckdb.connect(str(DB_PATH), read_only=True)
+    con = guarded_connect(DB_PATH, read_only=True)
     log.info("DB: %s (%.1f MB)", DB_PATH, DB_PATH.stat().st_size / 1e6)
     existing = {r[0] for r in con.execute("SHOW TABLES").fetchall()}
     for tbl in NEW_TABLES:
@@ -847,7 +852,7 @@ def main() -> int:
     # ── Idempotency: if all daily tables already exist and inputs unchanged,
     #    skip unless --rebuild ─────────────────────────────────────────────
     if not args.rebuild:
-        con_ro = duckdb.connect(str(DB_PATH), read_only=True)
+        con_ro = guarded_connect(DB_PATH, read_only=True)
         existing = {r[0] for r in con_ro.execute("SHOW TABLES").fetchall()}
         con_ro.close()
         if all(t in existing for t in NEW_TABLES):
@@ -862,7 +867,7 @@ def main() -> int:
                 log.info("All daily tables exist and DB is newer than inputs. "
                          "Use --rebuild to force.")
                 if args.validate:
-                    con = duckdb.connect(str(DB_PATH), read_only=True)
+                    con = guarded_connect(DB_PATH, read_only=True)
                     validate_against_monthly(con)
                     con.close()
                 return 0
@@ -876,7 +881,7 @@ def main() -> int:
     log.info("=" * 70)
 
     try:
-        con = duckdb.connect(str(DB_PATH))
+        con = guarded_connect(DB_PATH)
         # DuckDB memory hint: T2 CSV is 1.7 GB; let it use a chunk of RAM
         con.execute("SET memory_limit = '8GB'")
         con.execute("SET threads = 8")

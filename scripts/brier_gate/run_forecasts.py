@@ -85,6 +85,14 @@ MODELS = {
         "reasoning_effort": "xhigh",
         "subsample": True,
     },
+    # NATIVE DeepSeek API at effort=max (one notch above OpenRouter's xhigh),
+    # FULL corpus — powers the us_listable split with real n and matches the
+    # live shadow's exact configuration.
+    "deepseek-max": {
+        "provider": "deepseek-native",
+        "id": "deepseek-v4-pro",
+        "reasoning_effort": "max",
+    },
 }
 ARMS = ["A0", "A1", "A2"]
 MAX_TOKENS = 300
@@ -155,6 +163,9 @@ class Caller:
         self.openrouter = OpenAI(
             base_url="https://openrouter.ai/api/v1", api_key=keys["OPENROUTER_API_KEY"]
         )
+        self.deepseek = OpenAI(
+            base_url="https://api.deepseek.com", api_key=keys["DEEPSEEK_API_KEY"]
+        )
 
     def call(self, provider: str, model_id: str, system: str, user: str,
              reasoning_effort: str | None = None) -> str:
@@ -177,6 +188,18 @@ class Caller:
                 **kwargs,
             )
             return "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
+        if provider == "deepseek-native":
+            resp = self.deepseek.chat.completions.create(
+                model=model_id,
+                max_tokens=16000,
+                temperature=TEMPERATURE,
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user},
+                ],
+                extra_body={"reasoning_effort": reasoning_effort or "high"},
+            )
+            return resp.choices[0].message.content or ""
         if reasoning_effort:
             extra = {"reasoning": {"effort": reasoning_effort}}
             max_tok = 16000

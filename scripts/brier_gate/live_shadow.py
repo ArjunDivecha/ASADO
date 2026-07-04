@@ -88,6 +88,7 @@ import requests
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(BASE_DIR / "scripts" / "brier_gate"))
 from context_packs import ContextPackBuilder  # noqa: E402
+from listable import us_listable  # noqa: E402
 
 LOOP_DB = BASE_DIR / "Data" / "loop" / "asado_loop.duckdb"
 AUDIT_LOG = BASE_DIR / "Data" / "work" / "brier_gate" / "live_shadow_log.jsonl"
@@ -158,6 +159,7 @@ CREATE TABLE IF NOT EXISTS brier_gate_live (
 """
 
 KALSHI_COLS_DDL = [
+    "ALTER TABLE brier_gate_live ADD COLUMN IF NOT EXISTS us_listable BOOLEAN",
     "ALTER TABLE brier_gate_live ADD COLUMN IF NOT EXISTS kalshi_ticker VARCHAR",
     "ALTER TABLE brier_gate_live ADD COLUMN IF NOT EXISTS kalshi_title VARCHAR",
     "ALTER TABLE brier_gate_live ADD COLUMN IF NOT EXISTS kalshi_yes_bid DOUBLE",
@@ -573,7 +575,7 @@ def main() -> int:
                      float(row.p_mkt), p_ai, len(samples), sha, MODEL_ID, EFFORT,
                      km["ticker"] if km else None, km["title"][:300] if km else None,
                      km["yes_bid"] if km else None, km["yes_ask"] if km else None,
-                     km["score"] if km else None]
+                     km["score"] if km else None, us_listable(row.question)]
                 )
                 with open(AUDIT_LOG, "a") as fh:
                     fh.write(json.dumps({
@@ -590,9 +592,10 @@ def main() -> int:
                        (forecast_date, forecast_ts, market_id, event_slug, question, tag,
                         resolve_by, days_to_resolution, p_mkt, p_ai, n_samples, pack_sha,
                         model, effort, resolution_value, resolved_ts, brier_ai, brier_mkt, scored_ts,
-                        kalshi_ticker, kalshi_title, kalshi_yes_bid, kalshi_yes_ask, kalshi_match_score)
+                        kalshi_ticker, kalshi_title, kalshi_yes_bid, kalshi_yes_ask, kalshi_match_score,
+                        us_listable)
                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, NULL, NULL,
-                               ?, ?, ?, ?, ?)""",
+                               ?, ?, ?, ?, ?, ?)""",
                     vals,
                 )
             print(f"  forecasts written: {n_ok} ok, {n_fail} failed "
@@ -606,9 +609,20 @@ def main() -> int:
     except Exception:
         con = _loop_con()
 
-    print("\n=== SHADOW SCOREBOARD ===")
+    # Backfill us_listable for rows written before the column existed
+    open_q = con.execute(
+        "SELECT DISTINCT market_id, question FROM brier_gate_live WHERE us_listable IS NULL"
+    ).fetchall()
+    for mid, q in open_q:
+        con.execute(
+            "UPDATE brier_gate_live SET us_listable = ? WHERE market_id = ?",
+            [us_listable(q), mid],
+        )
+
+    print("\n=== SHADOW SCOREBOARD (split: US-listable vs offshore-only) ===")
     board = con.execute(
-        """SELECT COUNT(*) n_forecasts,
+        """SELECT COALESCE(CAST(us_listable AS VARCHAR), 'unknown') us_listable,
+                  COUNT(*) n_forecasts,
                   COUNT(resolution_value) n_resolved,
                   AVG(brier_ai) brier_ai, AVG(brier_mkt) brier_mkt,
                   SUM(CASE WHEN resolution_value IS NOT NULL AND ABS(p_ai - p_mkt) > 0.05
@@ -616,7 +630,8 @@ def main() -> int:
                            ELSE (1 - resolution_value) - ((1 - p_mkt) + 0.05) END END) pnl_theta05_c05,
                   SUM(CASE WHEN resolution_value IS NOT NULL AND ABS(p_ai - p_mkt) > 0.05
                       THEN 1 ELSE 0 END) n_trades
-           FROM brier_gate_live"""
+           FROM brier_gate_live
+           GROUP BY 1 ORDER BY 1 DESC"""
     ).df()
     print(board.to_string(index=False))
     con.close()

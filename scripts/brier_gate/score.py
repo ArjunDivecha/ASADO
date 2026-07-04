@@ -64,8 +64,18 @@ RNG = np.random.default_rng(42)
 
 
 def load() -> pd.DataFrame:
+    import sys
+
+    sys.path.insert(0, str(BASE_DIR / "scripts" / "brier_gate"))
+    from listable import us_listable
+
     rows = [json.loads(l) for l in FORECASTS_PATH.read_text().splitlines() if l.strip()]
     raw = pd.DataFrame(rows)
+    corpus = pd.read_parquet(BASE_DIR / "Data" / "work" / "brier_gate" / "corpus.parquet")
+    q_map = dict(zip(corpus["market_id"], corpus["question"]))
+    raw["us_listable"] = raw["market_id"].map(
+        lambda m: us_listable(q_map.get(m, ""))
+    )
     agg = (
         raw.groupby(["model", "arm", "market_id", "horizon_days"])
         .agg(
@@ -75,6 +85,7 @@ def load() -> pd.DataFrame:
             outcome=("outcome", "first"),
             event_slug=("event_slug", "first"),
             tag=("tag", "first"),
+            us_listable=("us_listable", "first"),
         )
         .reset_index()
     )
@@ -161,6 +172,21 @@ def main() -> int:
                  "ci_lo": lo, "ci_hi": hi, "beats": hi < 0, "n": len(joined),
                  "n_events": joined["event_slug"].nunique()}
             )
+    # US-listable split (CFTC Reg 40.11 excludes war/terror/assassination):
+    # does the edge survive on contracts a US-regulated venue can list?
+    for (model, arm), sub in df[df["arm"].isin(["A1", "A2"])].groupby(["model", "arm"]):
+        for flag, label in [(True, "US-listable"), (False, "offshore-only")]:
+            s = sub[sub["us_listable"] == flag]
+            if len(s) < 20:
+                gate_rows.append({"model": model, "test": f"{arm} vs market [{label}]",
+                                  "n": len(s), "note": "insufficient obs"})
+                continue
+            mean_d, lo, hi = event_bootstrap_diff(s, "brier_ai", "brier_mkt")
+            gate_rows.append(
+                {"model": model, "test": f"{arm} vs market [{label}]",
+                 "mean_brier_diff": mean_d, "ci_lo": lo, "ci_hi": hi,
+                 "beats": hi < 0, "n": len(s), "n_events": s["event_slug"].nunique()}
+            )
     gate = pd.DataFrame(gate_rows)
 
     # ---- Leave-one-event-out for A1-vs-market (per model)
@@ -179,7 +205,9 @@ def main() -> int:
     # ---- PnL grid (per model, arm A1 and A2), with time split-half
     df["forecast_ord"] = df.groupby("model")["market_id"].transform(lambda s: 0)  # placeholder
     pnl_rows = []
-    for (model, arm), sub in df[df["arm"].isin(["A1", "A2"])].groupby(["model", "arm"]):
+    for (model, arm), sub0 in df[df["arm"].isin(["A1", "A2"])].groupby(["model", "arm"]):
+      for listable, sub in [("all", sub0), (True, sub0[sub0["us_listable"]]),
+                            (False, sub0[~sub0["us_listable"]])]:
         sub = sub.copy()
         for theta in THETA_GRID:
             for cost in COST_GRID:
@@ -193,8 +221,8 @@ def main() -> int:
                     h1 = pnl_rule(sub[med <= med.median()], theta, cost)
                     h2 = pnl_rule(sub[med > med.median()], theta, cost)
                     halves = {"h1_mean": h1.get("mean_pnl_per_$"), "h2_mean": h2.get("mean_pnl_per_$")}
-                pnl_rows.append({"model": model, "arm": arm, "theta": theta, "cost": cost,
-                                 **stats, **halves})
+                pnl_rows.append({"model": model, "arm": arm, "listable": listable,
+                                 "theta": theta, "cost": cost, **stats, **halves})
     pnl = pd.DataFrame(pnl_rows)
 
     # ---- Calibration
@@ -230,8 +258,8 @@ def main() -> int:
     print(summary.to_string(index=False))
     print("\n=== GATE TESTS (negative diff + CI<0 = beats) ===")
     print(gate.to_string(index=False))
-    print("\n=== PNL GRID (A1/A2) ===")
-    print(pnl[pnl["n_trades"] > 0].to_string(index=False))
+    print("\n=== PNL GRID (A1/A2, us_listable split) ===")
+    print(pnl[(pnl["n_trades"] > 0) & (pnl["listable"] != "all")].to_string(index=False))
 
     lines = [
         f"# Brier Gate — Results {STAMP}",

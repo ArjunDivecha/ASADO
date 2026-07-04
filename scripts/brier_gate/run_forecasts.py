@@ -76,7 +76,15 @@ ENV_PATH = Path("/Users/arjundivecha/Dropbox/AAA Backup/.env.txt")
 MODELS = {
     "sonnet": {"provider": "anthropic", "id": "claude-sonnet-5"},
     "deepseek": {"provider": "openrouter", "id": "deepseek/deepseek-v4-pro"},
-    "fable": {"provider": "anthropic", "id": "claude-fable-5"},
+    "fable": {"provider": "anthropic", "id": "claude-fable-5", "subsample": True},
+    # Same DeepSeek model with reasoning at xhigh, on the same subsample as
+    # fable: separates "smarter model" from "more deliberation".
+    "deepseek-xhigh": {
+        "provider": "openrouter",
+        "id": "deepseek/deepseek-v4-pro",
+        "reasoning_effort": "xhigh",
+        "subsample": True,
+    },
 }
 ARMS = ["A0", "A1", "A2"]
 MAX_TOKENS = 300
@@ -148,7 +156,8 @@ class Caller:
             base_url="https://openrouter.ai/api/v1", api_key=keys["OPENROUTER_API_KEY"]
         )
 
-    def call(self, provider: str, model_id: str, system: str, user: str) -> str:
+    def call(self, provider: str, model_id: str, system: str, user: str,
+             reasoning_effort: str | None = None) -> str:
         if provider == "anthropic":
             if "fable" in model_id:
                 # Fable 5 uses adaptive thinking controlled by output_config.effort;
@@ -168,15 +177,21 @@ class Caller:
                 **kwargs,
             )
             return "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
+        if reasoning_effort:
+            extra = {"reasoning": {"effort": reasoning_effort}}
+            max_tok = 16000
+        else:
+            extra = {"reasoning": {"enabled": False}}
+            max_tok = MAX_TOKENS
         resp = self.openrouter.chat.completions.create(
             model=model_id,
-            max_tokens=MAX_TOKENS,
+            max_tokens=max_tok,
             temperature=TEMPERATURE,
             messages=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
             ],
-            extra_body={"reasoning": {"enabled": False}},
+            extra_body=extra,
         )
         return resp.choices[0].message.content or ""
 
@@ -255,7 +270,7 @@ def main() -> int:
     for model_key in [m.strip() for m in args.models.split(",")]:
         spec = MODELS[model_key]
         for row in corpus.itertuples():
-            if model_key == "fable" and row.market_id not in fable_ids:
+            if spec.get("subsample") and row.market_id not in fable_ids:
                 continue
             pack = packs.get((row.market_id, row.horizon_days))
             for arm in ARMS:
@@ -282,7 +297,10 @@ def main() -> int:
         user = _user_prompt(row, arm, pack["text"] if pack else None)
         for attempt in range(3):
             try:
-                text = caller.call(spec["provider"], spec["id"], system, user)
+                text = caller.call(
+                    spec["provider"], spec["id"], system, user,
+                    reasoning_effort=spec.get("reasoning_effort"),
+                )
                 break
             except Exception as exc:
                 if attempt == 2:

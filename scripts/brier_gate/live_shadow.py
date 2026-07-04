@@ -436,6 +436,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--max-markets", type=int, default=40)
     parser.add_argument("--samples", type=int, default=5)
+    parser.add_argument("--workers", type=int, default=200,
+                        help="max concurrent API calls (DeepSeek has no hard rate limit)")
     parser.add_argument("--score-only", action="store_true")
     args = parser.parse_args()
 
@@ -540,7 +542,10 @@ def main() -> int:
                     print(f"  ⚠️ api: {job['row'].market_id[:12]}: {str(exc)[:80]}")
                     return None
 
-            with ThreadPoolExecutor(max_workers=12) as pool:
+            # DeepSeek's API has no hard rate limit (excess requests queue
+            # server-side), so fire every (market, sample) call at once.
+            n_calls = max(1, len(jobs) * args.samples)
+            with ThreadPoolExecutor(max_workers=min(n_calls, args.workers)) as pool:
                 futures = {
                     job["row"].market_id: [
                         pool.submit(one_sample, job) for _ in range(args.samples)

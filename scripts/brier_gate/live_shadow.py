@@ -491,6 +491,10 @@ def main() -> int:
             fdate = now.date()
             n_ok = n_fail = 0
             pending_inserts: list[list] = []
+
+            # Phase A (serial, local): context packs — DuckDB connections in
+            # ContextPackBuilder are not thread-safe, and packs are fast.
+            jobs = []
             for row in todo:
                 try:
                     pack_text, sha = cpb.build(row.question, row.event_title, row.tag, pd.Timestamp(now))
@@ -513,26 +517,44 @@ def main() -> int:
                     f"CURRENT MARKET PRICE (probability of YES): {row.p_mkt:.3f}\n\n"
                     "Your probability that this resolves YES?"
                 )
-                samples = []
-                for _ in range(args.samples):
-                    try:
-                        resp = ds_client.chat.completions.create(
-                            model=MODEL_ID,
-                            temperature=1.0,
-                            messages=[
-                                {"role": "system", "content": system},
-                                {"role": "user", "content": user},
-                            ],
-                            max_tokens=16000,
-                            extra_body={"reasoning_effort": EFFORT},
-                        )
-                        text = resp.choices[0].message.content or ""
-                        p = _parse_probability(text)
-                        if p is not None:
-                            samples.append(p)
-                    except Exception as exc:
-                        print(f"  ⚠️ api: {row.market_id[:12]}: {str(exc)[:80]}")
-                        time.sleep(3)
+                jobs.append({"row": row, "sha": sha, "system": system, "user": user})
+            cpb.close()
+
+            # Phase B (parallel): every (market, sample) forecast call at once.
+            from concurrent.futures import ThreadPoolExecutor
+
+            def one_sample(job):
+                try:
+                    resp = ds_client.chat.completions.create(
+                        model=MODEL_ID,
+                        temperature=1.0,
+                        messages=[
+                            {"role": "system", "content": job["system"]},
+                            {"role": "user", "content": job["user"]},
+                        ],
+                        max_tokens=16000,
+                        extra_body={"reasoning_effort": EFFORT},
+                    )
+                    return _parse_probability(resp.choices[0].message.content or "")
+                except Exception as exc:
+                    print(f"  ⚠️ api: {job['row'].market_id[:12]}: {str(exc)[:80]}")
+                    return None
+
+            with ThreadPoolExecutor(max_workers=12) as pool:
+                futures = {
+                    job["row"].market_id: [
+                        pool.submit(one_sample, job) for _ in range(args.samples)
+                    ]
+                    for job in jobs
+                }
+                results = {
+                    mid: [f.result() for f in fs] for mid, fs in futures.items()
+                }
+
+            # Phase C (parallel-ish): Kalshi matching per market, then persist.
+            for job in jobs:
+                row, sha = job["row"], job["sha"]
+                samples = [p for p in results.get(row.market_id, []) if p is not None]
                 if not samples:
                     n_fail += 1
                     continue
@@ -556,7 +578,6 @@ def main() -> int:
                     }) + "\n")
                 n_ok += 1
                 print(f"  ✓ {row.question[:60]}... mkt={row.p_mkt:.2f} ai={p_ai:.2f}")
-            cpb.close()
             con = _loop_con()
             for vals in pending_inserts:
                 con.execute(

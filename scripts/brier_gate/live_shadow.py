@@ -35,10 +35,13 @@ on the retrospective corpus with n too small to trust). Each run:
      fed-rates, inflation, oil, world), filters to genuinely-uncertain
      (0.05 <= p_mkt <= 0.95), liquid (volume >= $1,000), non-blacklisted
      binaries; dedups to <= 3 strikes/event; ranks by 24h volume.
-  3. FORECASTS up to --max-markets (default 40) with Fable 5 at xhigh
-     effort, arm A2 (PIT warehouse context pack + current market price),
-     k=3 samples, median. A market is re-forecast only if last forecast
-     is > 2 days old OR it resolves within 3 days.
+  3. FORECASTS up to --max-markets (default 40) with DeepSeek V4 Pro via
+     the NATIVE API (api.deepseek.com) at reasoning_effort="max", arm A2
+     (PIT warehouse context pack + current market price), k=5 samples,
+     median. A market is re-forecast only if last forecast is > 2 days old
+     OR it resolves within 3 days. (v1.0 used Fable-5 xhigh — day-1 rows in
+     brier_gate_live carry model/effort columns, so the history is mixed by
+     design; DeepSeek-xhigh validated retrospectively 2026-07-04.)
   4. DUAL-LOGS Kalshi (api.elections.kalshi.com, public, unauthenticated):
      each forecast's question is token-matched against all open Kalshi
      markets in Politics/World/Economics/Financials; the best match's
@@ -99,8 +102,14 @@ BLACKLIST = re.compile(
     r"tiktok|youtube|spotify|elon tweet|mrbeast)\b",
     re.IGNORECASE,
 )
-MODEL_ID = "claude-fable-5"
-EFFORT = "xhigh"
+# Forecaster: DeepSeek V4 Pro via the NATIVE API (api.deepseek.com, OpenAI-
+# compatible) at reasoning_effort="max" (native supports low/medium/high/
+# xhigh/max; validated retrospectively at xhigh: A2 beats market, Brier
+# 0.186 vs 0.202). ~10-30x cheaper than Fable (<$2/day at 40x5 calls).
+# The Kalshi matcher still uses a cheap Anthropic Sonnet call.
+MODEL_ID = "deepseek-v4-pro"
+EFFORT = "max"
+DEEPSEEK_BASE = "https://api.deepseek.com"
 P_MIN, P_MAX = 0.05, 0.95
 MIN_VOLUME = 1000.0
 MAX_PER_EVENT = 3
@@ -288,12 +297,12 @@ def _loop_con(retries: int = 5) -> duckdb.DuckDBPyConnection:
     raise RuntimeError("unreachable")
 
 
-def _anthropic_key() -> str:
+def _env_key(name: str) -> str:
     for line in ENV_PATH.read_text().splitlines():
-        m = re.match(r"^ANTHROPIC_API_KEY=(.+)$", line.strip())
+        m = re.match(rf"^{name}=(.+)$", line.strip())
         if m:
             return m.group(1).strip()
-    raise RuntimeError("ANTHROPIC_API_KEY not found in .env.txt")
+    raise RuntimeError(f"{name} not found in .env.txt")
 
 
 def _parse_probability(text: str):
@@ -426,7 +435,7 @@ def enumerate_targets(session: requests.Session) -> pd.DataFrame:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--max-markets", type=int, default=40)
-    parser.add_argument("--samples", type=int, default=3)
+    parser.add_argument("--samples", type=int, default=5)
     parser.add_argument("--score-only", action="store_true")
     args = parser.parse_args()
 
@@ -473,8 +482,10 @@ def main() -> int:
             n_matched = 0
 
             import anthropic
+            from openai import OpenAI
 
-            client = anthropic.Anthropic(api_key=_anthropic_key())
+            ds_client = OpenAI(base_url=DEEPSEEK_BASE, api_key=_env_key("DEEPSEEK_API_KEY"))
+            match_client = anthropic.Anthropic(api_key=_env_key("ANTHROPIC_API_KEY"))
             cpb = ContextPackBuilder()
             now = datetime.now(timezone.utc)
             fdate = now.date()
@@ -505,18 +516,17 @@ def main() -> int:
                 samples = []
                 for _ in range(args.samples):
                     try:
-                        resp = client.messages.create(
+                        resp = ds_client.chat.completions.create(
                             model=MODEL_ID,
                             temperature=1.0,
-                            system=system,
-                            messages=[{"role": "user", "content": user}],
-                            thinking={"type": "adaptive"},
-                            output_config={"effort": EFFORT},
+                            messages=[
+                                {"role": "system", "content": system},
+                                {"role": "user", "content": user},
+                            ],
                             max_tokens=16000,
+                            extra_body={"reasoning_effort": EFFORT},
                         )
-                        text = "".join(
-                            b.text for b in resp.content if getattr(b, "type", "") == "text"
-                        )
+                        text = resp.choices[0].message.content or ""
                         p = _parse_probability(text)
                         if p is not None:
                             samples.append(p)
@@ -527,7 +537,7 @@ def main() -> int:
                     n_fail += 1
                     continue
                 p_ai = float(pd.Series(samples).median())
-                km = match_kalshi(row.question, kalshi_universe, llm_client=client, session=session)
+                km = match_kalshi(row.question, kalshi_universe, llm_client=match_client, session=session)
                 if km is not None:
                     n_matched += 1
                 pending_inserts.append(

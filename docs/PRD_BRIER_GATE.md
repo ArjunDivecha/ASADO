@@ -1,7 +1,14 @@
 # PRD — Brier Gate: Can ASADO + Claude Beat the Prediction-Market Price?
 
 **Owner:** Arjun Divecha
-**Status:** Draft v0.1
+**Status:** EXECUTED 2026-07-03/04 — see `docs/BRIER_GATE_RESULTS_2026_07_04.md`.
+**Verdict:** FAIL at Sonnet 5 / DeepSeek V4 Pro tier (market beats every arm decisively;
+warehouse adds nothing). **AMBIGUOUS-POSITIVE at Fable 5 xhigh** (n=89): the warehouse
+adds significant value (A1 beats A0, CI excludes 0), and the A2 arm (warehouse + market
+price) beats the market Brier with threshold-rule PnL positive net of 5c costs in BOTH
+split halves (θ=0.05: 21 trades, +$0.26–0.31/$1, 81% hit; θ=0.10: 11 trades, +$0.45–0.50/$1).
+Small n and a CI that barely excludes zero → per §6 this is "extend live shadow" territory,
+NOT a trading green light. Recommended: live shadow with Fable xhigh on active markets.
 **Date:** 2026-07-03
 **Motivation:** ACX "The AI Superforecasters Are Here" (FutureSearch, Preseen). Their claim, stripped of hype: a data-advantaged AI forecaster can beat *prediction-market prices* on thin macro books. ASADO's edge is exactly the data layer those generic scaffolds lack. This PRD specifies the cheap kill-criterion experiment that must pass before any capital or further build is committed — same gate-first structure as the Tier 1 overnight signal (which passed Gate 1, failed Gate 2, and was correctly not traded).
 

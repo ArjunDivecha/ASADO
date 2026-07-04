@@ -9,6 +9,12 @@ price) beats the market Brier with threshold-rule PnL positive net of 5c costs i
 split halves (θ=0.05: 21 trades, +$0.26–0.31/$1, 81% hit; θ=0.10: 11 trades, +$0.45–0.50/$1).
 Small n and a CI that barely excludes zero → per §6 this is "extend live shadow" territory,
 NOT a trading green light. Recommended: live shadow with Fable xhigh on active markets.
+**ON HOLD (Arjun, 2026-07-04):** shadow ran day 1 (40 forecasts) then paused until
+Polymarket opens to US residents — the edge concentrates in geopolitical tail markets
+that are Polymarket-exclusive (day-1 Kalshi overlap: 1/40), so there is no executable
+venue to validate against yet. Resume trigger: Polymarket US access (check their
+QCX/CFTC re-entry status). To resume: reinstall the fdt-predmkt-shadow plist from the
+FDT repo's launchd/ dir; `brier_gate_live` day-1 rows will self-score on next run.
 **Date:** 2026-07-03
 **Motivation:** ACX "The AI Superforecasters Are Here" (FutureSearch, Preseen). Their claim, stripped of hype: a data-advantaged AI forecaster can beat *prediction-market prices* on thin macro books. ASADO's edge is exactly the data layer those generic scaffolds lack. This PRD specifies the cheap kill-criterion experiment that must pass before any capital or further build is committed — same gate-first structure as the Tier 1 overnight signal (which passed Gate 1, failed Gate 2, and was correctly not traded).
 

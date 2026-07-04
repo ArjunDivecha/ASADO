@@ -11,6 +11,16 @@
 - For work already approved in a PRD, build/test/verify autonomously (including overnight) without pausing for approval on simple decisions — only stop for genuinely undecidable choices — and leave a dated report in `docs/` (MORNING_REPORT_*/EOD_REPORT_*) with file:// links to artifacts.
 - The warehouse and Neo4j graph exist to surface non-obvious connections to country returns and to suggest short- and long-term trade ideas; analyses should tie explanatory data back to return surfaces.
 
+## Experimentation Rules (sandboxing vs the nightly pipeline)
+
+ASADO is a base for experimentation, but the nightly pipeline (daily_update -> loop job -> briefs) and the Fable Daily Trading production system (`A Complete/Fable Daily Trading`, reads the loop DB read-only at 12:20 PT) must never be disturbed. Binding rules for every session; full detail in `experiments/README.md`:
+
+1. **Main checkout = production.** launchd runs whatever is checked out here — never switch branches in this tree for an experiment. Pipeline-code experiments use a git worktree (`git worktree add "../ASADO-exp-<name>" -b exp/<name>`); merge back only what earns it.
+2. **Snapshot, don't share.** Never hold a connection to `Data/asado.duckdb` or `Data/loop/asado_loop.duckdb` — even idle READ-ONLY connections block the nightly writers (one-writer-or-many-readers; caused the Jul 2-3 pipeline failures). Freeze inputs first with `scripts/snapshot_for_experiment.py --db loop --tables <t1,t2> --name <exp>` and work off the parquet. Direct live-DB access = open, query, close within seconds.
+3. **Own your output space.** Keepable code/results: `experiments/<YYYY_MM>_<name>/` (committed, short README each). Scratch + snapshots: `Data/work/experiments/<name>/` (gitignored). Experiments NEVER write into `Data/processed/`, `Data/loop/`, the shared `Data/work/{t2,gdelt,econ,loop,...}` pipeline dirs, `config/`, or `ledgers/`.
+4. **Verdicts through the front door.** Exploration is free; any "this signal works" claim must register a harness trial charged to a family in `config/family_registry.yaml`. Never `sweep_signals.py --force` for re-measurement.
+5. **Isolate environments.** New packages go in a per-experiment venv (`uv venv` inside the experiment dir), never into `ASADO/venv` (the nightly depends on it). Avoid long-held resources 06:00-08:30 PT.
+
 ## Learned Workspace Facts
 
 - ASADO workspace root: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO`; 34-country T2 universe defined in `config/country_mapping.json`; git remote https://github.com/ArjunDivecha/ASADO.

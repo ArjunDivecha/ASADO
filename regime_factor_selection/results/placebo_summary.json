@@ -1,0 +1,19 @@
+{
+  "placebo_seed": 20260705,
+  "bootstrap_seed": 42,
+  "n_boot": 999,
+  "min_cell": 20,
+  "fdr_alpha": 0.1,
+  "placebo_included": 74,
+  "placebo_pass_fdr": 0,
+  "placebo_passing_factors": [],
+  "placebo_min_bootstrap_p": 0.002,
+  "placebo_raw_p_lt_010": 8,
+  "real_included": 74,
+  "real_pass_fdr": 0,
+  "real_passing_factors": [],
+  "real_min_bootstrap_p": 0.022,
+  "real_raw_p_lt_010": 18,
+  "expected_passes_by_chance": 7.4,
+  "placebo_invalidates_real": false
+}

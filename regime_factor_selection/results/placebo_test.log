@@ -1,0 +1,13 @@
+2026-07-05 14:51:28,746 - INFO - ======================================================================
+2026-07-05 14:51:28,747 - INFO - PLACEBO robustness check (PRD section 4)
+2026-07-05 14:51:28,747 - INFO - Placebo label-shuffle seed=20260705 ; inherited bootstrap seed=42, B=999, min cell=20, FDR alpha=0.10
+2026-07-05 14:51:28,999 - INFO - Factor panel: 779008 rows, 83 factors
+2026-07-05 14:51:29,683 - INFO - Panel rebuilt: 606420 ranked rows, 74 factors; 9 structurally excluded
+2026-07-05 14:51:29,699 - INFO - Per-country regime marginals verified identical to real labels.
+2026-07-05 14:51:29,750 - INFO - [IP-PLACEBO] panel after regime inner join: 502896 rows, 74 factors
+2026-07-05 14:51:31,884 - INFO - [IP-PLACEBO] included=74 excluded=9  ->  0 factors pass FDR(alpha=0.10)
+2026-07-05 14:51:32,112 - INFO - ======================================================================
+2026-07-05 14:51:32,112 - INFO - REAL  IP: 0/74 included factors pass FDR (alpha=0.10)
+2026-07-05 14:51:32,112 - INFO - PLACEBO : 0/74 included factors pass FDR (alpha=0.10) [expected ~7.4 by chance]
+2026-07-05 14:51:32,112 - INFO - PLACEBO smallest bootstrap p=0.0020 ; raw p<0.10 count=8
+2026-07-05 14:51:32,112 - INFO - REAL    smallest bootstrap p=0.0220 ; raw p<0.10 count=18

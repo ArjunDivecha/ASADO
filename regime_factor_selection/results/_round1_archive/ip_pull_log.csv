@@ -1,0 +1,91 @@
+timestamp,economy,country_label,ticker_tried,status,name_returned,sample_px_last,reject_reason,n_history_rows
+2026-07-05T14:17:29.263018,US,US,IP YOY Index,accepted,US Industrial Production YOY S,1.670000,,
+2026-07-05T14:17:29.542713,Germany,Germany,GRIPIYOY Index,accepted,Germany Industrial Production,-0.500000,,
+2026-07-05T14:17:29.749307,Japan,Japan,JNIPYOY Index,accepted,Japan Indices of Industrial Pr,-1.700000,,
+2026-07-05T14:17:29.969296,China,China,CHVAIOY Index,accepted,China Value Added of Industry,4.500000,,
+2026-07-05T14:17:30.219281,Korea,Korea,KOIPIYOY Index,rejected,South Korea IP-Mining/Manufact,0.700000,name_not_production,
+2026-07-05T14:17:30.613180,Australia,Australia,AUIPIYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:23008],
+2026-07-05T14:17:30.970411,Australia,Australia,AUIPYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:24057],
+2026-07-05T14:17:31.417704,Australia,Australia,AUNAIPIY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:24057],
+2026-07-05T14:17:31.720932,Brazil,Brazil,BZIPIYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:21931],
+2026-07-05T14:17:32.158658,Brazil,Brazil,BZIPTYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:23927],
+2026-07-05T14:17:32.454931,Brazil,Brazil,BRIPIYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:23010],
+2026-07-05T14:17:32.637432,Brazil,Brazil,BZIPYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:21930],
+2026-07-05T14:17:33.006577,Canada,Canada,CAIPIYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:23890],
+2026-07-05T14:17:33.223385,Canada,Canada,CAIPYOY Index,accepted,STCA Canada Industrial Product,13.560000,,
+2026-07-05T14:17:33.563781,Chile,Chile,CLIPIYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:21930],
+2026-07-05T14:17:33.850102,Chile,Chile,CLIPYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:23762],
+2026-07-05T14:17:34.160898,Chile,Chile,CHIPMYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:24196],
+2026-07-05T14:17:34.453663,Chile,Chile,CLMPIYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:19559],
+2026-07-05T14:17:34.895813,Denmark,Denmark,DNIPIYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:23600],
+2026-07-05T14:17:35.182877,Denmark,Denmark,DEIPIYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:19390],
+2026-07-05T14:17:35.489199,Denmark,Denmark,DAIPIYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:21937],
+2026-07-05T14:17:35.836434,Denmark,Denmark,DNIPMYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:21927],
+2026-07-05T14:17:36.104803,France,France,FRIPIYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:21932],
+2026-07-05T14:17:36.313443,France,France,FPIPYOY Index,accepted,France Industrial Production Y,3.200000,,
+2026-07-05T14:17:36.580615,Hong Kong,Hong Kong,HKIPIYOY Index,accepted,Hong Kong Industrial Productio,3.100000,,
+2026-07-05T14:17:36.954650,India,India,INIPIYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:21928],
+2026-07-05T14:17:37.168617,India,India,INPIINDY Index,accepted,India Industrial Production,5.100000,,
+2026-07-05T14:17:37.485651,Indonesia,Indonesia,IDIPIYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:23106],
+2026-07-05T14:17:37.840613,Indonesia,Indonesia,IDMPMYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:23118],
+2026-07-05T14:17:38.161747,Indonesia,Indonesia,IDIPYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:19392],
+2026-07-05T14:17:38.468944,Indonesia,Indonesia,IDMFGPY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:23009],
+2026-07-05T14:17:38.967546,Italy,Italy,ITIPIYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:23099],
+2026-07-05T14:17:39.191083,Italy,Italy,ITPRWAY Index,accepted,Italy Industrial Production Yo,1.300000,,
+2026-07-05T14:17:40.161789,Malaysia,Malaysia,MAIPIYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:22090],
+2026-07-05T14:17:40.370097,Malaysia,Malaysia,MAIPINDY Index,accepted,Malaysia Industrial Production,8.200000,,
+2026-07-05T14:17:40.713191,Mexico,Mexico,MXIPIYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:22090],
+2026-07-05T14:17:40.918872,Mexico,Mexico,MXIPTYOY Index,accepted,Mexico Industrial Production T,2.300000,,
+2026-07-05T14:17:41.144971,Netherlands,Netherlands,NEIPIYOY Index,accepted,General Manufacturing Producti,-2.900000,,
+2026-07-05T14:17:41.464137,Philippines,Philippines,PHIPIYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:24137],
+2026-07-05T14:17:41.882287,Philippines,Philippines,PHVPYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:21934],
+2026-07-05T14:17:42.214295,Philippines,Philippines,PHIPYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:23007],
+2026-07-05T14:17:42.545937,Philippines,Philippines,PHVPIYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:19499],
+2026-07-05T14:17:42.794395,Poland,Poland,POIPIYOY Index,rejected,Poland Import Prices YoY,-1.600000,name_not_production,
+2026-07-05T14:17:43.208313,Poland,Poland,POISYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:21934],
+2026-07-05T14:17:43.527203,Poland,Poland,PLIPIYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:24198],
+2026-07-05T14:17:44.062793,Saudi Arabia,Saudi Arabia,SRIPIYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:21931],
+2026-07-05T14:17:44.402195,Saudi Arabia,Saudi Arabia,SAUIPYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:23099],
+2026-07-05T14:17:44.753905,Saudi Arabia,Saudi Arabia,KSAIPYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:19432],
+2026-07-05T14:17:45.009042,Saudi Arabia,Saudi Arabia,SRIPYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:21929],
+2026-07-05T14:17:45.321814,Singapore,Singapore,SIIPIYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:23010],
+2026-07-05T14:17:45.603387,Singapore,Singapore,SGIPYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:24061],
+2026-07-05T14:17:45.889510,Singapore,Singapore,SIIPRYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:23210],
+2026-07-05T14:17:46.240170,Singapore,Singapore,SIPRYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:23007],
+2026-07-05T14:17:46.615547,South Africa,South Africa,SAIPIYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:23120],
+2026-07-05T14:17:46.897425,South Africa,South Africa,SAMPYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:19354],
+2026-07-05T14:17:47.272670,South Africa,South Africa,SAIPYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:19465],
+2026-07-05T14:17:47.576139,Spain,Spain,SPIPIYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:21928],
+2026-07-05T14:17:47.774319,Spain,Spain,SPIPCYOY Index,rejected,Spain CPI YoY,3.200000,name_not_production,
+2026-07-05T14:17:48.074793,Spain,Spain,SPIPYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:19390],
+2026-07-05T14:17:48.323021,Sweden,Sweden,SWIPIYOY Index,accepted,Sweden Industrial Production Y,6.330000,,
+2026-07-05T14:17:48.526459,Switzerland,Switzerland,SZIPIYOY Index,accepted,Switzerland Industrial Product,-7.100000,,
+2026-07-05T14:17:48.823130,Taiwan,Taiwan,TWIPIYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:19365],
+2026-07-05T14:17:49.265055,Taiwan,Taiwan,TAIPIYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:19354],
+2026-07-05T14:17:49.545676,Taiwan,Taiwan,TWINDPYY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:24198],
+2026-07-05T14:17:49.801767,Taiwan,Taiwan,TWIPRYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:19392],
+2026-07-05T14:17:50.131242,Thailand,Thailand,THIPIYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:21930],
+2026-07-05T14:17:50.427815,Thailand,Thailand,THMPIYOY Index,accepted,Thailand Manufacturing Product,16.300000,,
+2026-07-05T14:17:51.652431,Turkey,Turkey,TUIPIYOY Index,accepted,Turkey Industrial Production Y,-21.300000,,
+2026-07-05T14:17:51.876218,U.K.,U.K.,UKIPIYOY Index,accepted,UK Industrial Production YoY S,-0.200000,,
+2026-07-05T14:17:52.169900,Vietnam,Vietnam,VNIPIYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:21937],
+2026-07-05T14:17:52.428764,Vietnam,Vietnam,VNIPYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:19434],
+2026-07-05T14:17:52.762796,Vietnam,Vietnam,VNINDPY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:19355],
+2026-07-05T14:17:53.129524,Vietnam,Vietnam,VNIPRYOY Index,rejected,,,invalid_security:Unknown/Invalid Security  [nid:23007],
+2026-07-05T14:17:53.543819,US,US,IP YOY Index,history_ok,,,,329
+2026-07-05T14:17:53.905911,Germany,Germany,GRIPIYOY Index,history_ok,,,,328
+2026-07-05T14:17:54.211643,Japan,Japan,JNIPYOY Index,history_ok,,,,329
+2026-07-05T14:17:54.469084,China,China,CHVAIOY Index,history_ok,,,,294
+2026-07-05T14:17:54.731607,Canada,Canada,CAIPYOY Index,history_ok,,,,329
+2026-07-05T14:17:55.367539,France,France,FPIPYOY Index,history_ok,,,,329
+2026-07-05T14:17:55.666229,Hong Kong,Hong Kong,HKIPIYOY Index,history_ok,,,,81
+2026-07-05T14:17:56.026098,India,India,INPIINDY Index,history_ok,,,,38
+2026-07-05T14:17:56.355280,Italy,Italy,ITPRWAY Index,history_ok,,,,328
+2026-07-05T14:17:56.656162,Malaysia,Malaysia,MAIPINDY Index,history_ok,,,,160
+2026-07-05T14:17:56.929318,Mexico,Mexico,MXIPTYOY Index,history_ok,,,,328
+2026-07-05T14:17:57.452893,Netherlands,Netherlands,NEIPIYOY Index,history_ok,,,,60
+2026-07-05T14:17:57.730066,Sweden,Sweden,SWIPIYOY Index,history_ok,,,,316
+2026-07-05T14:17:58.032204,Switzerland,Switzerland,SZIPIYOY Index,history_ok,,,,85
+2026-07-05T14:17:58.524065,Thailand,Thailand,THMPIYOY Index,history_ok,,,,139
+2026-07-05T14:17:58.981408,Turkey,Turkey,TUIPIYOY Index,history_ok,,,,121
+2026-07-05T14:17:59.260114,U.K.,U.K.,UKIPIYOY Index,history_ok,,,,328

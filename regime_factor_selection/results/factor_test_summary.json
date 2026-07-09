@@ -1,0 +1,13 @@
+{
+  "ip_included": 74,
+  "ip_pass_fdr": 0,
+  "ip_passing_factors": [],
+  "gdp_included": 74,
+  "gdp_pass_fdr": 0,
+  "gdp_passing_factors": [],
+  "fdr_alpha": 0.1,
+  "min_cell": 20,
+  "n_boot": 999,
+  "seed": 42,
+  "verdict": "LEANING NULL (<8) -> placebo still required per PRD section 4"
+}

@@ -1,0 +1,85 @@
+{
+  "module": "regime_factor_selection",
+  "prd": "ASADO/PRD Regime-Conditional Factor Selection.md",
+  "generated": "2026-07-05",
+  "git": {
+    "repo_root": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO",
+    "head_commit": "2ddbe030e4f1c716c8ef72956e6665a24ff0177c",
+    "head_commit_short": "2ddbe03",
+    "head_commit_date": "2026-07-05 11:52:24 -0700",
+    "working_tree_note": "The regime_factor_selection/ module is UNTRACKED (git status '??') at write time -- the code that produced these results is not yet committed. head_commit is the ASADO repo HEAD, not a commit that contains this module. Commit the module to make this stamp binding (this is exactly the regime2.md-vs-regime.md silent-overwrite risk PRD section 4 warns about)."
+  },
+  "frozen_thresholds": {
+    "fdr_alpha": 0.10,
+    "min_cell": 20,
+    "regime_split": "bottom 30% Recession / middle 40% Neutral / top 30% Growth",
+    "classifier_min_history_months": 24,
+    "bootstrap_B": 999,
+    "bootstrap_seed": 42,
+    "placebo_shuffle_seed": 20260705,
+    "min_countries_per_date_cross_section": 8
+  },
+  "data_coverage": {
+    "t2_countries_total": 34,
+    "countries_with_usable_ip_labels": 34,
+    "ip_tickers_pulled": 31,
+    "ip_ticker_sharing_note": "US/NASDAQ/US SmallCap share IP YOY Index; ChinaA/ChinaH share CHVAIOY Index; Hong Kong has its own ticker. All 34 T2 pseudo-countries resolve to an IP series -> full 34/34 coverage, above PRD section 6's <10 insufficiency floor.",
+    "sufficiency_verdict": "SUFFICIENT (34/34 >= 10)"
+  },
+  "factor_universe": {
+    "curated_factor_names": 83,
+    "included_in_test": 74,
+    "structurally_excluded": 9,
+    "excluded_factors": ["Agriculture 12_TS", "Agriculture_TS", "Copper 12_TS", "Copper_TS", "Gold 12_TS", "Gold 12_CS", "Gold_TS", "Oil 12_TS", "Oil_TS"],
+    "exclusion_reason": "no cross-sectional dispersion (identical value broadcast to every country each date -> within-date cross-sectional rank-IC test is undefined). Non-tunable, structural."
+  },
+  "ip_primary": {
+    "included": 74,
+    "pass_fdr": 0,
+    "passing_factors": [],
+    "min_bootstrap_pvalue": 0.022,
+    "min_fdr_adjusted_pvalue": 0.3618,
+    "raw_p_lt_010": 18,
+    "expected_raw_p_lt_010_by_chance": 7.4,
+    "closest_factors": [
+      {"factor": "Operating Margin_TS", "interaction_growth_coef": -0.003856, "interaction_recession_coef": 0.068060, "joint_f_stat": 4.5217, "bootstrap_pvalue": 0.022, "n_obs_growth": 2014, "n_obs_recession": 2968, "n_obs_neutral": 3313, "n_countries": 34},
+      {"factor": "Best PBK_CS", "interaction_growth_coef": -0.081975, "interaction_recession_coef": -0.052331, "joint_f_stat": 3.9509, "bootstrap_pvalue": 0.022, "n_obs_growth": 1600, "n_obs_recession": 2551, "n_obs_neutral": 2715, "n_countries": 34},
+      {"factor": "Best ROE_TS", "interaction_growth_coef": 0.012192, "interaction_recession_coef": 0.068646, "joint_f_stat": 3.3955, "bootstrap_pvalue": 0.024, "n_obs_growth": 1591, "n_obs_recession": 2547, "n_obs_neutral": 2698, "n_countries": 34}
+    ]
+  },
+  "gdp_exploratory": {
+    "note": "NON-PRIMARY, separate FDR family, never pooled with IP (PRD section 2.1).",
+    "included": 74,
+    "pass_fdr": 0,
+    "passing_factors": [],
+    "min_bootstrap_pvalue": 0.023,
+    "min_fdr_adjusted_pvalue": 0.5651,
+    "raw_p_lt_010": 11
+  },
+  "placebo": {
+    "shuffle": "per-country independent permutation of the regime-label sequence; marginals preserved, date-alignment destroyed",
+    "shuffle_seed": 20260705,
+    "included": 74,
+    "pass_fdr": 0,
+    "passing_factors": [],
+    "min_bootstrap_pvalue": 0.002,
+    "raw_p_lt_010": 8,
+    "expected_raw_p_lt_010_by_chance": 7.4,
+    "invalidates_real": false,
+    "interpretation": "Placebo passes 0 factors under FDR, same as the real test, and its raw p<0.10 count (8) sits right at the ~7.4 expected by chance -- vs 18 in the real test. The machinery does NOT manufacture significance, so it neither invalidates nor rescues the real result: the null stands on its own."
+  },
+  "verdict": "LEANING NULL / NULL confirmed -- 0 of 74 factors clear FDR at alpha=0.10 (PRD section 6 '<8 factors' branch). Placebo confirms the FDR machinery is well-calibrated. Stop; do not sweep thresholds.",
+  "recommendation": "STOP. Pre-registered null: no genuine per-country regime-conditional factor-selection edge in this data. Do not proceed to Phase 2.",
+  "outputs": {
+    "factor_test_results_parquet": "regime_factor_selection/results/factor_test_results.parquet",
+    "factor_test_results_gdp_exploratory_parquet": "regime_factor_selection/results/factor_test_results_gdp_exploratory.parquet",
+    "placebo_results_parquet": "regime_factor_selection/results/placebo_results.parquet",
+    "regime_labels_ip_parquet": "regime_factor_selection/results/regime_labels_ip.parquet",
+    "regime_labels_gdp_parquet": "regime_factor_selection/results/regime_labels_gdp.parquet",
+    "ip_panel_parquet": "regime_factor_selection/results/ip_panel.parquet",
+    "figures": [
+      "regime_factor_selection/results/figures/pvalue_histogram_ip.pdf",
+      "regime_factor_selection/results/figures/pvalue_histogram_real_vs_placebo.pdf"
+    ]
+  }
+}

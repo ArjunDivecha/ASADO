@@ -1,0 +1,32 @@
+timestamp,economy,country_label,ticker_tried,status,name_returned,sample_px_last,reject_reason,n_history_rows
+2026-07-05T14:27:24.671628,US,US,IP YOY Index,accepted,US Industrial Production YOY S,1.670000,,329
+2026-07-05T14:27:25.233506,Germany,Germany,GRIPIYOY Index,accepted,Germany Industrial Production,-0.500000,,328
+2026-07-05T14:27:25.794035,Japan,Japan,JNIPYOY Index,accepted,Japan Indices of Industrial Pr,-1.700000,,329
+2026-07-05T14:27:26.288038,China,China,CHVAIOY Index,accepted,China Value Added of Industry,4.500000,,294
+2026-07-05T14:27:26.774654,Korea,Korea,KOIPIYOY Index,accepted,South Korea IP-Mining/Manufact,0.700000,,329
+2026-07-05T14:27:27.323841,Australia,Australia,AUIPMUY Index,accepted,Australia Industrial Productio,-2.300000,,27
+2026-07-05T14:27:27.839423,Brazil,Brazil,BZIPYOY% Index,accepted,Brazil Industrial Production N,0.200000,,281
+2026-07-05T14:27:28.352028,Canada,Canada,CAIPYOY Index,accepted,STCA Canada Industrial Product,13.560000,,329
+2026-07-05T14:27:28.866839,Chile,Chile,CHIPTOTY Index,accepted,Chile Industrial Production To,-7.490000,,197
+2026-07-05T14:27:29.388295,Denmark,Denmark,DEMFIPSY Index,accepted,Denmark Industrial Production,13.100000,,304
+2026-07-05T14:27:29.890845,France,France,FPIPYOY Index,accepted,France Industrial Production Y,3.200000,,329
+2026-07-05T14:27:30.446039,Hong Kong,Hong Kong,HKIPIYOY Index,accepted,Hong Kong Industrial Productio,3.100000,,81
+2026-07-05T14:27:31.037843,India,India,INBGIIPY Index,accepted,India Industrial Production Mo,5.140000,,329
+2026-07-05T14:27:31.629700,Indonesia,Indonesia,IDMPIYOY Index,accepted,Indonesia Industrial/Manufactu,-1.740000,,327
+2026-07-05T14:27:32.145620,Italy,Italy,ITPRWAY Index,accepted,Italy Industrial Production Yo,1.300000,,328
+2026-07-05T14:27:32.666529,Malaysia,Malaysia,MAIPINDY Index,accepted,Malaysia Industrial Production,8.200000,,160
+2026-07-05T14:27:33.146176,Mexico,Mexico,MXIPTYOY Index,accepted,Mexico Industrial Production T,2.300000,,328
+2026-07-05T14:27:33.675297,Netherlands,Netherlands,EUIPNLYY Index,accepted,Eurostat Industrial Production,4.000000,,304
+2026-07-05T14:27:34.217921,Philippines,Philippines,VOPIMFGY Index,accepted,Philippines Manufacturing Volu,12.000000,,100
+2026-07-05T14:27:34.723097,Poland,Poland,POISCYOY Index,accepted,Poland Sold Industrial Output,4.100000,,329
+2026-07-05T14:27:35.204742,Saudi Arabia,Saudi Arabia,SRINGINY Index,accepted,Saudi Arabia Industrial Produc,-19.100000,,88
+2026-07-05T14:27:35.761628,Singapore,Singapore,SIIPYOY% Index,accepted,Singapore Industrial Productio,13.000000,,329
+2026-07-05T14:27:36.320485,South Africa,South Africa,SFPMYOY Index,accepted,South Africa Manufacturing Pro,-2.800000,,328
+2026-07-05T14:27:36.851135,Spain,Spain,SPIOYOY Index,accepted,Spain Industrial Production Yo,0.800000,,329
+2026-07-05T14:27:37.384965,Sweden,Sweden,SWIPIYOY Index,accepted,Sweden Industrial Production Y,6.330000,,316
+2026-07-05T14:27:37.884423,Switzerland,Switzerland,SZIPIYOY Index,accepted,Switzerland Industrial Product,-7.100000,,85
+2026-07-05T14:27:38.377096,Taiwan,Taiwan,TWINDPIY Index,accepted,Taiwan Industrial Production Y,11.780000,,329
+2026-07-05T14:27:38.855558,Thailand,Thailand,THMPIN2Y Index,accepted,Thailand Production Index NSA,-0.800000,,173
+2026-07-05T14:27:39.341228,Turkey,Turkey,TUIOWDYY Index,accepted,Turkey Industrial Production W,6.040000,,328
+2026-07-05T14:27:39.847887,U.K.,U.K.,UKIPIYOY Index,accepted,UK Industrial Production YoY S,-0.200000,,328
+2026-07-05T14:27:40.423491,Vietnam,Vietnam,VIPITYOY Index,accepted,Vietnam Industrial Production,12.700000,,181

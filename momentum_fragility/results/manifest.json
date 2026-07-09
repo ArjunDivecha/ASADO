@@ -1,0 +1,179 @@
+{
+  "status": "complete",
+  "test": "momentum_fragility_conditional_reversal",
+  "conventions": {
+    "return_alignment": "1MRet@t is forward realized return over month t; pairs with composite[t] (verified == t2_master)",
+    "standardization": "per-country expanding z-score, min 24 months (pre-built upstream)",
+    "walk_forward": "composite already point-in-time; quartile break-points refit annually on years < Y",
+    "momentum_subset": "top cross-sectional quartile of 12-1MTR_CS (momentum_quartile_flag)",
+    "primary_horizon": "forward 1MRet"
+  },
+  "pass_thresholds": {
+    "pooled_spearman_max": -0.1,
+    "spread_min_bp": 50.0
+  },
+  "variants": {
+    "core": {
+      "overall_status": "FAIL - stopped at Gate 3 (decisive)",
+      "gates": {
+        "gate1_persistence": {
+          "pass": true,
+          "report_only": true,
+          "median_weighted_persist_1m": 0.5088839508869508,
+          "median_tercile_duration_months": 2.0142857142857142,
+          "worst_single_bucket_share": 0.6171875,
+          "degenerate_flag": false,
+          "n_countries": 34
+        },
+        "gate2_volatility": {
+          "pass": true,
+          "median_corr": 0.012280017797076912,
+          "median_abs_corr": 0.119190620587325,
+          "volatility_proxy_flag": false,
+          "threshold_flag_abs_corr_gt": 0.7
+        },
+        "gate3_lead": {
+          "pass": false,
+          "pooled_spearman": -0.013462680405953156,
+          "pooled_spearman_p": 0.5367250566615906,
+          "pooled_n_obs": 2108,
+          "spread_bottom_minus_top_decimal": -0.001140148738728166,
+          "spread_bottom_minus_top_bp": -11.40148738728166,
+          "n_bottom": 541,
+          "n_top": 482,
+          "mean_ret_bottom_lowfrag": 0.010693394929765603,
+          "mean_ret_top_highfrag": 0.01183354366849377,
+          "spearman_condition_pass": false,
+          "spread_condition_pass": false,
+          "oos_year_min": 2004,
+          "oos_year_max": 2026,
+          "diagnostic_per_country_sign": {
+            "n_countries_valid": 33,
+            "n_negative": 15,
+            "sign_test_p": 0.7565748791676015,
+            "median_per_country_spearman": 0.013200568990042672
+          },
+          "thresholds": {
+            "pooled_spearman_max": -0.1,
+            "spread_min_decimal": 0.005
+          }
+        },
+        "gate4_robustness": {
+          "pass": false,
+          "placebo_pooled_spearman": 0.005113213175069999,
+          "placebo_spread_decimal": -0.0032884349189466573,
+          "placebo_collapsed": true,
+          "placebo_also_significant_overrides_pass": false,
+          "subsample_split_year": 2013,
+          "subsample_sign_hold": false,
+          "subsample_details": [
+            {
+              "check": "subsample",
+              "sample": "pre_2013",
+              "pooled_spearman": -0.06342790126807406,
+              "pooled_p": 0.05380317668858418,
+              "n_obs": 925
+            },
+            {
+              "check": "subsample",
+              "sample": "post_2013",
+              "pooled_spearman": 0.015362863460273445,
+              "pooled_p": 0.5858783812086894,
+              "n_obs": 1260
+            }
+          ],
+          "point_in_time_discipline_pass": true,
+          "point_in_time_notes": [
+            "Composite is pre-built as per-country EXPANDING z-score (min 24m); every value at t uses only data <= t.",
+            "Momentum subset uses momentum_quartile_flag, a cross-sectional rank at t (no look-ahead).",
+            "Gate-3 composite quartile break-points are refit annually on qualifying months in years < Y only.",
+            "No full-sample mean/std/quantile is used to standardize or to define the pooled Spearman inputs.",
+            "1MRet@t is the forward realized return over month t and pairs with composite[t] directly (verified == t2_master)."
+          ],
+          "role": "diagnostic_only_gate3_failed"
+        }
+      }
+    },
+    "full": {
+      "overall_status": "FAIL - stopped at Gate 3 (decisive)",
+      "gates": {
+        "gate1_persistence": {
+          "pass": true,
+          "report_only": true,
+          "median_weighted_persist_1m": 0.5213822069492173,
+          "median_tercile_duration_months": 2.0208333333333335,
+          "worst_single_bucket_share": 0.9175257731958762,
+          "degenerate_flag": false,
+          "n_countries": 33
+        },
+        "gate2_volatility": {
+          "pass": true,
+          "median_corr": -0.09855889230733776,
+          "median_abs_corr": 0.14772958905183878,
+          "volatility_proxy_flag": false,
+          "threshold_flag_abs_corr_gt": 0.7
+        },
+        "gate3_lead": {
+          "pass": false,
+          "pooled_spearman": 0.03009260794270601,
+          "pooled_spearman_p": 0.44162552974387714,
+          "pooled_n_obs": 656,
+          "spread_bottom_minus_top_decimal": -0.009302495413700079,
+          "spread_bottom_minus_top_bp": -93.02495413700079,
+          "n_bottom": 159,
+          "n_top": 159,
+          "mean_ret_bottom_lowfrag": 0.009499419009258665,
+          "mean_ret_top_highfrag": 0.018801914422958744,
+          "spearman_condition_pass": false,
+          "spread_condition_pass": false,
+          "oos_year_min": 2019,
+          "oos_year_max": 2026,
+          "diagnostic_per_country_sign": {
+            "n_countries_valid": 10,
+            "n_negative": 6,
+            "sign_test_p": 0.376953125,
+            "median_per_country_spearman": -0.045592055003819715
+          },
+          "thresholds": {
+            "pooled_spearman_max": -0.1,
+            "spread_min_decimal": 0.005
+          }
+        },
+        "gate4_robustness": {
+          "pass": false,
+          "placebo_pooled_spearman": 0.0070010122850666205,
+          "placebo_spread_decimal": -0.0027011109230034207,
+          "placebo_collapsed": true,
+          "placebo_also_significant_overrides_pass": false,
+          "subsample_split_year": 2020,
+          "subsample_sign_hold": false,
+          "subsample_details": [
+            {
+              "check": "subsample",
+              "sample": "pre_2020",
+              "pooled_spearman": -0.05054335336025476,
+              "pooled_p": 0.5488466622500188,
+              "n_obs": 143
+            },
+            {
+              "check": "subsample",
+              "sample": "post_2020",
+              "pooled_spearman": 0.01998527788001472,
+              "pooled_p": 0.6336744552440394,
+              "n_obs": 571
+            }
+          ],
+          "point_in_time_discipline_pass": true,
+          "point_in_time_notes": [
+            "Composite is pre-built as per-country EXPANDING z-score (min 24m); every value at t uses only data <= t.",
+            "Momentum subset uses momentum_quartile_flag, a cross-sectional rank at t (no look-ahead).",
+            "Gate-3 composite quartile break-points are refit annually on qualifying months in years < Y only.",
+            "No full-sample mean/std/quantile is used to standardize or to define the pooled Spearman inputs.",
+            "1MRet@t is the forward realized return over month t and pairs with composite[t] directly (verified == t2_master)."
+          ],
+          "role": "diagnostic_only_gate3_failed"
+        }
+      }
+    }
+  }
+}

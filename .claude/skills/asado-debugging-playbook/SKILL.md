@@ -49,7 +49,7 @@ Quote every path — they contain spaces. All paths below are absolute.
 | `IOException ... Conflicting lock is held in ... (PID n)` | Read the guard's culprit line; identify holder before killing | [2](#s2) |
 | Neo4j down / graph steps failing / `bolt` refused | Read `neo4j_guard.log`; check bolt 7687 | [3](#s3) |
 | Everything green but brief looks days old | `ls Data/dislocations/`; compare date-in-filename to today | [4](#s4) |
-| A launchd job isn't running at all | `launchctl list | grep asado`; check PATH/conda | [5](#s5) |
+| A launchd job isn't running at all | `launchctl list | grep asado`; check PATH/conda; then tell corrupted-plist ([5a](#s5a)) apart from throttled-but-valid ([5b](#s5b)) | [5](#s5) |
 | Bloomberg pull hanging / never ready | Read runner log; check Parallels VM + preflight | [6](#s6) |
 | GDELT rate-limited / evidence packs partial | Do NOT retry-loop; understand cooldown-resets-on-probe | [7](#s7) |
 | A single loop/detector step crashed | Re-run just that step with `--only`; read PARTIAL vs FAIL | [8](#s8) |
@@ -80,15 +80,20 @@ All log paths above are the files that **actually exist** in
 and they match the log-path constants inside the runner and guard scripts
 (`run_asado_daily.sh:52`, `neo4j_guard.sh:52`).
 
-> **UNVERIFIED / gotcha:** In this repo snapshot the files in `~/Library/LaunchAgents/`
-> are stripped to a bare JSON array of just the `ProgramArguments` (e.g.
-> `com.arjundivecha.asado-daily.plist` is 123 bytes and has **no** `StandardOutPath`
+> **CONFIRMED, recurring:** the files in `~/Library/LaunchAgents/` periodically get
+> stripped to a bare JSON array of just `ProgramArguments` (e.g.
+> `com.arjundivecha.asado-daily.plist` shrunk to 123 bytes, no `StandardOutPath`
 > key), so `plutil -extract StandardOutPath raw <plist>` **fails**. Do not trust a
 > plist file on disk to tell you the log path here. The authoritative sources are (a)
 > the actual files in `Data/logs/`, and (b) `launchctl print gui/$(id -u)/<label>`.
 > The **repo-root** `*.plist` files are TEMPLATES and are NOT what launchd loaded
 > (build-tracer finding). Ground truth for "is it installed / what was its exit code"
-> is always `launchctl`, never a plist file.
+> is always `launchctl`, never a plist file. First seen in the 2026-07-06 review, it
+> recurred on **2026-07-09** and caused a missed daily run — full forensics and fix in
+> [Symptom 5a](#s5a). That miss also surfaced a **second, separable** failure mode
+> (schedule throttled after repeated failures, plist untouched) — see
+> [Symptom 5b](#s5b). Do not assume "stripped plist" any time a job doesn't fire;
+> check which one you actually have before touching anything.
 
 Quick health snapshot:
 
@@ -305,6 +310,26 @@ If a job is missing from this list, it is **not installed** — the `*.plist` fi
 **repo root are templates, not the installed jobs** (build-tracer finding). Do not assume
 "the plist is in the repo" means "the job is scheduled." Ground truth is `launchctl`.
 
+**`launchctl list`'s exit code is not evidence the job ran today.** Col 2 is the
+*last-recorded* exit code, which persists from whenever the job last actually ran — it
+does not mean "ran this morning." Before trusting a green exit code, confirm a fresh
+artifact exists for *today* (a new `daily_update_YYYY_MM_DD_*.log`, a new brief) — this
+is the same trap as [Symptom 4](#s4), just one layer further out. The 2026-07-09 incident
+below started exactly this way: `launchctl list` showed `asado-daily` at exit 0, but that
+was Jul 8's exit code — the job never fired on Jul 9 at all.
+
+**A job silently not firing has (at least) two distinct root causes.** They look
+identical from `launchctl list` — no PID, a stale-but-green exit code, no new log — but
+have different forensics and different fixes. Diagnose which one you have before touching
+anything:
+
+| | [5a](#s5a) Corrupted plist | [5b](#s5b) Repeated-failure throttle |
+|---|---|---|
+| `plutil -lint <plist>` | **fails** (invalid plist) | **passes** (valid plist) |
+| `launchctl print` calendar interval | present (cached from an earlier valid load) or absent | present, looks correct |
+| Root cause | on-disk `.plist` file itself got overwritten/truncated | launchd/backgroundtaskmanagementd suppressed the trigger after prior crashes; file was never touched |
+| Fix | rewrite the plist, then reload | reload (bootout+bootstrap) to force a clean re-arm; **rewriting content alone won't help** |
+
 **The classic PATH gotcha:** launchd's environment does **not** include
 `/opt/homebrew/bin`, so a bare `conda` invocation fails with `command not found`. The
 scripts already defend against this by invoking conda / python by **absolute path** —
@@ -323,6 +348,129 @@ launchctl print "gui/$(id -u)/com.arjundivecha.asado-daily"
 
 If the installed job and the repo template disagree, the **installed** one is what runs.
 Reconciling them is a change → see `asado-change-control` before editing.
+
+---
+
+<a id="s5a"></a>
+### 5a. Corrupted plist — stripped to a bare `ProgramArguments` JSON array
+
+**The scar (2026-07-09):** `com.arjundivecha.asado-daily` didn't fire at its 07:30
+weekday trigger. The Mac never slept overnight (`pmset -g log` showed no sleep/wake gap),
+other ASADO launchd jobs fired fine that same morning (`asado-predmkt-daily` at 06:30,
+`neo4j-guard` every 30 min, the equity poller every 10 min), so this wasn't a
+system-wide launchd or power problem — it was specific to this one job.
+
+**Two forensic tells that make this diagnosable in minutes instead of an hour:**
+
+1. **The `plutil`-escaping signature.** A corrupted plist's content looks like:
+   ```
+   ["\/usr\/bin\/caffeinate","-i","\/Users\/arjundivecha\/Dropbox\/AAA Backup\/A Working\/ASADO\/scripts\/run_asado_daily.sh"]
+   ```
+   The **backslash-escaped forward slashes** (`\/`) are the signature of Apple's
+   `plutil -convert json` output — Python's `json.dump` does not escape slashes by
+   default. That escaping means whatever overwrote the file most likely read the plist
+   via `plutil -convert json` (or an equivalent JSON view), extracted just the
+   `ProgramArguments` array, and wrote *that fragment* back onto the original `.plist`
+   path — clobbering `Label`, `StartCalendarInterval`, `StandardOutPath`, everything
+   else. Confirm fast: `plutil -lint <plist>` fails, and `head -c200 <plist>` shows a
+   bare `[...]` instead of `<?xml ... <plist> <dict>`.
+2. **The batch-glob timestamp pattern.** The corrupting write hits *all*
+   `com.arjundivecha.asado-*` (and sibling) plists in one shot, at the identical
+   to-the-second mtime, while unrelated non-ASADO LaunchAgents on the same machine are
+   untouched. Confirm fast:
+   ```bash
+   for f in ~/Library/LaunchAgents/com.arjundivecha.*.plist; do stat -f "%Sm  %N" "$f"; done | sort
+   ```
+   A cluster of identical timestamps across only the ASADO-prefixed jobs = one external
+   batch operation, not independent decay. In the 2026-07-09 incident, exactly 7 files
+   (`asado-daily`, `asado-loop-daily`, `asado-loop-heartbeat`, `asado-predmkt-daily`,
+   `asado-predmkt-equity-harvest`, `asado-predmkt-equity-poller`, `neo4j-guard`) shared
+   the mtime `00:37:10`; every `aa-*`, `fdt-*`, `overseer-*`, `nightwatch-*`, and
+   `bloomberg-keepalive` plist on the same Mac did not.
+
+**What did NOT explain it — check this before you spend time chasing it:** no script
+inside the ASADO repo writes to `~/Library/LaunchAgents/` (`grep -rl "LaunchAgents"
+--include="*.py" --include="*.sh"` turns up nothing that actually performs the write —
+only a docstring comment). The origin of the overwrite is still **unresolved**; it looks
+like an ad hoc command (plausibly from a past terminal/agent session) rather than a
+committed, repeatable script, since it doesn't recur on a fixed schedule and nothing in
+the repo can produce that exact byte pattern. If it recurs, the fastest way to catch the
+actual writer red-handed is to watch live (e.g. `fs_usage | grep LaunchAgents` or an
+`opensnoop` filter) rather than reconstruct it after the fact from timestamps.
+
+**Important corollary — corruption alone does not explain a missed trigger.** In this
+incident, 3 of the 7 corrupted jobs (`asado-predmkt-daily`, `neo4j-guard`, the equity
+poller) fired *correctly* later that same morning despite being in the identical stripped
+format — evidently because launchd was still running off an in-memory job definition
+cached from an earlier valid load, not off the on-disk file. So if the plist is corrupted
+**and** the job still fired on schedule, the corruption is cosmetic-for-now (fix it before
+next login/reboot regardless) — it is not, by itself, why a *specific* job went silent.
+If a job that shares the same corruption timestamp still failed to fire, look at
+[5b](#s5b) too.
+
+**Fix:**
+
+1. Write a full, valid XML plist (Label, `ProgramArguments`, `WorkingDirectory`,
+   `StartCalendarInterval`, `StandardOutPath`/`StandardErrorPath`, `RunAtLoad`). Copy the
+   structure from a currently-valid template such as
+   `com.arjundivecha.asado-loop-heartbeat.plist` in the repo root — do not hand-roll the
+   DOCTYPE/plist wrapper from memory.
+2. Validate before reloading: `plutil -lint <path>` must say `OK`.
+3. Force a clean re-registration — **editing the file alone is not enough**, because
+   launchd may still be running off a stale in-memory definition:
+   ```bash
+   launchctl bootout "gui/$(id -u)/com.arjundivecha.<label>"
+   launchctl bootstrap "gui/$(id -u)" "/Users/arjundivecha/Library/LaunchAgents/com.arjundivecha.<label>.plist"
+   launchctl print "gui/$(id -u)/com.arjundivecha.<label>" | grep -Ei "state|last exit|properties|calendar"
+   # properties should read "inferred program" with no "managed LWCR" flag afterward,
+   # and the calendar interval should show your intended schedule.
+   ```
+4. If the scheduled window for today was already missed, kick off that day's run
+   manually (the underlying script — e.g. `run_asado_daily.sh` — is resume-safe and
+   documents itself as "safe to run manually any time").
+
+---
+
+<a id="s5b"></a>
+### 5b. Repeated-failure throttle — valid plist, job still doesn't fire
+
+**Distinct from [5a](#s5a) — separable, with a different fix.** A job can go silent with
+a perfectly valid, untouched plist. The tell: `plutil -lint` passes, `launchctl print`
+shows the correct `StartCalendarInterval`, and yet the job did not fire at its scheduled
+time despite the Mac being awake (`pmset -g log` shows no sleep/wake gap covering the
+trigger) and sibling jobs firing normally. If you rewrite the plist content in this case,
+you are fixing nothing — the file was never the problem.
+
+**Working theory (2026-07-09 incident, not fully proven — treat as best-supported, not
+certain):** `com.arjundivecha.asado-daily` had failed hard twice in the preceding week
+(`2026-07-02`, `2026-07-03` — "daily_update failed after retry (exit 1). Alert sent.").
+macOS's `backgroundtaskmanagementd` daemon tracks LWCR-managed LaunchAgents
+(`launchctl print` shows `managed LWCR | has LWCR` in `properties` for these jobs) and can
+throttle/suppress a repeatedly-failing background item's calendar trigger without
+touching the file on disk or changing `launchctl list`'s reported schedule. Corroborating
+but not conclusive: `backgroundtaskmanagementd` logged an explicit enumeration of exactly
+the ASADO job set (including `asado-daily`) hours before the missed trigger:
+```bash
+log show --predicate 'process == "backgroundtaskmanagementd" AND eventMessage CONTAINS "asado"' \
+  --start "<yesterday> 00:00:00" --end "<today> 12:00:00" | grep -E "Identifier:|URL:"
+```
+This is circumstantial — there is no single log line that says "throttled." If you hit
+this again, the way to actually confirm the mechanism is to catch it live: watch
+`backgroundtaskmanagementd` and `launchd` logs (`log stream --predicate ...`) spanning a
+known-missed trigger time, not reconstruct it afterward.
+
+**Fix — different from 5a:** the lever is **resetting the scheduling/failure state**, not
+the file content:
+```bash
+launchctl bootout "gui/$(id -u)/com.arjundivecha.<label>"
+launchctl bootstrap "gui/$(id -u)" "/Users/arjundivecha/Library/LaunchAgents/com.arjundivecha.<label>.plist"
+```
+Rewriting an already-valid plist and reloading it with the *same content* is still worth
+doing (a clean bootout+bootstrap clears whatever cached backoff/throttle state launchd or
+BTM was holding), but do not spend time perfecting the plist XML here — the file was not
+the defect. If the same job throttles repeatedly, that is itself a signal to fix the
+underlying flakiness (the thing causing the repeated hard failures), not just to keep
+force-re-arming the schedule.
 
 ---
 

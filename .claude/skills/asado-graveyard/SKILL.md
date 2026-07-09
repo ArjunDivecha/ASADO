@@ -54,9 +54,21 @@ cd "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO" && find . -maxdepth 
 - `/Users/arjundivecha/Dropbox/AAA Backup/A Complete/Investment Learnings/INDEX.md` — one-line-per-project tested-and-rejected ledger.
 - `/Users/arjundivecha/Dropbox/AAA Backup/A Complete/Investment Learnings/Research-Agenda-2026-07-v2.md` — **the latest version governs** (`-v2` supersedes the un-suffixed `-2026-07.md`). Its §0.2 lists dead mechanisms; §0.3 is "The Six Laws" (reproduced in §4 below).
 
-### THE LAW that makes all four steps mandatory
+### Why all four steps are mandatory (for now)
 
-**The ledger alone is NOT the graveyard.** `regime_ew` died at Gate 3 (walk-forward own-country lead) with **no hypothesis-ledger entry at all** — its death is recorded only in `regime_ew/results/RESULTS.md:5-11`. If you check only the ledger (step b) you will miss it and can waste days rebuilding it. The canonical graveyard = **ledger + experiment RESULTS.md + `docs/strategy/lessons.md` + Investment Learnings**. (Evidence: git-archaeologist read of `origin/claude/nightwatch-06-20-failures-37d4lv`; RESULTS.md verified present, no matching ledger id found by the one-liner above.)
+**The ledger doesn't cover directory-experiment methodology verdicts — none of them.**
+Not just `regime_ew` (Gate 3, walk-forward own-country lead, dead — recorded only in
+`regime_ew/results/RESULTS.md:5-11`): as of 2026-07-08, **zero** of the five directory
+experiments in the table below (`regime/`, `regime_loop/`, `regime_ew/`,
+`regime_factor_selection/`, `momentum_fragility/`) have a
+`ledgers/hypothesis_ledger.jsonl` entry. This is structural, not an oversight: the
+ledger's registration mechanism requires a single variable resolvable via
+`config/family_registry.yaml`, and a whole-methodology PRD-gate-ladder verdict doesn't
+fit that shape. See **asado-change-control** LAW 2 for the root cause and the proposed
+(not yet built) fix. Until that fix ships, checking the ledger alone will make you
+conclude these were never tested and risk re-deriving a known kill. The canonical
+graveyard = **ledger + experiment RESULTS.md + `docs/strategy/lessons.md` + Investment
+Learnings**.
 
 **Companion law — DISTRUST A SEARCHED PASS.** Any PASS that an autonomous tuning/optimization loop *found* is presumed false until it is re-derived from pre-registered, corrected inputs. See `regime` v1 in the table: a v1 "PASS" flipped to DEAD once the inputs were fixed. A green metric that a search process optimized toward is not evidence; it is the thing the search was gaming.
 
@@ -84,7 +96,7 @@ out-of-sample?", and it is where most experiments die after full-sample fits loo
 | 1 | `regime/` (v2) | Do factor ICs vary across global macro regimes enough to condition on? | **DEAD** | `regime2.md:12-18` — H1 persistence 0.729 (FAIL, need ≥0.75); H2 **0/52** factors significant post-BH-FDR; H3 Sharpe Δ +0.078, only 7.1% of 5y windows beat baseline | 2026-05-23 | Global macro regimes can't reorder cross-sectional country ranking. |
 | 1a | `regime/` **v1 provenance** | Same idea, earlier run that reported a **PASS**. | **PASS WAS FALSE** | `regime2.md:22-30` documents v1 (`regime.md`, now superseded; last in history at commit `83e03a7`) was overturned by data-sourcing + logic corrections. Contract canon links the false pass to `regime_loop` autonomous tuning. | superseded 2026-05-23 | A pass a search loop found is presumed false until pre-registered re-derivation. **[provenance: the corrections are documented in regime2.md; the causal attribution to `regime_loop` gaming is the handover's synthesis — treat as the house law, not a quote from regime2.md.]** |
 | 2 | `regime_loop/` | Autonomous loop that tunes a regime scheme until it "passes". | **DEAD (self-defeating)** | `regime_loop/output/state.json`: `best_metrics.all_pass = 0.0`, `best_primary_metric = 0.0`, `loop_status = "error"` — **zero honest successes** | 2026-05-25 run | An optimizer pointed at the pass/fail metric games the metric; the loop produced no real win. **[the "0 successes / 13 attempts, agents modified forbidden files" figure is from the miner's read of run history; the current state.json shows all_pass=0.0 and loop_status=error but retires=0 — 0-successes is verified, the "13 attempts / gaming" count is UNVERIFIED from this snapshot.]** |
-| 3 | `regime_ew/` | Per-country HMM regime as an early-warning signal with walk-forward own-country return lead. | **DEAD (Gate 3)** | `regime_ew/results/RESULTS.md:5-11` — Gate 3 own-country lead FAIL: **17/34** countries negative (need ≥23), median ρ −0.003 (need ≤−0.10), spread −0.68%/mo | 2026-06-21 | Full-sample fit looked significant = look-ahead artifact caught by the walk-forward gate. **Has NO ledger entry — the founding example of the law above.** |
+| 3 | `regime_ew/` | Per-country HMM regime as an early-warning signal with walk-forward own-country return lead. | **DEAD (Gate 3)** | `regime_ew/results/RESULTS.md:5-11` — Gate 3 own-country lead FAIL: **17/34** countries negative (need ≥23), median ρ −0.003 (need ≤−0.10), spread −0.68%/mo | 2026-06-21 | Full-sample fit looked significant = look-ahead artifact caught by the walk-forward gate. Like all five directory experiments in this table, has no ledger entry (see note above). |
 | 4 | `regime_factor_selection/` | Conditioned on each country's own IP regime, does any T2 factor's rank-IC differ by regime? | **DEAD (clean null)** | `regime_factor_selection/results/RESULTS.md:5-13` — **0 of 74** factors clear FDR (α=0.10); placebo (shuffled labels) collapses raw hits 18→8, confirming machinery is calibrated | 2026-07-05 | A pre-registered, placebo-confirmed null — the *cleanest* kind of dead end. |
 | 5 | `momentum_fragility/` | Within hot-momentum names, does higher "fragility" predict lower forward return? | **DEAD (Gate 3, both variants)** | `momentum_fragility/results/RESULTS.md:5-13` — core ρ=−0.0135 spread −11.4bp (n=2108); full ρ=**+0.0301** (wrong sign) spread −93bp; need ρ≤−0.10 | 2026-07-05 | Fragility-conditioned reversal doesn't exist at monthly horizon. |
 | 6 | Strategy #1 — PCA-stacked cross-section regime analogs | Build worldstate→PCA→analog→aggregate→backtest to pick countries. | **DEAD (NO-GO)** | `docs/strategy/lessons.md:1-20` (memo `analogs/v1/go_no_go.md`); killed in ~5h at commit `fbef913` | 2026-05-08 | PCA is misspecified when features (~2,900-dim flat vector) ≫ samples; sticky-basis, IC≈0. Kept 5 reusable primitives, trimmed the rest. |

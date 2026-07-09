@@ -86,22 +86,50 @@ tuning parameters, do not act on it and do not report it as a result. Re-run it
 as a fresh, pre-registered hypothesis through the harness (see
 **asado-research-protocol**). Only a pre-registered re-derivation counts.
 
-### LAW 2 — THE LEDGER ALONE IS NOT THE GRAVEYARD
+### LAW 2 — THE LEDGER DOESN'T COVER METHODOLOGY EXPERIMENTS (a scoped, fixable gap)
 
-> Before proposing or reviving an idea, check ALL graveyard surfaces, not just
-> the hypothesis ledger. The ledger is incomplete.
+> Until the ledger is extended to capture directory-experiment verdicts, also
+> check `results/RESULTS.md` in each experiment dir before proposing or
+> reviving an idea. This is a workaround for a known, nameable gap — not a
+> permanent property of the ledger to route around forever.
 
-**Incident.** `regime_ew/` died at Gate 3 on 2026-06-21 (walk-forward showed no
-predictive lead; `regime_ew/results/RESULTS.md:5-11`) but was **never written to
-`ledgers/hypothesis_ledger.jsonl`**. A reader who checks only the ledger would
-conclude regime_ew was never tested and could waste days re-deriving a known
-kill.
+**Root cause, not just an incident.** `register_hypothesis()`
+(`scripts/loop/ledgers.py:179-230`) requires a `signal_spec["variable"]` that
+resolves to a family via `config/family_registry.yaml`'s `variable_prefixes`
+lists (it raises `UnclassifiedVariableError` otherwise) — the whole ledger
+schema is built around single-variable harness verdicts (IC / NW-t / deflated
+Sharpe / cost grid from `evaluate_signal.py`). A directory-experiment
+methodology test — an HMM regime classifier, a fragility composite, a whole
+regime-conditioning approach — isn't one registered variable; it's evaluated
+against its own PRD-defined gate ladder (Gate 1/2/3/...) that doesn't map onto
+that schema. **This isn't one missed entry: as of 2026-07-08, none of the five
+directory experiments (`regime/`, `regime_loop/`, `regime_ew/`,
+`regime_factor_selection/`, `momentum_fragility/`) have a
+`ledgers/hypothesis_ledger.jsonl` entry** — confirmed by grepping the ledger
+for their names/family keys and finding zero hits. It is structural, not
+accidental: the mechanism that writes ledger entries cannot currently represent
+this class of verdict at all.
 
-**How to comply.** The canonical graveyard is the union of: the ledger, each
-experiment dir's `results/RESULTS.md`, `docs/strategy/lessons.md`, and the
-external Investment Learnings folder. The **asado-graveyard** skill is the
-check-before-proposing protocol — use it. Do not treat a clean ledger as "not
-tested".
+**The real fix (not yet built — surface this to the user, don't build it
+unilaterally).** Extend the ledger with an additive, non-breaking event kind for
+methodology-level verdicts — e.g. a `directory_experiment_verdict` event
+alongside the existing `hyp_register`/`hyp_verdict` events, written by each
+directory experiment's results step, that doesn't require
+`family_registry.yaml` resolution or feed the deflated-Sharpe trial count. This
+would let **asado-graveyard** §1b's live-tally command become complete on its
+own instead of needing a four-surface manual check. Retroactively backfilling
+the five known-missing verdicts is a separate decision worth flagging
+explicitly: those weren't pre-registered before results were seen, so grafting
+them into the same file as genuine pre-registration-proof entries needs the
+user's sign-off on how to represent that distinction, not a silent backfill.
+
+**How to comply until this is built.** The canonical graveyard is still the
+union of: the ledger, each experiment dir's `results/RESULTS.md`,
+`docs/strategy/lessons.md`, and the external Investment Learnings folder. The
+**asado-graveyard** skill is the check-before-proposing protocol — use it. Do
+not treat a clean ledger as "not tested." If you're in a position to actually
+build the ledger extension above, propose it to the user rather than assuming
+either "don't touch it" or "just do it."
 
 ### LAW 3 — DEPLOYED ≠ COMMITTED
 

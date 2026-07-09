@@ -35,12 +35,12 @@ idea is recorded so it stays dead.
 ## STEP 0 — Check the graveyard FIRST (non-negotiable)
 
 Before you design anything, confirm the idea is not already settled. **Re-proposing a dead idea is
-the fastest way to lose the user's trust.** Route to the **asado-graveyard** skill and check the
-whole canonical graveyard, which is bigger than the ledger:
-1. The hypothesis ledger — `ledgers/hypothesis_ledger.jsonl` (grows daily; get the live tally with **asado-graveyard** §1b's dedupe-to-latest-verdict one-liner, never trust a count baked into a doc).
-2. Per-experiment `RESULTS.md` files under `experiments/` and the directory experiments (`regime/`, `regime_ew/`, `regime_factor_selection/`, `momentum_fragility/`, …).
-3. `docs/strategy/lessons.md` (settled no-go methods, e.g. PCA regime analogs).
-4. The external graveyard: `/Users/arjundivecha/Dropbox/AAA Backup/A Complete/Investment Learnings/` — `INDEX.md` and the latest `Research-Agenda-2026-07-v*.md`.
+the fastest way to lose the user's trust.** Route to the **asado-graveyard** skill and run its full
+§1 PROTOCOL — all five sources, in order (hypothesis ledger, methodology ledger, experiment
+`RESULTS.md` files, `docs/strategy/lessons.md`, external Investment Learnings). Don't re-enumerate
+that list here — it drifts out of sync with the canonical one (this line was itself once stale after
+the methodology ledger was added); **asado-graveyard** §1 is the single source of truth for what to
+check.
 
 **Why the ledger alone is not enough:** `regime_ew` died at Gate 3 with NO ledger entry — kills can
 live only in an experiment `RESULTS.md`. If asado-graveyard says the mechanism is dead, STOP and

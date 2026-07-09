@@ -14,7 +14,7 @@ Everything here is light-mode plain markdown. This is a **read-before-you-propos
 
 ## 1. THE PROTOCOL — run this before proposing ANY research idea
 
-Before you propose, register, or build a new signal / factor / regime scheme / combiner, check **all four** sources, in this order. Do not stop at the first.
+Before you propose, register, or build a new signal / factor / regime scheme / combiner, check **all five** sources, in this order. Do not stop at the first.
 
 **(a) This skill's graveyard table** (§2 below). Scan for the mechanism you're about to propose. If it's there and marked DEAD, STOP — do not re-propose it. If you believe you have new evidence that overturns a DEAD verdict, that is allowed, but you must say so explicitly to the user and treat the old verdict as the prior to beat.
 
@@ -45,12 +45,42 @@ for hid, (v, fam, dsr) in sorted(last.items()):
 
 Ledger schema (verified `ledgers/hypothesis_ledger.jsonl:1-3`): each line is one JSON object with an `event` field ∈ {`hyp_register`, `hyp_verdict`, `hyp_status`}. Registration carries `family_key`, `mechanism_text`, `signal_spec.{table,variable,source}`. Verdicts carry `verdict` ∈ {WATCH, WEAK, DEAD, INSUFFICIENT_COVERAGE} and `verdict_json.deflated_sharpe`. `hyp_status` events carry a free-text `note` (this is where leakage retractions and blacklistings are recorded).
 
-**(c) Experiment-directory RESULTS.md files.** Some kills live ONLY as an experiment write-up and never got a ledger row (see the law below). Check:
+**(c) The methodology ledger** — `ledgers/methodology_ledger.jsonl` (built 2026-07-09, see the note below). This is where directory-experiment (whole-methodology, not single-variable) verdicts belong — a real, separate ledger from (b), not a workaround. List every experiment and its verdict (stdlib `python3` only; reads the JSONL file, runs no repo code, opens no DuckDB):
+```bash
+cd "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO" && python3 -c '
+import json, os
+last = {}
+for line in open("ledgers/methodology_ledger.jsonl") if os.path.exists("ledgers/methodology_ledger.jsonl") else []:
+    line = line.strip()
+    if not line:
+        continue
+    o = json.loads(line)
+    eid = o["experiment_id"]
+    if o["event"] in ("methodology_register", "methodology_backfill"):
+        last[eid] = o
+    elif o["event"] == "methodology_verdict" and eid in last:
+        last[eid] = {**last[eid], **o}
+print("methodology experiments:", len(last))
+for eid, e in sorted(last.items()):
+    reg = "backfill" if not e.get("pre_registered", True) else "pre-reg"
+    verdict = e.get("verdict", "-")
+    gate = e.get("died_at_gate")
+    name = e["experiment_name"]
+    print(f"{verdict:12} {reg:9} {name:<28} died_at_gate={gate}  {eid}")
+'
+```
+As of 2026-07-09 this returns 0 — the mechanism exists and is tested, but the five known
+historical experiments below have NOT been backfilled into it yet (a separate decision;
+see the note below and **asado-change-control** LAW 2). Don't read an empty methodology
+ledger as "nothing has ever died methodology-wise" — check (d) too until/unless that
+changes.
+
+**(d) Experiment-directory RESULTS.md files.** Some kills live ONLY as an experiment write-up and never got a ledger row — this is currently true for all five directory experiments in the table below, until/unless they're backfilled into (c). Check:
 ```bash
 cd "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO" && find . -maxdepth 3 -iname "RESULTS.md" -not -path "*/node_modules/*" 2>/dev/null; ls regime2.md docs/strategy/lessons.md 2>/dev/null
 ```
 
-**(d) The external "Investment Learnings" graveyard** (the book's cross-project ledger, outside this repo):
+**(e) The external "Investment Learnings" graveyard** (the book's cross-project ledger, outside this repo):
 - `/Users/arjundivecha/Dropbox/AAA Backup/A Complete/Investment Learnings/INDEX.md` — one-line-per-project tested-and-rejected ledger.
 - `/Users/arjundivecha/Dropbox/AAA Backup/A Complete/Investment Learnings/Research-Agenda-2026-07-v2.md` — **the latest version governs** (`-v2` supersedes the un-suffixed `-2026-07.md`). Its §0.2 lists dead mechanisms; §0.3 is "The Six Laws" (reproduced in §4 below).
 

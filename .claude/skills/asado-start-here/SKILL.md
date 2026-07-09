@@ -136,7 +136,8 @@ matters, check live with the command shown.
 | `docs/VARIABLE_DICTIONARY.md` | GENERATED | Current variable definitions. Regen every `monthly_update`. | `git log -1 --format=%ci -- docs/VARIABLE_DICTIONARY.md` |
 | `ARJUN.md` | TRUST (if present) | Synthesized business-value review of the system, when it exists. | `git ls-files ARJUN.md` (confirm tracked) + `git log -1 --format=%ci -- ARJUN.md` |
 | `FABLE.md` | TRUST (if present) | Synthesized engineering review, when it exists (e.g. incl. the P0 leakage-guard proposal history). | `git ls-files FABLE.md` + `git log -1 --format=%ci -- FABLE.md` |
-| `ledgers/hypothesis_ledger.jsonl`, `ledgers/thesis_ledger.jsonl` | TRUST (append-only) | The authoritative verdict record for the single-variable harness pathway (pre-register via `family_registry.yaml` → `evaluate_signal.py` → DEAD/WEAK/WATCH/INSUFFICIENT_COVERAGE) — current *by construction* since it's append-only. **Scope limit:** it does NOT (yet) capture directory-experiment methodology verdicts (regime/, momentum_fragility/, etc.) — see **asado-graveyard** §2 note and **asado-change-control** LAW 2. | always live; see **asado-graveyard** §1b for the live-tally command |
+| `ledgers/hypothesis_ledger.jsonl`, `ledgers/thesis_ledger.jsonl` | TRUST (append-only) | The authoritative verdict record for the single-variable harness pathway (pre-register via `family_registry.yaml` → `evaluate_signal.py` → DEAD/WEAK/WATCH/INSUFFICIENT_COVERAGE) — current *by construction* since it's append-only. **Scope limit:** does NOT capture directory-experiment methodology verdicts — see the next row. | always live; see **asado-graveyard** §1b for the live-tally command |
+| `ledgers/methodology_ledger.jsonl` | TRUST (append-only) | The verdict record for whole-methodology directory experiments (regime/, momentum_fragility/, etc.) that the hypothesis ledger's single-variable schema can't represent — built 2026-07-09, `scripts/loop/ledgers.py`. **Scope limit:** the five known historical experiments predating this ledger are NOT backfilled into it (a separate, still-open decision) — until/unless they are, check each experiment dir's `RESULTS.md` too. See **asado-change-control** LAW 2 and **asado-graveyard** §1c. | always live; see **asado-graveyard** §1c for the live-tally command |
 | `Data/dislocations/brief_<YYYY_MM_DD>.md` | GENERATED (daily) | Today's dislocation brief. | `ls -t Data/dislocations/brief_*.md \| head -1` — then verify the filename date is recent AND the body isn't a stale repeat (see §4) |
 | `docs/ASADO_TRADING_RUNBOOK_2026_07_03.md` | TRUST / UNINDEXED | The paper→live runbook (multi-sleeve), as of the date in its filename. Not in `docs/README.md`'s index — find successors/updates with `find docs -iname "*RUNBOOK*"`. | filename date is fixed identity, not freshness — check for a newer-dated sibling file before trusting it's still the latest |
 | `docs/alpha_book_2026_07_02/` (dir) | TRUST / UNINDEXED | The net-edge audit as of its dated directory name. Historically absent from `docs/README.md`'s index. | `find docs -maxdepth 1 -iname "alpha_book_*"` for a newer dated sibling |
@@ -160,10 +161,12 @@ these, in this order:
 2. `CLAUDE.md` → the `## Current state (YYYY-MM-DD)` section — the human-curated
    snapshot (what's live, what recently died, what's on hold).
 3. `AGENTS.md` → conventions + "Learned User Preferences."
-4. `ledgers/hypothesis_ledger.jsonl` and `ledgers/thesis_ledger.jsonl` — the
-   authoritative kill/keep verdicts. Verdict counts grow daily; don't trust a
-   count in any doc (including this one) — get the live tally with
-   **asado-graveyard** §1b's dedupe-to-latest-verdict one-liner.
+4. `ledgers/hypothesis_ledger.jsonl`, `ledgers/thesis_ledger.jsonl`, and
+   `ledgers/methodology_ledger.jsonl` — the authoritative kill/keep verdicts
+   (single-variable, trade-thesis, and whole-methodology respectively).
+   Verdict counts grow daily; don't trust a count in any doc (including this
+   one) — get the live tally with **asado-graveyard** §1b (hypothesis) or
+   §1c (methodology).
 5. `Data/dislocations/brief_<latest>.md` — the newest daily brief. Find it live
    with `ls -t Data/dislocations/brief_*.md | head -1`, not by trusting a
    filename in any doc. **Check both the date in the filename AND that the

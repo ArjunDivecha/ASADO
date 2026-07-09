@@ -10,11 +10,22 @@ INPUT FILES:
   status changes). Created on first registration.
 - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/ledgers/thesis_ledger.jsonl
   Append-only event log of trade theses (opens, daily marks, closes).
+- /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/ledgers/methodology_ledger.jsonl
+  Append-only event log of directory-experiment (whole-methodology, not
+  single-variable) verdicts — regime/, regime_ew/, momentum_fragility/-style
+  tests that live outside the single-variable harness because they're gated
+  by their own PRD-defined ladder, not evaluate_signal.py. Created on first
+  registration. A SEPARATE file from hypothesis_ledger.jsonl on purpose:
+  fold_hypotheses() FAIL-IS-FAILs on any event type outside HYP_EVENTS, so a
+  new event kind cannot be added into that file without either weakening that
+  guard or crashing the nightly fold_ledgers step — this file has its own
+  guard (METHODOLOGY_EVENTS) instead, isolated from the harness's
+  trial-count/deflated-Sharpe machinery entirely.
 - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/asado.duckdb (read-only)
   t2_factors_daily 1DRet rows used for auto-marking open theses.
 
 OUTPUT FILES:
-- The two JSONL files above (append-only; nothing is ever rewritten or deleted).
+- The three JSONL files above (append-only; nothing is ever rewritten or deleted).
 - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/asado_loop.duckdb
   Folded current-state tables rebuilt from the event logs on demand:
     hypothesis_ledger  - one row per hypothesis, latest state. Carries both the
@@ -28,14 +39,21 @@ OUTPUT FILES:
                          a review-kill (killed_review) to 'void' (no Brier) so
                          the loser-prune path is auditable, never silently null.
     thesis_marks       - one row per (thesis, mark date)
+    methodology_ledger - one row per directory-experiment, latest state
+                         (register -> verdict, or a single backfill event for
+                         a historical experiment that predates this ledger).
+                         `pre_registered` is False for backfilled rows so a
+                         consumer can tell genuine pre-registration proof from
+                         a reconstructed historical record.
 
-VERSION: 1.0
-LAST UPDATED: 2026-06-10
-AUTHOR: Arjun Divecha (built by agent session, Alpha-Hunting Loop Phase 1)
+VERSION: 1.1
+LAST UPDATED: 2026-07-09
+AUTHOR: Arjun Divecha (built by agent session, Alpha-Hunting Loop Phase 1;
+        methodology ledger added by agent session 2026-07-09)
 
 DESCRIPTION:
 The memory and honesty layer of the Alpha-Hunting Loop (PRD section 6).
-Two append-only ledgers, stored as JSONL so git history is tamper evidence:
+Three append-only ledgers, stored as JSONL so git history is tamper evidence:
 
 1. HYPOTHESIS LEDGER - every research idea must be pre-registered (mechanism
    written down BEFORE results are seen, hashed) and every test counts as a
@@ -48,28 +66,45 @@ Two append-only ledgers, stored as JSONL so git history is tamper evidence:
    mechanically (invalidated / expired-hit / expired-miss). Stated probability
    vs outcome feeds Brier-score calibration. Hand-marking is impossible by
    construction - marks only come from the return data.
+3. METHODOLOGY LEDGER - every directory-experiment (a whole modeling approach
+   tested against its own PRD-defined gate ladder, not one harness variable)
+   registers a hypothesis + gate ladder before results, then a verdict after.
+   Extends the same pre-registration discipline as (1) to a class of research
+   the hypothesis ledger structurally cannot represent (no single variable to
+   resolve via family_registry.yaml). `register_methodology_experiment` /
+   `attach_methodology_verdict` are for new experiments going forward;
+   `backfill_methodology_verdict` is a distinct, explicitly-flagged path for
+   recording a historical experiment that predates this ledger (see its
+   docstring — it is NOT equivalent evidentiary weight to a real
+   pre-registration and callers must not treat it as one).
 
 Event-sourcing design: each JSONL line is an immutable event
 ({"event": "hyp_register" | "hyp_verdict" | "hyp_status" | "thesis_open" |
-"thesis_mark" | "thesis_close", ...}). Current state = fold of all events.
-A 10th grader's version: it's a diary in pen, not pencil - you can add new
-pages but never erase old ones, so your past claims stay checkable.
+"thesis_mark" | "thesis_close" | "thesis_review" | "methodology_register" |
+"methodology_verdict" | "methodology_backfill", ...}). Current state = fold
+of all events. A 10th grader's version: it's a diary in pen, not pencil - you
+can add new pages but never erase old ones, so your past claims stay
+checkable.
 
 DEPENDENCIES:
 - duckdb, pandas (project venv)
 
 USAGE:
- python scripts/loop/ledgers.py --rebuild       # fold JSONL -> DuckDB tables
- python scripts/loop/ledgers.py --list          # show current hypotheses + theses
+ python scripts/loop/ledgers.py --rebuild       # fold JSONL -> DuckDB tables (all 3 ledgers)
+ python scripts/loop/ledgers.py --list          # show current hypotheses + theses + methodology experiments
  python scripts/loop/ledgers.py --mark          # auto-mark open theses (daily job)
  # As a library:
  from scripts.loop.ledgers import register_hypothesis, open_thesis, ...
 
 NOTES:
-- IDs: H_YYYYMMDD_NNN / T_YYYYMMDD_NNN, NNN increments within the day.
+- IDs: H_YYYYMMDD_NNN / T_YYYYMMDD_NNN / M_YYYYMMDD_NNN, NNN increments within
+  the day, independently per prefix.
 - thesis direction: long / short. invalidation_level: adverse cumulative
   return in DECIMAL from entry (e.g. -0.07 = closed out if down 7% on a long).
 - Outcome at close: hit=1 / miss=0; brier_contribution = (probability - outcome)^2.
+- methodology verdict: DEAD / GRADUATED / WATCH / INSUFFICIENT.
+  died_at_gate = the gate number it failed at, or None if it graduated (passed
+  every gate in its registered ladder).
 =============================================================================
 """
 
@@ -93,14 +128,23 @@ from scripts.loop.family_registry import resolve_family, UnclassifiedVariableErr
 
 HYP_PATH = LEDGER_DIR / "hypothesis_ledger.jsonl"
 THESIS_PATH = LEDGER_DIR / "thesis_ledger.jsonl"
+METHODOLOGY_PATH = LEDGER_DIR / "methodology_ledger.jsonl"
 
 VALID_ARCHETYPES = {"A1", "A2", "A3", "A4", "A5", "A6", "A7", "other"}
 VALID_DIRECTIONS = {"long", "short"}
+VALID_METHODOLOGY_VERDICTS = {"DEAD", "GRADUATED", "WATCH", "INSUFFICIENT"}
 
 # A3 — ledger integrity (FAIL-IS-FAIL on the reader). The fold refuses to
 # silently drop an event type it does not understand.
 HYP_EVENTS = {"hyp_register", "hyp_verdict", "hyp_status"}
 THESIS_EVENTS = {"thesis_open", "thesis_mark", "thesis_close", "thesis_review"}
+# Deliberately its OWN set, checked by its OWN fold function, in its OWN file.
+# hyp_register/hyp_verdict live in hypothesis_ledger.jsonl, whose fold raises
+# on anything outside HYP_EVENTS above — adding a new event kind there would
+# either weaken that guard or crash the nightly fold_ledgers step the moment
+# an unrecognized event appeared. Isolating this in its own file means it can
+# evolve without touching the harness's trial-count/deflated-Sharpe path at all.
+METHODOLOGY_EVENTS = {"methodology_register", "methodology_verdict", "methodology_backfill"}
 # A hypothesis in one of these statuses is retired/rejected: its verdict must
 # NOT read as "live" (the H_20260610_001 bug — a retired 12MRet look-ahead
 # still folded to verdict='WATCH', so a `WHERE verdict='WATCH'` query
@@ -472,12 +516,218 @@ def _close(thesis_id: str, status: str, close_date: str, realized: float,
     })
 
 
+# ── methodology ledger (directory-experiment verdicts) ─────────────────────
+# Extends the hypothesis ledger's pre-registration discipline to
+# whole-methodology tests (regime/, regime_ew/, momentum_fragility/-style
+# directory experiments) that the harness's single-variable schema cannot
+# represent — see the module docstring and METHODOLOGY_EVENTS above for why
+# this is a separate file rather than a new event type in hypothesis_ledger.jsonl.
+
+def _validate_gate_ladder(gate_ladder: list[dict[str, Any]]) -> None:
+    if not gate_ladder or not isinstance(gate_ladder, list):
+        raise ValueError("gate_ladder must be a non-empty list of {'gate': int, 'description': str}")
+    for g in gate_ladder:
+        if "gate" not in g or "description" not in g:
+            raise ValueError(f"each gate_ladder entry needs 'gate' and 'description', got {g!r}")
+        if not str(g["description"]).strip():
+            raise ValueError(f"gate {g.get('gate')} description must be non-empty")
+
+
+def register_methodology_experiment(
+    experiment_name: str,
+    experiment_dir: str,
+    hypothesis_text: str,
+    gate_ladder: list[dict[str, Any]],
+    prd_path: str = "",
+    author: str = "agent",
+) -> str:
+    """Pre-register a directory-experiment methodology test BEFORE running it.
+    Returns experiment_id.
+
+    hypothesis_text must be written BEFORE any results are seen (same
+    discipline as register_hypothesis's mechanism_text) — this is what makes
+    a later GRADUATED verdict meaningful rather than a post-hoc rationalization.
+    gate_ladder is the experiment's OWN numbered pass/fail criteria (there is
+    no universal ladder across experiments) — e.g.
+    [{"gate": 1, "description": "regime states are persistent"},
+     {"gate": 2, "description": "states are not just a volatility proxy"},
+     {"gate": 3, "description": "states lead own-country returns walk-forward OOS"}].
+    """
+    if not experiment_name or not experiment_name.strip():
+        raise ValueError("experiment_name required")
+    if not experiment_dir or not (Path(experiment_dir.rstrip("/")).is_dir()):
+        raise ValueError(f"experiment_dir must be an existing directory, got {experiment_dir!r}")
+    if not hypothesis_text or len(hypothesis_text.split()) < 15:
+        raise ValueError("hypothesis_text must be a real paragraph (>= 15 words), written before results")
+    _validate_gate_ladder(gate_ladder)
+
+    experiment_id = _next_id("M", METHODOLOGY_PATH, "experiment_id")
+    _append_event(METHODOLOGY_PATH, {
+        "event": "methodology_register",
+        "experiment_id": experiment_id,
+        "author": author,
+        **_session_stamp(),
+        "experiment_name": experiment_name,
+        "experiment_dir": experiment_dir,
+        "hypothesis_text": hypothesis_text,
+        "gate_ladder": gate_ladder,
+        "prd_path": prd_path,
+        "pre_registered": True,
+        "status": "registered",
+    })
+    return experiment_id
+
+
+def attach_methodology_verdict(
+    experiment_id: str,
+    verdict: str,
+    died_at_gate: Optional[int],
+    evidence_path: str,
+    lesson: str,
+    gate_results: Optional[list[dict[str, Any]]] = None,
+    verdict_date: Optional[str] = None,
+) -> None:
+    """Record the result of a pre-registered methodology experiment.
+
+    died_at_gate = the gate number it failed at (must match a gate in the
+    registered ladder), or None if it GRADUATED (passed every gate).
+    evidence_path should point at the specific RESULTS.md (and line range if
+    useful) backing the verdict — this ledger is a pointer + verdict, not a
+    replacement for the experiment's own writeup.
+    """
+    exp = get_methodology_experiment(experiment_id)
+    if exp is None:
+        raise KeyError(f"methodology experiment {experiment_id} not registered")
+    if verdict not in VALID_METHODOLOGY_VERDICTS:
+        raise ValueError(f"verdict must be one of {sorted(VALID_METHODOLOGY_VERDICTS)}")
+    valid_gates = {g["gate"] for g in exp["gate_ladder"]}
+    if died_at_gate is not None and died_at_gate not in valid_gates:
+        raise ValueError(f"died_at_gate {died_at_gate} is not in this experiment's registered ladder {sorted(valid_gates)}")
+    if not evidence_path or not evidence_path.strip():
+        raise ValueError("evidence_path required (e.g. 'regime_ew/results/RESULTS.md:5-11')")
+    if not lesson or len(lesson.split()) < 5:
+        raise ValueError("lesson must be a real one-liner (>= 5 words), not vacuous")
+
+    status = {"DEAD": "dead", "GRADUATED": "graduated",
+              "WATCH": "watch", "INSUFFICIENT": "insufficient"}[verdict]
+    _append_event(METHODOLOGY_PATH, {
+        "event": "methodology_verdict",
+        "experiment_id": experiment_id,
+        "verdict": verdict,
+        "died_at_gate": died_at_gate,
+        "gate_results": gate_results or [],
+        "evidence_path": evidence_path,
+        "lesson": lesson,
+        "verdict_date": verdict_date or date.today().isoformat(),
+        "status": status,
+    })
+
+
+def backfill_methodology_verdict(
+    experiment_name: str,
+    experiment_dir: str,
+    hypothesis_text: str,
+    gate_ladder: list[dict[str, Any]],
+    verdict: str,
+    died_at_gate: Optional[int],
+    evidence_path: str,
+    lesson: str,
+    verdict_date: str,
+    prd_path: str = "",
+    author: str = "agent",
+) -> str:
+    """Record a HISTORICAL methodology experiment that predates this ledger,
+    in one combined event (there is no real pre-registration moment to anchor
+    a two-step register/verdict pair to). Returns experiment_id.
+
+    IMPORTANT — epistemic honesty: this stamps pre_registered=False. A
+    backfilled entry documents a real, already-verified kill (RESULTS.md is
+    the primary evidence), but it does NOT carry the same evidentiary weight
+    as a genuine pre-registration written before results were seen, and
+    callers/readers must not conflate the two. Do not call this for a new
+    experiment — use register_methodology_experiment + attach_methodology_verdict
+    instead so the pre-registration proof is real.
+    """
+    if not experiment_name or not experiment_name.strip():
+        raise ValueError("experiment_name required")
+    if not experiment_dir or not (Path(experiment_dir.rstrip("/")).is_dir()):
+        raise ValueError(f"experiment_dir must be an existing directory, got {experiment_dir!r}")
+    if not hypothesis_text or len(hypothesis_text.split()) < 15:
+        raise ValueError("hypothesis_text must be a real paragraph (>= 15 words)")
+    _validate_gate_ladder(gate_ladder)
+    if verdict not in VALID_METHODOLOGY_VERDICTS:
+        raise ValueError(f"verdict must be one of {sorted(VALID_METHODOLOGY_VERDICTS)}")
+    valid_gates = {g["gate"] for g in gate_ladder}
+    if died_at_gate is not None and died_at_gate not in valid_gates:
+        raise ValueError(f"died_at_gate {died_at_gate} is not in gate_ladder {sorted(valid_gates)}")
+    if not evidence_path or not evidence_path.strip():
+        raise ValueError("evidence_path required")
+    if not lesson or len(lesson.split()) < 5:
+        raise ValueError("lesson must be a real one-liner (>= 5 words), not vacuous")
+    if not verdict_date:
+        raise ValueError("verdict_date required for a backfill (the historical date, not today)")
+
+    status = {"DEAD": "dead", "GRADUATED": "graduated",
+              "WATCH": "watch", "INSUFFICIENT": "insufficient"}[verdict]
+    experiment_id = _next_id("M", METHODOLOGY_PATH, "experiment_id")
+    _append_event(METHODOLOGY_PATH, {
+        "event": "methodology_backfill",
+        "experiment_id": experiment_id,
+        "author": author,
+        **_session_stamp(),
+        "experiment_name": experiment_name,
+        "experiment_dir": experiment_dir,
+        "hypothesis_text": hypothesis_text,
+        "gate_ladder": gate_ladder,
+        "prd_path": prd_path,
+        "pre_registered": False,
+        "verdict": verdict,
+        "died_at_gate": died_at_gate,
+        "gate_results": [],
+        "evidence_path": evidence_path,
+        "lesson": lesson,
+        "verdict_date": verdict_date,
+        "status": status,
+    })
+    return experiment_id
+
+
+def get_methodology_experiment(experiment_id: str) -> Optional[dict[str, Any]]:
+    state = fold_methodology_experiments()
+    return state.get(experiment_id)
+
+
+def fold_methodology_experiments(events: Optional[list[dict[str, Any]]] = None) -> dict[str, dict[str, Any]]:
+    if events is None:
+        events = _read_events(METHODOLOGY_PATH)
+    state: dict[str, dict[str, Any]] = {}
+    for e in events:
+        ev = e.get("event")
+        if ev not in METHODOLOGY_EVENTS:
+            raise ValueError(
+                f"unknown methodology event type {ev!r} (FAIL-IS-FAIL: the ledger "
+                f"reader refuses to silently drop events it does not understand)")
+        eid = e.get("experiment_id")
+        if ev in ("methodology_register", "methodology_backfill"):
+            state[eid] = {k: v for k, v in e.items() if k != "event"}
+        elif ev == "methodology_verdict" and eid in state:
+            state[eid]["verdict"] = e["verdict"]
+            state[eid]["died_at_gate"] = e["died_at_gate"]
+            state[eid]["gate_results"] = e["gate_results"]
+            state[eid]["evidence_path"] = e["evidence_path"]
+            state[eid]["lesson"] = e["lesson"]
+            state[eid]["verdict_date"] = e["verdict_date"]
+            state[eid]["status"] = e["status"]
+    return state
+
+
 # ── DuckDB folding ──────────────────────────────────────────────────────────
 
 def rebuild_duckdb_tables() -> None:
-    """Fold both JSONL ledgers into loop-DB tables (idempotent full rebuild)."""
+    """Fold all three JSONL ledgers into loop-DB tables (idempotent full rebuild)."""
     hyps = fold_hypotheses()
     theses = fold_theses()
+    methods = fold_methodology_experiments()
 
     hyp_rows = []
     for h in hyps.values():
@@ -529,6 +779,30 @@ def rebuild_duckdb_tables() -> None:
         for m in t["marks"]:
             mark_rows.append({"thesis_id": t["thesis_id"], **m})
 
+    method_rows = []
+    for m in methods.values():
+        method_rows.append({
+            "experiment_id": m["experiment_id"],
+            "created_ts": m["ts"],
+            "author": m["author"],
+            "model_id": m.get("model_id") or "unknown",
+            "model_version": m.get("model_version") or "unknown",
+            "session_id": m.get("session_id") or "unknown",
+            "experiment_name": m["experiment_name"],
+            "experiment_dir": m["experiment_dir"],
+            "hypothesis_text": m["hypothesis_text"],
+            "gate_ladder_json": json.dumps(m["gate_ladder"]),
+            "prd_path": m.get("prd_path", ""),
+            "pre_registered": m.get("pre_registered", True),
+            "status": m["status"],
+            "verdict": m.get("verdict"),
+            "died_at_gate": m.get("died_at_gate"),
+            "gate_results_json": json.dumps(m.get("gate_results") or []),
+            "evidence_path": m.get("evidence_path"),
+            "lesson": m.get("lesson"),
+            "verdict_date": m.get("verdict_date"),
+        })
+
     con = loop_connection()
     try:
         for name, rows, empty_cols in [
@@ -547,6 +821,13 @@ def rebuild_duckdb_tables() -> None:
              "outcome DOUBLE, outcome_label VARCHAR, brier_contribution DOUBLE"),
             ("thesis_marks", mark_rows,
              "thesis_id VARCHAR, mark_date VARCHAR, cum_return DOUBLE, days_open INT"),
+            ("methodology_ledger", method_rows,
+             "experiment_id VARCHAR, created_ts VARCHAR, author VARCHAR, "
+             "model_id VARCHAR, model_version VARCHAR, session_id VARCHAR, "
+             "experiment_name VARCHAR, experiment_dir VARCHAR, hypothesis_text VARCHAR, "
+             "gate_ladder_json VARCHAR, prd_path VARCHAR, pre_registered BOOLEAN, status VARCHAR, "
+             "verdict VARCHAR, died_at_gate INT, gate_results_json VARCHAR, "
+             "evidence_path VARCHAR, lesson VARCHAR, verdict_date VARCHAR"),
         ]:
             con.execute(f"DROP TABLE IF EXISTS {name}")
             if rows:
@@ -570,7 +851,7 @@ def rebuild_duckdb_tables() -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Alpha-Hunting Loop ledgers.")
     parser.add_argument("--rebuild", action="store_true", help="Fold JSONL into loop-DB tables.")
-    parser.add_argument("--list", action="store_true", help="Print current hypotheses and theses.")
+    parser.add_argument("--list", action="store_true", help="Print current hypotheses, theses, and methodology experiments.")
     parser.add_argument("--mark", action="store_true", help="Auto-mark open theses from daily returns.")
     args = parser.parse_args()
 
@@ -587,6 +868,7 @@ def main() -> int:
         return 0
     if args.list:
         hyps, theses = fold_hypotheses(), fold_theses()
+        methods = fold_methodology_experiments()
         print(f"── {len(hyps)} hypothesis(es) ──")
         for h in hyps.values():
             print(f"  {h['hypothesis_id']} [{h['status']:>10}] {h['archetype']} family={h['family_key']} "
@@ -596,6 +878,11 @@ def main() -> int:
             last = t["marks"][-1]["cum_return"] if t["marks"] else None
             print(f"  {t['thesis_id']} [{t['status']:>11}] {t['direction']:>5} {t['entity']:<14} "
                   f"h={t['horizon_days']}d p={t['probability']} inv={t['invalidation_level']} mark={last}")
+        print(f"── {len(methods)} methodology experiment(s) ──")
+        for m in methods.values():
+            reg = "backfill" if not m.get("pre_registered", True) else "pre-reg"
+            print(f"  {m['experiment_id']} [{m['status']:>11}] {reg:>8} {m['experiment_name']:<24} "
+                  f"verdict={m.get('verdict', '-')} died_at_gate={m.get('died_at_gate', '-')}")
         return 0
     parser.print_help()
     return 1

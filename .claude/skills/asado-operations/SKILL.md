@@ -57,7 +57,7 @@ which are installed and required for §4/§6.
 All times are **local Mac time (PT)**. Source of truth is the **loaded launchd state**, read
 with `launchctl print gui/$(id -u)/<label>` — NOT the on-disk plist. The installed files in
 `~/Library/LaunchAgents/com.arjundivecha.*.plist` contain only a `ProgramArguments` JSON array;
-the schedule, log paths, and PATH live in the loaded domain state (verified 2026-07-08).
+the schedule, log paths, and PATH live in the loaded domain state.
 
 > **The 2 plists in the repo root** (`./com.arjundivecha.asado-loop-heartbeat.plist`,
 > `./com.arjundivecha.neo4j-guard.plist`) are **UNINSTALLED TEMPLATES** — do not edit them
@@ -72,7 +72,7 @@ the schedule, log paths, and PATH live in the loaded domain state (verified 2026
 | daily 12:45 | `com.arjundivecha.asado-loop-heartbeat` | `venv/bin/python scripts/loop/heartbeat.py --watchdog` | `loop_heartbeat_launchd.log` | exit 0; no iMessage alert fired |
 | login + every 30 min | `com.arjundivecha.neo4j-guard` | `/bin/bash scripts/ops/neo4j_guard.sh` | `neo4j_guard_launchd.log` | exit 0; bolt port 7687 up |
 | daily 06:30 | `com.arjundivecha.asado-predmkt-daily` | `venv/bin/python scripts/predmkt_daily_job.py` | `predmkt_launchd.log` | exit 0 |
-| daily 16:45 | `com.arjundivecha.asado-predmkt-equity-harvest` | `venv/bin/python scripts/predmkt_equity_daily_job.py` | `predmkt_equity_daily.log` | exit 0 — **⚠ LAST RUN EXITED 1 (known live failure, unfixed as of 2026-07-08)** |
+| daily 16:45 | `com.arjundivecha.asado-predmkt-equity-harvest` | `venv/bin/python scripts/predmkt_equity_daily_job.py` | `predmkt_equity_daily.log` | exit 0 (two-step job: universe discovery + history harvest; check the log for which step failed, not just the launchd exit code) |
 | every 600 s | `com.arjundivecha.asado-predmkt-equity-poller` | `venv/bin/python scripts/poll_predmkt_intraday.py` | `predmkt_equity_poller.log` | exit 0; self-gates to UTC market windows, so a no-op between windows is normal |
 | always-on service | `homebrew.mxcl.neo4j` | Homebrew-managed Neo4j | (Neo4j's own logs) | running with a PID in `launchctl list` |
 
@@ -219,9 +219,12 @@ python scripts/snapshot_for_experiment.py          # NOTE: scripts/, not scripts
 ```bash
 launchctl list | grep -Ei 'asado|neo4j|fdt'
 ```
-Good: every ASADO label shows `0` in col 2 (or `-` if not yet run this boot).
-**Expected anomaly (2026-07-08):** `asado-predmkt-equity-harvest` shows `1` — a known unfixed
-failure, not a new incident.
+Good: every ASADO label shows `0` in col 2 (or `-` if not yet run this boot). A non-zero
+exit is a real signal, not something to explain away as "probably a known issue" — go
+read that job's log (this table's Log column) before deciding whether it's transient
+(e.g. a network blip) or a real regression. Don't assume any specific job is "known
+broken" based on a past snapshot in this or any other doc — check its actual current
+log.
 
 **Neo4j is up** (two independent checks):
 ```bash
@@ -233,9 +236,9 @@ launchctl list | grep homebrew.mxcl.neo4j   # good: a numeric PID in col 1
 ```bash
 ls -t "Data/dislocations/"brief_*.md | head -1
 ```
-Good: the newest brief's date matches the most recent weekday. As of 2026-07-08 the latest is
-`brief_2026_07_07.md`. If the newest brief is several days stale while jobs show exit 0,
-that is the "green-but-stale" failure — go to `asado-debugging-playbook`.
+Good: the newest brief's date (in its filename) matches the most recent weekday. If the
+newest brief is several days stale while jobs show exit 0, that is the "green-but-stale"
+failure — go to `asado-debugging-playbook`.
 
 **Daily run log + progress file:**
 ```bash

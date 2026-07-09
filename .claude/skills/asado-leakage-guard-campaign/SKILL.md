@@ -39,11 +39,13 @@ re-checks ASADO's two crown-jewel correctness rules and exits nonzero (naming th
 offender) whenever either is violated — then wire it into CI so it runs on every
 change. Prove it works with seeded fixtures. Nothing else.
 
-**Why it is the highest-leverage item in the repo** (from the FABLE.md P0 review,
-`FABLE.md:44-61`): the two rules that protect *every* future experiment and collector
-are today enforced only by **convention and duplication across ≥8 files**, with
-**almost no CI** (`.github/workflows/` contains only `openwiki-update.yml`, verified
-2026-07-08). Two concrete manifestations of that latent risk, both verified on disk:
+**Why this was assessed as the highest-leverage item in the repo** (from the FABLE.md P0
+review, `FABLE.md:44-61`, at the time it was written): the two rules that protect *every*
+future experiment and collector were enforced only by **convention and duplication
+across ≥8 files**, with **almost no CI**. This rationale is historical — before doing
+any work, confirm in Phase 0.0 below that the gap it describes is still open; someone
+may have already closed it since this skill was written. Two concrete manifestations of
+that risk, as originally diagnosed:
 
 1. **The forward-return blacklist is re-implemented independently, and the two copies
    have already diverged.**
@@ -72,18 +74,38 @@ The guard turns that vigilance into a command. See the sibling skill
 
 ## Phase 0 — PRE-FLIGHT (do this before anything else)
 
-The entire contract lives in an **UNTRACKED** file, `FABLE.md`. Your first job is to
-confirm it still exists and capture it, because untracked files can vanish.
+### 0.0 Confirm the campaign hasn't already been completed
+
+Before investing in any of the phases below, check whether someone already built and
+wired the guard — do not assume the gap described in §1 is still open just because this
+skill exists:
+```bash
+cd "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO"
+find scripts/qa -iname "*leakage*" -o -iname "*isolation*"
+find .github/workflows -type f
+```
+**If a leakage/isolation guard script already exists:** read it, confirm it covers both
+INV1 (forward-return blacklist) and INV2 (isolated-table exclusion) from §2 below, and
+confirm it's wired into `.github/workflows/`. If it fully covers both, this campaign is
+already graduated — tell the user and stop; don't rebuild it. If it's partial, treat the
+remaining phases as filling the gap, not starting from zero.
+
+The entire contract lives in `FABLE.md`. Your first job is to confirm it still exists
+and capture its content — do not assume its tracked-in-git status from this skill or
+any other doc (check live with `git ls-files FABLE.md`); either way, files can be
+moved, renamed, or deleted between when this skill was written and when you read it.
 
 ### 0.1 Verify the contract source exists
 
 ```bash
 ls -la "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/FABLE.md"
+git ls-files "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/FABLE.md"   # tracked or not?
 ```
 
-**EXPECTED OBSERVATION:** the file exists (verified present 2026-07-08, ~18 KB, dated
-2026-07-06). The embedded Divecha contract is the fenced ` ```markdown ` block at
-approximately `FABLE.md:137-322`; the handoff prompt is at `FABLE.md:118-131`.
+**EXPECTED OBSERVATION:** the file exists. The embedded Divecha contract is the fenced
+` ```markdown ` block at approximately `FABLE.md:137-322`; the handoff prompt is at
+`FABLE.md:118-131`. (Exact line numbers can drift if the file has been edited since —
+if the fenced block isn't there, search the file for `spec_id: ASADO-LEAKAGE-ISOLATION-GUARD-001`.)
 
 **CONTINGENCY — if `FABLE.md` is MISSING:** do not invent a contract. The essential
 invariants are carried as backup in section "Backup: the invariants the guard checks"
@@ -108,7 +130,9 @@ carry `command: TODO` — resolving those TODOs into real shell commands IS the 
 ```bash
 ls -la "/Users/arjundivecha/code/divecha/divecha/scripts/validate_contract.py"
 ```
-**EXPECTED OBSERVATION:** file exists (verified present 2026-07-08, executable, ~19 KB).
+**EXPECTED OBSERVATION:** file exists and is executable. If it's missing, `divecha` may
+have moved or been reinstalled elsewhere — check the global `divecha` skill for its
+current path rather than assuming this one is wrong.
 
 ```bash
 python3 "/Users/arjundivecha/code/divecha/divecha/scripts/validate_contract.py" \
@@ -343,8 +367,10 @@ two apart.
 
 ## Backup: the invariants the guard checks (use only if FABLE.md is missing)
 
-If `FABLE.md` cannot be found in Phase 0, reconstruct the contract around these verified
-facts (all confirmed on disk 2026-07-08). Keep `schema_version: 1`,
+If `FABLE.md` cannot be found in Phase 0, reconstruct the contract around these invariants
+(the data-contract rules themselves — durable regardless of when you're reading this;
+re-verify the cited file:line references live since exact line numbers can drift as the
+source files change). Keep `schema_version: 1`,
 `spec_id: ASADO-LEAKAGE-ISOLATION-GUARD-001`, `target_agent: either`.
 
 - **INV1 — forward-return blacklist.** No NMRet/NDRet-family variable may be a registered

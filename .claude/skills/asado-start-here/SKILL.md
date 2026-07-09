@@ -58,10 +58,13 @@ untracked files.**
 - Never `git checkout <branch>`, `git switch`, `git reset --hard`, `git stash`,
   or rebase in this checkout. launchd runs from HEAD of this tree; switching
   branches silently changes what runs tonight.
-- Never `git clean -fd` / `git clean -fdx`. Load-bearing synthesis docs
-  `ARJUN.md` and `FABLE.md` (both 2026-07-06) are **untracked** — verified via
-  `git status --short` showing `?? ARJUN.md` / `?? FABLE.md`. A clean deletes
-  them permanently.
+- Never `git clean -fd` / `git clean -fdx`. This repo has repeatedly accumulated
+  genuinely load-bearing untracked files — synthesized reviews, dead-experiment
+  records with real research value — that a clean deletes **permanently and
+  irreversibly**, no warning, no undo. Before ANY operation that could remove
+  untracked content, run `git status --short` and look for anything that isn't
+  obvious scratch/cache/data output; if in doubt, ask the user rather than
+  clean.
 - Do all experiments in an isolated worktree: `git worktree add <path> <branch>`.
   See **asado-change-control** and **asado-operations**.
 
@@ -107,31 +110,42 @@ without an explicit user go-ahead.**
 
 ## 3. Doc-authority router — which doc answers what, and whether to trust it
 
-Statuses: **TRUST** = current authority; **GENERATED** = auto-regenerated schema
-truth (trust the numbers, don't hand-edit); **AT-RISK** = trustworthy but
-untracked (back it up before any git clean); **NAV** = navigation index, not
-ground truth; **STALE** = do NOT trust as current state. Dates are the last
-commit touching the file (verified 2026-07-08 via `git log -1 --format=%ci`).
+Statuses reflect each doc's **structural category** — why it tends to be trustworthy
+or not — which stays true regardless of when you're reading this. They are NOT a
+point-in-time freshness verdict: **never trust a specific date, commit hash, or
+filename baked into this table (or any doc) as still current.** Where currency
+matters, check live with the command shown.
 
-| Doc (path relative to repo root) | Status | Last commit | Answers |
+- **TRUST (LIVE)** = the repo's own designated current authority (self-declared
+  reading order, or the file that's actively edited as state changes).
+- **GENERATED** = mechanically regenerated on a schedule by pipeline code — trust the
+  numbers, never hand-edit.
+- **NAV** = a navigation/summary layer derived from other docs — useful for finding
+  things, not a source of ground truth.
+- **STRUCTURALLY STALE** = superseded by a generated doc, or self-flagged stale in its
+  own text, or an index that has no auto-update mechanism — durably a *weaker* source
+  than its live/generated counterpart, even though its specific "how far behind" gap
+  will keep changing.
+
+| Doc (path relative to repo root) | Status | Answers | Check currency with |
 |---|---|---|---|
-| `AGENTS.md` | TRUST (LIVE) | 2026-07-04 `cc97cab` | Conventions, tribal knowledge, "read openwiki/quickstart.md first." Caveat: its loop step-counts (27→32→33 across entries) are all stale — see §4. |
-| `CLAUDE.md` | TRUST (LIVE) | 2026-07-04 `cc97cab` (working copy modified) | Project rules + a dated `## Current state (2026-07-06)` snapshot (line ~133). |
-| `openwiki/quickstart.md` | NAV | LLM-generated (glm, daily CI) | Navigation into architecture/workflow/ops notes. Derivative, not ground truth. |
-| `docs/factor_reference.md` | GENERATED | 2026-07-02 `3609af5` | Current factor/variable schema — what factors exist right now. |
-| `docs/VARIABLE_DICTIONARY.md` | GENERATED | 2026-07-02 `3609af5` | Current variable definitions. Regen every `monthly_update`. |
-| `ARJUN.md` | TRUST / AT-RISK (untracked) | 2026-07-06 (untracked) | Newest synthesized review of the system. Untracked — one `git clean` from gone. |
-| `FABLE.md` | TRUST / AT-RISK (untracked) | 2026-07-06 (untracked) | Newest synthesized review incl. the P0 leakage-guard proposal. Untracked. |
-| `ledgers/hypothesis_ledger.jsonl`, `ledgers/thesis_ledger.jsonl` | TRUST (append-only) | live | The authoritative verdict record (DEAD/WEAK/WATCH/INSUFFICIENT_COVERAGE). |
-| `Data/dislocations/brief_<YYYY_MM_DD>.md` | GENERATED (daily) | latest `brief_2026_07_07.md` | Today's dislocation brief. Verify the filename date is recent AND the content isn't a stale repeat (see §4). |
-| `docs/ASADO_TRADING_RUNBOOK_2026_07_03.md` | TRUST / UNINDEXED | 2026-07-03 | The actual paper→live runbook (8 sleeves). Not in docs/README index. |
-| `docs/alpha_book_2026_07_02/` (16 files) | TRUST / UNINDEXED | 2026-07-02 | The net-edge audit: fundable edge ~0–0.7%/yr on $100k; nothing survives 25bp. Not indexed. |
-| `docs/JUDGMENT_OPERATING_MODEL_2026_06_17.md` | REFERENCE | 2026-06-17 | Judgment layer, family_key gaming, calibration-sample and zero-lag bugs. |
-| `llmchat.md` | **STALE** | 2026-07-02 `ce15611` | Frozen ~20 commits behind. Do NOT treat as current state. |
-| `DATA_DICTIONARY.md` | **STALE** | 2026-06-11 `ecf1da7` | Superseded by `docs/factor_reference.md` + `docs/VARIABLE_DICTIONARY.md`. |
-| `ASADO_DATABASE_MAP.md` | **STALE** | 2026-06-11 `ecf1da7` | Superseded; schema is ~4+ weeks behind. |
-| `CLAUDE_CODE_BRIEF.md` | **STALE** | 2026-05-16 `37a131c` | Self-flagged stale. Do not trust. |
-| `docs/README.md` (index) | **PARTIAL/STALE** | — | Missing ~30 files, incl. the whole `alpha_book_2026_07_02/` cluster and the trading runbook. Don't rely on it to find docs. |
+| `AGENTS.md` | TRUST (LIVE) | Conventions, tribal knowledge, "read openwiki/quickstart.md first." Caveat: loop step-counts written in prose here are never reliable — see §4. | `git log -1 --format=%ci -- AGENTS.md` |
+| `CLAUDE.md` | TRUST (LIVE) | Project rules + a dated `## Current state (YYYY-MM-DD)` section. | `git log -1 --format=%ci -- CLAUDE.md`; also check `git status` for an uncommitted working-copy edit |
+| `openwiki/quickstart.md` | NAV | Navigation into architecture/workflow/ops notes. Derivative (LLM-generated by daily CI), not ground truth. | n/a — always derivative |
+| `docs/factor_reference.md` | GENERATED | Current factor/variable schema — what factors exist right now. Regenerated every `monthly_update.py` run. | `git log -1 --format=%ci -- docs/factor_reference.md` |
+| `docs/VARIABLE_DICTIONARY.md` | GENERATED | Current variable definitions. Regen every `monthly_update`. | `git log -1 --format=%ci -- docs/VARIABLE_DICTIONARY.md` |
+| `ARJUN.md` | TRUST (if present) | Synthesized business-value review of the system, when it exists. | `git ls-files ARJUN.md` (confirm tracked) + `git log -1 --format=%ci -- ARJUN.md` |
+| `FABLE.md` | TRUST (if present) | Synthesized engineering review, when it exists (e.g. incl. the P0 leakage-guard proposal history). | `git ls-files FABLE.md` + `git log -1 --format=%ci -- FABLE.md` |
+| `ledgers/hypothesis_ledger.jsonl`, `ledgers/thesis_ledger.jsonl` | TRUST (append-only) | The authoritative verdict record (DEAD/WEAK/WATCH/INSUFFICIENT_COVERAGE) — current *by construction* since it's append-only. | always live; see **asado-graveyard** §1b for the live-tally command |
+| `Data/dislocations/brief_<YYYY_MM_DD>.md` | GENERATED (daily) | Today's dislocation brief. | `ls -t Data/dislocations/brief_*.md \| head -1` — then verify the filename date is recent AND the body isn't a stale repeat (see §4) |
+| `docs/ASADO_TRADING_RUNBOOK_2026_07_03.md` | TRUST / UNINDEXED | The paper→live runbook (multi-sleeve), as of the date in its filename. Not in `docs/README.md`'s index — find successors/updates with `find docs -iname "*RUNBOOK*"`. | filename date is fixed identity, not freshness — check for a newer-dated sibling file before trusting it's still the latest |
+| `docs/alpha_book_2026_07_02/` (dir) | TRUST / UNINDEXED | The net-edge audit as of its dated directory name. Historically absent from `docs/README.md`'s index. | `find docs -maxdepth 1 -iname "alpha_book_*"` for a newer dated sibling |
+| `docs/JUDGMENT_OPERATING_MODEL_2026_06_17.md` | REFERENCE | Judgment layer, family_key gaming, calibration-sample and zero-lag bugs, as diagnosed on its dated filename. | check `docs/` for a newer-dated judgment/governance doc before assuming this is still the latest word |
+| `llmchat.md` | **STRUCTURALLY STALE** | An append-only cross-agent session log — trustworthy only if actively being written to. | `git log -1 --format=%ci -- llmchat.md`; if the gap to `git log -1` on HEAD is more than a few days, treat it as abandoned, not current |
+| `DATA_DICTIONARY.md` | **STRUCTURALLY STALE** | Hand-maintained; structurally superseded by the GENERATED pair above, which will always be more current since nothing regenerates this one. | prefer `docs/factor_reference.md` / `docs/VARIABLE_DICTIONARY.md` outright rather than checking a date here |
+| `ASADO_DATABASE_MAP.md` | **STRUCTURALLY STALE** | Same reason as `DATA_DICTIONARY.md` — hand-maintained schema doc with a generated replacement. | same as above |
+| `CLAUDE_CODE_BRIEF.md` | **STRUCTURALLY STALE** | Self-flagged stale in its own text (an intrinsic, durable property — read the file's own header). | n/a — trust the self-flag, not a date |
+| `docs/README.md` (index) | **STRUCTURALLY STALE** | A hand-maintained doc index with no auto-update mechanism — has repeatedly fallen behind newly added docs. Don't rely on it to find docs; use `find docs -iname "*<keyword>*"` instead. | n/a — the failure mode is structural (no regen), not a specific staleness date |
 
 ## 4. Where is the current state? (reconstruct today's truth)
 
@@ -147,15 +161,17 @@ these, in this order:
    snapshot (what's live, what recently died, what's on hold).
 3. `AGENTS.md` → conventions + "Learned User Preferences."
 4. `ledgers/hypothesis_ledger.jsonl` and `ledgers/thesis_ledger.jsonl` — the
-   authoritative kill/keep verdicts (as of 2026-07-08: 59 hypotheses — 21 DEAD,
-   21 WEAK, 16 INSUFFICIENT_COVERAGE, 1 WATCH).
-5. `Data/dislocations/brief_<latest>.md` — the newest daily brief (latest is
-   `brief_2026_07_07.md`). **Check both the date in the filename AND that the
+   authoritative kill/keep verdicts. Verdict counts grow daily; don't trust a
+   count in any doc (including this one) — get the live tally with
+   **asado-graveyard** §1b's dedupe-to-latest-verdict one-liner.
+5. `Data/dislocations/brief_<latest>.md` — the newest daily brief. Find it live
+   with `ls -t Data/dislocations/brief_*.md | head -1`, not by trusting a
+   filename in any doc. **Check both the date in the filename AND that the
    body is not a stale repeat** — a green pipeline once re-committed an identical
    stale brief 15 times.
-6. `ARJUN.md` + `FABLE.md` — the newest synthesized reviews (2026-07-06), if
-   present. Back them up before any git operation that could clean untracked
-   files.
+6. `ARJUN.md` + `FABLE.md` — synthesized reviews of the system's state, useful
+   context if present; check `git log -1 --format=%ci -- ARJUN.md FABLE.md` for
+   how current they are rather than assuming a date.
 
 **What NOT to trust for current state:** `llmchat.md`, `DATA_DICTIONARY.md`,
 `ASADO_DATABASE_MAP.md`, `CLAUDE_CODE_BRIEF.md`, the `docs/README.md` index, and

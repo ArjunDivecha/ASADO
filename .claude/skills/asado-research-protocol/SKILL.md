@@ -37,7 +37,7 @@ idea is recorded so it stays dead.
 Before you design anything, confirm the idea is not already settled. **Re-proposing a dead idea is
 the fastest way to lose the user's trust.** Route to the **asado-graveyard** skill and check the
 whole canonical graveyard, which is bigger than the ledger:
-1. The hypothesis ledger — `ledgers/hypothesis_ledger.jsonl` (59 hypotheses as of 2026-07-08: 21 DEAD, 21 WEAK, 16 INSUFFICIENT_COVERAGE, 1 WATCH).
+1. The hypothesis ledger — `ledgers/hypothesis_ledger.jsonl` (grows daily; get the live tally with **asado-graveyard** §1b's dedupe-to-latest-verdict one-liner, never trust a count baked into a doc).
 2. Per-experiment `RESULTS.md` files under `experiments/` and the directory experiments (`regime/`, `regime_ew/`, `regime_factor_selection/`, `momentum_fragility/`, …).
 3. `docs/strategy/lessons.md` (settled no-go methods, e.g. PCA regime analogs).
 4. The external graveyard: `/Users/arjundivecha/Dropbox/AAA Backup/A Complete/Investment Learnings/` — `INDEX.md` and the latest `Research-Agenda-2026-07-v*.md`.

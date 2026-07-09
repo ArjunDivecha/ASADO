@@ -54,14 +54,16 @@ Quote every path — they contain spaces. All paths below are absolute.
 | GDELT rate-limited / evidence packs partial | Do NOT retry-loop; understand cooldown-resets-on-probe | [7](#s7) |
 | A single loop/detector step crashed | Re-run just that step with `--only`; read PARTIAL vs FAIL | [8](#s8) |
 | Numbers look wrong / suspected corruption | Verify ticker↔country; report, don't fix | [9](#s9) |
-| — | Known live issues as of 2026-07-08 | [10](#s10) |
+| — | Durable hazards + how to check current status | [10](#s10) |
 
 ---
 
-## The launchd jobs and their logs (verified 2026-07-08)
+## The launchd jobs and their logs
 
-Seven ASADO jobs plus Homebrew Neo4j are installed. Confirmed loaded via
-`launchctl list` (second column = last exit code):
+Reference snapshot of what's installed; jobs get added/removed occasionally, so treat
+this as a starting map, not a guaranteed-current inventory. Reconcile against the live
+set with `launchctl list | grep -Ei 'asado|neo4j|fdt'` (second column = last exit code)
+before assuming this list is complete.
 
 | launchd label | When | Runs | Its log file (in `Data/logs/`) |
 |---|---|---|---|
@@ -471,25 +473,32 @@ truth everything else must join back to.
 ---
 
 <a id="s10"></a>
-## 10. Known live issues as of 2026-07-08 (don't rediscover these)
+## 10. Durable hazards (structural, not a point-in-time snapshot)
 
-- **`asado-predmkt-equity-harvest` last run failed (exit 1).** Confirmed via
-  `launchctl list` (its last-exit column is `1`; all other ASADO jobs are `0`). It is a
-  known, currently-unfixed live failure — investigate its log
-  (`Data/logs/predmkt_equity_daily.log`) but don't be surprised it's red.
-- **`regime/src/regime_tagger.py:70` mislabels Recession as "Crisis."** The R3 (Recession)
-  branch appends `"R3_Recession"` but `return "Crisis", fired` (verified live on this
-  checkout). A one-line fix exists only on the **unmerged** branch
-  `origin/claude/nightwatch-06-20-failures-37d4lv` (commit `4825fa9`) — it is NOT on main.
-  If you touch regime labels, know this bug is live.
+These are facts about how the code is *built*, not a status report — they stay true
+until someone changes the underlying code, unlike a launchd exit code or an untracked-file
+list, which drift constantly. Do not maintain a "current known issues" list in this skill;
+check live state instead (below).
+
 - **`tests/loop/test_gap_engine.py:143-145`** (`test_live_gap_engine_tables_if_present`)
   opens the **real production loop DB** read-only. Running `python -m pytest tests/`
   therefore touches production — avoid it during the 06:00–08:30 PT nightly window
-  (build-tracer finding).
+  (build-tracer finding). This is a structural property of the test file; it stays true
+  until someone rewrites that test.
 - **Two UNGUARDED monthly writers** (`load_gdelt_deep_to_duckdb.py:126`,
-  `build_gdelt_deep_cs.py:142`) — see [Symptom 2](#s2).
-- **Untracked on disk** (not in git as of this handover): `ARJUN.md`, `FABLE.md`,
-  `momentum_fragility/`, `regime_factor_selection/`. Don't assume they're versioned.
+  `build_gdelt_deep_cs.py:142`) — see [Symptom 2](#s2). Structural property of those
+  scripts; stays true until someone routes them through `guarded_connect()`.
+- **Regime/label-tagging code has a known failure shape** — a tagger can fire the right
+  internal rule but `return` the wrong label string, and nothing enforces the two agree.
+  See **asado-change-control** §5 for the durable lesson and how to check any specific
+  tagger for this before trusting its output.
+
+**To find out what's *actually* broken right now** (don't trust any hardcoded list,
+including ones from a past handover):
+```bash
+launchctl list | grep -Ei 'asado|neo4j|fdt'     # col 2 = last exit code, non-zero = failed
+cd "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO" && git status --short   # untracked/modified files, live
+```
 
 ---
 

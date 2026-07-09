@@ -209,9 +209,13 @@ failure mode in this repo. These are read-only checks except where noted.
 
 1. **`git status` is clean of untracked data.** No parquet/xlsx/duckdb/PDF/log
    files staged or committed. Data and run outputs belong in `.gitignore`, code
-   only. (Untracked-but-expected items that should stay untracked as of
-   2026-07-08: `ARJUN.md`, `FABLE.md`, `momentum_fragility/`,
-   `regime_factor_selection/` — do not commit these without asking.)
+   only. **Never trust a list of "expected untracked files" in this or any
+   other doc — tracked state drifts every time someone commits.** Confirm live
+   with `git status --short` / `git ls-files <path>` before deciding what's
+   safe to stage. If an untracked file looks like a synthesized review
+   document or a dead experiment's results (not obvious scratch/data-cache
+   output), don't assume it's "supposed to" stay untracked and don't assume
+   it's fine to commit either — ask the user.
 
 2. **No new `duckdb.connect` outside the guard.** Core builders must go through
    `guarded_connect()` in `scripts/duckdb_lock_guard.py`. Holding an
@@ -259,9 +263,9 @@ STOP and append to `docs/USER_FIX_LIST.md`.
 ## 5. Git conventions in this repo
 
 - **Auto-commit jobs exist.** Expect to see commits you did not make: nightly
-  brief auto-commits (55+ of them as of 2026-07-08) and OpenWiki CI commits.
-  Two brief commits/day with different timestamps is normal (Law 4). Do not
-  "clean these up" or rebase over them.
+  brief auto-commits and OpenWiki CI commits. Two brief commits/day with
+  different timestamps is normal (Law 4). Do not "clean these up" or rebase
+  over them.
 
 - **Never rebase or force-push `main`.** launchd runs from this tree; a rewrite
   of `main` can strand the deployed state. Never push, force-push, or open a PR
@@ -274,14 +278,37 @@ STOP and append to `docs/USER_FIX_LIST.md`.
   ```
   Work there; the production tree stays on `main` untouched.
 
-- **Tool-created branch stubs are clutter, not work.** Branches like
-  `codex/*`, `traycer/*`, and the `devin/*` stub carry zero unique commits
-  (pure ancestors of `main`); they are safe to ignore. Do not build on them and
-  do not assume they contain anything. (`origin/claude/nightwatch-06-20-failures-37d4lv`
-  is different — it holds the never-merged one-line fix `4825fa9` for the still-live
-  `regime/src/regime_tagger.py:70` bug, which returns `"Crisis"` instead of
-  `"Recession"`. Verified live on `main` 2026-07-08. Report this; do not merge it
-  without asking — it is a class (b)/(e) decision for the user.)
+- **Never trust a branch name as evidence of real work — verify divergence.**
+  AI coding tool sessions (Codex, Traycer, Devin, Claude) routinely create a
+  session-start branch stub that never receives a commit; a bare branch name
+  proves nothing. Check before acting on any branch:
+  ```bash
+  cd "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO"
+  git merge-base --is-ancestor <branch> main && echo "pure ancestor — no unique work"
+  git log main..<branch> --oneline    # empty output = same conclusion
+  ```
+  A branch that DOES diverge still needs full review before you act on any
+  part of it — never merge or hand-apply a piece of a branch (e.g. cherry-pick
+  a single commit) without reading the whole diff and confirming with the user
+  what else is bundled in. (This repo has previously had a genuinely useful
+  one-line fix sitting stranded on an unmerged branch for weeks, bundled
+  alongside hundreds of lines of unrelated log output — the fix was easy to
+  miss and the log diff was not something to blindly pull in with it.) Check
+  `git branch -a` and `git log main..<branch>` live rather than trusting any
+  branch inventory in a doc — branches get created, merged, and deleted
+  continuously.
+
+- **Regime/label-tagging bugs have unusually high blast radius — verify, don't
+  assume.** A function that classifies rows into named regimes/labels (the
+  `tag_regime`-style pattern used in this repo's regime experiments) can fire
+  the *correct* internal rule/tag while `return`ing the *wrong* label string —
+  the fired-tag list and the returned label are independently editable, and
+  nothing enforces they agree. Every downstream consumer trusts the returned
+  label, not the internal tag, so a single wrong `return` silently mislabels
+  every row that hits that branch for as long as the bug survives. Before
+  trusting any regime-conditioned result, read the tagger function directly
+  and confirm each branch's `fired`/tag list actually matches what it
+  `return`s — do not infer correctness from the tag name alone.
 
 - **Commit code only.** Data files, run outputs (parquet/xlsx/PDF),
   checkpoints, `.env`, and anything with keys go in `.gitignore`. Commit at

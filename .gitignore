@@ -10,6 +10,8 @@ node_modules/
 
 # Data files (too large for GitHub)
 Data/asado.duckdb
+Data/asado.duckdb.wal
+*.wal
 Data/Normalized_T2_MasterCSV.csv
 Data/raw/
 Data/processed/

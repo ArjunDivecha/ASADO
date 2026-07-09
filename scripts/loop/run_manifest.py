@@ -211,8 +211,11 @@ def _loop_table_counter() -> Optional[Callable[[str], Optional[int]]]:
     if not LOOP_DB.exists():
         return None
     try:
-        import duckdb
-        con = duckdb.connect(str(LOOP_DB), read_only=True)
+        from scripts.duckdb_lock_guard import guarded_connect
+        # Short wait budget keeps this diagnostic snappy (it degrades to
+        # "no table checks" on failure) while still clearing killable
+        # ~/.claude-science lock squatters via the shared guard.
+        con = guarded_connect(LOOP_DB, read_only=True, wait_budget_s=20)
         known = {r[0] for r in con.execute(
             "SELECT table_name FROM information_schema.tables WHERE table_schema='main'").fetchall()}
     except Exception:  # noqa: BLE001 — DB locked/absent: degrade to no table checks

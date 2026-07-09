@@ -16,8 +16,8 @@ OUTPUT FILES:
   loop surface (country_returns_monthly, ledgers, graph features,
   dislocations, harness results).
 
-VERSION: 1.0
-LAST UPDATED: 2026-06-10
+VERSION: 1.1
+LAST UPDATED: 2026-07-05
 AUTHOR: Arjun Divecha (built by agent session, Alpha-Hunting Loop)
 
 DESCRIPTION:
@@ -31,8 +31,17 @@ read-only under the alias `asado` so queries can join both worlds:
     con.execute("SELECT * FROM asado.feature_panel LIMIT 5")   # warehouse
     con.execute("SELECT * FROM country_returns_monthly")       # loop-owned
 
+v1.1 (2026-07-05): loop_connection() now opens asado_loop.duckdb through the
+shared scripts/duckdb_lock_guard.guarded_connect() instead of a passive
+[0,2,4,8,16]s backoff loop. The guard clears killable sandbox-kernel lock
+squatters (~/.claude-science) that squat the loop-DB lock and waits out
+legitimate ASADO holders, failing loudly only after its wait budget. This
+replaces the old loop that simply died when a squatter held the lock — the
+cause of 17 loop-daily job failures on 2026-07-04.
+
 DEPENDENCIES:
 - duckdb (project venv)
+- scripts/duckdb_lock_guard.py (guarded_connect — shared lock guard)
 
 USAGE:
  from scripts.loop.loopdb import loop_connection, t2_countries, LOOP_DIR
@@ -42,6 +51,7 @@ USAGE:
 from __future__ import annotations
 
 import json
+import sys
 import time
 from pathlib import Path
 
@@ -54,6 +64,13 @@ LOOP_DB = LOOP_DIR / "asado_loop.duckdb"
 LEDGER_DIR = BASE_DIR / "ledgers"
 BRIEF_DIR = BASE_DIR / "Data" / "dislocations"
 COUNTRY_MAPPING = BASE_DIR / "config" / "country_mapping.json"
+
+# Shared DuckDB lock guard (scripts/duckdb_lock_guard.py). Ensure the ASADO
+# root is importable whether loopdb is imported as `scripts.loop.loopdb` (root
+# already on path) or run in a context where it is not.
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+from scripts.duckdb_lock_guard import guarded_connect  # noqa: E402
 
 
 # DuckDB error substrings that mark transient contention (worth retrying) vs a
@@ -72,37 +89,53 @@ def _is_retryable(exc: Exception) -> bool:
 def loop_connection(read_only: bool = False) -> duckdb.DuckDBPyConnection:
     """Open the loop DB with the main warehouse attached read-only as `asado`.
 
-    FAIL-IS-FAIL: if the main warehouse is missing we raise. Transient write-lock
-    / IO contention is retried with exponential backoff (2, 4, 8, 16 s). A
-    DETERMINISTIC error (corrupt DB, bad ATTACH path, version mismatch) is
-    re-raised immediately rather than burning 30s of backoff. If the ATTACH
-    fails after connect, the half-open connection is closed so a leaked write
-    handle cannot self-induce the very lock error we are retrying against.
+    FAIL-IS-FAIL: if the main warehouse is missing we raise. The loop DB
+    connection is acquired through the shared lock guard
+    (scripts/duckdb_lock_guard.guarded_connect): it clears killable
+    sandbox-kernel squatters (~/.claude-science) that squat the loop-DB lock,
+    waits out legitimate ASADO holders, and raises a loud, actionable error
+    only after its wait budget (default 300s) is exhausted. This replaced the
+    old passive [0,2,4,8,16]s backoff that simply died when a squatter held
+    the lock (17 loop-daily failures on 2026-07-04).
+
+    The main-warehouse ATTACH is a separate operation the guard cannot wrap
+    (it wraps duckdb.connect, not ATTACH). A read-only ATTACH conflicts only
+    with a read-WRITE holder of asado.duckdb (normally a monthly
+    setup_duckdb.py rebuild), so a transient lock there is retried with a
+    short backoff (2, 4, 8, 16 s); a DETERMINISTIC error (corrupt/missing
+    warehouse, version mismatch) is re-raised immediately rather than burning
+    the backoff budget. If the ATTACH ultimately fails, the half-open loop
+    connection is closed so a leaked write handle cannot self-induce the very
+    lock error we are retrying against.
     """
     LOOP_DIR.mkdir(parents=True, exist_ok=True)
     if not MAIN_DB.exists():
         raise FileNotFoundError(f"Main ASADO warehouse not found: {MAIN_DB}")
+
+    con = guarded_connect(LOOP_DB, read_only=read_only)
+
     last_exc: Exception = RuntimeError("unreachable")
     for attempt, wait in enumerate([0, 2, 4, 8, 16]):
         if wait:
             time.sleep(wait)
-        con = None
         try:
-            con = duckdb.connect(str(LOOP_DB), read_only=read_only)
             con.execute(f"ATTACH '{MAIN_DB}' AS asado (READ_ONLY)")
             return con
         except Exception as exc:  # noqa: BLE001
-            if con is not None:
+            # A prior attempt may have succeeded before a later query raised;
+            # a re-ATTACH then reports "already attached" — treat as attached.
+            if "already attached" in str(exc).lower():
+                return con
+            last_exc = exc
+            if not _is_retryable(exc) or attempt == 4:
                 try:
                     con.close()
                 except Exception:  # noqa: BLE001
                     pass
-            last_exc = exc
-            if not _is_retryable(exc):
-                raise  # deterministic — fail fast, don't waste the backoff budget
-            if attempt < 4:
-                print(f"[loopdb] transient contention attempt {attempt + 1} ({exc}); "
-                      f"retrying in {[2,4,8,16][attempt]}s", flush=True)
+                raise
+            print(f"[loopdb] transient ATTACH contention attempt {attempt + 1} ({exc}); "
+                  f"retrying in {[2,4,8,16][attempt]}s", flush=True)
+    con.close()
     raise last_exc
 
 

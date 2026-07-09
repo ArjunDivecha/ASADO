@@ -69,6 +69,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from scripts.loop.loopdb import LOOP_DIR, T2_UNIVERSE, loop_connection, returns_panel  # noqa: E402
+from scripts.duckdb_lock_guard import guarded_connect  # noqa: E402
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 MAIN_DB = BASE_DIR / "Data" / "asado.duckdb"
@@ -87,7 +88,7 @@ def log(msg: str) -> None:
 
 def month_end_factors() -> pd.DataFrame:
     """Month-end _CS fundamental factor snapshot per (month, country, variable)."""
-    con = duckdb.connect(str(MAIN_DB), read_only=True)
+    con = guarded_connect(MAIN_DB, read_only=True)
     try:
         df = con.execute(f"""
             SELECT date_trunc('month', f.date) AS month, f.country, f.variable,

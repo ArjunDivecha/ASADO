@@ -110,35 +110,28 @@ def _dim_liveness():
 def _dim_ledger_integrity():
     if not LOOP_DB.exists():
         return "blind", "asado_loop.duckdb", "loop DB absent"
-    import duckdb
-    import time as _t
-    bad = resurrected = None
-    last = None
-    for attempt, wait in enumerate([0, 2, 4]):  # small retry for transient lock
-        con = None
+    from scripts.duckdb_lock_guard import guarded_connect
+    # Acquire via the shared lock guard: it clears killable ~/.claude-science
+    # squatters and waits out legitimate holders, raising only if still locked
+    # at the (deliberately short) budget — this is a fast scorecard dimension.
+    con = None
+    try:
+        con = guarded_connect(LOOP_DB, read_only=True, wait_budget_s=20)
+    except Exception as exc:  # noqa: BLE001 — could not acquire: transient lock/IO
+        # Could not verify — don't false-red a possible ledger leak, don't hang.
+        return "amber", "live_signals", f"could not verify (transient lock/IO): {exc}"
+    try:
+        bad = con.execute("SELECT count(*) FROM live_signals WHERE status IN ('retired','rejected')").fetchone()[0]
+        resurrected = con.execute("SELECT count(*) FROM live_signals WHERE hypothesis_id='H_20260610_001'").fetchone()[0]
+    except Exception as exc:  # noqa: BLE001
+        # schema drift / query error — a real problem, not transient lock.
+        # FAIL-IS-FAIL: do NOT downgrade a possible ledger leak to amber.
+        return "red", "live_signals", f"ledger check error: {exc}"
+    finally:
         try:
-            if wait:
-                _t.sleep(wait)
-            con = duckdb.connect(str(LOOP_DB), read_only=True)
-            bad = con.execute("SELECT count(*) FROM live_signals WHERE status IN ('retired','rejected')").fetchone()[0]
-            resurrected = con.execute("SELECT count(*) FROM live_signals WHERE hypothesis_id='H_20260610_001'").fetchone()[0]
-            break
-        except Exception as exc:  # noqa: BLE001
-            last = exc
-            msg = str(exc).lower()
-            if not ("lock" in msg or "io error" in msg or "being used" in msg):
-                # schema drift / query error — a real problem, not transient lock.
-                # FAIL-IS-FAIL: do NOT downgrade a possible ledger leak to amber.
-                return "red", "live_signals", f"ledger check error: {exc}"
-        finally:
-            if con is not None:
-                try:
-                    con.close()
-                except Exception:  # noqa: BLE001
-                    pass
-    else:
-        # exhausted retries, all transient-lock — could not verify, don't false-red
-        return "amber", "live_signals", f"could not verify (transient lock/IO): {last}"
+            con.close()
+        except Exception:  # noqa: BLE001
+            pass
     if bad or resurrected:
         return "red", "live_signals", f"retired/rejected leak={bad}, H_20260610_001 present={resurrected}"
     return "green", "live_signals", "no retired/rejected in live_signals"

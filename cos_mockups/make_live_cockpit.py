@@ -404,7 +404,7 @@ html = html.replace(
   else if(MAPLAYER==="gap"){bg=gapColor(n);val=g?"◆":""}''',
     '''function tile(n,v){let bg,val;const gt=TILE_BY_COUNTRY[n]||{};const g=GAP_COUNTRY[n];const ag=EDGE_AGREE[n];
   if(MAPLAYER==="return"){bg=retColor(v);val=(v>0?"+":"")+v.toFixed(1)}
-  else if(MAPLAYER==="edge"){bg=edgeColor(n);val=ag?(ag.conflict?"✕":(ag.long>=3?"▲":(ag.short>=3?"▼":""))):""}
+  else if(MAPLAYER==="edge"){bg=edgeColor(n);val=ag?(ag.conflict?"✕":((ag.edge||0)>=0.5?"▲":((ag.edge||0)<=-0.5?"▼":""))):""}
   else if(MAPLAYER==="gap"){bg=gapColor(n);val=g?"◆":""}'''
 )
 html = html.replace(

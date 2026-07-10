@@ -834,6 +834,7 @@ def read_consensus(con, latest_dislo=None):
             "horizon": m.get("horizon"),
             "direction": m.get("direction"),
             "count_in_agreement": bool(m.get("count_in_agreement")),
+            "mechanism": m.get("mechanism", key),
             "note": m.get("note"),
             "hypothesis_id": m.get("hypothesis_id"),
             "as_of": _date_str(g["date"].iloc[0]),
@@ -851,25 +852,36 @@ def read_consensus(con, latest_dislo=None):
             "score": _clean_num(r.score, 4),
         }
 
-    voting = {f["key"] for f in families if f["count_in_agreement"]}
+    # Vote by MECHANISM cluster, not by family. The four diffusion families
+    # (graph_bank / graph_twohop / twins / lead-lag; cross-sectional Spearman
+    # 0.90-0.97 among the graph trio) are ONE price-propagation mechanism and
+    # must count as a single vote, not four — otherwise "4 families agree"
+    # overstates independent confirmation. cpi_revision and positioning are
+    # genuinely non-price mechanisms; has_nonprice_confirmation flags whether a
+    # non-price mechanism corroborates the direction (GPT-5.6 review, 2026-07-10).
+    mech_of = {f["key"]: f.get("mechanism", f["key"])
+               for f in families if f["count_in_agreement"]}
+    NONPRICE_MECHS = {"cpi_revision", "positioning"}
     agreement = {}
     for country, cells in matrix.items():
-        long_fams, short_fams, eligible = [], [], 0
+        mech_net: dict[str, int] = {}   # mechanism -> net vote across its families
         for fam, cell in cells.items():
-            if fam not in voting:
+            if fam not in mech_of:
                 continue
-            eligible += 1
             q = max(1, math.ceil(cell["n"] * 0.2))
-            if cell["rank"] <= q:
-                long_fams.append(fam)
-            elif cell["rank"] > cell["n"] - q:
-                short_fams.append(fam)
-        edge = (len(long_fams) - len(short_fams)) / eligible if eligible else 0.0
+            vote = 1 if cell["rank"] <= q else (-1 if cell["rank"] > cell["n"] - q else 0)
+            mech_net[mech_of[fam]] = mech_net.get(mech_of[fam], 0) + vote
+        long_mechs = sorted(mk for mk, v in mech_net.items() if v > 0)
+        short_mechs = sorted(mk for mk, v in mech_net.items() if v < 0)
+        eligible = len(mech_net)         # mechanisms with >=1 eligible family cell
+        edge = (len(long_mechs) - len(short_mechs)) / eligible if eligible else 0.0
         agreement[country] = {
-            "long": len(long_fams), "short": len(short_fams), "eligible": eligible,
-            "long_families": long_fams, "short_families": short_fams,
+            "long": len(long_mechs), "short": len(short_mechs), "eligible": eligible,
+            "long_families": long_mechs, "short_families": short_mechs,  # now MECHANISMS
             "edge": _clean_num(edge, 3),
-            "conflict": bool(long_fams and short_fams),
+            "conflict": bool(long_mechs and short_mechs),
+            "has_nonprice_confirmation": bool(
+                (set(long_mechs) | set(short_mechs)) & NONPRICE_MECHS),
         }
     conflicts = [{"country": c, "long_families": a["long_families"],
                   "short_families": a["short_families"]}
@@ -1005,7 +1017,7 @@ def build_edge_board(gov, gap_engine, consensus, events, expiring, cap=5):
         a = agreement.get(entity)
         if not a or not a.get("eligible"):
             return None
-        return (f"{a['long']} of {a['eligible']} families lean long · "
+        return (f"{a['long']} of {a['eligible']} mechanisms lean long · "
                 f"{a['short']} lean short" + (" · CONFLICT" if a.get("conflict") else ""))
 
     if (gap_engine or {}).get("status") == "fresh":
@@ -1093,7 +1105,7 @@ def build_edge_board(gov, gap_engine, consensus, events, expiring, cap=5):
     return {"as_of": (gap_engine or {}).get("as_of") or (consensus or {}).get("as_of"),
             "slots": slots[:cap],
             "selection_note": "governance exception first; then gaps by LIVE tension, "
-                              "consensus extremes (≥3 families), fresh event windows, "
+                              "consensus extremes (mechanism agreement), fresh event windows, "
                               "expiring theses — dedup by entity|direction, cap 5."}
 
 

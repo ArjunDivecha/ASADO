@@ -38,6 +38,7 @@ config_version: family_ranks_v1_2026_07_01
 
 families:
   - key: combiner
+    mechanism: combiner
     label: "Ridge combiner"
     table: combiner_scores_daily
     variable: COMBINER_RIDGE_DAILY_V1
@@ -52,6 +53,7 @@ families:
     universe: "Australia,Brazil,Canada,Chile,ChinaA,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,Netherlands,Philippines,Poland,Singapore,South Africa,Spain,Sweden,Switzerland,Thailand,Turkey,U.K.,U.S.,Vietnam"
 
   - key: leadlag
+    mechanism: diffusion
     label: "Lead-lag 5d gap"
     table: leadlag_features_daily
     variable: LL_LEADER_GAP_5D
@@ -66,6 +68,7 @@ families:
     universe: "Australia,ChinaA,ChinaH,Hong Kong,India,Indonesia,Japan,Korea,Malaysia,Netherlands,Philippines,Singapore,Switzerland,Taiwan,Thailand,U.K."
 
   - key: graph_twohop
+    mechanism: diffusion
     label: "PIT two-hop trade gap"
     table: graph_features_pit_daily
     variable: GRAPHP_TWOHOP_TRADE_GAP_21D
@@ -80,6 +83,7 @@ families:
     universe: "Australia,Brazil,Canada,Chile,ChinaA,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,Netherlands,Philippines,Poland,Saudi Arabia,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K.,U.S.,Vietnam"
 
   - key: graph_bank
+    mechanism: diffusion
     label: "PIT bank-neighbor gap"
     table: graph_features_pit_daily
     variable: GRAPHP_BANK_NBR_RET_GAP_21D
@@ -94,6 +98,7 @@ families:
     universe: "Australia,Brazil,Canada,Chile,Denmark,France,Germany,Hong Kong,Italy,Japan,Korea,Mexico,Netherlands,Philippines,South Africa,Spain,Sweden,Switzerland,Taiwan,U.K.,U.S."
 
   - key: twins
+    mechanism: diffusion
     label: "Fundamental-twin divergence"
     table: similarity_features_daily
     variable: SIM_NBR_RET_GAP_21D
@@ -108,6 +113,7 @@ families:
     universe: "Australia,Brazil,Canada,Chile,ChinaA,ChinaH,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,NASDAQ,Netherlands,Philippines,Poland,Saudi Arabia,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K.,U.S.,US SmallCap,Vietnam"
 
   - key: cpi_rev
+    mechanism: cpi_revision
     label: "ECFC CPI revision (reflation)"
     table: consensus_signals
     variable: CONS_CPI_REV3M_12M
@@ -123,6 +129,7 @@ families:
     universe: "Australia,Brazil,Canada,Chile,ChinaA,ChinaH,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,NASDAQ,Netherlands,Philippines,Poland,Saudi Arabia,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K.,U.S.,US SmallCap,Vietnam"
 
   - key: etf_contra
+    mechanism: positioning
     label: "ETF-flow contrarian"
     table: etf_flow_signals
     variable: ETF_FLOW_21D_Z
@@ -137,6 +144,7 @@ families:
     universe: "Australia,Brazil,Canada,Chile,ChinaA,ChinaH,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,NASDAQ,Netherlands,Philippines,Poland,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K.,U.S.,US SmallCap,Vietnam"
 
   - key: tot_impulse
+    mechanism: terms_of_trade
     label: "ToT impulse z"
     table: derived            # computed in build_family_ranks.py (D1 substrate, ungated)
     variable: TOT_IMPULSE_Z36M

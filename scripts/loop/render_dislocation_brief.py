@@ -75,10 +75,35 @@ def load_top_gaps(con, as_of: pd.Timestamp, limit: int) -> pd.DataFrame:
         FROM gap_episodes e
         JOIN latest_marks m USING (gap_id)
         WHERE e.status = 'open' AND e.research_only = false
+          AND COALESCE(m.absorption_state, '') <> 'repriced_against'
         ORDER BY COALESCE(m.tension_score_current, e.tension_score_at_open) DESC
         """,
         [str(as_of.date())],
     ).fetchdf().head(limit * 4)
+
+
+def load_rejected_gaps(con, as_of: pd.Timestamp, limit: int = 8) -> pd.DataFrame:
+    """Open episodes price has already repriced AGAINST (thesis falsified). These
+    are learning evidence — 'the data was wrong / price knew first' — NOT headline
+    opportunities, so they render in a separate section and never in Top Gaps."""
+    return con.execute(
+        """
+        WITH latest_marks AS (
+          SELECT *
+          FROM gap_episode_marks
+          WHERE CAST(date AS DATE) = CAST(? AS DATE)
+          QUALIFY row_number() OVER (PARTITION BY gap_id ORDER BY mark_window) = 1
+        )
+        SELECT e.gap_id, e.entity, e.direction, e.gap_class, e.horizon_bucket,
+               e.mechanism_text, m.days_active, m.price_absorption_index
+        FROM gap_episodes e
+        JOIN latest_marks m USING (gap_id)
+        WHERE e.status = 'open' AND e.research_only = false
+          AND m.absorption_state = 'repriced_against'
+        ORDER BY m.days_active DESC
+        """,
+        [str(as_of.date())],
+    ).fetchdf().head(limit)
 
 
 def dedupe_entity_direction(df: pd.DataFrame, limit: int) -> list[dict]:
@@ -188,6 +213,22 @@ def render_section(con, as_of: pd.Timestamp) -> str:
         if r.get("_related"):
             rel = ", ".join(f"{x['gap_class']} {x['gap_id'][:8]}" for x in r["_related"][:3])
             lines.append(f"   - Related same-country gap episodes nested, not headline slots: {rel}")
+        lines.append("")
+
+    # Rejected-by-price section: open episodes the market has already moved
+    # AGAINST. Kept visible as learning evidence (data wrong / price knew first),
+    # but explicitly NOT opportunities — they are excluded from Top Gaps above.
+    rejected = load_rejected_gaps(con, as_of)
+    if not rejected.empty:
+        lines.append("### Rejected by price / awaiting autopsy")
+        lines.append("")
+        lines.append("Open episodes price has already repriced **against** — evidence that "
+                     "the data was wrong or price knew first, not tradable opportunities.")
+        lines.append("")
+        for r in rejected.to_dict("records"):
+            lines.append(f"- **{r['entity']} {r['direction']}** ({r.get('gap_class')}, "
+                         f"{r.get('horizon_bucket')}) — {r['mechanism_text']}; "
+                         f"days active {r.get('days_active')}, absorption index {r.get('price_absorption_index')}.")
         lines.append("")
     lines.append(END)
     return "\n".join(lines)

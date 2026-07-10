@@ -38,11 +38,23 @@ forced the "score both directions, flag tradability" refinement — strict long-
 have discarded ~78% of the learning population and slowed the pre-registered 80-episode
 gate ~5x.
 
-## Not done / next (all need review before landing)
-- Wire `score_gap_outcomes` into `loop_daily_job.py` after `build_country_returns`, writing
-  the append-only `gap_outcomes` table in the loop DB (currently sandbox parquet).
-- Stage 1b–1e production changes (autopsy honesty, brief hygiene, mechanism clustering) — separate reviewed edits.
-- Real outcomes begin maturing ~2026-07-22 (21d); the 80-episode gate is quarters out.
+## Stage 1 — LANDED in the nightly loop (2026-07-10)
+- **1a scorer wired** (commit f2e21c9): `score_gap_outcomes` runs after `build_country_returns`;
+  writes append-only `gap_outcomes` + maintains `etf_total_return_daily` (yfinance auto_adjust,
+  fail-soft nightly top-up) in the loop DB. Optional step, never red-lights the job.
+- **1d brief hygiene** (117f312): `repriced_against` gaps excluded from Top Gaps, moved to a
+  "Rejected by price / awaiting autopsy" section. Verified read-only.
+- **1e mechanism clustering** (d32d87b): `mechanism` field in `family_ranks.yaml`; cockpit votes
+  by mechanism (diffusion collapses 4→1), `has_nonprice_confirmation` flag, edge-based map arrow.
+  Browser-verified, 0 console errors.
+- **1b autopsy honesty** (7260bb9): `net_return_after_etf_drag` direction-adjusted; falsified
+  (`repriced_against`) gaps now close as explicit failures at max_age instead of lingering open.
+
+## Next (Stage 2+, once outcomes mature ~2026-07-22)
+- Deterministic multi-axis attribution classifier + Fable-xhigh lesson generation → `lesson_ledger.jsonl`.
+- `mechanism_priors` (shadow) + counterfactual static-vs-learned logging.
+- Add `gap_outcomes` to `config/loop_schema_contract.yaml` in the same commit as its first consumer.
+- The 80-closed-promoted-episode evidence gate is quarters out — the loop earns its evidence forward.
 
 ## Files
 - `score_gap_outcomes.py` — the scorer

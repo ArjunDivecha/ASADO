@@ -193,6 +193,11 @@ STEPS = [
     ("collect_news_bridge", [PY, "scripts/loop/collect_news_bridge.py"]),
     ("mark_theses", [PY, "scripts/loop/ledgers.py", "--mark"]),
     ("build_country_returns", [PY, "scripts/loop/build_country_returns.py"]),
+    # Learning loop: score matured gap episodes/controls into the append-only
+    # gap_outcomes loop table (net-of-cost ETF active return vs window EW-34).
+    # OPTIONAL: nothing matures until ~21 trading days after an episode opens, so
+    # early runs correctly insert 0 rows. Never red-lights the nightly job.
+    ("score_gap_outcomes", [PY, "scripts/loop/score_gap_outcomes.py"]),
     # Discovery Triage: append forward readouts to the incubator/graveyard rosters.
     # Runs after build_country_returns (its return surface); optional + no-op until
     # claims have been routed (see config/governance_contract.yaml).

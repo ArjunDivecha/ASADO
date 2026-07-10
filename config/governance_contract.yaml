@@ -74,6 +74,12 @@ steps:
     expected_outputs:
       - {kind: file, path_template: "Data/loop/country_returns_monthly.parquet", staleness: mtime}
 
+  - name: score_gap_outcomes
+    governance: false
+    optional: true          # learning-loop scorer; inserts 0 until episodes mature (~21 td)
+    expected_outputs:
+      - {kind: loop_db_table, table: gap_outcomes}
+
   - name: discovery_forward_track
     governance: false
     optional: true          # appends forward readouts; no-op until claims are routed

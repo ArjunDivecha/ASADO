@@ -513,6 +513,12 @@ def build_marks_and_closures(con, as_ts: pd.Timestamp, cfg: dict[str, Any]) -> t
         floor = float(expected_info.get("expected_move_floor") or cfg.get("expected_move", {}).get("default_floor_abs", 0.005))
         idx, unabs, state = absorption_state(realized, exp, floor, cap)
         days_active = int((as_ts.date() - pd.Timestamp(ep["first_seen_date"]).date()).days) + 1
+        # net_return_after_etf_drag stores the DIRECTION-ADJUSTED realized return
+        # (`realized` = direction_sign * etf_return_21d), not the raw undirected
+        # ETF move — otherwise a winning short reads as a loss. No expense drag is
+        # separately subtracted (it is already inside the price series). This is a
+        # lightweight lifecycle marker; the append-only gap_outcomes table is the
+        # authoritative net-of-cost outcome measure.
         if days_active > max_age and state in ("unabsorbed", "insufficient_signal"):
             state = "decayed"
             con.execute(
@@ -527,8 +533,28 @@ def build_marks_and_closures(con, as_ts: pd.Timestamp, cfg: dict[str, Any]) -> t
                 "absorption_half_life_days": None,
                 "realized_etf_return": etf_ret,
                 "realized_country_return": country_ret,
-                "net_return_after_etf_drag": etf_ret,
+                "net_return_after_etf_drag": realized,
                 "notes": "Auto-expired by max_age_days with no clear absorption.",
+            })
+        elif days_active > max_age and state == "repriced_against":
+            # Falsified gap: price moved AGAINST the thesis through max_age. Close
+            # it as an explicit failure autopsy so adverse episodes enter outcome
+            # statistics — otherwise repriced_against gaps linger open forever and
+            # the autopsy population is selected on success (GPT-5.6, 2026-07-10).
+            con.execute(
+                "UPDATE gap_episodes SET status='closed', closed_at=?, close_reason=? WHERE gap_id=?",
+                [datetime.now(), "max_age_repriced_against", ep["gap_id"]],
+            )
+            autopsies.append({
+                "gap_id": ep["gap_id"],
+                "closed_at": datetime.now(),
+                "close_reason": "max_age_repriced_against",
+                "outcome_label": "falsified",
+                "absorption_half_life_days": None,
+                "realized_etf_return": etf_ret,
+                "realized_country_return": country_ret,
+                "net_return_after_etf_drag": realized,
+                "notes": "Auto-closed: price repriced against the thesis through max_age.",
             })
         elif state == "absorbed":
             con.execute(
@@ -543,7 +569,7 @@ def build_marks_and_closures(con, as_ts: pd.Timestamp, cfg: dict[str, Any]) -> t
                 "absorption_half_life_days": days_active,
                 "realized_etf_return": etf_ret,
                 "realized_country_return": country_ret,
-                "net_return_after_etf_drag": etf_ret,
+                "net_return_after_etf_drag": realized,
                 "notes": "Auto-closed after price absorption threshold cleared.",
             })
         has_price = bool(p)

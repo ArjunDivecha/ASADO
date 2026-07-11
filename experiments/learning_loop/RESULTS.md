@@ -50,10 +50,24 @@ gate ~5x.
 - **1b autopsy honesty** (7260bb9): `net_return_after_etf_drag` direction-adjusted; falsified
   (`repriced_against`) gaps now close as explicit failures at max_age instead of lingering open.
 
+## Also landed 2026-07-10 (post-Stage-1 hardening + #1/#2)
+- **Decisions settled:** holdout dedup at source (build_gap_episodes), FDT backtest
+  registered (`experiments/fdt_mech_backtest/RESULTS.md`), CPI PIT-date routed to
+  USER_FIX_LIST item 5, Stage 0b attribution = lightweight z-trajectory heuristic.
+- **#2 Capture clock (Stage 1c):** `data_known_at` / `decision_available_at` /
+  `absorbed_at` on `gap_outcomes` (idempotent ALTER; absorbed_at < decision => not
+  capturable). Verified on a matured test row.
+- **#1 Fable claim contract:** `build_fable_connections` emits an optional structured
+  `claim`; `write_claims` → append-only `fable_claims` loop table; `score_gap_outcomes`
+  adapter 2 grades Fable's own directional calls through the same engine. Tested
+  without a paid call; live claim quality is exercised by the nightly Fable pass.
+
 ## Next (Stage 2+, once outcomes mature ~2026-07-22)
-- Deterministic multi-axis attribution classifier + Fable-xhigh lesson generation → `lesson_ledger.jsonl`.
+- Deterministic multi-axis attribution classifier (z-trajectory heuristic for
+  data_validity) + Fable-xhigh lesson generation → `lesson_ledger.jsonl`.
 - `mechanism_priors` (shadow) + counterfactual static-vs-learned logging.
-- Add `gap_outcomes` to `config/loop_schema_contract.yaml` in the same commit as its first consumer.
+- Add `gap_outcomes` + `fable_claims` to `config/loop_schema_contract.yaml` (optional
+  entries) alongside the first attribution consumer.
 - The 80-closed-promoted-episode evidence gate is quarters out — the loop earns its evidence forward.
 
 ## Files

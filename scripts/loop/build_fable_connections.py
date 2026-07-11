@@ -142,6 +142,11 @@ Rules — these are hard constraints:
    that are not one clean directional bet. A claim is how a conjecture becomes
    something the outcome scorer can later grade — so attach one only if you would
    stand behind being measured on it.
+7. The packet's `prior_lessons` are what the learning loop has already concluded
+   from matured, net-of-cost outcomes. Weigh them: do NOT re-propose a mechanism
+   already shown to lead in index space but fail to capture in ETF space, and
+   prefer setups the lessons mark as capturable. Learning from prior failures is
+   part of the job, not optional.
 
 Record your 3-7 connections by calling the record_connections tool."""
 
@@ -433,6 +438,43 @@ def scrub(obj):
     return obj
 
 
+def packet_lessons() -> list[dict]:
+    """Digest of prior learning-loop lessons (Stage 3a): the 10 most recent plus
+    up to 10 high-confidence, deduped and compacted. Empty until the attribution
+    step has written lessons. This is how tonight's conjecture learns from what
+    has already failed net-of-cost."""
+    ledger = BASE_DIR / "ledgers" / "lesson_ledger.jsonl"
+    if not ledger.exists():
+        return []
+    recs = []
+    for line in ledger.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            r = json.loads(line)
+        except Exception:  # noqa: BLE001
+            continue
+        if r.get("event") == "lesson":
+            recs.append(r)
+    recent = recs[-10:]
+    high = [r for r in recs if r.get("confidence") == "high"][-10:]
+    seen, digest = set(), []
+    for r in recent + high:
+        lid = r.get("lesson_id")
+        if lid in seen:
+            continue
+        seen.add(lid)
+        digest.append({
+            "entity": r.get("entity"), "headline_class": r.get("headline_class"),
+            "mechanism_cluster": (r.get("axes") or {}).get("data_validity") and r.get("mechanism_cluster"),
+            "diagnosis": str(r.get("diagnosis", ""))[:280],
+            "proposed_adjustment": str(r.get("proposed_adjustment", ""))[:220],
+            "confidence": r.get("confidence"),
+        })
+    return digest
+
+
 def build_packet(con) -> dict:
     as_of = con.execute("SELECT max(date) FROM dislocation_daily").fetchone()[0]
     packet = {
@@ -461,6 +503,11 @@ def build_packet(con) -> dict:
         "country_returns_1m_pct": _block(lambda: packet_returns(con), "returns", {}),
         "forward_calendar_14d": _block(lambda: packet_calendar(con), "calendar", []),
         "graph": _block(packet_graph, "neo4j_graph", {"note": "Neo4j unavailable tonight"}),
+        "prior_lessons_note": "What the learning loop has already concluded from matured, "
+                              "net-of-cost outcomes. Weigh these: do not re-propose a "
+                              "mechanism already shown to fail capture, and prefer setups "
+                              "the lessons suggest are capturable.",
+        "prior_lessons": _block(packet_lessons, "lessons", []),
     }
     return scrub(packet)
 

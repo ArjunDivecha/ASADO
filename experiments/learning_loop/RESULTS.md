@@ -62,12 +62,24 @@ gate ~5x.
   adapter 2 grades Fable's own directional calls through the same engine. Tested
   without a paid call; live claim quality is exercised by the nightly Fable pass.
 
-## Next (Stage 2+, once outcomes mature ~2026-07-22)
-- Deterministic multi-axis attribution classifier (z-trajectory heuristic for
-  data_validity) + Fable-xhigh lesson generation → `lesson_ledger.jsonl`.
-- `mechanism_priors` (shadow) + counterfactual static-vs-learned logging.
-- Add `gap_outcomes` + `fable_claims` to `config/loop_schema_contract.yaml` (optional
-  entries) alongside the first attribution consumer.
+## Stage 2 + 3a — BUILT AHEAD of maturity (2026-07-10)
+- **Stage 2 attribution** (`scripts/loop/attribute_outcomes.py`, optional loop step):
+  deterministic six-axis classifier (code assigns the class) + derived headline;
+  data_validity via detector-z trajectory heuristic. 8/8 unit tests + synthetic
+  end-to-end. Fable-xhigh lesson generation GATED (`ASADO_RUN_ATTRIBUTION_LLM=1`),
+  live-verified on a synthetic packet (Claude 5 `thinking.adaptive` +
+  `output_config.effort=xhigh`); the lesson stayed within the assigned class.
+  Writes `outcome_attribution` + append-only `ledgers/lesson_ledger.jsonl`.
+- **Stage 3a lessons digest**: nightly Fable packet now carries `prior_lessons`
+  (10 recent + 10 high-confidence) with a prompt rule to weigh them.
+- **Schema contract**: `gap_outcomes` / `fable_claims` / `outcome_attribution`
+  declared optional in `config/loop_schema_contract.yaml` (36/36 green).
+
+## Next (needs matured outcomes, first ~2026-07-16)
+- Turn on the gated Fable-xhigh lessons once real outcomes score.
+- Promoted-vs-control lift report + Fable-claim scorecard (the headline metric).
+- `mechanism_priors` (shadow) + counterfactual static-vs-learned logging (Stage 4).
+- Weekly review board (Stage 3b).
 - The 80-closed-promoted-episode evidence gate is quarters out — the loop earns its evidence forward.
 
 ## Files

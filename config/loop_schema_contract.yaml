@@ -174,3 +174,22 @@ tables:
   sov_rating_changes:
     optional: true
     columns: [date, country, agency, old_score, new_score, delta]
+
+  # ---- learning loop (optional: self-create; empty until outcomes mature) -----
+  gap_outcomes:
+    optional: true
+    columns: [outcome_id, gap_id, candidate_signature, role, entity, direction,
+              preferred_ticker, evaluation_horizon, entry_ts, exit_ts, r_etf,
+              r_idx, r_ew, gross_active, index_information, etf_capture,
+              net_active, tradable_long_only, unscoreable_reason, scoring_version,
+              price_source, data_known_at, decision_available_at, absorbed_at]
+  fable_claims:
+    optional: true
+    columns: [claim_id, emitted_at, connection_id, entity, direction,
+              horizon_days, expression_ticker, invalidation, mechanism,
+              confidence, title, model, packet_sha256, created_ts]
+  outcome_attribution:
+    optional: true
+    columns: [outcome_id, gap_id, role, entity, data_validity, price_response,
+              timing, expression, economics, horizon_fit, headline_class,
+              attributed_at, attribution_version, lesson_id]

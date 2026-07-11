@@ -9,7 +9,26 @@ Newest items at the top. When you fix one, delete the entry or mark it done.
 
 ## Open
 
-*(none — all items resolved)*
+### 5. CPI-revision consensus dates are calendar month-end, not true availability date — needs decision
+- **Symptom (GPT-5.6 review 2026-07-10):** `cons_cpi_rev3m_12m` / the `cpi_rev`
+  family carries month-end dates (e.g. `2026-07-31` today), which are future-dated
+  vs the real observation and can contaminate any naive "latest as-of today" join.
+- **Root cause:** `scripts/loop/load_consensus.py:72` uses `s.resample("ME").last()`,
+  so the `date` becomes the calendar month-end. The value itself is real (last
+  consensus observed in the month), so this is a **PIT-label** issue, not a
+  forward-data leak.
+- **Why not a clean loop-side fix:** the month-end date is a **load-bearing merge
+  key** — `derive_signals` (`load_consensus.py:96-98`) merges the current- and
+  next-target-year forecasts `on=["date", ...]` to build the rollover-free 12m
+  blend. The two target-year series can have different real last-obs dates within a
+  month, so relabeling `date` to the true observation date would break that merge.
+- **Proposed fix (needs approval):** keep an internal month-end merge key, but stamp
+  the *output* `date` (what lands in `consensus_signals` / `family_ranks_daily`) with
+  `min(month_end, last_actual_obs_date)` so downstream PIT joins never see a future
+  date. Add a test that no output row is dated after its last underlying observation.
+- **Mitigating fact:** the cockpit already treats `cpi_rev` as monthly-lagging and
+  excludes it from the daily freshness clock (`build_cockpit_data.py`), so the
+  practical contamination surface is small — but the label is still wrong.
 
 ---
 

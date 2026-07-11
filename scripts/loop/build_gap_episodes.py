@@ -456,6 +456,13 @@ def build(as_of: str | None = None) -> dict[str, int]:
             con.execute("INSERT INTO gap_episode_expression BY NAME SELECT * FROM expr_df")
 
         holdout_df = pd.DataFrame(holdout_rows)
+        # Dedup within the run: the same candidate can be emitted twice when two
+        # source dislocations map to one (entity|gap_class|direction|horizon)
+        # signature. The table has no PK, so without this the day's batch writes
+        # duplicate candidate_id rows (33/810 observed 2026-07-09) that every
+        # downstream consumer must then defend against. Keep the first.
+        if not holdout_df.empty and "candidate_id" in holdout_df.columns:
+            holdout_df = holdout_df.drop_duplicates(subset=["candidate_id"], keep="first")
         con.execute("DELETE FROM gap_holdout_daily WHERE date = ?", [as_str])
         if not holdout_df.empty:
             con.execute("INSERT INTO gap_holdout_daily BY NAME SELECT * FROM holdout_df")

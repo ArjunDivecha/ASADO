@@ -69,6 +69,17 @@ Detector authors write these once per detector template. Without them, Fable
 would end up implicitly judging whether the data was right — the exact thing
 the architecture forbids.
 
+> **DECISION (Arjun, 2026-07-10): v1 uses a LIGHTWEIGHT deterministic heuristic,
+> not full per-detector predicates.** The classifier assigns `data_validity` by
+> checking whether the claim's headline world-state z-score **reverted toward
+> neutral vs persisted/extended** over the horizon (computed from the warehouse,
+> PIT). Imperfect — it approximates confirmed/revised_away rather than reading a
+> bespoke `confirmation_spec` — but real, cheap, and it unblocks Stage 2 without a
+> per-detector build. The code still assigns the class from the z-trajectory;
+> Fable only explains within it, so the "code assigns, LLM explains" invariant
+> holds. Full structured `evidence_refs`/`confirmation_spec`/`invalidation_spec`
+> per detector remain the upgrade path once the heuristic's error cases are seen.
+
 ### 0c. Frozen return formula (pre-registered here)
 
 Primary outcome, per claim, at its declared horizon:

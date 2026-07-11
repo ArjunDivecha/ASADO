@@ -224,8 +224,14 @@ CREATE TABLE IF NOT EXISTS gap_outcomes (
   scoring_version       VARCHAR,      -- bump on any formula change
   scored_at             TIMESTAMP,
   price_source          VARCHAR,      -- 'bbg_tri' | 'yf_adj' — provenance
-  correction_of         VARCHAR       -- prior outcome_id this supersedes; NULL normally
+  correction_of         VARCHAR,      -- prior outcome_id this supersedes; NULL normally
+  -- Capture clock (Stage 1c) — placed here, not on gap_episodes, to avoid a
+  -- durable-schema migration; attribution reads gap_outcomes anyway.
+  data_known_at         TIMESTAMP,    -- when the world-state datum was knowable (v1 proxy: as_of_date_open)
+  decision_available_at TIMESTAMP,    -- first tradable close after open (= entry_ts)
+  absorbed_at           TIMESTAMP     -- first mark date price reached absorption_state='absorbed'
 );
+-- absorbed_at < decision_available_at  =>  price had it before we could act (not capturable).
 ```
 
 **Append-only discipline:** a matured episode is scored once and frozen. A data

@@ -103,9 +103,12 @@ CREATE TABLE IF NOT EXISTS gap_outcomes (
   index_information DOUBLE, etf_capture DOUBLE, entry_cost DOUBLE, exit_cost DOUBLE,
   borrow_cost DOUBLE, net_active DOUBLE, tradable_long_only BOOLEAN,
   stale_price BOOLEAN, borrow_estimated BOOLEAN, unscoreable_reason VARCHAR,
-  scoring_version VARCHAR, scored_at TIMESTAMP, price_source VARCHAR, correction_of VARCHAR
+  scoring_version VARCHAR, scored_at TIMESTAMP, price_source VARCHAR, correction_of VARCHAR,
+  data_known_at TIMESTAMP, decision_available_at TIMESTAMP, absorbed_at TIMESTAMP
 )
 """
+# Capture-clock columns (Stage 1c) — added idempotently to the existing table too.
+CLOCK_COLS = ["data_known_at", "decision_available_at", "absorbed_at"]
 OUTCOME_COLS = [
     "outcome_id", "gap_id", "candidate_signature", "role", "selection_date",
     "entity", "direction", "preferred_ticker", "benchmark", "evaluation_horizon",
@@ -113,6 +116,7 @@ OUTCOME_COLS = [
     "index_information", "etf_capture", "entry_cost", "exit_cost", "borrow_cost",
     "net_active", "tradable_long_only", "stale_price", "borrow_estimated",
     "unscoreable_reason", "scoring_version", "scored_at", "price_source", "correction_of",
+    "data_known_at", "decision_available_at", "absorbed_at",
 ]
 
 
@@ -214,7 +218,7 @@ def load_etf_map() -> dict[str, str]:
 def load_episodes_and_controls(con):
     eps = con.execute("""
         SELECT gap_id, episode_key, entity, direction, horizon_days,
-               preferred_ticker, opened_at, status
+               preferred_ticker, opened_at, as_of_date_open, status
         FROM gap_episodes
     """).fetchdf()
     controls = con.execute("""
@@ -285,7 +289,8 @@ def country_window_return(cret, country, entry, exit_):
 
 
 def score_one(*, role, gap_id, candidate_signature, selection_date, entity,
-              direction, horizon_days, ticker, opened_at, px, cret, cal):
+              direction, horizon_days, ticker, opened_at, px, cret, cal,
+              data_known_at=None, absorbed_at=None):
     row = {c: None for c in OUTCOME_COLS}
     row.update({
         "outcome_id": _hash(gap_id or candidate_signature, role, horizon_days, SCORING_VERSION),
@@ -298,6 +303,10 @@ def score_one(*, role, gap_id, candidate_signature, selection_date, entity,
         "scoring_version": SCORING_VERSION,
         "scored_at": datetime.now().isoformat(timespec="seconds"),
         "price_source": "yf_adj",
+        # Capture clock (Stage 1c): when the world-state datum was knowable, when
+        # we could first trade on it, and when price absorbed it. absorbed_at <
+        # decision_available_at => price had it before we could act (not capturable).
+        "data_known_at": data_known_at, "absorbed_at": absorbed_at,
     })
     status = None
     if not ticker or ticker not in px.columns:
@@ -307,6 +316,7 @@ def score_one(*, role, gap_id, candidate_signature, selection_date, entity,
 
     entry, exit_, matured = resolve_entry_exit(opened_at or selection_date, horizon_days, cal)
     row["entry_ts"] = None if entry is None else entry
+    row["decision_available_at"] = None if entry is None else entry
     if not matured:
         return row, "pending"
     row["exit_ts"] = exit_
@@ -335,14 +345,27 @@ def run(loop_db_override: str | None) -> int:
     con = open_conn(loop_db_override)
     try:
         con.execute(GAP_OUTCOMES_DDL)
+        # Idempotent capture-clock migration for a pre-existing gap_outcomes table.
+        for col in CLOCK_COLS:
+            con.execute(f"ALTER TABLE gap_outcomes ADD COLUMN IF NOT EXISTS {col} TIMESTAMP")
         px = ensure_price_store(con)
         cal = px.index
         etf_map = load_etf_map()
         eps, controls = load_episodes_and_controls(con)
         cret = load_country_daily_returns(con)
+        # absorbed_at: first mark date each episode reached absorption_state='absorbed'.
+        absorbed_map = dict(con.execute("""
+            SELECT gap_id, MIN(CAST(date AS DATE)) FROM gap_episode_marks
+            WHERE absorption_state = 'absorbed' GROUP BY gap_id
+        """).fetchall())
 
         rows, statuses = [], []
         for _, e in eps.iterrows():
+            # data_known_at proxy (v1): the panel as-of date the gap was detected on
+            # (structured evidence availability is the Stage 0b upgrade path).
+            dka = e.get("as_of_date_open")
+            if pd.isna(dka):
+                dka = e.get("opened_at")
             r, st = score_one(
                 role="promoted", gap_id=e["gap_id"], candidate_signature=None,
                 selection_date=(None if pd.isna(e.get("first_selection_date"))
@@ -350,7 +373,9 @@ def run(loop_db_override: str | None) -> int:
                 entity=e["entity"], direction=e["direction"],
                 horizon_days=int(e["horizon_days"]) if pd.notna(e["horizon_days"]) else 21,
                 ticker=e.get("preferred_ticker") or etf_map.get(e["entity"]),
-                opened_at=e.get("opened_at"), px=px, cret=cret, cal=cal)
+                opened_at=e.get("opened_at"), px=px, cret=cret, cal=cal,
+                data_known_at=(None if pd.isna(dka) else pd.to_datetime(dka)),
+                absorbed_at=absorbed_map.get(e["gap_id"]))
             rows.append(r); statuses.append(st)
         for _, c in controls.iterrows():
             hb = c.get("horizon_bucket") or "21d"
@@ -359,7 +384,8 @@ def run(loop_db_override: str | None) -> int:
                 selection_date=pd.to_datetime(c["selection_date"]).date(),
                 entity=c["entity"], direction=c["direction"],
                 horizon_days=HORIZON_DAYS.get(hb, 21), ticker=etf_map.get(c["entity"]),
-                opened_at=c["selection_date"], px=px, cret=cret, cal=cal)
+                opened_at=c["selection_date"], px=px, cret=cret, cal=cal,
+                data_known_at=pd.to_datetime(c["selection_date"]), absorbed_at=None)
             rows.append(r); statuses.append(st)
 
         allrows = pd.DataFrame(rows)

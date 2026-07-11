@@ -80,6 +80,12 @@ steps:
     expected_outputs:
       - {kind: loop_db_table, table: gap_outcomes}
 
+  - name: attribute_outcomes
+    governance: false
+    optional: true          # Stage 2 attribution; 0 rows until outcomes score; Fable lessons gated
+    expected_outputs:
+      - {kind: loop_db_table, table: outcome_attribution}
+
   - name: discovery_forward_track
     governance: false
     optional: true          # appends forward readouts; no-op until claims are routed

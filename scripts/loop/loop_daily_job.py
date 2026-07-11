@@ -198,6 +198,10 @@ STEPS = [
     # OPTIONAL: nothing matures until ~21 trading days after an episode opens, so
     # early runs correctly insert 0 rows. Never red-lights the nightly job.
     ("score_gap_outcomes", [PY, "scripts/loop/score_gap_outcomes.py"]),
+    # Learning loop Stage 2: deterministic multi-axis attribution of matured
+    # outcomes (code assigns the class). Fable-xhigh lesson generation is GATED
+    # behind ASADO_RUN_ATTRIBUTION_LLM=1 so it never auto-spends. OPTIONAL.
+    ("attribute_outcomes", [PY, "scripts/loop/attribute_outcomes.py"]),
     # Discovery Triage: append forward readouts to the incubator/graveyard rosters.
     # Runs after build_country_returns (its return surface); optional + no-op until
     # claims have been routed (see config/governance_contract.yaml).

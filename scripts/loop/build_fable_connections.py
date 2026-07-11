@@ -133,6 +133,15 @@ Rules — these are hard constraints:
    existing harness or an event study could run.
 5. If the packet genuinely contains no interesting cross-surface structure
    tonight, return fewer connections — never pad.
+6. When — and only when — a connection is concrete enough to stand as a single-
+   market, directional, tradable recommendation, attach a `claim` object: the one
+   `entity` (from the 34-country universe), `direction` (long/short), horizon in
+   trading days (`horizon_days` ∈ 5/21/63/126), the ETF you would express it
+   through (`expression_ticker`), and a concrete `invalidation` level or
+   condition. Omit `claim` for pure context, framing, or relative/multi-leg ideas
+   that are not one clean directional bet. A claim is how a conjecture becomes
+   something the outcome scorer can later grade — so attach one only if you would
+   stand behind being measured on it.
 
 Record your 3-7 connections by calling the record_connections tool."""
 
@@ -172,6 +181,20 @@ CONNECTIONS_TOOL = {
                         "confidence": {"type": "string", "enum": ["low", "medium", "high"]},
                         "falsifiable_check": {"type": "string"},
                         "horizon": {"type": "string", "enum": ["days", "weeks", "months"]},
+                        # Optional evaluable claim contract: present only when the
+                        # connection is one clean directional, tradable bet. This is
+                        # what lets the outcome scorer grade Fable's own calls.
+                        "claim": {
+                            "type": "object",
+                            "required": ["entity", "direction", "horizon_days"],
+                            "properties": {
+                                "entity": {"type": "string"},
+                                "direction": {"type": "string", "enum": ["long", "short"]},
+                                "horizon_days": {"type": "integer", "enum": [5, 21, 63, 126]},
+                                "expression_ticker": {"type": "string"},
+                                "invalidation": {"type": "string"},
+                            },
+                        },
                     },
                 },
             },
@@ -509,6 +532,64 @@ def write_artifacts(packet: dict, conns: list[dict], model: str) -> Path:
     return out
 
 
+def _load_etf_map() -> dict:
+    d = json.loads((BASE_DIR / "config" / "etf_t2_map.json").read_text())
+    m = d.get("map", d)
+    return {k: v["primary"] for k, v in m.items() if v.get("primary")}
+
+
+def write_claims(conns: list[dict], packet: dict, model: str) -> int:
+    """Append tonight's structured Fable CLAIMS to the loop-DB `fable_claims`
+    table so the outcome scorer can later grade Fable's own directional calls
+    (adapter 2 of the claim contract). Only connections carrying a well-formed
+    `claim` are stored; a malformed claim is skipped with a warning — the
+    connection still stands as a CONJECTURE in the JSON artifact. Idempotent per
+    emitted_at (DELETE-by-date then insert). Fail-soft at the call site."""
+    etf_map = _load_etf_map()
+    as_of = packet["as_of"]
+    packet_sha = hashlib.sha256(
+        json.dumps(packet, sort_keys=True, default=str).encode()).hexdigest()
+    rows = []
+    for c in conns:
+        claim = c.get("claim")
+        if not isinstance(claim, dict):
+            continue
+        entity, direction, hd = claim.get("entity"), claim.get("direction"), claim.get("horizon_days")
+        if entity not in T2_UNIVERSE or direction not in ("long", "short") or hd not in (5, 21, 63, 126):
+            log(f"  skipping malformed claim on {c.get('id')}: "
+                f"entity={entity} dir={direction} horizon_days={hd}")
+            continue
+        rows.append({
+            "claim_id": f"{c['id']}_claim", "emitted_at": as_of,
+            "connection_id": c["id"], "entity": entity, "direction": direction,
+            "horizon_days": int(hd),
+            "expression_ticker": claim.get("expression_ticker") or etf_map.get(entity),
+            "invalidation": claim.get("invalidation"), "mechanism": c.get("mechanism"),
+            "confidence": c.get("confidence"), "title": c.get("title"),
+            "model": model, "packet_sha256": packet_sha, "created_ts": datetime.now(),
+        })
+    con = loop_connection(read_only=False)
+    try:
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS fable_claims (
+              claim_id VARCHAR, emitted_at DATE, connection_id VARCHAR, entity VARCHAR,
+              direction VARCHAR, horizon_days INTEGER, expression_ticker VARCHAR,
+              invalidation VARCHAR, mechanism VARCHAR, confidence VARCHAR, title VARCHAR,
+              model VARCHAR, packet_sha256 VARCHAR, created_ts TIMESTAMP
+            )
+        """)
+        con.execute("DELETE FROM fable_claims WHERE emitted_at = ?", [as_of])
+        if rows:
+            df = pd.DataFrame(rows)
+            con.register("fc_new", df)
+            con.execute("INSERT INTO fable_claims BY NAME SELECT * FROM fc_new")
+            con.unregister("fc_new")
+    finally:
+        con.close()
+    log(f"fable_claims: stored {len(rows)} evaluable claim(s) for {as_of}")
+    return len(rows)
+
+
 def check() -> int:
     latest = FABLE_DIR / "connections_latest.json"
     if not latest.exists():
@@ -557,6 +638,12 @@ def main() -> int:
     log(f"{len(conns)} connections -> {out}")
     for c in conns:
         log(f"  [{c['confidence']:6s}] {c['title']}")
+    # Persist the evaluable subset as claims (fail-soft: a claims-write failure
+    # must not fail an otherwise-successful synthesis).
+    try:
+        write_claims(conns, packet, model)
+    except Exception as exc:  # noqa: BLE001
+        log(f"fable_claims write failed (non-fatal): {exc}")
     return 0
 
 

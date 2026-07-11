@@ -236,6 +236,20 @@ def load_episodes_and_controls(con):
     return eps.merge(promo, on="gap_id", how="left"), controls
 
 
+def load_fable_claims(con) -> pd.DataFrame:
+    """Fable's own directional claims (adapter 2 of the claim contract). Empty if
+    the table does not exist yet (no Fable claim has been emitted)."""
+    exists = con.execute(
+        "SELECT count(*) FROM information_schema.tables WHERE table_name='fable_claims'"
+    ).fetchone()[0]
+    if not exists:
+        return pd.DataFrame()
+    return con.execute("""
+        SELECT claim_id, emitted_at, entity, direction, horizon_days, expression_ticker
+        FROM fable_claims
+    """).fetchdf()
+
+
 def load_country_daily_returns(con) -> pd.DataFrame:
     """Backward-labeled, 0.0-dropped daily TRI returns — loopdb.daily_country_returns
     semantics (scripts/loop/loopdb.py:161-195). Reads the attached warehouse."""
@@ -386,6 +400,17 @@ def run(loop_db_override: str | None) -> int:
                 horizon_days=HORIZON_DAYS.get(hb, 21), ticker=etf_map.get(c["entity"]),
                 opened_at=c["selection_date"], px=px, cret=cret, cal=cal,
                 data_known_at=pd.to_datetime(c["selection_date"]), absorbed_at=None)
+            rows.append(r); statuses.append(st)
+        # Adapter 2: grade Fable's own directional claims through the same engine.
+        for _, f in load_fable_claims(con).iterrows():
+            r, st = score_one(
+                role="fable_claim", gap_id=None, candidate_signature=f["claim_id"],
+                selection_date=pd.to_datetime(f["emitted_at"]).date(),
+                entity=f["entity"], direction=f["direction"],
+                horizon_days=int(f["horizon_days"]),
+                ticker=f.get("expression_ticker") or etf_map.get(f["entity"]),
+                opened_at=f["emitted_at"], px=px, cret=cret, cal=cal,
+                data_known_at=pd.to_datetime(f["emitted_at"]), absorbed_at=None)
             rows.append(r); statuses.append(st)
 
         allrows = pd.DataFrame(rows)

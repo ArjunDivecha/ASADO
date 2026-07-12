@@ -530,7 +530,24 @@ function tripRow(r,showC){return `<tr onclick="openCountry('${qs(r.country)}')">
   <td class="num" title="bucket avg fwd ${r.cur_bucket_avg_fwd!=null?(r.cur_bucket_avg_fwd*100).toFixed(1)+'%':'—'} · hit ${r.cur_bucket_hit_rate!=null?Math.round(r.cur_bucket_hit_rate*100)+'%':'—'} · n=${r.cur_bucket_n??'—'}">${r.cur_bucket_avg_fwd!=null?((r.cur_bucket_avg_fwd>=0?"+":"")+(r.cur_bucket_avg_fwd*100).toFixed(1)+"%"):"—"}</td>
   <td class="num">${r.confidence_score!=null?r.confidence_score.toFixed(2):"—"}</td>
   <td class="num">${r.ic_t_stat!=null?r.ic_t_stat.toFixed(1):"—"}</td>
-  <td class="num">${r.triptych_url?`<a href="${esc(r.triptych_url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--teal);text-decoration:none" title="open in the Triptych visual tool">⧉</a>`:"—"}</td></tr>`}
+  <td class="num">${r.triptych_url?`<a href="${esc(r.triptych_url)}" target="_blank" rel="noopener" onclick="return tripOpen(event,this.href,'${qs(r.factor)} · ${qs(r.country)} · ${r.horizon_months}M')" style="color:var(--teal);text-decoration:none" title="open the Triptych (popup; new tab if popups blocked)">⧉</a>`:"—"}</td></tr>`}
+
+/* Triptych popup (2026-07-11): in-page modal hosting the actual Triptych visual
+   tool in an iframe (triptych-one.vercel.app now sends frame-ancestors *).
+   Falls back to the anchor's target=_blank navigation if JS is disabled. */
+function tripOpen(ev,url,label){ev.preventDefault();ev.stopPropagation();
+  let m=document.getElementById("tripmodal");
+  if(!m){m=document.createElement("div");m.id="tripmodal";document.body.appendChild(m)}
+  m.innerHTML=`<div onclick="tripClose()" style="position:fixed;inset:0;background:rgba(24,22,18,.55);z-index:200"></div>
+  <div role="dialog" aria-label="Triptych" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:201;width:min(1320px,96vw);height:min(880px,94vh);background:#FDFCF9;border:1px solid #D8D2C4;border-radius:10px;box-shadow:0 18px 60px rgba(0,0,0,.35);display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid #E6E0D2;background:#F6F3EA;font-family:var(--display);font-size:13px">
+      <b>Triptych</b><span class="muted" style="font-size:12px">${esc(label||"")}</span><span style="flex:1"></span>
+      <a href="${esc(url)}" target="_blank" rel="noopener" style="color:var(--teal);text-decoration:none;font-size:12px" title="open in a full browser tab">⧉ new tab</a>
+      <span onclick="tripClose()" title="close (Esc)" style="cursor:pointer;font-size:15px;padding:0 4px;color:#6B655A">✕</span></div>
+    <iframe src="${esc(url)}" style="flex:1;border:0;width:100%;background:#fff" loading="eager"></iframe></div>`;
+  m.style.display="block";document.body.style.overflow="hidden";return false}
+function tripClose(){const m=document.getElementById("tripmodal");if(m){m.style.display="none";m.innerHTML=""}document.body.style.overflow=""}
+document.addEventListener("keydown",e=>{if(e.key==="Escape")tripClose()});
 FVIEWS.triptych={title:()=>`Triptych <em>Priors</em>`,opts:()=>``,render:()=>{
   if(TRIP.status==="missing")return `<p class="narr"><span class="ox">UNKNOWN.</span> No Triptych scan in this payload — run scripts/loop/build_triptych_scan.py, then rebuild cockpit_data. <span class="cite">triptych</span></p>`;
   const q=TRIP.queue||[];

@@ -1,0 +1,155 @@
+{
+  "verdict": "DEAD",
+  "failing_gates": [
+    "G1_sharpe",
+    "G3_skew",
+    "G4_beats_voltarget",
+    "G5_placebo"
+  ],
+  "full_sample": {
+    "a_baseline": {
+      "sharpe": 3.255,
+      "cagr": 0.5979,
+      "mdd": -0.1322,
+      "calmar": 4.521,
+      "skew_monthly": 2.993,
+      "n_days": 4361
+    },
+    "b_disp_D1": {
+      "sharpe": 3.246,
+      "cagr": 0.5148,
+      "mdd": -0.1258,
+      "calmar": 4.091,
+      "skew_monthly": 1.289,
+      "n_days": 4361
+    },
+    "b2_disp_D2": {
+      "sharpe": 3.427,
+      "cagr": 0.5362,
+      "mdd": -0.1305,
+      "calmar": 4.108,
+      "skew_monthly": 2.598,
+      "n_days": 4361
+    },
+    "c_voltarget": {
+      "sharpe": 3.207,
+      "cagr": 0.4366,
+      "mdd": -0.1322,
+      "calmar": 3.301,
+      "skew_monthly": 0.565,
+      "n_days": 4361
+    }
+  },
+  "subperiods": {
+    "2005_2015": {
+      "a_baseline": {
+        "sharpe": 3.822,
+        "cagr": 0.8412,
+        "mdd": -0.1322,
+        "calmar": 6.362,
+        "skew_monthly": 2.59,
+        "n_days": 2003
+      },
+      "b_disp_D1": {
+        "sharpe": 3.957,
+        "cagr": 0.6644,
+        "mdd": -0.1258,
+        "calmar": 5.28,
+        "skew_monthly": 1.306,
+        "n_days": 2003
+      },
+      "b2_disp_D2": {
+        "sharpe": 3.928,
+        "cagr": 0.7573,
+        "mdd": -0.1305,
+        "calmar": 5.802,
+        "skew_monthly": 2.228,
+        "n_days": 2003
+      },
+      "c_voltarget": {
+        "sharpe": 3.913,
+        "cagr": 0.5739,
+        "mdd": -0.1322,
+        "calmar": 4.34,
+        "skew_monthly": 0.443,
+        "n_days": 2003
+      }
+    },
+    "2016_2023": {
+      "a_baseline": {
+        "sharpe": 2.991,
+        "cagr": 0.4704,
+        "mdd": -0.1091,
+        "calmar": 4.313,
+        "skew_monthly": 0.195,
+        "n_days": 1836
+      },
+      "b_disp_D1": {
+        "sharpe": 2.911,
+        "cagr": 0.446,
+        "mdd": -0.1091,
+        "calmar": 4.09,
+        "skew_monthly": 0.253,
+        "n_days": 1836
+      },
+      "b2_disp_D2": {
+        "sharpe": 3.18,
+        "cagr": 0.4084,
+        "mdd": -0.0643,
+        "calmar": 6.349,
+        "skew_monthly": 0.161,
+        "n_days": 1836
+      },
+      "c_voltarget": {
+        "sharpe": 2.873,
+        "cagr": 0.369,
+        "mdd": -0.1091,
+        "calmar": 3.384,
+        "skew_monthly": 0.094,
+        "n_days": 1836
+      }
+    },
+    "2024_2026": {
+      "a_baseline": {
+        "sharpe": 1.716,
+        "cagr": 0.2428,
+        "mdd": -0.0784,
+        "calmar": 3.098,
+        "skew_monthly": 1.168,
+        "n_days": 522
+      },
+      "b_disp_D1": {
+        "sharpe": 1.716,
+        "cagr": 0.2428,
+        "mdd": -0.0784,
+        "calmar": 3.098,
+        "skew_monthly": 1.168,
+        "n_days": 522
+      },
+      "b2_disp_D2": {
+        "sharpe": 2.111,
+        "cagr": 0.2444,
+        "mdd": -0.0534,
+        "calmar": 4.576,
+        "skew_monthly": 1.45,
+        "n_days": 522
+      },
+      "c_voltarget": {
+        "sharpe": 1.621,
+        "cagr": 0.199,
+        "mdd": -0.0739,
+        "calmar": 2.693,
+        "skew_monthly": 1.071,
+        "n_days": 522
+      }
+    }
+  },
+  "real_sharpe_delta_vs_baseline": -0.009,
+  "placebo_pct_beaten": 0.788,
+  "n_placebo": 500,
+  "multiplier_mean_abs_dg_per_month": 0.1349,
+  "mean_g_d1": 0.942,
+  "share_days_at_floor": 0.0,
+  "prd_commit": "8beeeea",
+  "seed": 20260713
+}

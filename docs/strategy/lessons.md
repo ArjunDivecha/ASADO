@@ -111,3 +111,8 @@ In order of recommended priority for a T2-style country rotation context:
    approach). Not PCA over features, but a small neural network or even ridge
    regression trained to map current state → forward return ranking. Lets the
    model learn what's predictive rather than what's variance-explanatory.
+
+## Inverse-state exposure overlays on positively-skewed books (settled 2026-07-13)
+- **No-go:** scaling gross exposure inversely to ANY stress-state variable (cross-sectional dispersion, own realized vol) on the daily combiner LS book. Tested pre-registered in `experiments/2026_07_dispersion_throttle/` (PRD commit 8beeeea): dispersion throttle Sharpe delta -0.009 while monthly skew collapsed +2.99 -> +1.29; identical-shape vol-target control: skew -> +0.57. Same failure shape as the AA engine vol-conditioning rejection (2026-07-11, Investment Learnings AA.md) — now confirmed on two unrelated engine classes.
+- **Mechanism:** these books earn their convexity IN the high-dispersion/high-vol episodes; an inverse-state overlay de-levers exactly those months — it sells cheap insurance the book already owns.
+- **Boundary:** this settles inverse-state GROSS throttles on positively-skewed LS/momentum books. It does not speak to overlays on negatively-skewed books (e.g. carry), which remain untested in-house.

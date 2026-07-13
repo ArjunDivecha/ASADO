@@ -1,0 +1,11 @@
+{
+  "S1_top_flow_z_2021_23": 0.149,
+  "S1_top_flow_z_2024_26": -0.396,
+  "S1_pass": false,
+  "S2_hi_inflow_half_exret_2024_26_monthly": -0.00906,
+  "S2_lo_inflow_half_exret_2024_26_monthly": -0.00703,
+  "S2_n_months": 29,
+  "S2_pass": true,
+  "verdict_a_crowding": "PARTIAL",
+  "note": "flows observable 2015+; abnormal = country flow-to-mcap minus 34-country mean"
+}

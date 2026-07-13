@@ -69,3 +69,6 @@ Newest items at the top. When you fix one, delete the entry or mark it done.
 
 ### 4. Quarantined `sovereign_daily.parquet.bad_saudi` — DELETED 2026-06-11
 - Deleted with explicit permission.
+
+## 2026-07-13 — G1 flip autopsy (experiments/2026_07_flip_autopsy)
+- PROPOSAL (needs approval, pipeline change): nightly family-IC tracker for network_spillover (and other families) writing one row/family/night to the loop DB + automatic R-A price-gate evaluation. Rationale: the 2024-26 family IC flip went unmeasured for ~15 months because the harness only runs on demand; the flip was only ever visible inside June-2026 harness JSONs. Machinery exists in experiments/2026_07_flip_autopsy/a2_drift_test.py.

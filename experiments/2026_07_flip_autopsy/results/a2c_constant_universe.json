@@ -1,0 +1,126 @@
+{
+  "constant_universe_per_year": {
+    "2012": 0.04533,
+    "2013": -0.00388,
+    "2014": 0.00618,
+    "2015": 0.05043,
+    "2016": 0.05756,
+    "2017": 0.02842,
+    "2018": -0.0176,
+    "2019": 0.04192,
+    "2020": 0.00658,
+    "2021": 0.01013,
+    "2022": 0.0129,
+    "2023": 0.03306,
+    "2024": 0.00685,
+    "2025": -0.00835,
+    "2026": -0.02849
+  },
+  "coverage_2023_vs_2025": [
+    {
+      "variable": "GRAPH_BANK_NBR_RET_GAP_21D",
+      "n_2023": 21.0,
+      "n_2025": 21.0
+    },
+    {
+      "variable": "GRAPH_BANK_NBR_RET_GAP_63D",
+      "n_2023": 21.0,
+      "n_2025": 21.0
+    },
+    {
+      "variable": "GRAPH_NBR_DRAWDOWN_COUNT",
+      "n_2023": 31.0,
+      "n_2025": 31.0
+    },
+    {
+      "variable": "GRAPH_PORT_HOLDER_STRESS_21D",
+      "n_2023": 31.0,
+      "n_2025": 31.0
+    },
+    {
+      "variable": "GRAPH_TRADE_NBR_RET_GAP_21D",
+      "n_2023": 31.0,
+      "n_2025": 31.0
+    },
+    {
+      "variable": "GRAPH_TRADE_NBR_RET_GAP_63D",
+      "n_2023": 31.0,
+      "n_2025": 31.0
+    },
+    {
+      "variable": "GRAPH_TWOHOP_TRADE_GAP_21D",
+      "n_2023": 31.0,
+      "n_2025": 31.0
+    },
+    {
+      "variable": "GRAPHP_BANK_NBR_RET_GAP_21D",
+      "n_2023": 21.0,
+      "n_2025": 21.0
+    },
+    {
+      "variable": "GRAPHP_BANK_NBR_RET_GAP_63D",
+      "n_2023": 21.0,
+      "n_2025": 21.0
+    },
+    {
+      "variable": "GRAPHP_BLOC_GAP_21D",
+      "n_2023": 30.0,
+      "n_2025": 30.0
+    },
+    {
+      "variable": "GRAPHP_HOLDER_STRESS_21D",
+      "n_2023": 31.0,
+      "n_2025": 31.0
+    },
+    {
+      "variable": "GRAPHP_HUB_GAP_21D",
+      "n_2023": 30.0,
+      "n_2025": 30.0
+    },
+    {
+      "variable": "GRAPHP_KATZ_TRADE_GAP_21D",
+      "n_2023": 30.0,
+      "n_2025": 30.0
+    },
+    {
+      "variable": "GRAPHP_NBR_DD_COUNT",
+      "n_2023": 30.0,
+      "n_2025": 30.0
+    },
+    {
+      "variable": "GRAPHP_TRADE_NBR_RET_GAP_21D",
+      "n_2023": 30.0,
+      "n_2025": 30.0
+    },
+    {
+      "variable": "GRAPHP_TRADE_NBR_RET_GAP_63D",
+      "n_2023": 30.0,
+      "n_2025": 30.0
+    },
+    {
+      "variable": "GRAPHP_TWOHOP_TRADE_GAP_21D",
+      "n_2023": 30.0,
+      "n_2025": 30.0
+    },
+    {
+      "variable": "LL_LEADER_GAP_5D",
+      "n_2023": 27.9,
+      "n_2025": 31.78
+    },
+    {
+      "variable": "LL_LEADER_RET_1D",
+      "n_2023": 27.7,
+      "n_2025": 31.6
+    },
+    {
+      "variable": "SIM_NBR_RET_GAP_21D",
+      "n_2023": 34.0,
+      "n_2025": 34.0
+    },
+    {
+      "variable": "SIM_NBR_RET_GAP_63D",
+      "n_2023": 34.0,
+      "n_2025": 34.0
+    }
+  ]
+}

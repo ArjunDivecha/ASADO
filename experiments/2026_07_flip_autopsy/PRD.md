@@ -8,6 +8,19 @@
 
 ---
 
+> **AMENDMENT 1 (2026-07-13, logged BEFORE any measurement):** recon found no repo artifact
+> documenting the premise (post-2024 negative family IC); the Alpha Book (2026-07-02) reports the
+> family positive in both sample halves, and the family was harness-measured only on 2026-06-10/12.
+> Therefore a fifth outcome is added: **(∅′) premise false — no flip exists** (family IC 2024→ is
+> not materially negative under §3's definition). Phase order updated: verify the premise first,
+> from the frozen June-2026 harness JSONs' per-year IC tables, then from fresh recomputation.
+> Recon also established there are NO stored nightly signal vintages (all signal tables are
+> drop-and-recreate; `build_combiner.py:208-210,307-309`, `build_graph_features.py:371-372`) and
+> essentially a single construction commit (`96d0f80`) — so step (i-a) binds to "frozen June-2026
+> harness JSONs vs today's recomputation" and step (i-b) code-vintage reconstruction is DROPPED
+> (no code vintages exist to reconstruct). (i-c) coverage slices and PIT-vs-non-PIT comparison
+> remain. No numbers were seen before this amendment.
+
 ## 1. Question
 
 The network_spillover family (GRAPH*/GRAPHP*/LL_*/SIM_* — "neighbour returns propagate before the endpoint reprices"), the strongest mechanism in the ledger record, shows negative ICs since ~2024. Exactly one of four verdicts must come out of this memo:

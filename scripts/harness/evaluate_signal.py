@@ -43,8 +43,10 @@ can cheat even accidentally:
  3. RANK IC by horizon with Newey-West t-stats (overlap-corrected) and a
     year-by-year IC table.
  4. PORTFOLIOS (monthly AND daily since v2): top-7 long-only vs the
-    equal-weight-34 baseline and top7-minus-bottom7 long-short, at 10/25/50
-    bps one-way costs + 50 bps/yr short borrow, with turnover reported.
+    equal-weight-34 baseline and top7-minus-bottom7 long-short, evaluated
+    GROSS (v3, 2026-07-13: cost gating retracted per Arjun's directive — a
+    5/10/25/50 bps cost grid + 50 bps/yr borrow and turnover are still
+    reported, but as implementation-time diagnostics only, never gates).
     Daily uses overlapping tranches — see the DAILY FREQUENCY note below.
  5. SUB-PERIOD STABILITY: 2008-12 / 2013-17 / 2018-22 / 2023-now.
  6. DEFLATED SHARPE: the long-short Sharpe is compared to the expected
@@ -70,11 +72,11 @@ DAILY FREQUENCY (v2, 2026-06-10): daily runs now get the FULL gate set.
     hold_days trading days on its own offset and holds otherwise. Daily
     portfolio return = average over tranches. Holdings take effect the
     trading day AFTER the rank date (no same-close execution).
- c. COSTS: one-way 10/25/50 bps x actual tranche turnover, charged on
-    rebalance days, + 50 bps/yr borrow on the short leg. Country ETF
-    spreads cluster near the 10-25 bps cases; 50 bps is the stress case.
+ c. COSTS (diagnostic only since v3): one-way 5/10/25/50 bps x actual
+    tranche turnover + 50 bps/yr borrow are reported in the result JSON
+    for implementation planning; they play no role in the verdict.
  d. DEFLATED SHARPE: same Bailey-Lopez de Prado machinery with
-    periods_per_year=252 on the net-25bps LS daily series.
+    periods_per_year=252 on the GROSS LS daily series (v3).
  e. NW-t: max_lag now equals the horizon in TRADING DAYS (v1 used h//21
     which under-corrected 5d/21d overlap - the v1 daily t-stats were
     overstated; treat archived v1 daily runs accordingly).
@@ -322,9 +324,8 @@ def backtest_monthly(
             "ls_ann_return": _ann_ret(ls_net),
             "ls_sharpe": _sharpe(ls_net),
         }
-    result["_ls_net25_series"] = (
-        (bt.set_index("date")["ret_top"] - bt["ret_bot"].values)
-        - bt.set_index("date")["turnover_ls"] * 2 * 0.0025 - borrow_m
+    result["_ls_gross_series"] = (
+        bt.set_index("date")["ret_top"] - bt["ret_bot"].values
     )
     result["_subperiods_src"] = bt
     return result
@@ -487,9 +488,8 @@ def backtest_daily(
             "ls_ann_return": _ann_ret(ls_net, 252),
             "ls_sharpe": _sharpe(ls_net, 252),
         }
-    result["_ls_net25_series"] = (
-        (bt.set_index("date")["ret_top"] - bt["ret_bot"].values)
-        - bt.set_index("date")["turnover_ls"] * 2 * 0.0025 - borrow_d
+    result["_ls_gross_series"] = (
+        bt.set_index("date")["ret_top"] - bt["ret_bot"].values
     )
     result["_subperiods_src"] = bt
     return result
@@ -507,8 +507,8 @@ def _compact_hold(res: dict[str, Any]) -> dict[str, Any]:
         "avg_daily_turnover_ls_oneway": res.get("avg_daily_turnover_ls_oneway"),
         "breakeven_cost_bps_ls": res.get("breakeven_cost_bps_ls"),
         "gross_ls_sharpe": res.get("gross", {}).get("ls_sharpe"),
+        "gross_top_excess_ann_return": res.get("gross", {}).get("excess_ann_return"),
         "net_ls_sharpe": {bps: net.get(bps, {}).get("ls_sharpe") for bps in net},
-        "net_top_excess_25bps": net.get("25bps", {}).get("top_excess_ann_return"),
     }
 
 
@@ -574,15 +574,18 @@ def decide_verdict(metrics: dict[str, Any], frequency: str) -> tuple[str, list[s
             return "WATCH", notes
         return ("WEAK" if (t is not None and not np.isnan(t) and t >= 1.5) else "DEAD"), notes
 
-    g_cost = metrics.get("ls_sharpe_net25") is not None and not np.isnan(metrics["ls_sharpe_net25"]) \
-        and metrics["ls_sharpe_net25"] > 0 and metrics.get("top_excess_net25", np.nan) > 0
+    # 2026-07-13: cost gating RETRACTED (Arjun's directive) — verdicts key to
+    # GROSS portfolio metrics. The cost grid + breakeven remain in the result
+    # JSON as implementation-time diagnostics only, never as gates.
+    g_port = metrics.get("ls_sharpe_gross") is not None and not np.isnan(metrics["ls_sharpe_gross"]) \
+        and metrics["ls_sharpe_gross"] > 0 and metrics.get("top_excess_gross", np.nan) > 0
     g_dsr = metrics.get("deflated_sharpe") is not None and not np.isnan(metrics["deflated_sharpe"]) \
         and metrics["deflated_sharpe"] > 0
-    notes.append(f"net-25bps LS Sharpe={metrics.get('ls_sharpe_net25')} & top7 excess={metrics.get('top_excess_net25')} "
-                 f"(gate both >0: {'PASS' if g_cost else 'FAIL'})")
+    notes.append(f"gross LS Sharpe={metrics.get('ls_sharpe_gross')} & top7 excess={metrics.get('top_excess_gross')} "
+                 f"(gate both >0: {'PASS' if g_port else 'FAIL'})")
     notes.append(f"deflated Sharpe={metrics.get('deflated_sharpe')} (gate >0: {'PASS' if g_dsr else 'FAIL'})")
 
-    if g_t and g_years and g_cost and g_dsr:
+    if g_t and g_years and g_port and g_dsr:
         return "WATCH", notes
     if t is not None and not np.isnan(t) and t >= 1.5:
         return "WEAK", notes
@@ -841,15 +844,15 @@ def evaluate_signal(
                         res_h = backtest_daily(sig_panel, ret_panel, direction, hold_days=h,
                                                n_top=n_top, min_cross_section=min_xs)
                         res_h.pop("_subperiods_src", None)
-                        res_h.pop("_ls_net25_series", None)
+                        res_h.pop("_ls_gross_series", None)
                     hold_grid[f"hold_{h}d"] = _compact_hold(res_h)
             if "_subperiods_src" in portfolio:
                 subperiods = subperiod_table(portfolio.pop("_subperiods_src"), periods)
-                ls_series = portfolio.pop("_ls_net25_series")
+                ls_series = portfolio.pop("_ls_gross_series")
                 dsr = deflated_sharpe_block(ls_series, family_trial_count(canonical_family_of(hyp)),
                                             periods_per_year=periods)
             else:
-                portfolio.pop("_ls_net25_series", None)
+                portfolio.pop("_ls_gross_series", None)
 
         # ── Verdict ─────────────────────────────────────────────────────
         prim = ic_block[primary_label]
@@ -859,8 +862,8 @@ def evaluate_signal(
             "history_fail": history_fail,
             "primary_nw_t": prim["nw_t"],
             "pct_positive_years": prim["pct_positive_years"],
-            "ls_sharpe_net25": portfolio.get("net", {}).get("25bps", {}).get("ls_sharpe"),
-            "top_excess_net25": portfolio.get("net", {}).get("25bps", {}).get("top_excess_ann_return"),
+            "ls_sharpe_gross": portfolio.get("gross", {}).get("ls_sharpe"),
+            "top_excess_gross": portfolio.get("gross", {}).get("excess_ann_return"),
             "deflated_sharpe": dsr.get("deflated_sharpe"),
             "portfolios_skipped": portfolios_skipped,
             "portfolio_error": portfolio.get("error"),

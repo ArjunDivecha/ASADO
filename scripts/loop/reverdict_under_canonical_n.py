@@ -77,12 +77,17 @@ def _metrics_from_result(res: dict[str, Any], new_dsr: float) -> dict[str, Any]:
         yic = prim.get("yearly_ic") or {}
         pct_pos = (round(sum(1 for v in yic.values() if v < 0) / len(yic), 3)
                    if yic else None)
-    net25 = (res.get("portfolio") or {}).get("net", {}).get("25bps", {})
+    # 2026-07-13 cost-gating retraction: decide_verdict now keys to GROSS
+    # portfolio metrics. Old result JSONs always stored the gross block, so
+    # this mapping is valid for pre-retraction records too. (Their stored
+    # sharpe_per_period was computed on the old net-25 series — reverdicts of
+    # old records are therefore slightly conservative on the DSR gate.)
+    gross = (res.get("portfolio") or {}).get("gross", {})
     return {
         "coverage_fail": False, "history_fail": False,
         "primary_nw_t": primary_nw_t, "pct_positive_years": pct_pos,
-        "ls_sharpe_net25": net25.get("ls_sharpe"),
-        "top_excess_net25": net25.get("top_excess_ann_return"),
+        "ls_sharpe_gross": gross.get("ls_sharpe"),
+        "top_excess_gross": gross.get("excess_ann_return"),
         "deflated_sharpe": new_dsr,
         "portfolios_skipped": bool(res.get("portfolios_skipped")),
         "portfolio_error": (res.get("portfolio") or {}).get("error"),

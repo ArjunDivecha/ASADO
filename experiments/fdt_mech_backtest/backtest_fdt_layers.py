@@ -56,7 +56,7 @@ import pandas as pd
 
 ROOT = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO")
 OUT = ROOT / "experiments" / "fdt_mech_backtest"
-COST_1WAY = 0.0025  # 25bp one-way, house law
+COST_1WAY = 0.0  # 2026-07-13: 25bp "house law" RETRACTED by Arjun — evaluate gross; costs are an implementation-time question, never a research gate
 TOP_N = 5
 S2_VARS = ["SIM_NBR_RET_GAP_63D", "GRAPHP_BANK_NBR_RET_GAP_21D",
            "GRAPHP_TWOHOP_TRADE_GAP_21D"]

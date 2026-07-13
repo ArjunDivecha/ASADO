@@ -9,7 +9,7 @@ passes, 2026-07-10; all file:line and table refs verified on disk).
 
 > **DECISIONS FROZEN (Arjun, 2026-07-10):**
 > 1. **Price source = yfinance adjusted close** (`auto_adjust=True`), option (B) below — not Bloomberg. Free, matches the FDT `etf_prices_full.parquet` precedent. Accept the small cross-vendor dividend-timing noise in the `etf_capture` decomposition.
-> 2. **Long-only BOOK, but score BOTH directions for LEARNING** (refined 2026-07-10 after the scorer showed 82% of promoted episodes are short — long-only scoring would have discarded ~78% of the learning population and slowed the 80-episode gate ~5x). A short episode is scored as a *paper* bet (we still learn whether the data led price); the book constraint is carried as a separate boolean `tradable_long_only`, and realizable lift is measured on the `tradable_long_only=True` subset. Borrow cost is not modeled for paper shorts; trading costs are charged symmetrically at 25 bp/side.
+> 2. **Long-only BOOK, but score BOTH directions for LEARNING** (refined 2026-07-10 after the scorer showed 82% of promoted episodes are short — long-only scoring would have discarded ~78% of the learning population and slowed the 80-episode gate ~5x). A short episode is scored as a *paper* bet (we still learn whether the data led price); the book constraint is carried as a separate boolean `tradable_long_only`, and realizable lift is measured on the `tradable_long_only=True` subset. Borrow cost is not modeled for paper shorts; ~~trading costs are charged symmetrically at 25 bp/side~~ **(amended 2026-07-13: cost retraction — scoring is GROSS, `COST_1WAY = 0.0`)**.
 > 3. **Benchmark = per-episode window EW-34** (§3), not the FDT month-end-rebalanced EW.
 > These three are now binding; the prose below is kept for reasoning but the boxed decisions govern where they differ.
 
@@ -134,7 +134,7 @@ Alpha-Book failure mode made measurable per episode.
 | Window returns | Compound daily total returns from `entry_ts` (exclusive — entered at that close) to `exit_ts` (inclusive). Buy-and-hold, no intra-window rebalance. |
 | `exit_ts` | `entry_ts` + `horizon_days` trading days on the **ETF (NYSE) calendar**; `horizon_days` frozen at open (`gap_episodes.horizon_days`). |
 | Benchmark `R_ew` | Equal-weight buy-and-hold over **the same `[entry_ts, exit_ts]` window** across all primary ETFs with a valid price at both endpoints; `1/N` at entry, no rebalance. (Per-episode window EW, not the FDT month-end-rebalanced EW — the two coincide only for month-aligned windows.) |
-| Costs | **25 bp per side**, charged at both entry and exit (= 50 bp round-trip). Constant `COST_1WAY = 0.0025`, matching the house law at `backtest_fdt_layers.py:59`. |
+| Costs | **NONE — scored GROSS** (amended 2026-07-13: the 25bp "house law" was retracted by Arjun as erroneous; costs are never applied in research). Constant `COST_1WAY = 0.0`, matching `backtest_fdt_layers.py:59` and `score_gap_outcomes.py` scoring_version 2.0. Original frozen value was 25 bp/side — rows scored before the retraction carry it. |
 | Borrow | Shorts (`dir = −1`) charge a per-ticker annualized borrow rate × (horizon_days/252), from a small documented table; default conservative estimate where unknown, flagged `borrow_estimated=true`. |
 | ETF expense | **NOT deducted.** With a dividend-adjusted `R_etf`, the expense ratio is already in realized performance. `etf_ownership_drag_bps` stays an ex-ante expression-quality input only (fixes the v1 double-count; `build_gap_episodes.py:373` is ex-ante and untouched). |
 | Currency | No separate FX term. FX lives inside `R_etf` (USD-denominated ETF) vs `R_idx` (local TRI) — i.e. it shows up in `etf_capture`, which is the honest place for it. |
@@ -264,9 +264,10 @@ write them — they are superseded by `gap_outcomes`).
 1. **Price source: (A) Bloomberg TRI [recommended] or (B) yfinance adj-close?**
    This is the one decision I won't make unilaterally — it sets the basis for
    every number.
-2. **Costs:** confirm 25 bp/side (50 bp round-trip) and confirm shorts are in
-   scope at all (if the book is long-only in ETF space, drop `borrow_cost` and
-   the `dir=−1` path simplifies).
+2. **Costs:** ~~confirm 25 bp/side~~ **RESOLVED 2026-07-13: costs retracted per
+   Arjun's directive — score GROSS (`COST_1WAY = 0.0`); never apply cost/turnover
+   penalties in research.** Shorts-in-scope question stands (if the book is
+   long-only in ETF space, drop `borrow_cost` and the `dir=−1` path simplifies).
 3. **Benchmark:** confirm per-episode-window EW-34 (§3) rather than the
    month-end-rebalanced FDT EW — I believe window-EW is correct for discrete
    episodes, but it differs from the existing experiment and you should bless

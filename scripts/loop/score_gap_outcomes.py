@@ -81,8 +81,12 @@ from scripts.loop.loopdb import loop_connection, MAIN_DB  # noqa: E402
 ETF_MAP_JSON = BASE_DIR / "config" / "etf_t2_map.json"
 SEED_PARQUET = BASE_DIR / "experiments" / "fdt_mech_backtest" / "etf_prices_full.parquet"
 
-SCORING_VERSION = "1.0"
-COST_1WAY = 0.0025
+SCORING_VERSION = "2.0"  # 2.0 (2026-07-13): cost gating retracted — scoring is gross
+# 2026-07-13: the 25bp "house law" was RETRACTED by Arjun (the assumption was
+# erroneous). Research is evaluated GROSS; execution cost is an
+# implementation-time question. Rows with scoring_version < 2.0 carry the old
+# 25bp haircut in net_active — treat their net columns accordingly.
+COST_1WAY = 0.0
 HORIZON_DAYS = {"5d": 5, "21d": 21, "63d": 63, "126d": 126}
 
 T2_UNIVERSE = [

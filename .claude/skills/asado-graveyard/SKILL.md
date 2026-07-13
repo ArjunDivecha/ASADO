@@ -159,7 +159,7 @@ Query any id with the §1b one-liner. All DSRs verified in-ledger 2026-07-08.
 
 These live outside the repo, in `Research-Agenda-2026-07-v2.md:57-67` (§0.3 "The Six Laws"). **The v2 file is the governing latest.** Reproduced faithfully; read the source for the full framing:
 
-1. **The cost law.** In the country-ETF ledger, **nothing survives 25bp one-way**; only 4 signals clear 10bp; 12 clear 5bp. The flagship combiner's own habitat costs 9.4–10bp. → New ideas must be near-zero-turnover, be *paid for* providing liquidity (premia), or move to venues costing 1–3bp (futures, FX).
+1. **~~The cost law~~ — RETRACTED 2026-07-13 (Arjun's directive; the v2 agenda file carries the retraction).** The 25bp one-way assumption was erroneous; the whole cost/turnover gating framework is withdrawn. Evaluate research GROSS — never penalize or kill an idea on cost/turnover grounds. **Graveyard consequence: an entry whose kill was *purely* cost-based (gross-positive, net-negative — e.g. the `graph_trade_gap` daily-horizon note above) counts as UNTESTED, not dead, and may be re-proposed.** Kills based on gross performance, leakage, or statistical failure stand unchanged.
 2. **The expression law.** Index-space alpha ≈ **zero in the US-listed ETF at the US close**. US-hours market makers embed cross-market public info; the opening auction prints overnight info. → The venue and the clock are first-class research variables.
 3. **The second-order law.** First-order macro signals die in the harness (**31 DEAD**, disproportionately first-order); what survives is *delayed second-order propagation* (graph, lead-lag, similarity twins, combiner) — in index space, with a 2024–26 sign flip currently unexplained.
 4. **The hit-rate law.** Per-mechanism true-positive rate is **~15–20%**. Family-count DSR haircuts are mandatory; a WATCH verdict is a lottery ticket, not a sleeve.
@@ -179,7 +179,7 @@ So a reader doesn't mistake open work for dead work:
 - **Brier Gate** (Polymarket/US prediction-market conditioning) — **ON HOLD**.
 - **DeepSeek shadow** — parallel shadow eval, open.
 - **Open theses:** Indonesia long, Hong Kong long — both open, with a **double-counting risk** flagged (they may overlap existing exposures; verify before staking).
-- **WEAK tier — 21 entries.** Not dead, but not promising. A WEAK verdict failed to clear WATCH (which requires ALL of: NW-t ≥ 2.5, ≥60% positive-IC years, net-25bps LS Sharpe > 0, deflated Sharpe > 0). Treat WEAK as "parked, needs a materially better formulation," not "kill" and not "green."
+- **WEAK tier — 21 entries.** Not dead, but not promising. A WEAK verdict failed to clear WATCH (pre-2026-07-13 gates: NW-t ≥ 2.5, ≥60% positive-IC years, net-25bps LS Sharpe > 0, deflated Sharpe > 0; the portfolio gate is GROSS since the cost-gating retraction). A pre-retraction WEAK/DEAD whose only failing gate was the net-25bps cost gate deserves a re-run under the gross gates. Treat WEAK as "parked, needs a materially better formulation," not "kill" and not "green."
 - **INSUFFICIENT_COVERAGE — 16 entries.** Undecided for lack of data span, not a verdict on the idea.
 
 The lone **WATCH** (`H_20260610_003` graph_trade_gap variant) is a lottery ticket per Law 4 — not a sleeve.

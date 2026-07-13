@@ -8,7 +8,7 @@ description: >
   research factory" core. Use it when you are asked to test a signal/factor, backtest a
   cross-sectional country idea, run or design a sweep, register a hypothesis, or decide whether a
   finding is real. It carries the mandatory safety gates (forward-return blacklist, publication-lag
-  default, pre-registration) and the earned cost laws inline. Do NOT use this skill to OPERATE the
+  default, pre-registration) inline; cost laws retracted 2026-07-13. Do NOT use this skill to OPERATE the
   live pipeline or run nightly jobs (use asado-operations), to DEBUG a broken run or failing job
   (use asado-debugging-playbook), to change collector/warehouse/harness CODE (use
   asado-change-control), or merely to check whether an idea is already dead — do that FIRST via
@@ -47,11 +47,14 @@ live only in an experiment `RESULTS.md`. If asado-graveyard says the mechanism i
 report that to the user instead of re-running it.
 
 Respect the **earned laws** before you spend a day on something (Investment Learnings
-`Research-Agenda-2026-07-v2.md:57-67`): nothing survives 25bp one-way (only 4 signals ever cleared
-10bp); index-space alpha ≈ 0 at the US-listed ETF close; first-order macro dies (31 DEAD) — only
-delayed second-order propagation has survived; per-mechanism true-positive rate is 15-20%, so DSR
-haircuts are mandatory; proxy engines lie (test in the real engine); only arithmetic/statute edges
-never decay.
+`Research-Agenda-2026-07-v2.md:57-67`): index-space alpha ≈ 0 at the US-listed ETF close;
+first-order macro dies (31 DEAD) — only delayed second-order propagation has survived;
+per-mechanism true-positive rate is 15-20%, so DSR haircuts are mandatory; proxy engines lie
+(test in the real engine); only arithmetic/statute edges never decay.
+**RETRACTED (2026-07-13, Arjun's directive):** the old "cost law" ("nothing survives 25bp
+one-way") is withdrawn — the 25bp assumption was erroneous. Never apply transaction-cost or
+turnover penalties/gates in research; evaluate GROSS. Old verdicts that killed a signal
+*purely* on cost grounds count as UNTESTED, not dead.
 
 ---
 
@@ -193,12 +196,12 @@ The harness returns exactly one of five verdicts (logic verified at
 |---|---|
 | `INSUFFICIENT_COVERAGE` | coverage gate failed: needs ≥28 countries on ≥95% of dates (scaled for sub-universes). |
 | `INSUFFICIENT_HISTORY` | fewer than 60 aligned months/dates. |
-| `WATCH` | **ALL four** pass: NW-t primary ≥ 2.5 **and** ≥60% positive-IC years **and** net-25bps LS Sharpe > 0 (with top-7 excess > 0) **and** deflated Sharpe > 0. |
+| `WATCH` | **ALL four** pass: NW-t primary ≥ 2.5 **and** ≥60% positive-IC years **and** GROSS LS Sharpe > 0 (with gross top-7 excess > 0) **and** deflated Sharpe > 0. (v3, 2026-07-13: cost gating retracted — was net-25bps.) |
 | `WEAK` | not WATCH, but NW-t primary ≥ 1.5. |
 | `DEAD` | everything else. |
 
-The four WATCH gates are AND-ed (`if g_t and g_years and g_cost and g_dsr: return "WATCH"`,
-`:585-586`). The net-25bps requirement is the cost realism gate — see STEP-cost below. Deflated Sharpe
+The four WATCH gates are AND-ed (`if g_t and g_years and g_port and g_dsr: return "WATCH"`).
+The portfolio gate is GROSS profitability — see STEP-cost below. Deflated Sharpe
 subtracts the expected max Sharpe of `N` pure-noise trials, where `N` is the family's running trial
 count; more trials in the family ⇒ a higher bar. There is a WATCH-only value: 1 hypothesis is WATCH
 out of 59.
@@ -220,22 +223,21 @@ out of 59.
   Triptych prior layer hard-zeroes full-sample confidence for this reason. Never promote a
   full-sample number.
 
-### STEP-cost — Cost realism is the verdict gate
+### STEP-cost — Costs are diagnostic only, NEVER a gate (retraction, 2026-07-13)
 
-The WATCH gate is keyed to **net-25bps** long-short Sharpe, not gross. This encodes the earned laws
-(costs from `evaluate_signal.py` header `:34-40, 79`, laws from AGENTS.md `:79` and Investment
-Learnings):
-- **Nothing survives 25bp one-way.** All 29 verdicted daily hypotheses die at 25bps.
-- **At 10bp, exactly four signals** cleared net LS Sharpe > 0.3 (daily ridge combiner, GRAPHP bank
-  gap, SIM twins 63d, GRAPH bank 63d) — breakevens cluster 8-14 bps: real but thin, futures /
-  cheap-DM-ETF execution only.
-- **1-day holds win NET for fast signals** — top daily signals decay faster with hold length than
-  turnover savings accrue, so slowing them down doesn't rescue them; 21d holds only help genuinely
-  slow signals (e.g. SOV_2S10S breakeven 15.8bps).
+**The cost-realism gate is RETRACTED per Arjun's directive** — the 25bp one-way assumption
+it was built on was erroneous. Since harness v3 (2026-07-13) the WATCH gate is keyed to
+**GROSS** long-short Sharpe and gross top-7 excess. Do not apply transaction-cost or
+turnover penalties anywhere in research, and do not report cost-netted numbers as verdict
+inputs.
 
-Every daily run also emits diagnostic `hold_period_grid` (same ranks re-costed at 1d/5d/21d) and
-`breakeven_cost_bps_ls` (the one-way bps at which net LS return crosses zero; negative = loses money
-even for free). These are diagnostic only — the verdict stays keyed to the registered hold.
+What remains, for implementation planning only: every run still emits the cost grid
+(`net` at 5/10/25/50bps), `hold_period_grid` (daily: same ranks re-costed at 1d/5d/21d),
+and `breakeven_cost_bps_ls` (the one-way bps at which net LS return crosses zero). Use
+these to choose a venue/hold when DEPLOYING a signal — never to judge, penalize, or kill
+one. Historical note: all 29 daily hypotheses verdicted before 2026-07-13 were gated at
+net-25bps; any of them that died purely on the cost gate counts as UNTESTED under the
+current rules.
 
 ### STEP 7 — Record the result (kills are the product)
 
@@ -326,7 +328,7 @@ description of the past, not evidence.
 - [ ] Harness run through the front door; verdict written to the ledger automatically.
 - [ ] Verdict interpreted against the exact gates; any WATCH treated as guilty until pre-registered re-derivation.
 - [ ] `RESULTS.md` written; on a kill, the lesson recorded (and `docs/strategy/lessons.md` updated if it's a no-go), code trimmed to reusable primitives.
-- [ ] Report to the user: the verdict, the net-25bps number, and the honest universe — link the result JSON and `RESULTS.md` with `file://` paths.
+- [ ] Report to the user: the verdict, the GROSS LS Sharpe / top-7 excess, and the honest universe — link the result JSON and `RESULTS.md` with `file://` paths. (Never report cost-netted numbers as the headline.)
 
 **A null is the product.** Record it honestly. Do not simulate a PASS, do not soften a DEAD, do not
 bury a surprising result.

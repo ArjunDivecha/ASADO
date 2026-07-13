@@ -481,9 +481,15 @@ The answer to "do any daily signals survive costs?". `evaluate_signal.py` v2.1 a
 daily run: a **hold-period grid** (the same daily ranks re-costed at 1d / 5d / 21d tranched
 holds, `hold_period_grid` in the result JSON), a **breakeven cost** (`breakeven_cost_bps_ls` =
 the one-way bps at which mean net LS return crosses zero given the strategy's own turnover),
-and a **5 bps cost case** (liquid-futures / DM-ETF execution). Verdict gates are unchanged —
-still keyed to the registered hold at net-25bps; the grid is a design diagnostic. All 29
+and a **5 bps cost case** (liquid-futures / DM-ETF execution). All 29
 verdicted daily hypotheses were re-measured in place (same hypothesis IDs, zero new trials).
+
+> **RETRACTION (harness v3, 2026-07-13, Arjun's directive):** the cost-gating framework
+> below is withdrawn — the 25bp one-way assumption was erroneous. Verdicts now key to
+> **GROSS** LS Sharpe and gross top-7 excess; the cost grid, hold grid, and breakeven
+> numbers remain in result JSONs as implementation-time diagnostics only, never gates.
+> Signals verdicted before 2026-07-13 that died *purely* on the net-25bps gate count as
+> UNTESTED. The section below is kept as a historical record of the v2.1 analysis.
 
 **The quantified answer** (`Data/loop/harness_runs/cost_model_summary_2026_06_12.xlsx`):
 nothing survives 25 bps one-way — that conclusion stands. But at **10 bps**, 4 signals clear
@@ -498,9 +504,9 @@ EM-ETF strategies. The graph family's economics: breakevens cluster at 8-14 bps,
 thin edges that only an efficient execution stack can monetize.
 
 **Known caveats:** v1 `graph_features_daily` still uses *current* Neo4j edge weights (kept for
-continuity; the PIT table is the analytical surface); the headline DSR for daily signals is
-still computed at net-25bps on the registered hold — conservative by construction (see the
-hold-period grid for the 5/10 bps economics); GDELT DOC API rate-limits aggressively — `country_news` fails loudly and recovers
+continuity; the PIT table is the analytical surface); since harness v3 (2026-07-13) the
+headline DSR is computed on the GROSS LS series (pre-v3 result JSONs used net-25bps —
+read their DSRs as conservative); GDELT DOC API rate-limits aggressively — `country_news` fails loudly and recovers
 when the block lifts; D10 peg-currency rows (Hong Kong, Saudi Arabia) carry a peg note because
 z-scores off a near-zero vol baseline run hot — read them as peg-risk repricing, not magnitude.
 Bloomberg quota usage for the loop's nightly pulls is logged append-only to

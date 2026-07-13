@@ -101,7 +101,7 @@ Conventions to freeze before coding (Stage 0 deliverable is this spec, reviewed 
 - **Exit:** close of session `entry + horizon_days` trading days on the ETF's calendar; holiday/stale-quote handling = last prior close carried, flagged.
 - **Prices:** total-return (dividend-adjusted) series for ETF and benchmark alike; document the source and the adjustment convention.
 - **Expenses:** `etf_ownership_drag_bps` is **not** subtracted from realized adjusted returns (already embedded in NAV/price); it remains an ex-ante expression-quality input only.
-- **Costs:** 25bp **per side** (entry + exit both charged); short borrow at a per-ticker table (default conservative estimate, flagged where estimated).
+- **Costs:** ~~25bp per side~~ **NONE — scored GROSS (amended 2026-07-13: the 25bp house law was retracted by Arjun as erroneous; never apply cost/turnover penalties in research)**; short borrow at a per-ticker table (default conservative estimate, flagged where estimated).
 - **Benchmark:** EW-34, rebalancing convention documented and identical to the FDT/Alpha-Book convention so results are comparable.
 - **Mapping edge cases:** ChinaA/ChinaH dual expression, U.S. multi-expression, ETF delistings/mapping changes — enumerated in the spec with one rule each.
 - Every outcome row carries `scoring_version`; formula changes bump the version, never rewrite old rows.

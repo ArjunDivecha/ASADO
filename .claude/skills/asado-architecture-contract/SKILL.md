@@ -221,8 +221,10 @@ yourself:
 5. **Coverage floors + rank-IC / Newey-West t + cost grid** (5/10/25/50 bps + borrow).
 
 **Verdict tiers:** DEAD / WEAK / WATCH (+ INSUFFICIENT_COVERAGE). `WATCH` — the strongest a
-signal can earn — requires ALL of: NW-t ≥ 2.5, ≥ 60% positive-IC years, net-25bps
-long-short Sharpe > 0, and deflated Sharpe > 0. (The ledger's verdict tally grows daily —
+signal can earn — requires ALL of: NW-t ≥ 2.5, ≥ 60% positive-IC years, GROSS
+long-short Sharpe > 0 (with gross top-7 excess > 0), and deflated Sharpe > 0. (Harness v3,
+2026-07-13: cost gating retracted per Arjun's directive — the cost grid is diagnostic only,
+never a gate. Verdicts before that date were gated at net-25bps.) (The ledger's verdict tally grows daily —
 get the live count via `asado-graveyard` §1b rather than trusting a number in any doc. See
 `asado-graveyard` / `asado-research-protocol` for the ledger lifecycle.)
 

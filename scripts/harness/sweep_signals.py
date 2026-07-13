@@ -251,7 +251,7 @@ def run_sweep(spec_path: Path, dry_run: bool, force: bool) -> int:
                 "mean_ic": prim["mean_ic"],
                 "nw_t": prim["nw_t"],
                 "pct_positive_years": prim["pct_positive_years"],
-                "ls_sharpe_net25": result.get("portfolio", {}).get("net", {}).get("25bps", {}).get("ls_sharpe"),
+                "ls_sharpe_gross": result.get("portfolio", {}).get("gross", {}).get("ls_sharpe"),
                 "deflated_sharpe": result.get("deflated_sharpe_block", {}).get("deflated_sharpe"),
                 "n_dates": result["coverage"]["n_dates"],
                 "result_file": result.get("result_file"),

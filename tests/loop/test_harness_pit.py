@@ -193,11 +193,11 @@ class TestStatsCore:
     def test_verdict_watch_requires_all_gates(self):
         base = {"coverage_fail": False, "history_fail": False,
                 "primary_nw_t": 3.0, "pct_positive_years": 0.8,
-                "ls_sharpe_net25": 0.5, "top_excess_net25": 0.02, "deflated_sharpe": 0.05}
+                "ls_sharpe_gross": 0.5, "top_excess_gross": 0.02, "deflated_sharpe": 0.05}
         v, _ = decide_verdict(base, "monthly")
         assert v == "WATCH"
         for k, bad in [("primary_nw_t", 2.0), ("pct_positive_years", 0.5),
-                       ("ls_sharpe_net25", -0.1), ("deflated_sharpe", -0.01)]:
+                       ("ls_sharpe_gross", -0.1), ("deflated_sharpe", -0.01)]:
             m = dict(base)
             m[k] = bad
             v, _ = decide_verdict(m, "monthly")
@@ -206,7 +206,7 @@ class TestStatsCore:
     def test_verdict_dead_when_no_signal(self):
         v, _ = decide_verdict({"coverage_fail": False, "history_fail": False,
                                "primary_nw_t": 0.3, "pct_positive_years": 0.5,
-                               "ls_sharpe_net25": None, "top_excess_net25": None,
+                               "ls_sharpe_gross": None, "top_excess_gross": None,
                                "deflated_sharpe": None}, "monthly")
         assert v == "DEAD"
 

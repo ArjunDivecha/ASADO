@@ -1,0 +1,20 @@
+{
+  "a_baseline": {
+    "sharpe": 1.059,
+    "cagr": 0.1498,
+    "mdd": -0.27,
+    "skew_monthly": 0.496
+  },
+  "b_disp_D1": {
+    "sharpe": 0.998,
+    "cagr": 0.1275,
+    "mdd": -0.27,
+    "skew_monthly": 0.438
+  },
+  "c_voltarget": {
+    "sharpe": 1.034,
+    "cagr": 0.1161,
+    "mdd": -0.2177,
+    "skew_monthly": 0.328
+  }
+}

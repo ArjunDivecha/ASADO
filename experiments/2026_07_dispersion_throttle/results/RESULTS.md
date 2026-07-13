@@ -1,5 +1,32 @@
 # R1 Dispersion Throttle — Results
 
+> ## ⚠️ CORRECTION (2026-07-13, same day, after Arjun's challenge)
+>
+> The original table below reported the book at **lag 0, 1-day hold** — a signal computed
+> through day t's close, "executed" at that same close, re-ranked daily on asynchronous
+> local index closes. That construction is a paper fantasy: it embeds the same-close
+> execution impossibility and the timezone echo (day t+1 local returns react to global
+> information the signal already saw). Decomposition of the fake Sharpe 3.27:
+>
+> | Construction | Sharpe | CAGR |
+> |---|---|---|
+> | lag 0, 1d hold (as originally reported) | 3.27 | 59.7% |
+> | lag 0, 5d hold (harness measurement convention; matches the harness's own 1.774) | 1.76 | 19.3% |
+> | **lag 1, 1d hold (realistic close-to-close)** | **1.06** | 15.0% |
+> | lag 1, 5d hold | 0.97 | 9.9% |
+>
+> ~2/3 of the reported level was execution fantasy + timezone echo; the residual ~1.0
+> gross is still a local-close paper number with a NEGATIVE deflated Sharpe in the
+> harness record (−0.10) — i.e., per the expression law, no real strategy. **There is no
+> 3-Sharpe strategy; there is not even a robust 1-Sharpe strategy here.**
+>
+> **Corrected verdict check (lag-1 book, same pre-registered arms —
+> `r1_corrected_lag1.json`):** baseline Sharpe 1.059 / skew +0.50; dispersion throttle
+> 0.998 / +0.44; vol-target 1.034 / +0.33. Throttle delta **−0.061**, loses to
+> vol-target, skew still down → **DEAD verdict UNCHANGED**, now on defensible numbers.
+> The original table is retained below only as the record of what was wrongly reported;
+> its levels must not be cited.
+
 **Experiment:** `experiments/2026_07_dispersion_throttle/` · **Run:** 2026-07-13
 **PRD:** committed at `8beeeea` before any measurement; all constants frozen there; no parameter search occurred.
 **Book:** daily top-7/bottom-7 LS on `COMBINER_RIDGE_DAILY_V1` (frozen 2026-07-13 snapshot), 1-day lag, gross. Evaluation 2008-03 → 2026-07 (post 3-year expanding warm-up), 4,361 days.

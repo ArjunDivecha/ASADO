@@ -105,3 +105,6 @@ exp/family-ic-monitor.
 - review: tests/test_review_audit_monitor.py → 4 passed (scope, forbid, single-entry yaml, invariant coverage).
 - validator: DIVECHA_CONTRACT_VALID mode=build.
 - G3/G4: --dry-run (backfill + verify-idempotent) exit 0, --help exit 0 — well-formed, not executed.
+
+## AUTHOR AMENDMENT 3 (2026-07-14, Fable)
+G3 gate expectation parked/0 -> parked/1. The backfill's first run FAILED honestly on the authored expectation; adjudication against family_ic_nightly showed June 2026 book-roster IC +0.093 (May -0.137), so consecutive=1 is the true state. Code unchanged except the named constant KNOWN_ANSWER_EXPECTED_CONSECUTIVE=1; the gate machine was correct. Lesson: authored point-expectations about live data must be verified against data before being made binding; INV4's four clauses (which WERE data-verified) all passed on first run.

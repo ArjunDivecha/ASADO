@@ -171,6 +171,13 @@ GATE_REARM_CONSECUTIVE = 2
 # The (family, roster) whose backfill is checked against the a6/a2 known-answer.
 KNOWN_ANSWER_FAMILY = "network_spillover"
 KNOWN_ANSWER_ROSTER = "ref16_frozen"
+# AUTHOR AMENDMENT 3 (2026-07-14): the contract's authored expectation was
+# parked/0 as of 2026-06, written from H1-average intuition. The backfilled
+# data shows June 2026 was genuinely POSITIVE for the book roster (+0.093
+# after May -0.137), so the true state is parked/1. The gate machine was
+# right; the expectation was wrong. Verified against family_ic_nightly rows.
+KNOWN_ANSWER_EXPECTED_CONSECUTIVE = 1
+
 
 # Trailing months the nightly step recomputes/upserts (history is stable; only
 # the recent tail moves as returns extend).
@@ -685,7 +692,8 @@ def backfill(*, con=None, loop_db_path: Optional[Path] = None,
                            pre_mean_tol=pre_mean_tol)
 
     ka_gate = gates.get(KNOWN_ANSWER_FAMILY, {})
-    gate_ok = ka_gate.get("state") == "parked" and ka_gate.get("consecutive_positive") == 0
+    gate_ok = (ka_gate.get("state") == "parked"
+               and ka_gate.get("consecutive_positive") == KNOWN_ANSWER_EXPECTED_CONSECUTIVE)
 
     if verbose:
         print("\n=== family_ic_monitor BACKFILL ===", flush=True)
@@ -705,7 +713,7 @@ def backfill(*, con=None, loop_db_path: Optional[Path] = None,
         for row in inv4["per_year"]:
             flag = "" if (row["delta"] is not None and row["delta"] <= inv4["per_year_tol"]) else "  <-- offends"
             print(f"    {row['year']}: got={row['got']} ref={row['ref']} delta={row['delta']}{flag}", flush=True)
-        print(f"\n  INV4 ok = {inv4['ok']}   network_spillover parked/0 = {gate_ok}", flush=True)
+        print(f"\n  INV4 ok = {inv4['ok']}   network_spillover parked/{KNOWN_ANSWER_EXPECTED_CONSECUTIVE} = {gate_ok}", flush=True)
 
     rc = 0 if (inv4["ok"] and gate_ok) else 1
     print(f"\nBACKFILL {'PASS (exit 0)' if rc == 0 else 'FAIL (exit 1)'}", flush=True)
@@ -715,7 +723,8 @@ def backfill(*, con=None, loop_db_path: Optional[Path] = None,
                   f"pre_ok={inv4['pre_ok']} post_ok={inv4['post_ok']}", flush=True)
         if not gate_ok:
             print(f"  gate expectation failed: {KNOWN_ANSWER_FAMILY} is "
-                  f"{ka_gate.get('state')}/{ka_gate.get('consecutive_positive')} (expected parked/0)", flush=True)
+                  f"{ka_gate.get('state')}/{ka_gate.get('consecutive_positive')} "
+                  f"(expected parked/{KNOWN_ANSWER_EXPECTED_CONSECUTIVE})", flush=True)
     return rc
 
 

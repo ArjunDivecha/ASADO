@@ -16,7 +16,7 @@ The regime wars were lost fighting on the wrong front. Every internal kill and e
 
 Our four kills — global-macro regime factor weighting, per-country HMM early warning, IP-regime factor selection, EF/HMM branch clustering — all tried to make a regime label reorder or predict the cross-section. The external literature contains **zero** published, replicated OOS evidence that any regime method (deterministic, HMM, jump model, NN, transformer) improves cross-sectional selection — a conspicuous gap that corroborates our nulls. What survives replication is narrow and specific:
 
-1. **Cross-sectional return dispersion** predicts *when* cross-sectional strategies pay (Stivers–Sun JFQA 2010; Docherty–Hurst 2018, international, dispersion-scaled momentum beats unconditional in every region tested).
+1. ##### **Cross-sectional return dispersion** predicts *when* cross-sectional strategies pay (Stivers–Sun JFQA 2010; Docherty–Hurst 2018, international, dispersion-scaled momentum beats unconditional in every region tested).
 2. **A strategy's own conditional volatility / crash hazard** is forecastable even where its return is not (Daniel–Moskowitz 2016; Barroso–Santa-Clara 2015) — and our own dead experiments whispered this: the `Regime` branch states had below-random return AUC but real next-month **vol/drawdown** content; `regime_ew` states were persistent and real, they just didn't lead *returns*.
 3. **Statistical jump models** (Nystrup; Kolm/Mulvey/Shu 2021–2024) fix the exact defect (regime persistence: our 0.729 / 3.5-month states) that made HMM regimes untradeable — with real OOS de-risking evidence and open-source code. They fix the *method*; they do not overturn the *selection null*.
 
@@ -155,4 +155,4 @@ Key URLs (full citation lists live in the three research-track reports, reproduc
 - Global financial cycle skeptic: https://www.bis.org/publ/work661.pdf (Cerutti–Claessens–Rose)
 - Regime-forecast fragility: Dacco–Satchell 1999, https://onlinelibrary.wiley.com/doi/abs/10.1002/(SICI)1099-131X(199901)18:1%3C1::AID-FOR685%3E3.0.CO;2-B
 - Changepoint momentum: https://arxiv.org/abs/2105.13727 · TSFM skepticism: https://arxiv.org/abs/2606.27100
-- Quantpedia cousins: https://quantpedia.com/strategies/dynamic-asset-allocation-with-asset-specific-regime-forecasts · https://quantpedia.com/strategies/a-regime-aware-market-capitalization-rotation-strategy
+- ###### Quantpedia cousins: https://quantpedia.com/strategies/dynamic-asset-allocation-with-asset-specific-regime-forecasts · https://quantpedia.com/strategies/a-regime-aware-market-capitalization-rotation-strategy

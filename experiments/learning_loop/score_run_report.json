@@ -1,0 +1,20 @@
+{
+  "scored_at": "2026-07-10T18:16:58",
+  "scoring_version": "0.1",
+  "last_price_date": "2026-07-09",
+  "n_rows": 87,
+  "n_promoted": 38,
+  "n_control": 49,
+  "n_scored": 0,
+  "n_pending": 86,
+  "n_unscoreable": 1,
+  "n_long": 30,
+  "n_short": 57,
+  "n_tradable_long_only": 30,
+  "by_status": {
+    "pending": 86,
+    "unscoreable": 1
+  },
+  "n_pending_promoted": 38,
+  "n_pending_promoted_tradable": 7
+}

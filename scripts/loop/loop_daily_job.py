@@ -287,6 +287,16 @@ STEPS = [
     # (the Consensus Matrix / Edge Board substrate). Must run AFTER
     # build_combiner and the feature/loader steps it re-presents.
     ("build_family_ranks", [PY, "scripts/loop/build_family_ranks.py"]),
+    # Family-IC monitor (contract FAMILY-IC-MONITOR-001): recompute each
+    # monitored family's monthly IC on the harness-v4 honest clock, upsert one
+    # row/family/month into the durable loop-DB table family_ic_nightly, and
+    # maintain the R-A price-gate state (Data/work/loop/family_ic_status.json).
+    # Placed after the combiner + family-rank steps so combiner_scores_daily and
+    # the graph/lead-lag/similarity feature tables it reads are already built.
+    # FAIL-SOFT BY DESIGN: nightly_step catches all internal errors and returns
+    # exit 2 (PARTIAL) rather than raising, so a monitor crash is a warning that
+    # cannot take down the loop (it never returns a hard-failure exit 1).
+    ("family_ic_monitor", [PY, "scripts/loop/build_family_ic_monitor.py"]),
     # Push discovered SIMILAR_TO / LEADS edges + combiner ranks into Neo4j.
     ("write_graph_discoveries", [PY, "scripts/loop/write_graph_discoveries.py"]),
     ("build_dislocations", [PY, "scripts/loop/build_dislocations.py"]),

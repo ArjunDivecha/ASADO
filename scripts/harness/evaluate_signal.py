@@ -23,9 +23,20 @@ OUTPUT FILES:
 - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/ledgers/hypothesis_ledger.jsonl
   Verdict event appended automatically (never by hand).
 
-VERSION: 2.1
-LAST UPDATED: 2026-06-12
+VERSION: 4.0
+LAST UPDATED: 2026-07-14
 AUTHOR: Arjun Divecha (built by agent session, Alpha-Hunting Loop Phase 1/2)
+
+V4 (2026-07-14, HARNESS-V4-HONEST-LEDGER-001): a minimum 1-trading-day
+EXECUTION embargo now applies to EVERY daily-frequency evaluation, including
+sources in ZERO_LAG_SOURCES. Publication lag (when data becomes knowable) and
+execution embargo (the earliest close at which the trade can be placed) are
+distinct: on a 34-market panel whose closes are hours apart, a signal computed
+at day t's close cannot be traded at that same close, so the forward-return
+window must open strictly AFTER the signal date. See effective_daily_lag_days.
+Monthly logic is untouched. Every result JSON now carries a self-describing
+`execution_convention` block (lag_days_effective, window_open_rule, frequency,
+harness_version).
 
 DESCRIPTION:
 The skeptic. The ONLY path from "idea" to "evidence" in the Alpha-Hunting
@@ -152,6 +163,20 @@ FORWARD_RETURN_VARIABLES = {
 
 DEFAULT_MONTHLY_HORIZONS = [1, 3, 6]      # months
 DEFAULT_DAILY_HORIZONS = [5, 21, 63]      # trading days
+
+# v4 harness identity. Written into every result JSON's execution_convention
+# block so archived runs are self-describing about the clock they were measured on.
+HARNESS_VERSION = 4
+
+# v4 (2026-07-14) — minimum EXECUTION embargo for ALL daily evaluations. A
+# signal observed at day t's close cannot be traded before the NEXT close, so
+# the forward-return window must open strictly after the signal date (start
+# index > signal-date index in align_daily). This floor applies regardless of
+# source — including ZERO_LAG_SOURCES and an explicit publication_lag_days=0
+# override — because zero *publication* lag does not make same-close execution
+# real on a 34-market panel whose closes are hours apart. Distinct from
+# CONSERVATIVE_DAILY_LAG_DAYS (the per-variable publication default).
+MIN_DAILY_EXECUTION_EMBARGO_DAYS = 1
 
 SUBPERIODS = [
     ("2008-2012", "2008-01-01", "2012-12-31"),
@@ -682,6 +707,52 @@ def daily_publication_lag_days(variable: str, source: str,
     return CONSERVATIVE_DAILY_LAG_DAYS
 
 
+def effective_daily_lag_days(variable: str, source: str,
+                             signal_spec: Optional[dict[str, Any]] = None,
+                             registry: Optional[dict] = None) -> int:
+    """v4 — the effective daily lag actually applied to align_daily. It is the
+    LARGER of the per-variable publication lag (daily_publication_lag_days) and
+    the minimum execution embargo (MIN_DAILY_EXECUTION_EMBARGO_DAYS = 1).
+
+    This is the single number the forward-return window is offset by, and it is
+    >= 1 for EVERY daily evaluation (INV1): a signal is never allowed to predict
+    the return that opens at its own close, no matter how instantly it is
+    published. `daily_publication_lag_days` is deliberately left untouched (it
+    still reports the true publication lag, 0 for market-derived sources) — the
+    execution embargo is a distinct, additive floor stacked on top of it here."""
+    pub = daily_publication_lag_days(variable, source, signal_spec, registry)
+    return max(pub, MIN_DAILY_EXECUTION_EMBARGO_DAYS)
+
+
+def _execution_convention(frequency: str, lag_days: int, lag_months: int) -> dict[str, Any]:
+    """v4 (INV7) — self-describing execution clock stamped on every result JSON.
+    Keys: lag_days_effective, window_open_rule, frequency, harness_version. For
+    daily runs lag_days_effective is the integer effective lag (>= 1); for
+    monthly runs it is None (the monthly clock has no trading-day lag) and the
+    rule describes the month-M + publication-lag + 1 window instead."""
+    if frequency == "daily":
+        return {
+            "harness_version": HARNESS_VERSION,
+            "frequency": "daily",
+            "lag_days_effective": int(lag_days),
+            "window_open_rule": (
+                f"forward-return window opens at signal_date + {int(lag_days)} "
+                f"trading day(s) (start index > signal index); minimum execution "
+                f"embargo = {MIN_DAILY_EXECUTION_EMBARGO_DAYS}d applies to all daily "
+                f"sources, including ZERO_LAG_SOURCES"
+            ),
+        }
+    return {
+        "harness_version": HARNESS_VERSION,
+        "frequency": "monthly",
+        "lag_days_effective": None,
+        "window_open_rule": (
+            f"forward-return window opens at month M + {int(lag_months)} "
+            f"(publication lag, months) + 1; monthly embargo unchanged from v3"
+        ),
+    }
+
+
 def infer_publication_lag(df: pd.DataFrame, source: str, frequency: str) -> int:
     """Conservative MONTHLY publication-lag default (months). Market-derived = 0.
     (Daily lag is governed separately by daily_publication_lag_days — A6.)"""
@@ -737,9 +808,10 @@ def evaluate_signal(
         signal, source = load_signal(con, signal_spec, countries, start_date, frequency)
         lag = signal_spec.get("publication_lag_months")
         lag = infer_publication_lag(signal, source, frequency) if lag is None else int(lag)
-        # A6: per-variable daily publication embargo (trading days). Replaces the
-        # old blanket daily=0; an unproven daily variable fails closed to 1 day.
-        lag_days = (daily_publication_lag_days(signal_spec.get("variable", ""), source, signal_spec)
+        # v4: effective daily lag = max(publication lag, execution embargo). The
+        # >=1-day floor applies to ALL daily sources (INV1); zero *publication*
+        # lag never grants same-close execution. Monthly stays lag_days=0.
+        lag_days = (effective_daily_lag_days(signal_spec.get("variable", ""), source, signal_spec)
                     if frequency == "daily" else 0)
 
         if frequency == "monthly":
@@ -889,6 +961,7 @@ def evaluate_signal(
             "publication_lag_days": lag_days,
             "direction": direction,
             "frequency": frequency,
+            "execution_convention": _execution_convention(frequency, lag_days, lag),
             "horizons": horizons,
             "universe_n": len(countries),
             "universe": "t2_34" if len(countries) >= 34 else sorted(countries),

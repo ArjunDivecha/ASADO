@@ -64,7 +64,7 @@ gates:
   - id: G2
     intent: "existing repo test suite stays green and INV6 monthly-equivalence check passes"
     must_assert: "full pytest run exits 0 including the INV6 v3-vs-v4 monthly equivalence test"
-    command: '"/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/venv/bin/python" -m pytest tests/ -q -p no:cacheprovider --deselect "tests/loop/test_methodology_ledger.py::test_real_methodology_ledger_folds_without_unknown_events" --deselect "tests/loop/test_methodology_ledger.py::test_real_methodology_ledger_count_conservation"'
+    command: '"/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/venv/bin/python" -m pytest tests/ -q -p no:cacheprovider'
     requires_permission: false
   - id: G3
     intent: "the honest re-verdict sweep completes: all 59 existing hypothesis ids re-evaluated through evaluate_signal front door under v4, INV4 ledger-integrity checker passes, and a summary table (parquet + xlsx) of old-verdict vs new-verdict per hypothesis is written"

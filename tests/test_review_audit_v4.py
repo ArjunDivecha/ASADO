@@ -95,7 +95,25 @@ def _changed_paths() -> list[str]:
     return sorted(p for p in paths if p and p not in META_EXCLUSIONS)
 
 
+
+def _on_contract_branch() -> bool:
+    """These two scope-audit tests belong to contract HARNESS-V4-HONEST-LEDGER-001
+    and are only meaningful on its build branch: they diff the working tree
+    against main under THAT contract's scope rules. On any other branch or
+    worktree (including main post-merge, and sibling contract branches whose
+    own scopes legitimately differ) they must skip - a contract's review audit
+    must never leak into the global suite (lesson, 2026-07-14)."""
+    import subprocess as _sp
+    try:
+        branch = _sp.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                                  text=True).strip()
+    except Exception:
+        return False
+    return branch == "exp/harness-v4"
+
 def test_review_all_changed_paths_are_in_scope():
+    if not _on_contract_branch():
+        pytest.skip("HARNESS-V4 contract audit: only runs on exp/harness-v4")
     import subprocess as _sp
     head = _sp.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
     base = _sp.check_output(["git", "merge-base", "HEAD", "main"], text=True).strip()
@@ -116,6 +134,8 @@ def test_review_all_changed_paths_are_in_scope():
 
 
 def test_review_no_forbidden_path_touched():
+    if not _on_contract_branch():
+        pytest.skip("HARNESS-V4 contract audit: only runs on exp/harness-v4")
     scope = _load_scope()
     forbidden = [p for p in scope.get("forbid", []) if isinstance(p, str)]
     changed = _changed_paths()

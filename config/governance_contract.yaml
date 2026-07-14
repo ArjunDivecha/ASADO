@@ -261,6 +261,13 @@ steps:
       - {kind: file, path_template: "Data/loop/family_ranks_daily.parquet", staleness: mtime}
       - {kind: loop_db_table, table: family_ranks_daily}
 
+  - name: family_ic_monitor
+    governance: false
+    optional: true          # family-IC monitor (FAMILY-IC-MONITOR-001): fail-soft observability, exits 2 (PARTIAL) on failure, never reds the loop
+    expected_outputs:
+      - {kind: loop_db_table, table: family_ic_nightly}
+      - {kind: file, path_template: "Data/work/loop/family_ic_status.json", staleness: mtime}
+
   - name: write_graph_discoveries
     governance: false
     optional: true          # Neo4j must be up; no file output (rc-only)

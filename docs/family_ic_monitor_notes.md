@@ -35,30 +35,39 @@ member's **sign-aligned** per-date cross-sectional rank IC, collapsed to a
 first-of-month mean series. Daily families use their 5d horizon; monthly
 families use their 1m horizon with the harness monthly publication embargo.
 
-## Monitored families (v1, deterministic roster)
+## Monitored families and rosters (v1, deterministic) — AUTHOR AMENDMENT 1
 
 Roster is the committed data file `scripts/loop/family_ic_roster_v1.json` —
-**frozen**, not re-resolved from the live ledger (see below).
+**frozen**, not re-resolved from the live ledger. Each family carries one or
+more named rosters, persisted in the durable table's `roster` column so a
+family's monitored series is **continuous** and changes only on a deliberate
+re-issue (not on every live re-verdict, which would make the series
+discontinuous). Two roles:
 
-| family | freq | horizon | members |
+- `role: gate` (`book_2026_07_14`) — the Alpha Book v2 WATCH-tier variables
+  frozen at Book publication. **This is the series the R-A gate runs on** and the
+  status artifact reports.
+- `role: inv4_reference` (`ref16_frozen`, network_spillover only) — a6's exact
+  16 members, used **only** for the INV4 known-answer comparison.
+
+| family | freq | horizon | gate roster (`book_2026_07_14`) |
 |---|---|---|---|
-| `network_spillover` | daily | 5d | the 16 GRAPH*/GRAPHP*/LL_*/SIM_* variables that carried a WEAK/WATCH verdict in the flip autopsy (all `higher_is_better`) |
+| `network_spillover` | daily | 5d | `GRAPH_BANK_NBR_RET_GAP_21D`, `GRAPHP_TRADE_NBR_RET_GAP_21D`, `GRAPHP_KATZ_TRADE_GAP_21D`, `SIM_NBR_RET_GAP_21D`, `LL_LEADER_GAP_5D` |
 | `eco_surprise` | monthly | 1m | `ECO_INFL_SURPRISE_Z` |
 | `ml_combiner` | daily | 5d | `COMBINER_RIDGE_DAILY_V1` |
 
-**Why the roster is frozen to 16 (not re-resolved live):** the a6 known-answer
-was computed on the 16 WEAK/WATCH members that existed on 2026-07-13, *before*
-the harness-v4 re-verdict (2026-07-14) demoted 4 of them to DEAD. The live
-post-v4 ledger now lists only 12. Freezing to the a6-era 16 is the only way the
-backfill can reproduce the a6 reference; re-resolving from the live ledger would
-make the known-answer unreproducible. When v2 of the monitor re-derives the
-roster from current verdicts, the a6 tie-out is retired.
+**Why ref16 is frozen (not re-resolved live):** the a6 known-answer was computed
+on the 16 WEAK/WATCH members that existed on 2026-07-13, *before* the harness-v4
+re-verdict (2026-07-14) demoted 4 to DEAD (the live post-v4 ledger now lists
+only 12). Freezing to the a6-era 16 is the only way the backfill can reproduce
+a6.
 
 ## Durable table & status artifact (INV3, INV6)
 
 - Table `family_ic_nightly` in the **durable** loop DB
-  (`Data/loop/asado_loop.duckdb`) — one row per `(family, month)`, PRIMARY KEY
-  `(family, month)`, upsert via `ON CONFLICT ... DO UPDATE` (idempotent re-runs).
+  (`Data/loop/asado_loop.duckdb`) — one row per `(family, roster, month)`,
+  PRIMARY KEY `(family, roster, month)`, upsert via `ON CONFLICT ... DO UPDATE`
+  (idempotent re-runs).
   Never the main warehouse (destroyed on every rebuild). Opened through
   `loop_connection()` → `guarded_connect()`; connections are never held.
 - Status artifact `Data/work/loop/family_ic_status.json` (atomic temp-then-rename).
@@ -92,30 +101,27 @@ graph/lead-lag/similarity feature tables it reads are built first). It is
 never a hard exit 1, so a monitor crash is a warning that cannot take down the
 loop.
 
-## INV4 known-answer — important caveat (a6 reference)
+## INV4 known-answer — four amended clauses (AUTHOR AMENDMENT 1)
 
-The backfill compares the `network_spillover` monthly family IC against two
-flip-autopsy references: per-year means vs `a6_lag1_family_ic.json` (±0.005) and
-monthly correlation vs `a2_family_ic_monthly_recomputed.parquet` (≥0.95).
+The backfill runs INV4 on network_spillover's **`ref16_frozen`** roster against
+the flip-autopsy references. Four binding clauses (`ok` = AND of all four),
+implemented in `inv4_comparison()`:
 
-**The a6 generating script was never committed** (commit `cdcd9a4` added only
-the JSON output + a `USER_FIX_LIST` note). A faithful reconstruction from the
-committed a2 machinery + frozen snapshot, read-only, establishes:
+1. monthly corr ≥ `INV4_MIN_CORR` (0.95) vs the committed a2 monthly series;
+2. per-year means within `INV4_PER_YEAR_TOL` (0.012) of a6's `lag1_per_year`;
+3. 2012-2023 mean within `INV4_PRE_MEAN_TOL` (0.001) of a6's `lag1_pre_mean` (+0.0123);
+4. post-2024 (≥2024) mean < 0 — the flip must reproduce.
 
-- a6 is definitively a **lag-1** diagnostic (lag-0 is off by ~0.035/yr; the
-  `USER_FIX_LIST` entry confirms pre-2024 mean +0.0123 / NW-t 2.2).
-- The construction here matches a6's **aggregate** pre-2024 mean to 5 decimals
-  (0.01231 vs 0.01228) and correlates **0.9517** with the committed a2 monthly
-  series — the correlation clause passes (thinly).
-- BUT the **per-year** worst |delta| vs a6 is ~**0.011** (≈12/27 years exceed
-  ±0.005), even on the identical frozen snapshot — a6's exact daily→monthly→
-  yearly path is unrecoverable (its monthly NW-t is 2.23 vs 1.89 here).
-
-So the ±0.005 per-year clause **as literally written is not reproducible** from
-the lost script. The comparison ships with the contract's literal thresholds as
-documented, adjustable module constants (`INV4_PER_YEAR_TOL`, `INV4_MIN_CORR`);
-the backfill prints the full per-year table + both correlations so the operator
-sees exactly where live data lands. The thresholds are **not** silently
-weakened. Author-side resolution pending (relax per-year tol to ~0.012, or make
-the binding check the reproducible corr≥0.95 vs a2 with per-year vs a6 as a
-diagnostic).
+**Why 0.012, not the originally-authored 0.005:** the a6 generating script was
+never committed (commit `cdcd9a4` added only the JSON output + a `USER_FIX_LIST`
+note). A faithful read-only reconstruction from the committed a2 machinery +
+frozen snapshot establishes a6 is definitively **lag-1**, matches a6's aggregate
+pre-2024 mean to 5 decimals (0.01231 vs 0.01228) and correlates **0.9517** with
+a2 — but per-year worst |delta| vs a6 is ~**0.011** even on the identical
+snapshot (a6's exact daily→monthly→yearly path is unrecoverable). The author
+amended the per-year tolerance to 0.012 (measured independent-reconstruction
+noise, not authored precision) and added the pre-mean and flip clauses so the
+known-answer is both reproducible and meaningful. Thresholds are named,
+adjustable module constants; the backfill prints the full per-year table
+regardless. **Contract lesson: reference artifacts must be committed WITH their
+generating script.**

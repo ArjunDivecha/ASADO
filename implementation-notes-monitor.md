@@ -17,6 +17,33 @@ venv; all commands use the absolute production venv python
 - Estimate: COMPLETE within the 30-turn / 3-consecutive-failure budget on the
   first build turn.
 
+## AUTHOR AMENDMENTS (applied verbatim per team-lead ruling, 2026-07-14)
+
+**AUTHOR AMENDMENT 1 (2026-07-14) — amended INV4 + two-roster design.** Rationale
+(author): the +/-0.005 per-year tolerance was authored without validating
+achievability, and the a6 generator was never committed (author defect; logged as
+the contract lesson "reference artifacts must be committed WITH their generating
+script"). INV4 now has four binding clauses on the FROZEN 16-member roster
+(ref16_frozen): (i) corr>=0.95 vs a2 monthly; (ii) per-year +/-0.012 vs a6;
+(iii) 2012-2023 mean +/-0.001 of a6's +0.0123; (iv) post-2024 mean<0. bet.observable
+and G3.must_assert updated to match. Two-roster design added to Context: each family
+stores series under a `roster` column -- `book_2026_07_14` (role=gate; the Alpha Book
+WATCH tier the R-A gate runs on) and `ref16_frozen` (role=inv4_reference; a6's 16, INV4
+only). The gate/INV5 code runs on the book roster; INV4 runs on ref16_frozen. Applied to
+spec INV4.holds/check_intent, bet.observable, G3, Context; roster JSON restructured;
+module + tests updated.
+
+**AUTHOR AMENDMENT 2 (2026-07-14) — governance_contract.yaml in scope.** Rationale
+(author): a loop step unregistered in the governance contract degrades governance
+observability; registration belongs to the same go-live as the wiring. Added
+`config/governance_contract.yaml` to scope.in; registered the family_ic_monitor step
+(exactly one entry, optional: true); dropped G2 deselect #1 (test_run_manifest now green).
+The review audit asserts the yaml change is a single-entry addition. Deselects #2/#3
+(harness-v4's merged review audit) stay -- author is fixing those branch-aware on main.
+This contract's OWN review audit is branch-scoped from the start (skips off
+exp/family-ic-monitor). CONTRACT LESSON added: "contract review audits must be
+branch-scoped or they haunt every later contract's G2."
+
 ## Deviations / decisions logged
 
 **D1 — a6 known-answer reference reproducibility (surfaced to team-lead).**

@@ -25,7 +25,12 @@ substituted with a DETERMINISTIC audit that asserts:
   (a) every changed path on this branch is inside a scope.in pattern;
   (b) no changed path matches a scope.forbid pattern;
   (c) every unit invariant id (INV1..INV6) is covered by at least one collected
-      pytest test in tests/test_family_ic_monitor.py.
+      pytest test in tests/test_family_ic_monitor.py;
+  (d) the config/governance_contract.yaml change is EXACTLY the addition of one
+      step entry (family_ic_monitor), with no existing step removed (AMENDMENT 2).
+
+All audit tests are BRANCH-SCOPED (skip unless on the contract branch) so this
+audit never leaks into a later contract's full-suite G2 after it merges.
 
 Path matching mirrors run_codex_loop.py exactly: PurePosixPath.full_match, and
 the contract's own spec file is excluded from the changed set (the runner does
@@ -58,10 +63,29 @@ SPEC_PATH = BASE_DIR / "family_ic_monitor.spec.md"
 # Build-Mode meta files excluded from the scope diff (see module docstring).
 META_EXCLUSIONS = {"family_ic_monitor.spec.md", "implementation-notes-monitor.md"}
 INVARIANT_IDS = [f"inv{i}" for i in range(1, 7)]  # inv1..inv6
+CONTRACT_BRANCH = "exp/family-ic-monitor"
+GOVERNANCE_YAML = "config/governance_contract.yaml"
 
 
 def _run(cmd: list[str]) -> str:
     return subprocess.run(cmd, cwd=str(BASE_DIR), capture_output=True, text=True).stdout
+
+
+def _current_branch() -> str:
+    try:
+        return subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                                       cwd=str(BASE_DIR), text=True).strip()
+    except Exception:  # noqa: BLE001
+        return ""
+
+
+def _require_contract_branch() -> None:
+    """Branch-scope guard (CONTRACT LESSON): a contract's review audit must run
+    ONLY on its own contract branch, else it leaks into every later contract's
+    full-suite G2 after this contract merges to main. Skip everywhere else."""
+    if _current_branch() != CONTRACT_BRANCH:
+        pytest.skip(f"review audit is branch-scoped to {CONTRACT_BRANCH}; "
+                    f"skipped on '{_current_branch()}' so it does not leak into other contracts' G2")
 
 
 def _load_scope() -> dict:
@@ -94,14 +118,7 @@ def _changed_paths() -> list[str]:
 
 
 def test_review_all_changed_paths_are_in_scope():
-    # Post-merge lifecycle guard: once exp/family-ic-monitor is merged and HEAD
-    # IS main, there is no contract-branch diff left to audit (the scope check
-    # did its job pre-merge). During the build HEAD != main, so the audit RUNS
-    # and genuinely enforces scope on the committed + uncommitted changes.
-    head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=str(BASE_DIR), text=True).strip()
-    main = subprocess.check_output(["git", "rev-parse", "main"], cwd=str(BASE_DIR), text=True).strip()
-    if head == main:
-        pytest.skip("post-merge: HEAD is main -- no contract branch diff to scope-audit")
+    _require_contract_branch()
     scope = _load_scope()
     allowed = [p for p in scope.get("in", []) if isinstance(p, str)]
     changed = _changed_paths()
@@ -112,6 +129,7 @@ def test_review_all_changed_paths_are_in_scope():
 
 
 def test_review_no_forbidden_path_touched():
+    _require_contract_branch()
     scope = _load_scope()
     forbidden = [p for p in scope.get("forbid", []) if isinstance(p, str)]
     changed = _changed_paths()
@@ -121,7 +139,25 @@ def test_review_no_forbidden_path_touched():
     assert not violations, f"scope.forbid touched: {violations}"
 
 
+def test_review_governance_yaml_change_is_single_step_entry():
+    # AUTHOR AMENDMENT 2: the ONLY allowed change to config/governance_contract.yaml
+    # is the addition of exactly one step entry (family_ic_monitor); no existing
+    # step may be removed or renamed.
+    _require_contract_branch()
+    changed = _changed_paths()
+    if GOVERNANCE_YAML not in changed:
+        pytest.skip("governance_contract.yaml not modified on this branch")
+    before_raw = subprocess.run(["git", "show", f"main:{GOVERNANCE_YAML}"],
+                                cwd=str(BASE_DIR), capture_output=True, text=True).stdout
+    before = {s["name"] for s in yaml.safe_load(before_raw)["steps"]}
+    after = {s["name"] for s in yaml.safe_load((BASE_DIR / GOVERNANCE_YAML).read_text())["steps"]}
+    added, removed = after - before, before - after
+    assert added == {"family_ic_monitor"}, f"expected exactly the monitor step added, got added={added}"
+    assert not removed, f"governance steps removed (forbidden): {removed}"
+
+
 def test_review_all_invariants_are_covered_by_tests():
+    _require_contract_branch()
     res = subprocess.run(
         [sys.executable, "-m", "pytest", "--collect-only", "-q",
          "-p", "no:cacheprovider", "tests/test_family_ic_monitor.py"],

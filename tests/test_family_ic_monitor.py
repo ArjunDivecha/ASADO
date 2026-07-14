@@ -170,12 +170,13 @@ def test_inv1_effective_lag_is_at_least_one_for_all_member_sources():
 # Synthetic helpers for INV2 / INV3 / INV6 (no real DB)
 # ─────────────────────────────────────────────────────────────────────────────
 def _syn_daily_family():
-    return {"frequency": "daily", "horizon_days": 1, "members": [
-        {"variable": "SYN_A", "table": "syn_tbl", "source": None,
-         "direction": "higher_is_better", "universe": None},
-        {"variable": "SYN_B", "table": "syn_tbl", "source": None,
-         "direction": "higher_is_better", "universe": None},
-    ]}
+    return {"frequency": "daily", "horizon_days": 1, "rosters": {
+        "book_2026_07_14": {"role": "gate", "members": [
+            {"variable": "SYN_A", "table": "syn_tbl", "source": None,
+             "direction": "higher_is_better", "universe": None},
+            {"variable": "SYN_B", "table": "syn_tbl", "source": None,
+             "direction": "higher_is_better", "universe": None},
+        ]}}}
 
 
 def _syn_loaders(seed=1):
@@ -248,15 +249,18 @@ def test_inv3_upsert_is_idempotent(tmp_path):
         months = pd.date_range("2020-01-01", periods=4, freq="MS")
         s1 = pd.Series([0.01, 0.02, -0.01, 0.03], index=months)
         nm = pd.Series([5, 5, 5, 5], index=months, dtype="Int64")
-        mon.upsert_family_ic(con, "fam", s1, nm, "daily", "5d", "ts1")
+        mon.upsert_family_ic(con, "fam", "book_2026_07_14", "gate", s1, nm, "daily", "5d", "ts1")
         n1 = con.execute(f"SELECT count(*) FROM {mon.MONITOR_TABLE}").fetchone()[0]
         # second run, same night, UPDATED values -> row count unchanged, values updated
         s2 = s1 + 0.005
-        mon.upsert_family_ic(con, "fam", s2, nm, "daily", "5d", "ts2")
+        mon.upsert_family_ic(con, "fam", "book_2026_07_14", "gate", s2, nm, "daily", "5d", "ts2")
         n2 = con.execute(f"SELECT count(*) FROM {mon.MONITOR_TABLE}").fetchone()[0]
         assert n1 == n2 == 4, f"upsert duplicated rows: {n1} -> {n2}"
-        got = mon.read_family_ic(con, "fam")
+        got = mon.read_family_ic(con, "fam", "book_2026_07_14")
         assert abs(float(got.iloc[0]) - 0.015) < 1e-9, "value not updated on re-upsert"
+        # a DIFFERENT roster for the same family+month is a distinct row (PK includes roster)
+        mon.upsert_family_ic(con, "fam", "ref16_frozen", "inv4_reference", s1, nm, "daily", "5d", "ts1")
+        assert con.execute(f"SELECT count(*) FROM {mon.MONITOR_TABLE}").fetchone()[0] == 8
     finally:
         con.close()
 
@@ -305,56 +309,83 @@ def test_inv3_module_never_writes_the_main_db():
 # ─────────────────────────────────────────────────────────────────────────────
 # INV4 — known-answer comparison logic (synthetic references, no live DB)
 # ─────────────────────────────────────────────────────────────────────────────
-def _write_refs(tmp_path, per_year, monthly_series):
+def _write_refs(tmp_path, per_year, pre_mean, monthly_series):
     a6 = tmp_path / "a6.json"
-    a6.write_text(json.dumps({"lag1_per_year": {str(y): float(v) for y, v in per_year.items()}}))
+    a6.write_text(json.dumps({"lag1_per_year": {str(y): float(v) for y, v in per_year.items()},
+                              "lag1_pre_mean": float(pre_mean)}))
     a2 = tmp_path / "a2.parquet"
     pd.DataFrame({"month": monthly_series.index, "family_ic": monthly_series.values}).to_parquet(a2)
     return a6, a2
 
 
-def _varying_monthly(first_year=2000, n_years=11, seed=0):
-    """A month-indexed series with real month-to-month variation (so a Pearson
-    correlation is well defined)."""
-    months = pd.date_range(f"{first_year}-01-01", periods=n_years * 12, freq="MS")
+def _flip_monthly(seed=0):
+    """Month-indexed 2010-01..2026-06 series that is positive-ish pre-2024 and
+    negative post-2024 (so the four INV4 clauses are all exercisable), with real
+    month-to-month variation so a Pearson correlation is well defined."""
+    months = pd.date_range("2010-01-01", "2026-06-01", freq="MS")
     rng = np.random.default_rng(seed)
-    vals = 0.02 + 0.03 * np.sin(np.arange(len(months)) / 3.0) + rng.normal(0, 0.005, len(months))
+    base = np.where(months.year < 2024, 0.02, -0.02)
+    vals = base + 0.015 * np.sin(np.arange(len(months)) / 3.0) + rng.normal(0, 0.004, len(months))
     return pd.Series(vals, index=months)
 
 
+def _refs_matching(tmp_path, series):
+    per_year = series.groupby(series.index.year).mean().to_dict()
+    pre = series[(series.index >= "2012-01-01") & (series.index < "2024-01-01")].mean()
+    return _write_refs(tmp_path, per_year, pre, series)
+
+
 def test_inv4_comparison_passes_on_matching_series(tmp_path):
-    monthly = _varying_monthly()
-    per_year = monthly.groupby(monthly.index.year).mean().to_dict()
-    a6, a2 = _write_refs(tmp_path, per_year, monthly)
-    rep = mon.inv4_comparison(monthly.copy(), a6_path=a6, a2_path=a2)
+    s = _flip_monthly()
+    a6, a2 = _refs_matching(tmp_path, s)
+    rep = mon.inv4_comparison(s.copy(), a6_path=a6, a2_path=a2)
     assert rep["ok"] is True, rep
-    assert rep["n_offending_years"] == 0
+    assert rep["n_offending_years"] == 0 and rep["corr_ok"] and rep["pre_ok"] and rep["post_ok"]
     assert rep["corr_vs_a2_monthly"] >= 0.95
 
 
 def test_inv4_comparison_flags_offending_year(tmp_path):
-    monthly = _varying_monthly()
-    per_year = monthly.groupby(monthly.index.year).mean().to_dict()
-    a6, a2 = _write_refs(tmp_path, per_year, monthly)
-    # backfill matches every year except 2005, shifted +0.02 (> tol 0.005)
-    backfill = monthly.copy()
-    backfill[backfill.index.year == 2005] += 0.02
+    s = _flip_monthly()
+    a6, a2 = _refs_matching(tmp_path, s)
+    backfill = s.copy()
+    backfill[backfill.index.year == 2015] += 0.02   # > per_year_tol 0.012
     rep = mon.inv4_comparison(backfill, a6_path=a6, a2_path=a2)
-    assert rep["ok"] is False
-    assert 2005 in rep["offending_years"]
+    assert rep["ok"] is False and 2015 in rep["offending_years"]
     assert rep["corr_vs_a2_monthly"] >= 0.95  # corr still fine; only per-year fails
 
 
 def test_inv4_comparison_fails_on_low_correlation(tmp_path):
-    backfill = _varying_monthly(seed=1)
-    per_year = backfill.groupby(backfill.index.year).mean().to_dict()  # per-year matches a6
-    independent_noise = _varying_monthly(seed=999) * 0 + \
-        pd.Series(np.random.default_rng(3).normal(0, 0.05, len(backfill)), index=backfill.index)
-    a6, a2 = _write_refs(tmp_path, per_year, independent_noise)  # a2 is uncorrelated with backfill
-    rep = mon.inv4_comparison(backfill.copy(), a6_path=a6, a2_path=a2)
-    assert rep["n_offending_years"] == 0, "per-year should match a6"
-    assert rep["corr_ok"] is False
-    assert rep["ok"] is False
+    s = _flip_monthly(seed=1)
+    per_year = s.groupby(s.index.year).mean().to_dict()
+    pre = s[(s.index >= "2012-01-01") & (s.index < "2024-01-01")].mean()
+    noise = pd.Series(np.random.default_rng(3).normal(0, 0.05, len(s)), index=s.index)
+    a6, a2 = _write_refs(tmp_path, per_year, pre, noise)   # a2 uncorrelated with backfill
+    rep = mon.inv4_comparison(s.copy(), a6_path=a6, a2_path=a2)
+    assert rep["n_offending_years"] == 0 and rep["pre_ok"] and rep["post_ok"]
+    assert rep["corr_ok"] is False and rep["ok"] is False
+
+
+def test_inv4_comparison_fails_on_pre_mean_mismatch(tmp_path):
+    s = _flip_monthly()
+    per_year = s.groupby(s.index.year).mean().to_dict()
+    true_pre = s[(s.index >= "2012-01-01") & (s.index < "2024-01-01")].mean()
+    # a6 pre-mean far off (> 0.001) while per-year still matches
+    a6, a2 = _write_refs(tmp_path, per_year, true_pre + 0.01, s)
+    rep = mon.inv4_comparison(s.copy(), a6_path=a6, a2_path=a2)
+    assert rep["pre_ok"] is False and rep["ok"] is False
+    assert rep["n_offending_years"] == 0 and rep["corr_ok"]
+
+
+def test_inv4_comparison_fails_when_flip_absent(tmp_path):
+    # An all-positive backfill (no post-2024 decay) fails clause (iv) even if the
+    # references are made to match its per-year/pre.
+    months = pd.date_range("2010-01-01", "2026-06-01", freq="MS")
+    rng = np.random.default_rng(2)
+    s = pd.Series(0.02 + 0.01 * np.sin(np.arange(len(months)) / 3.0) + rng.normal(0, 0.003, len(months)),
+                  index=months)
+    a6, a2 = _refs_matching(tmp_path, s)
+    rep = mon.inv4_comparison(s.copy(), a6_path=a6, a2_path=a2)
+    assert rep["post_2024_mean"] > 0 and rep["post_ok"] is False and rep["ok"] is False
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -461,10 +492,25 @@ def test_inv6_dynamic_run_touches_only_allowed_surfaces(tmp_path):
 # ─────────────────────────────────────────────────────────────────────────────
 # Roster sanity (deterministic v1 roster is intact)
 # ─────────────────────────────────────────────────────────────────────────────
-def test_roster_v1_is_the_frozen_16_plus_singletons():
+def test_roster_v1_two_roster_structure():
     fams = mon.monitored_families()
     assert set(fams) == {"network_spillover", "eco_surprise", "ml_combiner"}
-    assert len(fams["network_spillover"]["members"]) == 16
-    assert fams["network_spillover"]["horizon_days"] == 5
-    assert [m["variable"] for m in fams["ml_combiner"]["members"]] == ["COMBINER_RIDGE_DAILY_V1"]
-    assert [m["variable"] for m in fams["eco_surprise"]["members"]] == ["ECO_INFL_SURPRISE_Z"]
+    ns = fams["network_spillover"]
+    assert ns["horizon_days"] == 5
+    # gate roster = the 5 Book WATCH-tier members; ref16 = a6's 16 for INV4 only
+    assert mon.gate_roster_name(ns) == "book_2026_07_14"
+    assert len(ns["rosters"]["book_2026_07_14"]["members"]) == 5
+    assert ns["rosters"]["book_2026_07_14"]["role"] == "gate"
+    assert len(ns["rosters"]["ref16_frozen"]["members"]) == 16
+    assert ns["rosters"]["ref16_frozen"]["role"] == "inv4_reference"
+    # the Book 5 are a subset of ref16
+    book = {m["variable"] for m in ns["rosters"]["book_2026_07_14"]["members"]}
+    ref16 = {m["variable"] for m in ns["rosters"]["ref16_frozen"]["members"]}
+    assert book < ref16
+    # singleton families: gate roster only
+    assert mon.gate_roster_name(fams["ml_combiner"]) == "book_2026_07_14"
+    assert [m["variable"] for m in fams["ml_combiner"]["rosters"]["book_2026_07_14"]["members"]] \
+        == ["COMBINER_RIDGE_DAILY_V1"]
+    assert [m["variable"] for m in fams["eco_surprise"]["rosters"]["book_2026_07_14"]["members"]] \
+        == ["ECO_INFL_SURPRISE_Z"]
+    assert mon.KNOWN_ANSWER_ROSTER == "ref16_frozen"

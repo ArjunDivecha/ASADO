@@ -105,7 +105,21 @@ def _result_json_paths(out_dir: Path) -> list[Path]:
         data = json.loads(manifest.read_text())
         paths = [Path(p) for p in data.get("result_files", []) if p]
         if paths:
-            return paths
+            # A manifest may record paths through a since-removed worktree
+            # symlink (the G3 runtime prerequisite). If a recorded path no
+            # longer exists, resolve its basename against the harness_runs
+            # dir that physically contains this output dir - the per-run
+            # result JSONs live one level above reverdict_v4_<date>/.
+            runs_dir = out_dir.parent
+            resolved = []
+            for p in paths:
+                if p.exists():
+                    resolved.append(p)
+                elif (runs_dir / p.name).exists():
+                    resolved.append(runs_dir / p.name)
+                else:
+                    resolved.append(p)  # keep dangling -> reported as missing
+            return resolved
     # fallback: scan the dir (excludes summary.* and manifest.json)
     return [p for p in out_dir.glob("*.json") if p.name != "manifest.json"]
 

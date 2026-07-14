@@ -93,8 +93,15 @@ synthetic loaders + a temp DuckDB and never open real DBs.
 - /private/tmp/.../scratchpad/recon_a6.py, frozen_roster.json — a6 methodology
   reconstruction + roster extraction. Never wrote to any repo DB.
 
-## Gate/verification results (this build turn)
-- G1: tests/test_family_ic_monitor.py → 32 passed.
-- G2: full suite with 3 documented deselects → 309 passed, 2 skipped, exit 0.
-- review: tests/test_review_audit_monitor.py → 3 passed.
-- G3/G4: --dry-run (backfill + nightly) exit 0, --help exit 0 — well-formed, not executed.
+## Turn 3 — merged main; G2 now zero deselects
+Merged main (b358d50), which branch-scoped the harness-v4 review audit to
+exp/harness-v4 (skips here). With that + the AMENDMENT 2 step registration, G2 is
+the FULL suite with ZERO deselects. My own review audit remains branch-scoped to
+exp/family-ic-monitor.
+
+## Gate/verification results (final)
+- G1: tests/test_family_ic_monitor.py → 35 passed.
+- G2: full suite, ZERO deselects → 314 passed, 4 skipped (2 harness-v4 + 2 pre-existing), exit 0.
+- review: tests/test_review_audit_monitor.py → 4 passed (scope, forbid, single-entry yaml, invariant coverage).
+- validator: DIVECHA_CONTRACT_VALID mode=build.
+- G3/G4: --dry-run (backfill + verify-idempotent) exit 0, --help exit 0 — well-formed, not executed.

@@ -62,16 +62,13 @@ gates:
   - id: G2
     intent: "existing repo test suite stays green (no regression to loop, harness, or ledger behavior)"
     must_assert: "full pytest run exits 0"
-    # Two deselects (AUTHOR AMENDMENT 2 dropped the third): test_review_audit_v4.py
-    # is harness-v4's OWN merged review command whose scope.forbid lists
-    # scripts/loop/**, so it flags these (correctly in-scope) files -- a
-    # cross-contract leftover, not loop/harness/ledger behavior (root cause being
-    # fixed on main by the author making those audits branch-aware). This
-    # contract's OWN review audit is branch-scoped from the start (skips off
-    # exp/family-ic-monitor) so it never haunts a later contract's G2.
-    # test_run_manifest now stays GREEN: the step is registered in
-    # config/governance_contract.yaml (AMENDMENT 2). Everything else must exit 0.
-    command: '"/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/venv/bin/python" -m pytest tests/ -q -p no:cacheprovider --deselect "tests/test_review_audit_v4.py::test_review_all_changed_paths_are_in_scope" --deselect "tests/test_review_audit_v4.py::test_review_no_forbidden_path_touched"'
+    # ZERO deselects. After merging main (b358d50) the harness-v4 review audit is
+    # branch-scoped to exp/harness-v4 (skips here), and this contract's step is
+    # registered in config/governance_contract.yaml (AMENDMENT 2) so
+    # test_run_manifest is green. This contract's OWN review audit is likewise
+    # branch-scoped (skips off exp/family-ic-monitor) so it never leaks into a
+    # later contract's G2. The full suite exits 0 with no exclusions.
+    command: '"/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/venv/bin/python" -m pytest tests/ -q -p no:cacheprovider'
     requires_permission: false
   - id: G3
     intent: "the historical backfill runs against the live DBs and the four-clause INV4 known-answer comparison passes on the ref16_frozen roster; the book_2026_07_14 gate state initializes with network_spillover 'parked' at 0 consecutive positive month-ends as of 2026-06"
@@ -114,10 +111,11 @@ graduate: "gates green AND review pass AND scope clean; then Arjun approves the 
 scale: "graduated AND two weeks of clean nightly rows AND the Alpha Book v2 parked/re-armed states are read from this table instead of being hand-maintained"
 
 ledger:
-  turns: 2
+  turns: 3
   consecutive_failures: 0
   blockers: []
   lessons:
+    - "Turn 3: merged main (b358d50), which branch-scoped the harness-v4 review audit to exp/harness-v4 (it now skips here). Combined with AMENDMENT 2's step registration, G2 is now the FULL suite with ZERO deselects (314 passed / 4 skipped, exit 0). This contract's own review audit stays branch-scoped to exp/family-ic-monitor."
     - "AUTHOR AMENDMENT 1 (2026-07-14): the a6 generating script was never committed (commit cdcd9a4 shipped only the JSON), so the original +/-0.005 per-year INV4 clause was unachievable from a faithful reconstruction (worst ~0.011). INV4 amended to four measured clauses: corr>=0.95 vs a2, per-year +/-0.012 vs a6, pre-2024 mean +/-0.001 of a6's +0.0123, post-2024 mean<0. CONTRACT LESSON: reference artifacts must be committed WITH their generating script."
     - "AUTHOR AMENDMENT 2 (2026-07-14): config/governance_contract.yaml added to scope.in so the required family_ic_monitor loop step is registered (exactly one entry); test_run_manifest stays green and G2 deselect #1 is dropped. A loop step unregistered in the governance contract degrades governance observability, so registration belongs to the same go-live as the wiring."
     - "Roster design: each family carries named rosters in the table's `roster` column. role='gate' (book_2026_07_14, the Alpha Book WATCH tier frozen at Book publication) is what the R-A gate runs on; role='inv4_reference' (ref16_frozen, a6's exact 16) is used ONLY for the INV4 known-answer. Rosters change only on a deliberate Book re-issue, never on live re-verdicts, so the monitored series is continuous."

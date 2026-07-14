@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!--
+    ASADO nightly loop job. Every day 11:30, runs scripts/loop/loop_daily_job.py
+    under the ASADO venv. Long-running (Bloomberg-rate-limited) — NightWatch
+    allows a 210min grace window. Success line in the log is "all steps OK";
+    hard failures are "!!! STEP FAILED".
+
+    Logs to ASADO/Data/logs/loop_daily_launchd.log — this exact path is the
+    evidence file NightWatch's manifest (asado-loop-daily) greps, so do not
+    change it without updating overseer/manifest.json.
+
+    RECONSTRUCTED 2026-07-14: the installed file had decayed to a bare JSON
+    ProgramArguments array (no Label/StartCalendarInterval/etc) — the same
+    corruption that hit six plists at 2026-07-08 22:37:10 and that was fixed for
+    com.arjundivecha.asado-daily on 2026-07-09 but not for the others. After the
+    2026-07-12 reboot launchd could no longer bootstrap it and the job silently
+    stopped running (last run 2026-07-11 11:37). ProgramArguments recovered
+    verbatim from the corrupted file; schedule and log paths recovered from
+    NightWatch overseer/manifest.json. Corrupted original backed up to
+    ~/Library/LaunchAgents/corrupted_backup_2026-07-14/.
+    -->
+    <key>Label</key>
+    <string>com.arjundivecha.asado-loop-daily</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/venv/bin/python</string>
+        <string>/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/loop/loop_daily_job.py</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO</string>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>11</integer>
+        <key>Minute</key>
+        <integer>30</integer>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/logs/loop_daily_launchd.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/logs/loop_daily_launchd.log</string>
+
+    <key>RunAtLoad</key>
+    <false/>
+</dict>
+</plist>

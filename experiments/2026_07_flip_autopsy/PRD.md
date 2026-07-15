@@ -93,3 +93,19 @@ Estimated break date laid against: the 2024 EM flow reversal, tariff-regime onse
 - No trading rule, no sleeve, no harness registration, no `--force` sweeps.
 - No tuning of the axes, buckets, thresholds, or roster after seeing results — deviations get logged in RESULTS.md as post-hoc and cannot change the verdict.
 - No writes outside the sandbox; no held DB connections (snapshot-first; any unavoidable live touch is open→query→close).
+
+---
+
+> **ADDENDUM A7 (2026-07-15, pre-registered BEFORE any conditional number was computed; Arjun-approved):**
+> a FIFTH regime axis for step (ii): the Early Warning System state (`state_best` from
+> `/Users/arjundivecha/Dropbox/AAA Backup/A Working/Early Warning/outputs/run_20260715_113935/signals_panel.parquet`,
+> monthly IN/TRANSITION/OUT, 1960–2026-05, event-validated confluence classifier, internally
+> publication-lagged). Axis definition: EWS state at month-end m−1 conditions family IC of month m
+> (binary: IN vs NOT-IN, since OUT alone is ~15% of months). Outcomes: (a) network_spillover
+> 16-roster monthly family IC (a2 recomputed series), (b) the book_2026_07_14 5-variable roster
+> series. Pre-registered tests: conditional mean IC by state with NW-t (lag 6) on the IN-minus-NOTIN
+> difference, fit on pre-2024 and reported full-sample; decay localization (are 2024–26 negative
+> months concentrated in NOT-IN states?); secondary second-moment check (family-IC dispersion by
+> state — descriptive). Criterion: |NW-t| ≥ 2.0 pre-2024 = state-dependence found; else the
+> autopsy's state-independence conclusion extends to this axis. Prior: no difference (a3 found
+> flatness on all four original axes). No trading rule follows from any outcome.

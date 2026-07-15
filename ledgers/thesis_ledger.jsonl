@@ -119,3 +119,9 @@
 {"ts": "2026-07-14T07:40:49", "event": "thesis_mark", "thesis_id": "T_20260610_002", "mark_date": "2026-07-14", "cum_return": 0.00782, "days_open": 34}
 {"ts": "2026-07-14T07:41:00", "event": "thesis_mark", "thesis_id": "T_20260610_001", "mark_date": "2026-07-14", "cum_return": 0.016952, "days_open": 34}
 {"ts": "2026-07-14T07:41:00", "event": "thesis_mark", "thesis_id": "T_20260610_002", "mark_date": "2026-07-14", "cum_return": 0.00782, "days_open": 34}
+{"ts": "2026-07-14T08:14:24", "event": "thesis_mark", "thesis_id": "T_20260610_001", "mark_date": "2026-07-14", "cum_return": 0.016952, "days_open": 34}
+{"ts": "2026-07-14T08:14:24", "event": "thesis_mark", "thesis_id": "T_20260610_002", "mark_date": "2026-07-14", "cum_return": 0.00782, "days_open": 34}
+{"ts": "2026-07-15T00:15:16", "event": "thesis_mark", "thesis_id": "T_20260610_001", "mark_date": "2026-07-14", "cum_return": 0.016952, "days_open": 34}
+{"ts": "2026-07-15T00:15:16", "event": "thesis_mark", "thesis_id": "T_20260610_002", "mark_date": "2026-07-14", "cum_return": 0.00782, "days_open": 34}
+{"ts": "2026-07-15T05:43:12", "event": "thesis_mark", "thesis_id": "T_20260610_001", "mark_date": "2026-07-15", "cum_return": 0.013853, "days_open": 35}
+{"ts": "2026-07-15T05:43:12", "event": "thesis_mark", "thesis_id": "T_20260610_002", "mark_date": "2026-07-15", "cum_return": 0.018885, "days_open": 35}

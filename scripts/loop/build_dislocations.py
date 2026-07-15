@@ -1061,8 +1061,44 @@ def write_brief(con, df: pd.DataFrame, run_date: pd.Timestamp, regime: str) -> N
     lines += _etf_positioning_section(con, run_date)
     lines += _cot_section(con, run_date)
     lines += _jst_tail_context_section(con, run_date)
+    lines += _ews_and_gates_context_section()
     path.write_text("\n".join(lines) + "\n")
     log(f"brief: {path}")
+
+
+def _ews_and_gates_context_section(base=None) -> list[str]:
+    """US EWS regime state + family R-A gate states. CONTEXT TIER ONLY (same
+    class as the JST section): no detector severity, no sizing, no verdict is
+    affected. Reads two artifacts written by earlier steps and degrades
+    gracefully if either is absent or stale (staleness surfaced, never hidden).
+    Inputs: Data/work/loop/ews_context.json (build_ews_context.py),
+            Data/work/loop/family_ic_status.json (build_family_ic_monitor.py)."""
+    import json as _json
+    from pathlib import Path as _Path
+    header = ["", "## US regime + family-gate context (context tier)", ""]
+    out = list(header)
+    if base is None:
+        base = _Path("/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/loop")
+    base = _Path(base)
+    try:
+        e = _json.loads((base / "ews_context.json").read_text())
+        stale = " [STALE reading - refresh Early Warning]" if e.get("stale") else ""
+        out.append(
+            f"- EWS (US, 12-signal): **{e['state']}** as of {e['as_of_month_end']}"
+            f" - composite {e['composite']} ({e['composite_pctile']:.0%} pctile),"
+            f" diffusion {e['diffusion']:.0%}{stale}")
+        out.append(f"  - {e['a7_habitat_note']}")
+    except Exception as exc:
+        out.append(f"- EWS context UNAVAILABLE ({exc.__class__.__name__}) - run build_ews_context")
+    try:
+        g = _json.loads((base / "family_ic_status.json").read_text())
+        states = ", ".join(f"{k} {v.get('state')}/{v.get('consecutive_positive')}"
+                           for k, v in g.get("families", {}).items())
+        out.append(f"- Family R-A gates (as of {g.get('as_of')}): {states}"
+                   " - re-arm fires at 2 consecutive positive month-ends")
+    except Exception as exc:
+        out.append(f"- family gates UNAVAILABLE ({exc.__class__.__name__})")
+    return out
 
 
 def _jst_tail_context_section(con, run_date: pd.Timestamp) -> list[str]:

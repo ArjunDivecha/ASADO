@@ -265,8 +265,11 @@ steps:
     governance: false
     optional: true          # family-IC monitor (FAMILY-IC-MONITOR-001): fail-soft observability, exits 2 (PARTIAL) on failure, never reds the loop
     expected_outputs:
-      - {kind: loop_db_table, table: family_ic_nightly}
-      - {kind: file, path_template: "Data/work/loop/family_ic_status.json", staleness: mtime}
+  - name: ews_context
+    governance: false
+    optional: true          # US EWS context tier (2026-07-15): reads sibling Early Warning repo, fail-soft exit 2, never reds the loop
+    expected_outputs:
+      - {kind: file, path_template: "Data/work/loop/ews_context.json", staleness: mtime}
 
   - name: write_graph_discoveries
     governance: false

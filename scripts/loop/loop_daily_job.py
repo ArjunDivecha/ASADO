@@ -297,6 +297,9 @@ STEPS = [
     # exit 2 (PARTIAL) rather than raising, so a monitor crash is a warning that
     # cannot take down the loop (it never returns a hard-failure exit 1).
     ("family_ic_monitor", [PY, "scripts/loop/build_family_ic_monitor.py"]),
+    # US EWS regime reading -> context artifact for the brief (context tier,
+    # fail-soft exit 2 on any failure; reads the sibling Early Warning repo).
+    ("ews_context", [PY, "scripts/loop/build_ews_context.py"]),
     # Push discovered SIMILAR_TO / LEADS edges + combiner ranks into Neo4j.
     ("write_graph_discoveries", [PY, "scripts/loop/write_graph_discoveries.py"]),
     ("build_dislocations", [PY, "scripts/loop/build_dislocations.py"]),

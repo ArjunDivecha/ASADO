@@ -48,3 +48,29 @@ The flip went undocumented for ~15 months because **family IC is not monitored n
 - `a5_summary.json` — event alignment + live-combiner tie-out
 - Code: `a1_premise_check.py`, `a2_drift_test.py`, `a3_regime_conditioning.py`, `a4_crowding.py`, `snapshot_daily_returns.py`
 - Input freeze: `Data/work/experiments/flip_autopsy/snapshot_2026_07_13/` (MANIFEST.json)
+
+---
+
+## A7 addendum (2026-07-15) — the EWS fifth axis
+
+Arjun's Early Warning System state (IN/TRANSITION/OUT, event-validated 12-signal confluence,
+`Early Warning/outputs/run_20260715_113935`) was pre-registered as a fifth conditioning axis
+(PRD Addendum A7) and tested against the family IC. Result — **the first axis to cross its bar**:
+
+| Outcome | Period | mean IN | mean NOT-IN | NW-t (IN−NOTIN) |
+|---|---|---|---|---|
+| roster16 | pre-2024 | +0.022 (n=196) | **+0.043** (n=92) | **−2.17** ✂ bar |
+| roster16 | 2024+ | −0.032 (n=13) | +0.002 (n=16) | −1.03 |
+| book5 | pre-2024 | +0.031 | +0.049 | −1.58 (below bar) |
+
+**Reading:** the propagation family historically earned ~2× its IC in TRANSITION/OUT months —
+contagion propagates during stress; calm markets give it less to harvest. **The flip conclusion is
+unchanged**: both states degraded by similar magnitudes post-2024 (IN −0.055, NOT-IN −0.041 level
+shifts; negative 2024+ months split 44/56 IN/NOT-IN ≈ the base rate), so the decay remains a
+state-independent level shift ON TOP of a real habitat difference. Honesty stamps: (1) fifth axis
+tested — t=2.17 (p≈0.03) would NOT survive a five-axis FDR; the pre-registered single-axis bar
+was 2.0 and is honored with this caveat attached; (2) the effect is a MEAN difference (state stds
+pre-2024 are equal, 0.081 both) — not a dispersion artifact (a3's dispersion axis was flat); (3)
+book-5 roster same direction, below bar. **Use-class: context tier for re-arm sizing** — if the
+family re-arms while the EWS reads IN (its historically weaker habitat, and the current reading),
+size accordingly; no trading rule registered. Artifacts: `a7_summary.json`, `a7_ews_axis.xlsx`.

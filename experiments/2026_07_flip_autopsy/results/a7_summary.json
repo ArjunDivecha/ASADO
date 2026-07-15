@@ -1,0 +1,78 @@
+{
+  "roster16_2024plus_neg_months_IN_share": 0.438,
+  "roster16_2024plus_months_IN_share": 0.448,
+  "book5_2024plus_neg_months_IN_share": 0.5,
+  "book5_2024plus_months_IN_share": 0.448,
+  "criterion": "|NW-t| >= 2.0 on pre-2024 roster16 IN-minus-NOTIN",
+  "pre2024_roster16_nw_t": -2.17,
+  "verdict": "STATE-DEPENDENCE FOUND",
+  "ews_run": "run_20260715_113935",
+  "table": [
+    {
+      "outcome": "roster16",
+      "period": "pre2024",
+      "mean_IN": 0.02228,
+      "n_IN": 196,
+      "mean_NOTIN": 0.04324,
+      "n_NOTIN": 92,
+      "std_IN": 0.08066,
+      "std_NOTIN": 0.08115,
+      "nw_t_diff": -2.17
+    },
+    {
+      "outcome": "roster16",
+      "period": "full",
+      "mean_IN": 0.01888,
+      "n_IN": 209,
+      "mean_NOTIN": 0.03715,
+      "n_NOTIN": 108,
+      "std_IN": 0.08316,
+      "std_NOTIN": 0.0798,
+      "nw_t_diff": -1.89
+    },
+    {
+      "outcome": "roster16",
+      "period": "2024plus",
+      "mean_IN": -0.03249,
+      "n_IN": 13,
+      "mean_NOTIN": 0.00215,
+      "n_NOTIN": 16,
+      "std_IN": 0.10545,
+      "std_NOTIN": 0.06274,
+      "nw_t_diff": -1.03
+    },
+    {
+      "outcome": "book5",
+      "period": "pre2024",
+      "mean_IN": 0.03118,
+      "n_IN": 196,
+      "mean_NOTIN": 0.04905,
+      "n_NOTIN": 92,
+      "std_IN": 0.08776,
+      "std_NOTIN": 0.08702,
+      "nw_t_diff": -1.58
+    },
+    {
+      "outcome": "book5",
+      "period": "full",
+      "mean_IN": 0.02776,
+      "n_IN": 209,
+      "mean_NOTIN": 0.04267,
+      "n_NOTIN": 108,
+      "std_IN": 0.091,
+      "std_NOTIN": 0.08697,
+      "nw_t_diff": -1.3
+    },
+    {
+      "outcome": "book5",
+      "period": "2024plus",
+      "mean_IN": -0.02373,
+      "n_IN": 13,
+      "mean_NOTIN": 0.00595,
+      "n_NOTIN": 16,
+      "std_IN": 0.12378,
+      "std_NOTIN": 0.07953,
+      "nw_t_diff": -0.68
+    }
+  ]
+}

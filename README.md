@@ -549,3 +549,4 @@ Bloomberg quota usage for the loop's nightly pulls is logged append-only to
 - `docs/DATABASE_AUDIT_2026_06_09.md` — latest full warehouse audit.
 - `docs/DAILY_PIPELINE_REPORT_2026_06_09.md` — daily pipeline build + canonical validation.
 - `CLAUDE.md` — agent/dev guidance and conventions.
+- `PRD_LLM_12M_Country_Return_Predictor.md` — DRAFT spec (2026-07-17): blinded-LLM sub-scores + ridge combiner for 12M country-return prediction; train 2000–2014, 2015 embargo, OOS 2016→. No code yet.

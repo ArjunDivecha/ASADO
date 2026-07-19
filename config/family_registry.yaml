@@ -7,7 +7,7 @@
 #   scripts/harness/evaluate_signal.py (the deflated-Sharpe trial count N).
 #
 # VERSION: 1.1
-# LAST UPDATED: 2026-07-02 (added triptych_prior — Triptych PIT queue rule)
+# LAST UPDATED: 2026-07-18 (added llm_1m_country_rotation — LLM-1M PRD v2.4, both arms)
 # AUTHOR: Arjun Divecha (built by agent session, Governance Layer PRD v1.2, item A5)
 #
 # DESCRIPTION:
@@ -76,3 +76,7 @@ families:
   triptych_prior:
     description: "Triptych PIT conditional-history priors: walk-forward aggregates of the review-queue rule (decile-conditional forward-return leans over the factor scan grid)."
     variable_prefixes: ["TRIPTYCH_"]
+
+  llm_1m_country_rotation:
+    description: "1-month cross-country rotation from the blinded monthly dossier feature set (34 T2 countries): arm A = frozen blinded-LLM sub-scores + walk-forward ridge; arm B = tabular HGB on the raw dossier fields. ONE shared trial budget (17 burn-in arms + 2 OOS arms)."
+    variable_prefixes: ["LLM1M_", "TAB1M_"]

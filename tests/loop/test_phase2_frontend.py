@@ -74,6 +74,17 @@ def _bcd():
     return _load(BASE / "cos_mockups" / "build_cockpit_data.py", "bcd_p2")
 
 
+def test_triptych_run_row_opens_actual_graph_modal():
+    """The run itself—not only a tiny tool glyph—must open the graph."""
+    generator = (BASE / "cos_mockups" / "make_live_cockpit.py").read_text()
+    live_page = (BASE / "cos_mockups" / "cockpit_live.html").read_text()
+    for text in (generator, live_page):
+        assert 'data-triptych-run="${r.triptych_url?\'graph\':\'country\'}"' in text
+        assert "?`return tripOpen(event,'${qs(r.triptych_url)}'" in text
+        assert "View graph&nbsp;⧉" in text
+        assert 'aria-label="View Triptych graph for ${esc(label)}"' in text
+
+
 # --------------------------------------------------------------------------- #
 # build_family_ranks.rank_family — registered-direction orientation
 # --------------------------------------------------------------------------- #

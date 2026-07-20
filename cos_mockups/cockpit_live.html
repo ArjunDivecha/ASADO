@@ -521,7 +521,11 @@ FVIEWS.fable={title:()=>`Fable's <em>Desk</em>`,opts:()=>``,render:()=>{
 
 /* ===== Triptych priors (2026-07-02) — PIT conditional history, PRIOR only ===== */
 function tripDir(d){return d==="long"?'<b class="tl">LONG</b>':(d==="short"?'<b class="ox">SHORT</b>':esc(d||"—"))}
-function tripRow(r,showC){return `<tr onclick="openCountry('${qs(r.country)}')">
+function tripRow(r,showC){const label=`${r.factor} · ${r.country} · ${r.horizon_months}M`;
+  const rowAction=r.triptych_url
+    ?`return tripOpen(event,'${qs(r.triptych_url)}','${qs(label)}')`
+    :`openCountry('${qs(r.country)}')`;
+  return `<tr data-triptych-run="${r.triptych_url?'graph':'country'}" onclick="${rowAction}" title="${r.triptych_url?'Open the actual Triptych graph':'Open the country panel'}">
   ${showC?`<td style="font-family:var(--serif);font-size:12.5px">${esc(r.country)}</td>`:""}
   <td>${esc(r.factor)}${r.factor_table!=="t2_raw"?' <span class="muted" title="warehouse factor (ASADO-only, no tool view)">°</span>':""}</td>
   <td class="num" title="${esc(r.normalization)} · ${esc(r.return_mode)}">${esc((r.normalization||"").replace("history_z","z").replace("cross_var_pct","xs"))}/${esc((r.return_mode||"").slice(0,3))}</td>
@@ -530,7 +534,7 @@ function tripRow(r,showC){return `<tr onclick="openCountry('${qs(r.country)}')">
   <td class="num" title="bucket avg fwd ${r.cur_bucket_avg_fwd!=null?(r.cur_bucket_avg_fwd*100).toFixed(1)+'%':'—'} · hit ${r.cur_bucket_hit_rate!=null?Math.round(r.cur_bucket_hit_rate*100)+'%':'—'} · n=${r.cur_bucket_n??'—'}">${r.cur_bucket_avg_fwd!=null?((r.cur_bucket_avg_fwd>=0?"+":"")+(r.cur_bucket_avg_fwd*100).toFixed(1)+"%"):"—"}</td>
   <td class="num">${r.confidence_score!=null?r.confidence_score.toFixed(2):"—"}</td>
   <td class="num">${r.ic_t_stat!=null?r.ic_t_stat.toFixed(1):"—"}</td>
-  <td class="num">${r.triptych_url?`<a href="${esc(r.triptych_url)}" target="_blank" rel="noopener" onclick="return tripOpen(event,this.href,'${qs(r.factor)} · ${qs(r.country)} · ${r.horizon_months}M')" style="color:var(--teal);text-decoration:none" title="open the Triptych (popup; new tab if popups blocked)">⧉</a>`:"—"}</td></tr>`}
+  <td class="num">${r.triptych_url?`<a href="${esc(r.triptych_url)}" target="_blank" rel="noopener" aria-label="View Triptych graph for ${esc(label)}" onclick="return tripOpen(event,this.href,'${qs(label)}')" style="color:var(--teal);text-decoration:none;white-space:nowrap;font-weight:600" title="Open the actual Triptych graph">View graph&nbsp;⧉</a>`:"—"}</td></tr>`}
 
 /* Triptych popup (2026-07-11): in-page modal hosting the actual Triptych visual
    tool in an iframe (triptych-one.vercel.app now sends frame-ancestors *).

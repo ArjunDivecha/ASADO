@@ -1,3 +1,9 @@
+---
+type: "Reference"
+title: "Architecture overview"
+description: "ASADO's layered architecture: source collection, DuckDB warehouse, Neo4j graph, daily/monthly cadences, the separate loop database, and the cockpit/MCP query surface."
+---
+
 # Architecture overview
 
 ASADO is organized around a few stable layers:

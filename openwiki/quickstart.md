@@ -1,3 +1,9 @@
+---
+type: "Reference"
+title: "OpenWiki quickstart"
+description: "Entry point for ASADO's OpenWiki knowledge base — a hybrid macro/research/trading platform for a 34-country universe with DuckDB, Neo4j, daily/monthly pipelines, an alpha-hunting loop, prediction-market experiments, and a Chief-of-Staff cockpit."
+---
+
 # OpenWiki quickstart
 
 ASADO is a hybrid macro / research / trading platform for a 34-country universe. It combines a DuckDB analytical warehouse, a Neo4j graph, daily and monthly data pipelines, a loop database for the alpha-hunting system, prediction-market experiments, and a Chief-of-Staff cockpit for surfacing signals and governance.

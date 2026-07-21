@@ -1,3 +1,9 @@
+---
+type: "Reference"
+title: "Loop and research workflows"
+description: "ASADO's nightly alpha-hunting loop: dislocation engine, ledgers, harness verdicts, calibration reports, Triptych priors, graph features, and the canonical nightly brief."
+---
+
 # Loop and research workflows
 
 The loop system is ASADO's nightly research and validation stack. It is separate from the main warehouse and is designed to generate dislocations, ledgers, harness verdicts, calibration reports, and briefings without contaminating the core analytical store.

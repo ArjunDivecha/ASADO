@@ -1,3 +1,9 @@
+---
+type: "Reference"
+title: "Prediction markets and Brier Gate"
+description: "ASADO's prediction-market surfaces: the general predmkt pipeline and the Brier Gate experiment that tests whether the warehouse adds incremental forecasting value over market prices."
+---
+
 # Prediction markets and Brier Gate
 
 ASADO has two related prediction-market surfaces:

@@ -1,3 +1,9 @@
+---
+type: "Reference"
+title: "Frontend and cockpit"
+description: "ASADO's Chief-of-Staff cockpit: the cockpit_data.json payload contract, producer logic, Phase 2 frontend binding, and the distinction between verified signals and conjecture."
+---
+
 # Frontend and cockpit
 
 ASADO's Chief-of-Staff cockpit is a data product, not just a UI. The cockpit payload is built from loop-DB state, governance artifacts, research surfaces, and a small number of curated pointers into nightly reports.

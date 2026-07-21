@@ -1,3 +1,9 @@
+---
+type: "Reference"
+title: "Operations and runbooks"
+description: "How to run ASADO's monthly, daily, and nightly pipelines safely — prerequisites, commands, resume/lock discipline, failure modes, and the automated OpenWiki documentation workflow."
+---
+
 # Operations and runbooks
 
 This repository has several moving parts that are safe only when run in the right order. The operational story is mostly encoded in `README.md`, `CLAUDE.md`, `AGENTS.md`, and the docstrings of the orchestrator scripts.
@@ -68,6 +74,16 @@ Two operational patterns are especially important:
 - `scripts/monthly_update.py` — monthly orchestration and output map.
 - `scripts/loop/loop_daily_job.py` — loop step order and outputs.
 - `scripts/duckdb_lock_guard.py` — lock-squatter handling.
+
+## OpenWiki documentation workflow
+
+The repository's `openwiki/` wiki is refreshed by a scheduled GitHub Actions workflow at `.github/workflows/openwiki-update.yml`. The workflow:
+
+1. Installs the `openwiki` CLI globally.
+2. Runs `openwiki code --update --print`, configured via `OPENWIKI_PROVIDER`, `OPENWIKI_MODEL_ID`, and `OPENROUTER_API_KEY` env vars (with optional LangSmith tracing).
+3. Opens a pull request (`openwiki/update` branch) with the regenerated `openwiki/` content and touched agent-instruction files, instead of committing directly to the main branch.
+
+Do not hand-edit generated OpenWiki pages unless explicitly asked; prefer updating source code/docs and letting the workflow regenerate.
 
 ## Where to go next
 

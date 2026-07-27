@@ -97,7 +97,7 @@
   "loop": {
     "max_iterations": 30,
     "agent_backend": "claude",
-    "agent_model": "claude-sonnet-4-6",
+    "agent_model": "claude-sonnet-5",
     "agent_timeout_seconds": 1800,
     "git_commit_on_promote": false,
     "web_search_on_plateau": true,

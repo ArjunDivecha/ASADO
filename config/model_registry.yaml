@@ -13,9 +13,9 @@
 #   passes. No model id here is authoritative until that gate passes.
 # =============================================================================
 version: 1
-default_model: claude-opus-4-8
+default_model: claude-opus-5
 models:
-  claude-opus-4-8:
+  claude-opus-5:
     model_version: null
     training_cutoff: null            # NOT filled — must come from the official Anthropic
                                      # model card. While null, every historical idea routes to

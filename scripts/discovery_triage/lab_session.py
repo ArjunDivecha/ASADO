@@ -54,7 +54,7 @@ from .paths import DETECTOR_DRAFTS, DISCOVERY_CONFIG, DRAFTS_DIR, RESEARCH_LOOKS
 from .record_look import record_look
 from .surface_loader import check_surface, load_country_snapshot
 
-DEFAULT_MODEL = "claude-opus-4-8"
+DEFAULT_MODEL = "claude-opus-5"
 
 # FuguPRD §24 forbidden vocabulary — the Lab emits drafts, never validation claims.
 _FORBIDDEN = re.compile(

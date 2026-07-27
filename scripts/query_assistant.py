@@ -323,7 +323,7 @@ class ASADOQueryAssistant:
             os.getenv("ASADO_QUERY_MODEL")
             or os.getenv("ASADO_QUERY_ANTHROPIC_MODEL")
             or os.getenv("ANTHROPIC_MODEL")
-            or "claude-sonnet-4-20250514"
+            or "claude-sonnet-5"
         )
 
     def _schema_bundle(self) -> Dict[str, Any]:

@@ -26,7 +26,7 @@ The implementation is a **serious, mostly-faithful realization of the FuguPRD/V1
 | 9 | Static cockpit shows no API-failure noise | **PASS** | grep of `cockpit_live.html` = 0 occurrences of `501`/`API unavailable`; static mode short-circuits before any fetch. |
 | 10 | Generated live-LLM artifacts not merged as source | **PARTIAL** | journal drafts correctly gitignored (`.gitignore:56-59`), BUT `cos_mockups/cockpit_data.json`/`.js`/`cockpit_live.html` are git-tracked and embed live-Opus draft prose — spirit violated. |
 | 11 | `pytest tests/discovery_triage` passes | **PASS** | 75 passed in 0.90s (re-run live). Caveat: suite does not cover the AC3/AC4/provenance defects below. |
-| 12 | One live Opus run with strict schema | **PASS** | 26 `DRAFT_20260625_*.yaml` + 5 looks; model `claude-opus-4-8`, real numeric citations, falsification/self-falsification, route `prospective_only_unknown_cutoff`. |
+| 12 | One live Opus run with strict schema | **PASS** | 26 `DRAFT_20260625_*.yaml` + 5 looks; model `claude-opus-5`, real numeric citations, falsification/self-falsification, route `prospective_only_unknown_cutoff`. |
 | 13 | Browser smoke confirms front-end | **PARTIAL** | HTML/JS inspection + runtime payload only; loopback HTTP returned 000, no real Playwright/DOM render. Single AC with no runtime evidence. |
 
 ---

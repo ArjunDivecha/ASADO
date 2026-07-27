@@ -74,7 +74,7 @@ def test_lab_session_records_look_and_strict_filters(tmp_path):
 
     res = run_lab_session(
         "cross_surface_contradiction", "2026-06-24",
-        client=FakeClient(_cards()), snapshot=snapshot, model_id="claude-opus-4-8",
+        client=FakeClient(_cards()), snapshot=snapshot, model_id="claude-opus-5",
         looks_path=looks, drafts_path=drafts, drafts_dir=tmp_path,
     )
 

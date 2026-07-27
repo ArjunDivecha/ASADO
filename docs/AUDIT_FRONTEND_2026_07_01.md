@@ -38,7 +38,7 @@ nightly loop (steps ~190-191)
 browser @ 127.0.0.1:8800  <- uvicorn cos_chat_service:app
   StaticFiles("/") serves the page + data
   POST /api/cos/chat  (deterministic router first, Opus for research questions)
-  GET  /api/cos/health (verified live: opus_available=true, model claude-opus-4-8)
+  GET  /api/cos/health (verified live: opus_available=true, model claude-opus-5)
 ```
 
 Payload freshness at audit time: `meta.generated_ts 2026-07-01T09:30`,

@@ -136,7 +136,7 @@ VALID_METHODOLOGY_VERDICTS = {"DEAD", "GRADUATED", "WATCH", "INSUFFICIENT"}
 
 # A3 — ledger integrity (FAIL-IS-FAIL on the reader). The fold refuses to
 # silently drop an event type it does not understand.
-HYP_EVENTS = {"hyp_register", "hyp_verdict", "hyp_status"}
+HYP_EVENTS = {"hyp_register", "hyp_verdict", "hyp_status", "hyp_note"}
 THESIS_EVENTS = {"thesis_open", "thesis_mark", "thesis_close", "thesis_review"}
 # Deliberately its OWN set, checked by its OWN fold function, in its OWN file.
 # hyp_register/hyp_verdict live in hypothesis_ledger.jsonl, whose fold raises

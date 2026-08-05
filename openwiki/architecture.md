@@ -85,6 +85,9 @@ The loop architecture is split into `scripts/loop/` plus `tests/loop/` and the d
 ### Prediction-market experiments
 The Brier Gate code under `scripts/brier_gate/` is an isolated experiment pipeline that reads the warehouse in a PIT-safe way and scores forecast quality against market prices.
 
+### Discovery Triage
+`scripts/discovery_triage/` is a quarantined LLM-native Discovery Lab and chain-of-custody Court that runs *after* the loop's deterministic detectors and *before* the cockpit refresh. It emits drafts, not signals: an outcome-blind snapshot feeds a Claude model, a provenance classifier routes every idea by model training cutoff, blind human rulings precede unsealing, and every claim — survivor or killed — is forward-tracked (the graveyard is a control arm). It is JSONL/YAML-first under `journal/` and writes no DuckDB tables. See [Discovery Triage](discovery-triage.md).
+
 ### Frontend / cockpit
 `cos_mockups/` contains the generated cockpit payload and the UI-facing contract. The cockpit aggregates state from the loop DB, governance artifacts, and curated research outputs.
 
@@ -99,5 +102,6 @@ The Brier Gate code under `scripts/brier_gate/` is an isolated experiment pipeli
 
 - [Operations and runbooks](operations.md)
 - [Loop and research workflows](loop-and-research.md)
+- [Discovery Triage](discovery-triage.md)
 - [Prediction markets and Brier Gate](prediction-markets.md)
 - [Frontend and cockpit](frontend-and-cockpit.md)

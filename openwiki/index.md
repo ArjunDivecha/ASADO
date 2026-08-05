@@ -5,6 +5,7 @@ okf_version: "0.1"
 # Files
 
 - [Architecture overview](architecture.md) - ASADO's layered architecture: source collection, DuckDB warehouse, Neo4j graph, daily/monthly cadences, the separate loop database, and the cockpit/MCP query surface.
+- [Discovery Triage](discovery-triage.md) - ASADO's quarantined LLM-native Discovery Lab and chain-of-custody Court: outcome-blind snapshots, model-cutoff provenance classification, blind human rulings, the prospective incubator, and the graveyard control arm. JSONL/YAML-first, no DuckDB tables.
 - [Frontend and cockpit](frontend-and-cockpit.md) - ASADO's Chief-of-Staff cockpit: the cockpit_data.json payload contract, producer logic, Phase 2 frontend binding, and the distinction between verified signals and conjecture.
 - [Loop and research workflows](loop-and-research.md) - ASADO's nightly alpha-hunting loop: dislocation engine, ledgers, harness verdicts, calibration reports, Triptych priors, graph features, and the canonical nightly brief.
 - [Operations and runbooks](operations.md) - How to run ASADO's monthly, daily, and nightly pipelines safely — prerequisites, commands, resume/lock discipline, failure modes, and the automated OpenWiki documentation workflow.

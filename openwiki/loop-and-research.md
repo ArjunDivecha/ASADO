@@ -69,6 +69,15 @@ Key points:
 ### JST risk report and long-cycle context
 `build_jst_risk_report.py` and `docs/JST_MACROHISTORY_CALIBRATION.md` show another important distinction: JST macrohistory is an isolated calibration corpus, not a factor feed. The docs in `AGENTS.md` reinforce that it should never be merged into the normal factor panels.
 
+## Discovery Triage in the nightly chain
+
+The nightly loop job wires ASADO's quarantined LLM-native Discovery Lab near the end of the run, after `build_country_returns` (the return surface it reads) and before the cockpit refresh. `scripts/loop/loop_daily_job.py` runs two steps:
+
+1. `discovery_forward_track` — `python -m scripts.discovery_triage.forward_track`, which appends forward readouts to the incubator/graveyard rosters (optional + no-op until claims are routed).
+2. `discovery_docket` — `python -m scripts.discovery_triage.daily_docket --nightly`, gated so it no-ops unless `ASADO_RUN_DISCOVERY_LAB=1` (the nightly job never auto-spends on the Anthropic API).
+
+Discovery Triage is a separate custody track, not another detector: it emits drafts, never signals, and writes only to the JSONL/YAML `journal/` ledgers. Its full design, invariants, and source map are documented in [Discovery Triage](discovery-triage.md).
+
 ## Nightly outputs and briefs
 
 The dislocation brief is the canonical nightly artifact for human review. It is linked from the cockpit payload and is generated from the loop engine rather than hand-curated.
@@ -104,4 +113,5 @@ Related files:
 
 - [Architecture overview](architecture.md)
 - [Operations and runbooks](operations.md)
+- [Discovery Triage](discovery-triage.md)
 - [Frontend and cockpit](frontend-and-cockpit.md)

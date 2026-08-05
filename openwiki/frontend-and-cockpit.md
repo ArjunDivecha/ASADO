@@ -41,6 +41,8 @@ It also states that missing values are sanitized to `null`, returns are stored a
 
 The producer is intentionally resilient: each source is wrapped in error handling so one failure does not blank the whole cockpit.
 
+One top-level section, `research_desk`, is the cockpit surface for the Discovery Triage Court: `cos_mockups/build_cockpit_data.py::read_research_desk()` reads the JSONL `journal/` ledgers (discovery lab, analog shelf, under-triage, blind rulings, prospective, graveyard) and never fabricates rows when a ledger is absent. See [Discovery Triage](discovery-triage.md) for what those ledgers contain.
+
 ## Frontend binding logic
 
 The cockpit redesign work in `docs/PRD_Frontend_Alpha_Rethink_2026_07_01.md` and the tests in `tests/loop/test_phase2_frontend.py` show the binding logic is not trivial presentation glue. The current Phase 2 concepts include:
@@ -73,4 +75,5 @@ The cockpit is where multiple research layers converge. Future changes should pr
 
 - [Architecture overview](architecture.md)
 - [Loop and research workflows](loop-and-research.md)
+- [Discovery Triage](discovery-triage.md)
 - [Prediction markets and Brier Gate](prediction-markets.md)

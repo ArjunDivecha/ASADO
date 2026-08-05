@@ -129,7 +129,7 @@ def resume_match(prev, fp: dict) -> bool:
     )
 
 
-def run_step(name, script, flags, log_file, conda=False, timeout=None):
+def run_step(name, script, flags, log_file, conda=False, timeout=None, advisory=False):
     if conda:
         cmd = [CONDA, "run", "-p", BBG_ENV, "python", str(SCRIPTS_DIR / script)] + flags
     else:
@@ -147,6 +147,11 @@ def run_step(name, script, flags, log_file, conda=False, timeout=None):
         status = "TIMEOUT"
     else:
         status = "FAILED"
+    if advisory and status != "OK":
+        # Advisory stages report but never gate (see stage-list comment below) —
+        # downgrade BEFORE writing the log line so a log-glob monitor grepping
+        # for "STATUS: FAILED" doesn't false-positive on a non-gating warning.
+        status = "WARN"
     print(out[-2000:], flush=True)
     with open(log_file, "a") as f:
         f.write(f"\n{'='*60}\nSTEP: {name}\nSTATUS: {status} (exit {res.returncode}) ELAPSED {elapsed:.1f}s\n{'='*60}\n{out}\n")
@@ -240,7 +245,7 @@ def main() -> int:
         if args.resume and done.get(name):
             print(f"\n  [RESUME] NOT skipping '{name}' — checkpoint exists but "
                   f"script/args changed since it was written (re-running).", flush=True)
-        r = run_step(name, script, flags, log_file, conda=conda, timeout=timeout)
+        r = run_step(name, script, flags, log_file, conda=conda, timeout=timeout, advisory=advisory)
         if advisory and r["status"] != "OK":
             # Advisory steps report but never gate: downgrade to WARN,
             # keep going, keep the exit code clean.

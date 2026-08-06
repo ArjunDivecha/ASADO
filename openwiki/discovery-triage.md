@@ -54,23 +54,24 @@ It is JSONL/YAML-first under `journal/` and writes **no DuckDB tables** (a delib
 
 ## Custody chain
 
-<!-- openwiki: mermaid parse failed and this diagram was converted to a text fence so it does not break rendering. Fix the diagram source and restore the mermaid fence. Parser error: Heuristic: an unescaped angle bracket inside a label breaks rendering; rephrase the label. -->
-```text
+```mermaid
 flowchart TD
-    A[Known Gap Monitor<br/>loop detectors] --> B[Research Look Ledger<br/>record_look]
-    B --> C[Discovery Lab<br/>lab_session]
-    C -->|drafts only| D[Detector Drafts<br/>make_detector_draft]
-    D --> E[Provenance Classifier<br/>classify_provenance]
-    E --> F[Claim Freezer<br/>freeze_claim]
-    F --> G[Triage Battery<br/>run_triage_probes]
-    G --> H[Blind Packet<br/>build_blind_packet]
-    H --> I[Blind Human Ruling<br/>record_blind_ruling]
-    I -->|after unseal| J[Router<br/>route_claim]
+    A["Known Gap Monitor — loop detectors"] --> B["Research Look Ledger — record_look"]
+    B --> C["Discovery Lab — lab_session"]
+    C -->|drafts only| D["Detector Drafts — make_detector_draft"]
+    D --> E["Provenance Classifier — classify_provenance"]
+    E --> F["Claim Freezer — freeze_claim"]
+    F --> G["Triage Battery — run_triage_probes"]
+    G --> H["Blind Packet — build_blind_packet"]
+    H --> I["Blind Human Ruling — record_blind_ruling"]
+    I -->|after unseal| J["Router — route_claim"]
     J -->|survivor/quarantined| K[Prospective Incubator]
     J -->|killed/rejected| L[Graveyard Control Arm]
-    K --> M[Forward Track<br/>forward_track]
+    K --> M["Forward Track — forward_track"]
     L --> M
 ```
+
+*Discovery Triage custody chain: outcome-blind snapshot flows from the loop detectors through the Discovery Lab to frozen claims, blind rulings, and forward tracking (survivors to the Incubator, killed claims to the Graveyard control arm).*
 
 The Lab never sees forward returns, harness verdicts, PnL, the combiner, factor returns, top-20 membership, or attribution surfaces. The snapshot is built from a **code-level allowlist**, not a prompt.
 

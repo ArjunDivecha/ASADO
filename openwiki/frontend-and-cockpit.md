@@ -10,22 +10,9 @@ ASADO's Chief-of-Staff cockpit is a data product, not just a UI. The cockpit pay
 
 ## The payload contract
 
-`cos_mockups/COCKPIT_DATA_CONTRACT.md` is the canonical field contract for `cockpit_data.json`. It says the payload contains top-level sections such as:
-- governance
-- signals
-- dislocations
-- combiner
-- returns
-- theses
-- countries
-- drawdowns
-- brief
-- map
-- today
-- gap_engine
-- research_desk
+`cos_mockups/COCKPIT_DATA_CONTRACT.md` is the canonical field contract for `cockpit_data.json`. It says the payload top-level keys are `meta`, `governance`, `signals`, `dislocations`, `combiner`, `returns`, `theses`, `countries`, `drawdowns`, `brief`, `map`, `today`, `gap_engine`, and `research_desk`.
 
-It also states that missing values are sanitized to `null`, returns are stored as percent, and the UI must surface producer errors rather than render a silent empty state.
+It also states that missing values are sanitized to `null`, returns are stored as percent, and on producer failure an extra `error` string key (e.g. `"loop DB unavailable"`) is present — the UI must surface producer errors rather than render a silent empty state.
 
 ## Payload generation
 

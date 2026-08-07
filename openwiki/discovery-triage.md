@@ -163,9 +163,11 @@ The offline suite (`tests/discovery_triage/`, 18 files) uses injected/fake clien
 - `test_surface_loader_sanitize.py` — JSON-content sanitizer canary (C1): the combiner-score leak is scrubbed while legitimate descriptors survive.
 - `test_context_builder.py` — context rejects forbidden surfaces and the column-level return leak.
 - `test_lab_session.py` — look-before-draft, source-look linkage, strict canonical schema, prospective routing.
+- `test_record_look.py` — Research Look ledger minting (PR-1): `record_look` increments `L_YYYYMMDD_NNN` IDs within the day, alias-normalizes `visibility_mode` to canonical, and persists the §11.3 required keys.
 - `test_triage.py` — triage battery: target-reentry (FATAL), power band, warnings.
 - `test_blind_packet.py` / `test_blind_ruling.py` — §16 exclusions, route-aware harness stats, enforced blind orchestrator, one-unseal-per-ruling.
 - `test_route_claim.py` / `test_graveyard_tracking.py` — router and forward-track readouts, idempotency, return-surface whitelist.
+- `test_forward_track_attach.py` — H5 (red-team 2026-06-26): `forward_track` attaches the main warehouse as `asado` so `asado.t2_factors_daily` resolves instead of raising `CatalogException`; honors `ASADO_DATA_ROOT`.
 - `test_analog_outcome_blindness.py` — outcome-blind retrieval, frozen membership, post-freeze outcome attachment, constrained differencing.
 - `test_harness_bridge.py` — dedup, no double-charge, never writes Court fields into the ledger.
 - `test_schemas.py` — Pydantic models + jsonl_store hardening (lock-protected append, no duplicate IDs).

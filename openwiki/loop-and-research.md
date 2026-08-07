@@ -105,7 +105,7 @@ Related files:
 - `scripts/loop/triptych_kernel.py`
 - `tests/loop/test_harness_pit.py`
 - `tests/loop/test_triptych.py`
-- `docs/PRD_Alpha_Hunting_Loop.md`
+- `PRD_Alpha_Hunting_Loop.md`
 - `docs/TRIPTYCH_PREDICTION_WORKFLOW_2026_06_12.md`
 - `docs/JST_MACROHISTORY_CALIBRATION.md`
 

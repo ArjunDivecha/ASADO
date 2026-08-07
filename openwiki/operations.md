@@ -34,7 +34,7 @@ This is the daily run for the fast-moving T2 + GDELT surfaces. The script docstr
 - Econ is skipped,
 - and the loop stage is chained last.
 
-The script supports `--resume`, `--skip-bloomberg`, `--skip-gdelt`, `--skip-neo4j`, and `--t2-only`.
+The script supports `--resume`, `--skip-bloomberg`, `--skip-gdelt`, `--skip-neo4j`, `--skip-db`, `--skip-loop`, and `--t2-only`. The `--skip-db` and `--skip-loop` flags carve out the DuckDB panel load and the chained nightly loop job respectively, letting you re-run just the collection + graph stages or just the fast-moving surfaces.
 
 ### Nightly loop job
 `python scripts/loop/loop_daily_job.py`

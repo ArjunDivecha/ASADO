@@ -86,3 +86,59 @@ term-spread leg.
 Not licensed: any allocation decision, and any claim that the boundary mechanism is
 established. One variable clearing a 3-test threshold in-sample, on 67% country consistency,
 is a reason to run the confirmatory test — not a reason to believe it.
+
+---
+
+# D1b — is there a better valuation variable than Shiller PE? (EXPLORATORY)
+
+Prompted by Arjun pointing at `A Complete/T2 Factor Timing Fuzzy/T2 Top20.xlsx`, which ranks
+85 factors by information ratio in this exact universe and shows **Shiller PE is a poor
+factor here — rank 19/85 full sample, 49/85 trailing-1y, 63/85 trailing-3y** (its TS variant
+is 66/85, IR 0.00), while Trailing PE ranks **2nd**, Earnings Yield **6th**, EV to EBITDA **8th**.
+
+The instinct is right and the source is the right one to consult. **Tested, it does not transfer.**
+
+| Valuation variable | T2 Top20 rank (directional) | Boundary-marker t (DK) | Countries |
+|---|---|---|---|
+| **Shiller PE (CAPE)** | *19 / 85* | **−2.88** ✓ | 14/21 |
+| Earnings Yield | **6** | −0.45 | 17/28 |
+| Best PE | 15 | −0.37 | 18/28 |
+| Best Price Sales | 71 | −0.34 | 16/28 |
+| Trailing PE | **2** | −0.00 | 17/28 |
+| Best PBK | 62 | +0.18 | 21/28 |
+| Positive PE | 23 | +0.74 | 17/28 |
+| Best Cash Flow | 45 | +0.82 | 13/27 |
+| EV to EBITDA | **8** | +0.83 *(worst)* | 12/27 |
+
+**Shiller PE remains the only valuation metric that functions as a boundary marker**, and it
+is not close: −2.88 versus a range of −0.45 to +0.83 for everything else. The three best
+*directional* valuation factors (Trailing PE, Earnings Yield, EV to EBITDA) are all useless
+as boundary markers, and EV to EBITDA is the single worst.
+
+Spearman correlation between directional rank and boundary t-statistic: **+0.17** — i.e.
+essentially none. **Being a good factor and being a good boundary marker are unrelated jobs.**
+
+## The same inversion shows up in REER, which makes it a pattern rather than a fluke
+
+`REER_CS` is the **#1 ranked factor of all 85** (IR 0.62) and failed completely as a boundary
+marker in D1 (t = +1.46, wrong sign, 15/30 countries — a perfect coin flip). Two independent
+instances of the same inversion.
+
+## Why this is mechanically plausible (a hypothesis, not a finding)
+
+CAPE smooths earnings over ten years. That sluggishness is a **handicap** for ranking
+cheap-vs-expensive today — which is what the T2 Top20 measures — but an **asset** for asking
+"is this market at an extreme by its own history?", which is what a boundary needs. Trailing
+PE and Earnings Yield swing with the earnings cycle, so a market can print an extreme
+trailing PE because earnings collapsed rather than because price did. A denominator that
+moves is a bad ruler for measuring extremes.
+
+Testable implication for a future registration: other **slow, smoothed** measures should also
+work as boundary markers, while fast ones should not, independent of directional quality.
+
+## Status
+
+EXPLORATORY. These variables were selected on evidence **external** to the D1 outcome (the T2
+Top20 ranking), which is legitimate variable selection rather than mining the result — but
+none of it was pre-registered. The holdout remains untouched. The practical consequence is
+narrow: **the incumbent choice stands, and D1's conclusion is unchanged.**

@@ -6,7 +6,7 @@
 
 ---
 
-## Verdict: PARTIAL — signs replicate, significance does not survive an honest standard error
+## Verdict: PARTIAL (leaning NEGATIVE) — signs replicate, but the effect is a coin flip across countries
 
 Both of the paper's headline claims come out with the **correct sign** in the paper's own
 construction, and neither reaches |t| ≥ 2 once the standard error accounts for the
@@ -32,6 +32,35 @@ than even NW-12 — i.e. my registered headline was the most flattering of the t
 handles both dependencies. Every t-statistic falls by roughly half under it, on every arm,
 in both directions. The paper's own robustness section makes the same point (its Hodrick and
 IVX tables show NW-12 overstates); we are simply seeing it again, harder, in a shorter sample.
+
+---
+
+## The plainest evidence against the effect: it is a coin flip across countries
+
+Added 2026-08-08 after Arjun asked what the bucket averages actually represent. One row is
+ONE country, ONE month; the value is that country's trend-following return over the
+following 12 months, in excess of cash. The headline buckets are averages over ~500
+country-months each. Splitting the SAME gap country by country:
+
+| | |
+|---|---|
+| Countries showing the paper's effect (worse in extremes) | **8** |
+| Countries showing the **opposite** | **8** |
+| Median country's calm-vs-extreme gap | **+0.0pp** |
+| Range across countries | −18.8pp to +10.7pp |
+
+The pooled −2.4pp gap is not a pattern repeated across countries. It is a handful of
+countries with large negative gaps, offset by others going the other way, with the median
+country showing nothing at all. A real mechanism about behaviour near valuation extremes
+should appear in most countries most of the time.
+
+**This is more decisive than the t-statistics and requires no econometrics to see.** The
+pooled average concealed it; reporting it first was a presentation error.
+
+**Context that makes it worse:** the unconditional average is **+0.7%** over cash across all
+2,488 country-months, and traded as one equal-weighted diversified book it is **+0.6%/yr on
+7.6% vol — a return/risk of 0.08**. We are hunting a conditioning effect on top of a
+strategy that did not make money in this sample.
 
 ---
 

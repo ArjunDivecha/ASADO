@@ -84,3 +84,12 @@ Bloomberg runs under the OpusBloomberg conda env (Terminal logged in on Parallel
 `collect_*_bbg.py` write parquet only, paired `load_*.py` run in the project venv. Invoke
 conda by absolute path in anything launchd runs — its PATH has no `/opt/homebrew/bin`.
 Confirm every new ticker's country: `GSAB10YR` is South Africa's 10Y, not Saudi Arabia's.
+
+
+## Cross-session messaging
+
+Claude Code sessions can message each other directly. `ListAgents` (or `/list-agents`, `/peers`)
+lists reachable sessions; `SendMessage` delivers plain text to one by name. Same-machine delivery
+uses a local socket; cross-machine is reply-only via Remote Control. Use it to hand off a finding
+to a session working elsewhere instead of relaying it through the user. A message is text only —
+never conversation history or files; to share full context, resume the session instead.

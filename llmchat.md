@@ -1005,3 +1005,147 @@ morning discussion: one hypothesis, the epistemically cleanest).
 ---
 SESSION END: 2026-07-02 17:20 PDT | Agent: Cursor (Fable 5)
 ---
+---
+SESSION START: 2026-08-08 00:28 PST | Agent: Claude.ai
+---
+
+### Session Summary
+Designed a new research program: generalizing Suominen & Hjalmarsson's "Boundaries of Time Series Momentum" (WP, US 1927-2024 + 20-country DM panel 1989-2024) from a market-timing paper into a country-level agenda on the 34-country universe. Core concept extracted: momentum is the default dynamic of a market away from constraints; reversal is what constraints do. Their Boundaries variable — (scaled term spread)^2 + (scaled CAPE or div yield)^2, each input a 12m MA normalized to [-1,1] vs trailing 10y/20y min/max — is one hand-crafted guess at where constraints sit. Produced 13 test ideas across three axes plus sequencing and immediate build tasks.
+
+### Paper baseline (replication reference)
+- TSMOM = MOP(2012) 25-strategy index (lookbacks 1,3,6,9,12m x same holding periods), cash-market, NO vol scaling.
+- Key results: Boundaries negatively predicts 12m TSMOM (1% sig all US specs w/o interactions; adj R2 2% -> 10-12%). Past-12m-return x Boundaries interaction negative/significant -> reversals at extremes. Intl R2 8% -> 15-17%.
+- Robustness: weakens but survives Hodrick (1992) SEs and IVX (Kostakis et al.); NW-12 headline numbers overstate. OOS (CUMSUM) works for TSMOM; equity premium only 1-factor; gain concentrated 2012-2017.
+- Exploitable weaknesses: div-yield-only intl valuation leg (buyback contamination); 5y-minus-RF term spread ("data availability"); trailing min/max normalization fragile; symmetric sum-of-squares boundary shape assumed, never tested; mechanism (policy reaction) asserted via correlations (their Table 8), never tested causally.
+
+### Decisions Made
+- Dropped stock-level (global data mart) version — mechanism is macro, doesn't scale down. Country level is the home.
+- ASADO is the platform. Term-spread + macro coverage largely already in place (bloomberg_factors: BBG_Govt_Bond_10Y, BBG_Yield_Curve_10Y2Y, CDS 5Y/1Y, breakevens, OIS, WIRP; external_factors: BIS credit-to-GDP gap, BIS REER via collect_external.py, OECD CLI, EPU, GPR; imf_factors; sovereign_signals daily 2s10s). Remaining gaps are schema-audit items, not acquisitions.
+- Architectural home: T2 factor-timing layer as a conditioning variable on the momentum factor weight (fits 60m rolling weight optimization + TSMOM-on-factors PRD). NOT a blunt risk-on/off gate.
+- Discipline: pre-register the shortlist through the harness; hold out last 5y or a country subset. 13 hypotheses on ~35y of overlapping data — expect most to die; harness family-trial charging applies.
+
+### The 13 test ideas (condensed)
+Axis 1 — what defines a boundary:
+1. Boundary olympics: identical interaction test (past 12m ret x proximity-to-own-extreme) across candidate state vars per country: REER, credit-to-GDP gap, current account, FX reserves, real policy rate, cumulative ETF flows, sovereign CDS. Rank which extremes actually break trend. Prior: REER + credit gap beat valuation.
+2. Learn boundary geometry: momentum coefficient as flexible function of state space (kernel/shallow tree) instead of assumed sum-of-squares circle. Directly tests their symmetric-breakdown claim.
+3. Peer-relative normalization: extremeness vs contemporaneous 34-country cross-section instead of own trailing decade. No history burned (their 20y scaling halves the sample) — roughly doubles usable EM sample. Own-history extreme => domestic constraint; peer-relative => relative-value flows. Horse-race the two.
+4. Moving anchor: extremeness as distance from DIP demographic-adjusted fair value rather than trailing range. Fixes Japan/US-stuck-at-boundary-for-15y failure mode.
+Axis 2 — what breaks:
+5. Cross-sectional country momentum: are XS momentum crashes concentrated in months when winners sit at boundaries? Prize: boundary-filtered country momentum with shallower drawdowns.
+6. Long vs short leg (Daniel-Moskowitz analog): is boundary failure short-side (policy rescue of collapsed markets)? If yes -> refuse shorts at cheap extremes, keep the rest.
+7. Momentum term structure: which of the 25 lookback x holding combos die first approaching a boundary? Prediction: 12m dies while 1m survives/inverts -> rotation from slow trend to fast reversal, not to cash.
+8. FX leg decomposition: split USD ETF returns into local equity + currency. REER extremes are the cleanest boundary in finance (PPP mean reversion, actual intervention). Hypothesis: much of "country momentum breaks at extremes" in USD terms is FX mean reversion in costume.
+Axis 3 — mechanism/propagation/timing:
+9. Test the policy channel directly: reversals only when policy actually responds? Condition on realized CB actions + Polymarket ex-ante policy odds (predmkt_* tables; realistically DM-only — EM CB markets thin). DM/EM split sharpens: EM CBs hike into weakness (currency defense) — mechanism predicts DM-strong/EM-weak-or-reversed. Uniform effect across DM/EM/euro-periphery => their mechanism is wrong; plain valuation gravity.
+10. Boundary contagion: neighbor-weighted boundary exposure through the Neo4j trade/banking graph predicting own-country momentum failure beyond own state. Highest novelty; leverages graph_edge_vintages PIT infrastructure.
+11. Two-speed trap: slow Boundaries arms it, fast signal springs it. Test whether daily GDELT tone_dispersion_z / country_news_risk and fast/slow momentum crossovers (Goulding-Harvey-Mazzoleni) have sharply higher predictive power INSIDE boundary zones. May rehabilitate the GDELT monthly-IC-plateau finding — a fast signal's value should be state-contingent, not unconditional.
+12. Crowding as the boundary: positioning extremeness (ETF flows, short interest — both already in loop layers; COT where covered) horse-raced vs valuation boundaries. Caveat: proxies for ETF investors, not CTA books; a null is uninformative.
+13. Boundaries vs the HMM/regime state: does boundary proximity predict momentum failure WITHIN a regime state? Note the Regime branch verdict (AUC < random as direct forecaster; kept unmerged) — this is exactly the "regime-conditioned factor timing" use that the branch postmortem recommended testing instead. If regime state already knows, boundaries are a label; if not, regime info lives in valuation LEVELS that return-driven HMMs are structurally blind to.
+
+### Sequencing (info gained / effort)
+1. Replicate paper Tables 4 & 6 on the 20 DM countries 1989-2024 (their exact div-yield + term-spread construction) — validates data before improving anything.
+2. Ideas #2 + #1 (geometry map + boundary olympics) — replaces both hand-crafted guesses; everything downstream inherits.
+3. #8 (FX decomposition) — settles the measurement basis for everything else.
+4. #9 + #12 mechanism horse-race (policy vs crowding vs valuation gravity).
+5. #11 + #5 — the two direct-P&L items (turn-timer; boundary-filtered XS momentum).
+6. #10 last (needs boundary definition settled first).
+
+### What To Build Next (immediate tasks)
+1. SCHEMA AUDIT of asado.duckdb (read-only). Answer precisely:
+   a. Short-rate field per country for 10y-3m (Estrella-Mishkin), or only 10y-2y? (WIRP implied could proxy the short leg; post-2009 ZLB arguably favors 10y-2y anyway — run both if possible.) Report per-country history start dates for 10Y, 2Y, any short rate.
+   b. REER: confirm BIS REER coverage from collect_external.py (which countries, from when) in the warehouse.
+   c. Local-currency index returns: does T2 carry MSCI local-currency alongside USD returns? Decides whether idea #8 is a query or a Bloomberg pull.
+   d. Valuation fields per country in t2_master/t2_raw for a composite leg (E/P, B/P, sales yield, CAPE-like): list + coverage. (CAPE-ERP pctile already exists per the cockpit fundamentals pull.)
+   e. Current account, FX reserves in imf_factors: field names + coverage.
+   f. For every input: first usable date per country AFTER a 10y trailing normalization window (effective start = data start + 10y). Produce a coverage matrix (country x variable x effective start). Decides EM feasibility for the DM/EM mechanism split.
+2. Build the shared state-variable panel: country x month (daily where inputs allow), each variable in three normalizations — own-history percentile (10y), peer-relative cross-sectional percentile, anchor-adjusted (DIP where applicable). One table (suggest boundaries_panel), strictly additive; remember setup_duckdb.py DELETES and recreates asado.duckdb — if this needs persistence across rebuilds, it belongs in the loop DB or must be wired into the rebuild chain like the daily tables.
+3. Replication run (sequencing step 1) once the audit confirms inputs.
+4. Any promoted signal goes through evaluate_signal with proper family registration — suggest a new family (e.g. boundaries_regime) in config/family_registry.yaml rather than charging trials to existing families.
+
+### Constraints & Gotchas
+- Percentile-rank/winsorized z-score as base normalization; trailing min/max (paper's method) as robustness only — one outlier redefines a decade.
+- Overlapping 12m returns: cluster by month or Driscoll-Kraay for the panel; the paper's own Hodrick/IVX tables show NW-12 overstates.
+- Effective sample = data start + 10y window. EM tests may see ~4 boundary episodes/country — peer-relative normalization (#3) is the escape hatch; build it first-class.
+- USD vs local currency is not a detail: the policy responses driving their mechanism also move FX. Settle the basis before interpreting anything.
+- Vol scaling: Moreira-Muir is upstream of the CVXPY optimizer in T2. Boundaries must show value CONDITIONAL on vol management, not instead of it (their footnote 11 explicitly punts on this).
+- 1MRet-family forward variables remain hard-blacklisted as signals.
+
+### Open Questions
+- 10y-3m constructible or settle for 10y-2y?
+- Local-currency returns in T2 or Bloomberg pull needed?
+- Which valuation fields exist for the composite leg?
+- predmkt coverage: which countries have usable CB-policy markets, from when?
+
+### Context for Claude Code
+- Source paper: Suominen & Hjalmarsson, "Boundaries of Time Series Momentum" (Arjun has Limits_of_tsm-2.pdf).
+- Read AGENTS.md gotchas before touching collectors; use ./venv/bin/python; schema audit read-only before any writes.
+
+---
+SESSION END: 2026-08-08 00:55 PST | Agent: Claude.ai
+---
+
+---
+SESSION START: 2026-08-08 00:35 PDT | Agent: Claude Code (Opus 5)
+---
+
+### Session Summary
+Executed the schema audit requested by the 2026-08-08 Claude.ai boundaries-of-TSM hand-off,
+plus the mandatory step-zero prior-art gates the Claude.ai session could not run. Audit is
+COMPLETE; the boundaries_panel build was NOT started, deliberately (see Blockers).
+Full write-up: experiments/2026_08_boundaries_tsm/AUDIT_FINDINGS.md
+
+### Audit result — all 50 variables exist, nothing needs fetching
+- (a) Short rate: YES. BIS_Policy_Rate(30)/IMF_TBill_Rate(20)/IMF_Money_Market_Rate(26) ->
+  28 of 34 countries have one. BBG_Govt_Bond_2Y covers only 27, so 10y-3m has BETTER
+  coverage than 10y-2y. Build both. No short rate: FRA, GER, NLD, SGP, TWN, VNM.
+- (b) REER: present TWICE (BIS_REER 33ctry, t2_raw REER 34). No BIS fetch needed.
+- (c) Returns: T2 is natively LOCAL CURRENCY - the reverse of the hand-off's assumption.
+  Verified empirically (12MTR vs local TRI 12m: corr 1.0000, mean|diff| 0.00000), NOT from
+  metadata (whose review_status is "model_drafted" = LLM-written, unverified).
+- (d) Valuation: Shiller PE (real CAPE analog, 29ctry) + 9 more. Better than the paper's
+  dividend-yield-only intl leg.
+- (e) CA/reserves: IMF_BOP_Current_Account, WB_Current_Account_GDP, WB_FX_Reserves, etc.
+- (f) Coverage matrix written: results/schema_audit.xlsx + coverage_long.parquet.
+
+### Three findings that change the program
+1. WAREHOUSE FLOORS AT 2000, so the sample is ~half what the hand-off budgeted (~35y).
+   Own-history 10y normalization -> usable from 2011-02 (~15.4y). Peer-relative -> 2001-02
+   (~25.4y). "Best *" forward-estimate valuation fields -> 2016-03 (~10.4y).
+   => Peer-relative normalization (idea #3) is worth ~+10 years / +65% sample. Build it
+   first-class, as the hand-off intuited. Prefer Shiller PE/Earnings Yield over "Best *".
+   => ~15 independent overlapping 12m obs per country: 13 hypotheses is underpowered.
+2. IMF_WEO_* ARE FUTURE-DATED TO 2031-12-01 and are BANNED by the ElasticNet PIT Audit
+   ("total exclusion... unfixable by lagging"). Confirmed live. The trap: IMF_WEO_CA_GDP
+   looked like the BEST variable in the audit (history to 1980, 43 countries).
+3. REER EXISTS IN BOTH DATE CONVENTIONS - the documented smoking gun that fabricated
+   +5.1%/yr, +0.28 Sharpe, +0.82 IR. Reproduced on Australia: same-date corr 0.9824,
+   BIS shifted +1m 0.9982. REER is this program's FIRST-CHOICE boundary variable, so this
+   matters more here than anywhere prior. Never both copies in one design matrix; apply the
+   per-source lag dict (BIS/IMF/OECD 3, EPU 2, WB QPSD 5, BBG-direct 1, plus +1 convention).
+
+### Prior art (step zero)
+- Quantpedia (1,312 strategies, 5 phrasings): NO DIES_BOTH. #0862 momentum<->reversal
+  switching on a state variable = OURS_ONLY, screen rank 1/97, IR 0.65 (closest structural
+  analog, our best-ranked screened strategy). #0342 cross-asset TSMOM is by Suominen himself,
+  OOS Sharpe 0.50. #0118 MOP TSMOM: UNSCREENED.
+- Investment Learnings "Regime EW": "regime TIMING is not alpha in this stack"; "regime
+  taxonomies do not reorder the cross-section"; XS ranking of per-country HMM posteriors
+  LOSES money. Real prior against ideas #5/#13 - but not a kill: that entry's own open
+  question notes HMMs are return-driven and blind to LEVELS, which is exactly what Boundaries
+  conditions on. Argues for sequencing TS-conditioning ahead of cross-sectional.
+
+### Blockers / decisions needed from Arjun
+- PANEL HOME: hand-off says "boundaries_panel in asado.duckdb, strictly additive" - but
+  setup_duckdb.py DELETES AND RECREATES asado.duckdb. Needs a different home + change-control
+  classification. Not built until decided.
+- RETURN BASIS: T2 local vs traded USD ETFs. Brazil 12m local-vs-USD differs 15.7pp avg
+  (Turkey 10.5, Japan 7.8). Largest measurement decision in the program.
+- Shortlist far smaller than 13 before any run, then replication via asado-research-protocol.
+
+### Gotcha recorded
+12MRet/1MRet/3MRet/6MRet/9MRet are FORWARD returns (blacklisted; evaluate_signal.py raises).
+The paper's "past 12-month return" is 12MTR / 12-1MTR. One character apart; silent look-ahead.
+
+---
+SESSION END: 2026-08-08 01:05 PDT | Agent: Claude Code (Opus 5)
+---

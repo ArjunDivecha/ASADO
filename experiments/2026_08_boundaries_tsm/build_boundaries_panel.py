@@ -29,8 +29,10 @@ It then forms the paper's Boundaries variable in the paper's own normalization:
     Boundaries = norm(term spread)^2 + norm(CAPE)^2         (sum of squares)
     Boundaries_abs = |norm(term spread)| + |norm(CAPE)|     (paper's footnote 2 variant)
 
-and carries BOTH return bases (local currency and USD) so the FX-decomposition
-test (idea #8) is a column selection rather than a rebuild.
+and carries BOTH return bases so the FX-decomposition test (idea #8) is a column
+selection rather than a rebuild. NOTE THE DIRECTION: T2 returns are natively USD
+(verified against the US-listed country ETFs), so the LOCAL leg is the
+constructed one - the reverse of what the design hand-off assumed.
 
 THREE SAFETY RULES ENCODED HERE (each from a real, documented incident)
 -----------------------------------------------------------------------
@@ -117,11 +119,11 @@ SOURCE_LAG_MONTHS = {
 
 # (table, variable, output_name, lag_key)
 PULL = [
-    # --- returns / momentum (LOCAL currency natively) -----------------------
-    ("t2_raw", "Tot Return Index", "tri_local", "t2_raw"),
+    # --- returns / momentum (USD natively — see CURRENCY BASIS note above) --
+    ("t2_raw", "Tot Return Index", "tri_usd", "t2_raw"),
     ("t2_raw", "Currency", "fx_lcu_per_usd", "t2_raw"),
-    ("t2_raw", "12MTR", "mom_12m_local", "t2_raw"),
-    ("t2_raw", "12-1MTR", "mom_12_1m_local", "t2_raw"),
+    ("t2_raw", "12MTR", "mom_12m_usd", "t2_raw"),
+    ("t2_raw", "12-1MTR", "mom_12_1m_usd", "t2_raw"),
     # --- term-spread legs ---------------------------------------------------
     ("bloomberg_factors", "BBG_Govt_Bond_10Y", "y10", "bloomberg_factors"),
     ("bloomberg_factors", "BBG_Govt_Bond_2Y", "y2", "bloomberg_factors"),
@@ -223,12 +225,22 @@ def main() -> int:
     wide["short_rate"] = short
     wide["term_spread_10y3m"] = wide["y10"] - wide["short_rate"]
 
-    # USD return leg, constructed (T2 is natively LOCAL). Verified 2026-08-08:
-    # 12MTR reproduces the local TRI 12m change at corr 1.0000.
+    # CURRENCY BASIS — T2 returns are USD (owner-confirmed 2026-08-08, then
+    # verified against an independent source: T2 monthly returns vs the US-listed
+    # country ETFs in FDT's fdt_prices.duckdb, after shifting T2 back one month
+    # to undo its first-of-NEXT-month stamping. T2 as-is beat the de-FX'd version
+    # in 5 of 6 countries (Brazil .9870 vs .9737, Mexico .9679 vs .9508, Japan
+    # .9343 vs .9117, S.Africa .9351 vs .9280, Korea .8376 vs .8336; Turkey tied).
+    #
+    # So the LOCAL leg is the one that must be CONSTRUCTED, by putting the
+    # currency move back in:  (1+r_usd) * (1+ d%FX in LCU per USD) - 1.
+    # (An earlier version of this script had the conversion backwards. The trap:
+    # variable_registry_full calls Tot Return Index "local currency", but its
+    # review_status is "model_drafted" — LLM-written and never human-verified.)
     g = wide.groupby(level="country")
     fx12 = g["fx_lcu_per_usd"].pct_change(12)
     wide["fx_ret_12m"] = fx12
-    wide["mom_12m_usd"] = (1 + wide["mom_12m_local"]) / (1 + fx12) - 1
+    wide["mom_12m_local"] = (1 + wide["mom_12m_usd"]) * (1 + fx12) - 1
 
     # --- carry lower-frequency series forward BEFORE normalizing ------------
     # BIS credit gap / property prices / OECD CLI are QUARTERLY and WB reserves
@@ -305,6 +317,7 @@ def main() -> int:
         "boundaries_paper_first_date": str(kk["date"].min().date()) if len(kk) else None,
         "boundaries_paper_n_countries": int(kk["country"].nunique()) if len(kk) else 0,
         "source_lag_months": SOURCE_LAG_MONTHS,
+        "currency_basis": "T2 returns are USD natively; mom_12m_local is CONSTRUCTED",
         "excluded_imf_weo": True,
         "reer_copies_used": ["t2_raw.REER"],
     }, indent=2, default=str))

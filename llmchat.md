@@ -1149,3 +1149,50 @@ The paper's "past 12-month return" is 12MTR / 12-1MTR. One character apart; sile
 ---
 SESSION END: 2026-08-08 01:05 PDT | Agent: Claude Code (Opus 5)
 ---
+
+---
+SESSION START: 2026-08-08 01:40 PDT | Agent: Claude Code (Opus 5) — CORRECTION
+---
+
+### Correction to the 01:05 block: T2 returns are USD, not local currency
+
+Arjun corrected this directly and an independent check confirms him. The earlier block's
+claim that "T2 is natively LOCAL CURRENCY - the reverse of the hand-off's assumption" is
+WRONG and is retracted. The hand-off's original assumption (USD base) was right.
+
+VERIFICATION (independent source, not internal consistency): T2 monthly returns vs the
+US-listed country ETFs in FDT's fdt_prices.duckdb, which are unambiguously USD, after
+shifting T2 back one month to undo its first-of-next-month stamping. T2 AS-IS beat the
+de-FX'd version in 5 of 6 countries — Brazil .9870 vs .9737, Mexico .9679 vs .9508,
+Japan .9343 vs .9117, S.Africa .9351 vs .9280, Korea .8376 vs .8336; Turkey tied .9722.
+
+WHY THE EARLIER TEST WAS WORTHLESS (the useful part): it compared 12MTR against
+pct_change(Tot Return Index) and against a converted version of THE SAME series. Both
+branches shared TRI as their base, so it could only ever establish 12MTR = pct_change(TRI).
+It was structurally incapable of identifying a currency basis. The "local" label came
+entirely from variable_registry_full, whose review_status is "model_drafted" — LLM-written,
+never human-verified — which the same block had flagged as untrustworthy and then relied on.
+
+TWO STANDING LESSONS:
+- model_drafted registry metadata is NOT evidence (~1,587 rows carry that status). Hypothesis
+  only, until checked against something outside the warehouse.
+- Identifying a currency basis REQUIRES AN EXTERNAL REFERENCE. No internal cross-check between
+  T2 columns can do it, because they share a base series.
+
+SIDE BENEFIT: this independently confirmed the first-of-NEXT-month stamping in the returns
+themselves — correlations vs the ETFs were ~0.0 on raw dates and jumped to 0.84-0.99 once T2
+was shifted back one month. Same convention the ElasticNet PIT Audit documents.
+
+CONSEQUENCES:
+- build_boundaries_panel.py had the conversion backwards; fixed and re-run. Panel now carries
+  mom_12m_usd (native) and a CONSTRUCTED mom_12m_local = (1+r_usd)*(1+dFX). Sanity check
+  passes: U.S. difference is exactly 0.0000 (FX==1), Brazil 15.8pp, Turkey 12.3pp, Japan 8.1pp.
+- Idea #8 (FX decomposition) still costs nothing; only the direction flips.
+- The "return basis" decision I flagged as the program's largest is RESOLVED and is NOT a
+  decision: T2 is USD, the same basis as the traded ETFs, so the default needs no conversion.
+- Everything else in the 01:05 block stands (2000 floor, peer-relative 2.24x, IMF_WEO ban,
+  REER dual-convention, quarterly-ffill fix).
+
+---
+SESSION END: 2026-08-08 01:45 PDT | Agent: Claude Code (Opus 5)
+---

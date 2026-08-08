@@ -1,8 +1,8 @@
 # Boundaries-of-TSM — schema audit + step-zero prior art
 
-**Date:** 2026-08-08 · **Status:** audit COMPLETE, panel build NOT started (gated — see §5)
+**Date:** 2026-08-08 · **Status:** audit COMPLETE · panel BUILT (experiment-scoped, see §6b) · replication not started
 **Hand-off:** `llmchat-session-2026-08-08-boundaries-tsm.md` (Claude.ai, 2026-08-08 00:28 PST)
-**Script:** `experiments/2026_08_boundaries_tsm/schema_audit.py` (read-only)
+**Scripts:** `schema_audit.py` (read-only) · `build_boundaries_panel.py`
 **Artifacts:** `results/schema_audit.xlsx`, `results/coverage_long.parquet`, `results/schema_audit_summary.json`
 
 ---
@@ -10,9 +10,9 @@
 ## 1. Headline
 
 **All 50 audited variables exist. Nothing needs to be fetched. But the usable sample is
-roughly half what the hand-off assumed, the return basis is the opposite of what it
-assumed, and two of the program's first-choice variables sit on a documented look-ahead
-landmine.**
+roughly half what the hand-off assumed, and two of the program's first-choice variables sit
+on a documented look-ahead landmine.** The return basis is USD — the same as the traded
+ETFs — which removes what looked like the program's biggest measurement decision.
 
 ---
 
@@ -22,7 +22,7 @@ landmine.**
 |---|---|---|
 | a | Short rate for 10y−3m? | **YES.** `BIS_Policy_Rate` (30 ctry), `IMF_TBill_Rate` (20), `IMF_Money_Market_Rate` (26), `IMF_Discount_Rate` (10) — **28 of 34** T2 countries have at least one. Long leg: `BBG_Govt_Bond_10Y` (32), `10Yr Bond` t2 (33). `BBG_Govt_Bond_2Y` covers only **27**. Build **both** 10y−3m and 10y−2y; 10y−3m actually has *better* country coverage than 10y−2y. No short rate at all: France, Germany, Netherlands, Singapore, Taiwan, Vietnam. |
 | b | REER present? | **YES, twice.** `BIS_REER` (external_factors, 33 of 34) and `REER` (t2_raw, 34). **No BIS fetch needed.** But see §4 — the duplication is a hazard, not a bonus. |
-| c | Local-currency returns? | **Present — and the basis is the REVERSE of the hand-off's assumption.** T2 is natively **local currency**; USD must be *constructed*. Verified empirically, not from metadata. |
+| c | Local-currency returns? | **T2 returns are natively USD** (owner-confirmed, then independently verified — see §4c). The **local** leg is the one that must be constructed, via the `Currency` series. Either way idea #8 is a query, not a Bloomberg pull. |
 | d | Valuation fields | **Rich.** `Shiller PE` (a real CAPE analog, 29 ctry) — strictly better than the paper's dividend-yield-only international leg. Plus `Trailing PE`, `Best PE`, `Positive PE`, `Earnings Yield`, `Best Div Yield`, `Best Price Sales`, `Best PBK`, `Best Cash Flow`, `EV to EBITDA`. |
 | e | Current account / reserves | **YES.** `IMF_BOP_Current_Account`, `WB_Current_Account_GDP`, `Current Account` (t2); reserves via `WB_FX_Reserves`, `WB_Import_Cover_Months`, `MS_Reserve_Adequacy`. **Do not use `IMF_WEO_CA_GDP`** — see §4. |
 | f | Effective start after 10y window | See §3 and the `coverage_effective_start` sheet. |
@@ -105,16 +105,59 @@ EPU 2, WB QPSD 5, BBG-direct 1), and never both REER copies in one design matrix
 
 ---
 
-## 5. Why the panel was NOT built this session
+### 4c. Currency basis: T2 is USD — and how an earlier claim here got it backwards
 
-1. **The hand-off specifies the wrong home.** It says "`boundaries_panel` in `asado.duckdb`,
-   strictly additive". `setup_duckdb.py` **deletes and recreates `Data/asado.duckdb`** — a
-   persistent table there is destroyed on the next monthly rebuild. It needs a different
-   home (loop DB, experiment parquet, or a builder script the rebuild regenerates) plus a
-   change-control classification. The hand-off was written without repo access; this is not
-   a criticism of it, but it must not be followed as written.
-2. **Design inputs changed** on three counts above (sample span, return basis, banned/duplicated
-   variables), so building to the original spec would bake in the wrong choices.
+**T2 returns are USD.** Owner-confirmed 2026-08-08, then verified against an independent
+source: T2 monthly returns vs the US-listed country ETFs in FDT's `fdt_prices.duckdb`
+(unambiguously USD), after shifting T2 back one month to undo its first-of-next-month
+stamping. **T2 as-is beat the de-FX'd version in 5 of 6 countries:**
+
+| | T2 as-is vs ETF | T2 de-FX vs ETF |
+|---|---|---|
+| Brazil | **0.9870** | 0.9737 |
+| Mexico | **0.9679** | 0.9508 |
+| Turkey | 0.9722 | 0.9722 (tie) |
+| Japan | **0.9343** | 0.9117 |
+| South Africa | **0.9351** | 0.9280 |
+| Korea | **0.8376** | 0.8336 |
+
+An earlier version of this document claimed the opposite ("T2 is natively local") and called
+it empirically verified. **It was not.** That test compared `12MTR` against `pct_change(Tot
+Return Index)` and against a currency-converted version of the *same* series — both branches
+shared TRI as their base, so the test could only establish that `12MTR = pct_change(TRI)`.
+It was structurally incapable of identifying the currency basis. The "local" label came
+entirely from `variable_registry_full`, whose `review_status` is **`model_drafted`** —
+LLM-written, never human-verified — which this document had already flagged as untrustworthy
+and then relied on anyway.
+
+Two lessons worth keeping:
+- **`model_drafted` registry metadata is not evidence.** Roughly 1,587 rows of
+  `variable_registry_full` carry that status. Treat every one as a hypothesis.
+- **Identifying a currency basis requires an EXTERNAL reference.** No amount of internal
+  consistency-checking between T2 columns can do it, because they share the same base series.
+
+A side benefit: this exercise independently confirmed the **first-of-next-month stamping**.
+Correlations against the ETFs were ~0.0 on the raw dates and jumped to 0.84–0.99 once T2 was
+shifted back one month — the same convention the ElasticNet PIT Audit documents, now
+observable in the returns themselves.
+
+**Implication for idea #8:** the FX decomposition still costs nothing, but the direction
+flips — `local = (1 + r_usd) × (1 + ΔFX)`. The panel carries both, and the U.S. sanity check
+returns exactly 0.0000 difference (FX ≡ 1), as it must.
+
+---
+
+## 5. Why the panel was NOT written to the warehouse
+
+**The hand-off specifies an unsafe home.** It says "`boundaries_panel` in `asado.duckdb`,
+strictly additive". `setup_duckdb.py` **deletes and recreates `Data/asado.duckdb`** — a
+persistent table there is destroyed on the next monthly rebuild. The hand-off was written
+without repo access; this is not a criticism of it, but it must not be followed as written.
+
+The panel is therefore built as **experiment-scoped parquet** under
+`experiments/2026_08_boundaries_tsm/results/`, which is the sanctioned location and needs no
+change-control decision. Promoting it to a durable warehouse home (loop DB, or a builder
+script the monthly rebuild re-runs) is a separate, deliberate step — and Arjun's call.
 
 ---
 
@@ -202,9 +245,10 @@ absence. Recorded as open.
 ## 7. Recommended next actions (for Arjun's call)
 
 1. **Decide the panel's home** (loop DB vs experiment parquet vs regenerated builder) — blocks the build.
-2. **Settle the return basis**: T2 is local-currency; the traded ETFs are USD. Brazil's
-   local-vs-USD 12m returns differ by **15.7pp** on average (Turkey 10.5pp, Japan 7.8pp).
-   This is the largest single measurement decision in the program.
+2. **Return basis — RESOLVED: T2 is USD**, the same basis as the traded ETFs, so the
+   default requires no conversion and no decision. The panel also carries a constructed
+   local leg for idea #8 (Brazil differs by 15.8pp on average, Turkey 12.3pp, Japan 8.1pp,
+   U.S. 0.0000pp).
 3. **Pre-register a shortlist** far smaller than 13, given ~15 independent 12m observations.
 4. Then replication (sequencing step 1) via `asado-research-protocol` — snapshot + pre-registration,
    not ad hoc.

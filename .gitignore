@@ -60,3 +60,6 @@ journal/**/*.jsonl
 journal/**/*.jsonl.lock
 journal/**/*.yaml
 journal/**/*.md
+
+# Boundaries-of-TSM experiment outputs (data artifacts, not code)
+experiments/2026_08_boundaries_tsm/results/

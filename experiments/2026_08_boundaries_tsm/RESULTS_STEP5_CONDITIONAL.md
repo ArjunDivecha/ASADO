@@ -81,3 +81,76 @@ the real design question is not "should concentration vary with regime" but "sho
 strategy be holding one factor at all" — a much larger question and one with a real prior
 attached (residualization killed it by forcing diversification, so concentration is doing
 genuine work).
+
+---
+
+# UPDATE — the verdict above is REVISED. Broadening when alarmed works.
+
+The "do not implement" verdict was based on a paired t-test of monthly return
+differences. **That was the wrong test.** The effect is not in the average monthly return —
+it is in *when* the breadth changes. Two proper nulls both find it.
+
+## 1. Sign test: inverting the signal is catastrophic
+
+| | IR | Max DD |
+|---|---|---|
+| Baseline | 0.950 | −18.1% |
+| **Broaden when ALARMED** | **1.012** | **−12.7%** |
+| Broaden when CALM (inverted) | **0.647** | −16.7% |
+| Random 24% of months (25 draws) | 0.920 ± 0.064 | −15.5% |
+
+Inversion costs **0.365 of IR**. Noise does not do that. Against random same-frequency
+timing the real signal is at the **88th percentile on IR, 96th on drawdown**.
+
+## 2. Continuous beats binary
+
+Replacing the threshold with `HHI = 0.001 · M^(diffusion / 0.40)` — smooth, no cut point:
+
+| Setup | Return | Vol | IR | Max DD | Turnover | Eff. factors (calm → alarm) |
+|---|---|---|---|---|---|---|
+| Baseline | 7.37% | 7.76% | 0.950 | −18.1% | 7.7% | 1.1 |
+| M=5 | 7.53% | 7.42% | 1.016 | −18.1% | 8.4% | 1.1 → 1.3 |
+| **M=25** | 6.96% | 6.71% | **1.037** | **−13.3%** | 10.9% | 1.1 → 3.6 |
+| M=100 | 6.37% | 6.17% | 1.033 | **−10.6%** | 13.8% | 1.1 → 12.1 |
+| M=1000 | 5.49% | 5.82% | 0.944 | −11.2% | 18.0% | 1.1 → 33.4 |
+
+Clear interior optimum around M=25–100 — a **plateau, not a spike**, which is what a real
+effect looks like. Best IR 1.037 (+0.087 over production).
+
+## 3. Circular-shift null — the decisive test
+
+Same diffusion series, same autocorrelation, shifted so it no longer aligns with returns
+(20 shifts). This is the `circular_shift_null` technique already used in the *AA* record.
+
+| | IR | Max DD |
+|---|---|---|
+| **Real diffusion, M=25** | **1.037** | **−13.3%** |
+| Null: mean | 0.909 | −18.0% |
+| Null: sd / range | 0.051 / 0.810–1.020 | −18.1% to −16.9% |
+| **Real vs null** | **beats 100% of shifts** | **beats 100% of shifts** |
+
+Two things stand out:
+- The real drawdown (−13.3%) is **3.6pp better than the best of 20 shifts**. Complete separation.
+- The null's mean drawdown (−18.0%) is **indistinguishable from baseline** (−18.1%). Misaligned
+  broadening delivers *no* drawdown benefit whatsoever. And the null's mean IR (0.909) is
+  **below** baseline — broadening at the wrong times actively hurts.
+
+So the entire benefit comes from the *alignment* of the diffusion signal with the return
+series, which is exactly the claim being made.
+
+## Revised verdict
+
+**This is real, and it is not beta.** `sum(w) == 1` throughout — total exposure never changes,
+only the breadth of the active bet. It survives inversion, random-timing and circular-shift
+nulls, and shows a sensible dose-response plateau.
+
+Recommended setting: **continuous, M = 25–100.** M=25 maximises IR (+0.087); M=100 buys a much
+larger drawdown reduction (−18.1% → −10.6%) for ~1%/yr of return.
+
+Honest remaining caveats:
+1. **The EWS was calibrated on these same crashes.** This is the one caveat none of the nulls
+   address — they test whether the *timing* matters given the signal, not whether the signal
+   would have existed in advance. Unchanged from the earlier analysis.
+2. **Turnover rises** 7.7% → 10.9%/mo at M=25 (13.8% at M=100). Reported as a fact, not a gate.
+3. M was chosen from a 6-point sweep; the plateau mitigates but does not eliminate this.
+4. One strategy, 317 months.

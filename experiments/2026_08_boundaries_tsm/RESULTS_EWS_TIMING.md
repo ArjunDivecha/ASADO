@@ -3,8 +3,33 @@
 **Run:** 2026-08-08 · **Artifacts:** `results/ews_timing.xlsx`, `results/ews_timing.json`
 **Script:** `run_ews_timing.py` · Returns GROSS, no cost/turnover penalty (25bp law retracted)
 
-**This works, and unlike the Shiller-extremeness attempt it works for the right reasons.
-It is also, unavoidably, an in-sample test — see the caveat, which is the main thing.**
+**Verdict depends entirely on the objective, and the first version of this document got that
+wrong. On ABSOLUTE return/drawdown the overlay is good. Measured against a fully-invested
+equal-weight benchmark — the house convention — it is NEGATIVE. See §0.**
+
+---
+
+## 0. CORRECTION (2026-08-08, after Arjun asked "total or relative returns?")
+
+The original write-up showed portfolio Sharpe 0.81→1.01 AND net Sharpe 0.96→1.04 in one
+table, implying a single rule delivered both. **It does not.** Those are two different trades:
+
+| # | Implementation | Result |
+|---|---|---|
+| 1 | **Total returns**, halve the book to cash | Sharpe 0.75 → **1.00**, maxDD −62.7% → **−40.0%** |
+| 2 | **Relative returns**, stay fully invested, halve the ACTIVE bets | IR 0.95 → **1.04**, rel-DD −18.1% → −14.0% |
+| 3 | **Halve to cash, measured vs a FULLY-INVESTED benchmark** *(not originally shown)* | IR 0.95 → **0.83**, TE 8.2% → 8.7%, rel-DD −18.1% → **−26.0%** |
+
+Row 3 is what actually happens if the book de-risks and the benchmark does not — and it is
+**worse on every relative measure**. Worst 12-month relative stretch goes from −8.3% to
+**−14.3%**, over the twelve months ending 2010-02: de-risked straight through the 2009 rebound.
+
+**Because the house convention reports every backtest against equal-weight, row 3 is the
+number that should have led.** The overlay is attractive only under an ABSOLUTE-return
+objective. Under a relative mandate it is a bet against the market that lost.
+
+Rows 1 and 2 below stand as computed; the error was presentational — combining them as though
+one rule produced both — and it flattered the result.
 
 ---
 

@@ -154,3 +154,62 @@ Honest remaining caveats:
 2. **Turnover rises** 7.7% → 10.9%/mo at M=25 (13.8% at M=100). Reported as a fact, not a gate.
 3. M was chosen from a 6-point sweep; the plateau mitigates but does not eliminate this.
 4. One strategy, 317 months.
+
+---
+
+# ABSOLUTE RETURNS — the improvement does NOT survive translation
+
+Arjun asked for the absolute-return view. It materially narrows the result above.
+
+| Setup | Return | Vol | **Sharpe** | **Max DD** | Active IR |
+|---|---|---|---|---|---|
+| EW benchmark | 7.56% | 17.91% | 0.42 | −57.7% | — |
+| Baseline (production) | 14.91% | 20.37% | **0.73** | **−61.9%** | 0.91 |
+| Continuous M=25 | 14.58% | 19.87% | **0.73** | **−63.4%** | 1.00 |
+| Continuous M=100 | 14.04% | 19.47% | 0.72 | −61.2% | 1.00 |
+
+**Absolute Sharpe is flat (0.73 → 0.73 → 0.72) and absolute max drawdown is no better —
+slightly WORSE at M=25 (−63.4% vs −61.9%).**
+
+House convention, gross, vs equal-weight:
+
+| Window | base − EW | M=25 − EW | M=100 − EW |
+|---|---|---|---|
+| Full | +7.4% | +7.0% | +6.5% |
+| 5y | +4.1% | +3.3% | +2.7% |
+| 3y | +1.1% | **−0.3%** | +0.1% |
+| 1y | +14.4% | +10.0% | +8.8% |
+
+**The conditional version loses to the baseline in every window.**
+
+## Why — and it is simple arithmetic, not a bug
+
+The active book runs ~8% vol against a benchmark running ~18%. Total risk is dominated by
+market beta. Cutting active risk therefore:
+- improves the **ratio** (IR 0.91 → 1.00), because active vol falls faster than active return;
+- barely moves **total** vol (20.4% → 19.9%);
+- costs 0.33%/yr of return.
+
+Net absolute Sharpe: unchanged. And the active-drawdown gain (−18.1% → −13.3%) never reaches
+absolute drawdown, because a −62% drawdown is a market event, not an active-book event.
+
+## The session's two results are mirror images, and neither is a free lunch
+
+| | Absolute | Relative |
+|---|---|---|
+| **EWS exposure overlay** (scale the whole book) | Sharpe 0.75 → 1.00, DD −62.7% → −40.0% | **HURTS**: IR 0.95 → 0.83 |
+| **Step Five conditioning** (scale the active bet) | **NOTHING**: Sharpe 0.73 → 0.73 | Real: IR 0.91 → 1.00, survives every null |
+
+The overlay buys absolute risk reduction that is pure beta — equally available on SPY, and it
+gives up relative performance. The Step Five conditioning buys genuine relative improvement
+that does not translate into anything absolute.
+
+## Final verdict — it depends on the mandate, and only Arjun can set that
+
+- **Judged on IR vs equal-weight:** M=25 is worth having. +0.09 IR, survives inversion,
+  random-timing and circular-shift nulls, and is not beta by construction.
+- **Judged on absolute return or absolute drawdown:** do not implement. It costs ~0.33%/yr
+  and buys nothing spendable.
+
+Both statements are true simultaneously. The earlier "REVISED: this is real" stands as written
+— but it was, and is, a statement about the ACTIVE return only.

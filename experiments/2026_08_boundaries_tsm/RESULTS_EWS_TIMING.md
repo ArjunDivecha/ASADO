@@ -135,3 +135,44 @@ get an honest out-of-sample read given the EWS was calibrated on the historical 
 Second-best, if a decision is needed sooner: test the same rules on the **pre-2000 EWS
 history** against a proxy equity book, where the T2 strategy did not exist — still not clean
 (the EWS saw those crashes too) but it adds episodes.
+
+---
+
+## §0b. IT IS PURE BETA TIMING — it has nothing to do with the T2 strategy
+
+Arjun's question: "is this just a beta strategy, i.e. it has NOTHING to do with my strategy,
+and would deliver similar improvement to an SPX long-only?" **Yes. Tested and confirmed.**
+
+Same rule (diffusion ≥ 0.30 → half weight), same period 2000-04 → 2026-07:
+
+| Applied to | ΔSharpe | ΔMax drawdown |
+|---|---|---|
+| T2 Fuzzy (the strategy) | +0.24 | +22.6pp |
+| Equal-weight 34-country | +0.20 | +22.0pp |
+| **S&P 500 long-only** | **+0.22** | **+20.0pp** |
+
+And standalone on **66 years** of SPX (1960-02 → 2026-07): Sharpe 0.52 → 0.64,
+max drawdown −52.6% → −32.6%, de-risked 27% of months.
+
+T2's beta to SPX is **1.06**, so halving the book removes ~0.53 units of market beta. That is
+the entire mechanism.
+
+**This was structurally inevitable and should have been anticipated before running it.** The
+rule multiplies the whole book by a scalar. It cannot change which countries are held or their
+relative weights; the only thing it can do to active return is SHRINK it. There was never a
+mechanism by which it could improve selection, so any improvement was always going to be beta.
+
+It also explains §0 row 3: measured against a fully-invested benchmark, removing beta must
+look bad, because the benchmark keeps the beta you gave up.
+
+### Consequences
+
+1. **Not a T2 improvement — a separate asset-allocation decision.** "Half my equity exposure
+   in cash when the EWS flashes" is independent of "which countries do I own".
+2. **If the exposure timing is wanted, implement it on SPY/futures**, not by shrinking the
+   country book — same benefit, cheaper, and it leaves the alpha engine at full size. Halving
+   T2 halves the active return for no compensating gain.
+3. **The one non-beta use left** is scaling ACTIVE risk rather than total exposure (§0 row 2,
+   IR 0.95 → 1.04). That never bets against the market, so it cannot be dismissed as beta
+   timing — the only variant worth further work under a relative mandate, and so far tested
+   only in passing.

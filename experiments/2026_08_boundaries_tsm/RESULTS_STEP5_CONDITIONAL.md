@@ -213,3 +213,50 @@ that does not translate into anything absolute.
 
 Both statements are true simultaneously. The earlier "REVISED: this is real" stands as written
 — but it was, and is, a statement about the ACTIVE return only.
+
+---
+
+# BOTH LEVERS TOGETHER — they do not combine, they trade off
+
+Arjun: "what if we do both - use diffusion to take down overall absolute risk AND continuous
+lambda". Tested as a 3x4 grid: breadth `HHI = 0.001·M^(diff/0.40)` x exposure
+`s = S_MIN^(diff/0.40)`. Relative is measured against the FULLY-INVESTED equal-weight
+benchmark, which never de-risks.
+
+| Breadth M | Exposure S_MIN | Abs ann | Abs vol | **Abs Sharpe** | Abs DD | Rel ann | TE | **IR** | Rel DD |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | 1.00 | 14.91% | 20.37% | 0.73 | −61.9% | 7.05% | 7.76% | **0.91** | −18.1% |
+| 25 | 1.00 | 14.58% | 19.87% | 0.73 | −63.4% | 6.72% | 6.71% | **1.00** | −13.3% |
+| 25 | 0.75 | 14.23% | 16.59% | 0.86 | −49.8% | 5.73% | 6.79% | 0.84 | −14.6% |
+| 25 | 0.50 | 13.35% | 13.80% | 0.97 | −34.8% | 4.29% | 8.92% | 0.48 | −28.1% |
+| 1 | 0.35 | 12.85% | 12.44% | **1.03** | **−24.6%** | 3.47% | 10.65% | 0.33 | −36.0% |
+
+(Full 12-cell grid in the run output.)
+
+## No cell beats production on both measures
+
+All twelve were checked. The structure:
+
+- **Absolute Sharpe is set almost entirely by the EXPOSURE lever** — 0.73 → 0.86 → 0.97 → 1.03
+  as S_MIN falls, with M barely shifting it.
+- **The BREADTH lever only operates at full exposure** — M=25 lifts IR 0.91 → 1.00 at S=1.00,
+  but once de-risking starts IR collapses regardless of M (0.84 → 0.48 → 0.30).
+
+So exposure does not merely fail to combine with breadth; it **swamps** it. Halving exposure
+costs more relative performance than the breadth conditioning can win back, by roughly 5x.
+
+Relative drawdown also moves the wrong way as exposure falls: −18.1% → −26.3% → −36.0%. That
+is the 2009-rebound problem — a de-risked book underperforming a fully-invested benchmark
+through the recovery.
+
+## The decision surface, stated once
+
+1. **Absolute Sharpe 0.73 → 1.03** is available, at the cost of IR 0.91 → 0.33. This is the
+   beta trade, and it is obtainable on SPY without touching this strategy.
+2. **IR 0.91 → 1.00** is available, and delivers nothing absolute.
+3. **The only genuine compromise is M=25, S_MIN=0.75:** abs Sharpe 0.86 (+0.13), abs DD
+   −61.9% → −49.8%, IR 0.84 (−0.07).
+
+Everything in this session has been a way of discovering that the choice is a POINT ON THIS
+FRONTIER, not an escape from it. There is no configuration of these two levers that improves
+absolute and relative performance simultaneously.

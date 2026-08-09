@@ -89,7 +89,7 @@ The Brier Gate code under `scripts/brier_gate/` is an isolated experiment pipeli
 `scripts/discovery_triage/` is a quarantined LLM-native Discovery Lab and chain-of-custody Court that runs *after* the loop's deterministic detectors and *before* the cockpit refresh. It emits drafts, not signals: an outcome-blind snapshot feeds a Claude model, a provenance classifier routes every idea by model training cutoff, blind human rulings precede unsealing, and every claim — survivor or killed — is forward-tracked (the graveyard is a control arm). It is JSONL/YAML-first under `journal/` and writes no DuckDB tables. See [Discovery Triage](discovery-triage.md).
 
 ### Frontend / cockpit
-`cos_mockups/` contains the generated cockpit payload and the UI-facing contract. The cockpit aggregates state from the loop DB, governance artifacts, and curated research outputs.
+ASADO has three independent user-facing surfaces, all read-only over the warehouse / loop DB. `cos_mockups/` contains the generated Chief-of-Staff cockpit payload (`cockpit_data.json`) and the UI-facing contract; the cockpit aggregates state from the loop DB, governance artifacts, and curated research outputs. Separately, `frontend/app.py` is a Streamlit research/operator dashboard over the DuckDB warehouse and Neo4j, and `frontend/perspective_lab/` is a Vite/React workbench served by `scripts/perspective_lab_server.py` over curated read-only DuckDB slices. The Streamlit and Perspective surfaces are distinct from the cockpit. See [Frontend and cockpit](frontend-and-cockpit.md).
 
 ## Architectural guardrails
 

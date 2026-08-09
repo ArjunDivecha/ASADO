@@ -27,7 +27,7 @@ If you are a new human or agent, start here and then follow the links below.
 3. [Loop and research workflows](loop-and-research.md) — dislocations, ledgers, harnesses, and nightly outputs.
 4. [Discovery Triage](discovery-triage.md) — the quarantined LLM-native Discovery Lab and chain-of-custody Court: outcome-blind snapshots, model-cutoff provenance, blind rulings, and prospective forward tracking.
 5. [Prediction markets and Brier Gate](prediction-markets.md) — corpus building, context packs, live shadow, and related surfaces.
-6. [Frontend and cockpit](frontend-and-cockpit.md) — the live cockpit payload contract and Phase 2 binding logic.
+6. [Frontend and cockpit](frontend-and-cockpit.md) — the Chief-of-Staff cockpit payload contract, plus the Streamlit dashboard and Perspective Lab frontends that are distinct from it.
 
 ## Canonical source docs worth knowing
 
@@ -44,6 +44,7 @@ If you are a new human or agent, start here and then follow the links below.
 - `scripts/discovery_triage/` — the quarantined LLM Discovery Lab, provenance classifier, blind rulings, and forward-tracking Court.
 - `scripts/brier_gate/` — prediction-market corpus, context pack, scoring, and live shadow workflow.
 - `cos_mockups/` — Chief-of-Staff cockpit payload generation and UI bindings.
+- `frontend/` — Streamlit research dashboard (`app.py`) and Perspective Lab workbench; distinct from the cockpit.
 - `tests/loop/` — invariants for the loop, harness, frontend, and PIT behavior.
 - `tests/discovery_triage/` — offline invariants for the Discovery Lab, provenance, blind rulings, and forward tracking.
 - `docs/` — canonical specs, audits, and dated reports.

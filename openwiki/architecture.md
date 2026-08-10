@@ -80,7 +80,7 @@ The warehouse builders live at the top level of `scripts/`:
 `README.md`, `CLAUDE.md`, and `scripts/daily_update.py` show the daily extension is focused on T2 and GDELT, with daily return surfaces, optimizer outputs, and graph refreshes.
 
 ### Loop / research stack
-The loop architecture is split into `scripts/loop/` plus `tests/loop/` and the dated briefs in `Data/dislocations/`. This is documented separately in [Loop and research workflows](loop-and-research.md).
+The loop architecture is split into `scripts/loop/` plus `tests/loop/` and the dated briefs in `Data/dislocations/`. The nightly job (`scripts/loop/loop_daily_job.py`) runs a long ordered `STEPS` chain that covers the dislocation engine, the Price-Discovery Gap Engine (an enhancement layer over dislocations), graph features, the combiner/family-rank surfaces, Triptych priors, cross-source consistency checks, schema QA, the Fable connections step, and the Learning Loop (gap-outcome scoring + attribution + Fable claims). This is documented separately in [Loop and research workflows](loop-and-research.md).
 
 ### Prediction-market experiments
 The Brier Gate code under `scripts/brier_gate/` is an isolated experiment pipeline that reads the warehouse in a PIT-safe way and scores forecast quality against market prices.

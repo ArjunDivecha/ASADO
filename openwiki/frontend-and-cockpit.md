@@ -14,6 +14,8 @@ ASADO's Chief-of-Staff cockpit is a data product, not just a UI. The cockpit pay
 
 It also states that missing values are sanitized to `null`, returns are stored as percent, and on producer failure an extra `error` string key (e.g. `"loop DB unavailable"`) is present — the UI must surface producer errors rather than render a silent empty state.
 
+The `gap_engine` block is the cockpit surface for the Price-Discovery Gap Engine (gap-first map layer, Known Gaps feed, gap detail view, `config_version`/`config_hash` provenance); the engine itself and its promotion/holdout gates are documented in [Loop and research workflows](loop-and-research.md). The `research_desk` block is the Discovery Triage Court surface (see below).
+
 ## Payload generation
 
 `cos_mockups/build_cockpit_data.py` is the producer. Its docstring is valuable because it tells you exactly what the cockpit is reading and why:

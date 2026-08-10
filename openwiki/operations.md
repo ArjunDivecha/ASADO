@@ -25,6 +25,8 @@ This is the high-level monthly orchestrator. Its docstring shows the stage order
 
 Use this when you need a full warehouse refresh or when upstream source coverage changed.
 
+Two interactive launchers wrap the same monthly sequence with live streaming: `run.py` (interactive top-level launcher that prompts for the one manual Bloomberg prerequisite, then runs every automated step in order with a running status board) and `dashboard.py` (a real-time terminal dashboard that tails the `run.py` log and shows per-step status, collector metrics, DuckDB table sizes, and live output). These are operator conveniences over the same stages and flags as `monthly_update.py`, not separate pipelines.
+
 ### Daily metronome
 `python scripts/daily_update.py`
 
@@ -41,9 +43,11 @@ The script supports `--resume`, `--skip-bloomberg`, `--skip-gdelt`, `--skip-neo4
 
 This is the nightly alpha-hunting orchestrator. It reads from both the main warehouse and the loop DB, emits dislocations, briefs, evidence packs, ledgers, calibration reports, and cockpit refresh data.
 
-The docstring is useful because it lists the ordered steps and clarifies which collectors are parquet-only versus loop-DB loaders.
+The docstring is useful because it lists the ordered steps and clarifies which collectors are parquet-only versus loop-DB loaders. The full ordered `STEPS` chain is documented in [Loop and research workflows](loop-and-research.md); a singleton `fcntl.flock` (`Data/loop/.loop_daily.lock`) guards against the 07:30 chained run and the 11:30 launchd safety-net rebuilding the loop DB concurrently.
 
 Near the end of the run it also chains two Discovery Triage steps (`discovery_forward_track`, then the gated `discovery_docket --nightly`). The docket is a **cost gate**: it no-ops unless `ASADO_RUN_DISCOVERY_LAB=1`, so the nightly job never auto-spends on the Anthropic API. See [Discovery Triage](discovery-triage.md) for the full custody chain.
+
+The nightly job also runs the optional Learning Loop steps (`score_gap_outcomes`, `attribute_outcomes`) and the Fable connections step (`build_fable_connections`); the lesson layer and Discovery Lab are separately gated cost switches (`ASADO_RUN_ATTRIBUTION_LLM=1`, `ASADO_RUN_DISCOVERY_LAB=1`) that are no-op by default. Optional steps (declared in `config/governance_contract.yaml`) never red-light the nightly run.
 
 ## Resume and lock discipline
 
@@ -66,7 +70,7 @@ Two operational patterns are especially important:
 - DuckDB lock contention from idle analysis sessions.
 - Stale or missing loop outputs when the nightly chain is interrupted.
 - Pipeline stage edits that invalidate resume checkpoints.
-- Accidentally enabling the Discovery Lab in the nightly run (`ASADO_RUN_DISCOVERY_LAB=1`) and incurring Anthropic API spend; the default is no-op.
+- Accidentally enabling the Discovery Lab in the nightly run (`ASADO_RUN_DISCOVERY_LAB=1`) or the Fable-xhigh lesson layer (`ASADO_RUN_ATTRIBUTION_LLM=1`) and incurring Anthropic API spend; both are no-op by default.
 
 ## Operational source references
 

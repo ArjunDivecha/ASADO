@@ -170,3 +170,31 @@ internally consistent (both legs on the same row, whatever that row is), so the 
 SERIES is now valid — but its date stamps still inherit this upstream offset. Fixing it means
 changing the date axis of everything downstream, so it is left for Arjun.
 Origin to inspect: `Step Two Point Five Create Benchmark Rets.py`.
+
+### RETRACTION 2026-08-09 — "BUG 4" WAS NOT A BUG. Disregard it.
+
+The claim that `Portfolio_Data.xlsx` / `T2 Master.xlsx` sheet `1DRet` has a "corrupted date
+axis" is **WRONG and withdrawn**. `1DRet` is a **FORWARD** return by design:
+
+```
+corr(1DRet, TRAILING return T/T-1) = -0.0516
+corr(1DRet, FORWARD  return T+1/T) = +1.0000     mean|diff| = 1.7e-07
+```
+
+Under that convention every observation I flagged is CORRECT:
+- Friday rows = the Fri->Sat holding period, which genuinely earns 0 (market shut)
+- Sunday rows = Sun->Mon, i.e. Monday's session
+- Saturday rows = Sat->Sun, i.e. the Gulf markets that trade Sunday (owner confirmed)
+- ~6 populated rows/week = 5 major sessions + the Gulf Sunday session
+
+This is also consistent with ASADO's own forward-return blacklist, which lists `1DRet` as an
+optimizer TARGET. I should have joined those facts rather than diagnosing corruption.
+No upstream fix is needed and `Step Two Point Five Create Benchmark Rets.py` is not at fault.
+
+**Bugs 1-3 and their fix are UNAFFECTED and still stand.** Re-verified under the forward
+convention:
+- original: portfolio = w(T)·1DRet(T+1) = return over T+1->T+2; benchmark = 1DRet(T) = T->T+1.
+  Genuinely misaligned by one day. The fix shifts the portfolio leg onto row T+1, where the
+  benchmark is also T+1->T+2. Both legs now earn the same period, and the deliberate 2-day
+  implementation lag documented in the original header is preserved.
+- Validation stands: corr(net, benchmark_T+1) +0.537 -> +0.007; exact zeros 14.2% -> 0.

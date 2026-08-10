@@ -79,3 +79,67 @@ Newest items at the top. When you fix one, delete the entry or mark it done.
 - **Proposed fix (needs approval):** apply CONSERVATIVE_DAILY_LAG_DAYS=1 to ALL daily signals including zero-lag sources (or equivalent: verdict horizon opens at t+1 close). Then re-verdict the ~29 daily hypotheses via the sanctioned re-measurement path (existing ids, zero new registrations, as in the v2.1 re-cost).
 - **Scope note:** monthly verdicts unaffected (existing embargoes; 1-day echo is second-order at 21d horizons). All DEAD verdicts stand a fortiori (they died under the favorable convention).
 - Evidence: experiments/2026_07_flip_autopsy/results/a6_lag1_family_ic.json; experiments/2026_07_dispersion_throttle/results/RESULTS.md correction block.
+
+---
+
+## 2026-08-09 — `factor_returns_daily` is invalid as an active-return series (3 bugs in `scripts/t2_optimizer_daily.py`)
+
+**Found by:** health check prompted by "does ASADO calculate daily factor returns?"
+**Scope:** `factor_returns_daily`, source `t2_optimizer_daily` — 106 factors, 1,030,002 rows,
+1999-12-31 → 2026-08-07. **Live T2 Fuzzy strategy is NOT affected** (verified: the monthly
+`Step Four Create Monthly Top20 Returns FAST.py` is clean on all three counts).
+**Not fixed** — T2-feed code, needs owner approval per CLAUDE.md.
+
+### Bug 1 (severe) — benchmark not shifted with the portfolio leg
+
+`scripts/t2_optimizer_daily.py:107,121,122`
+```python
+ret_next = returns.shift(-1)                    # portfolio leg -> T+1 returns
+port     = (w * rn).sum(axis=1, min_count=1)    # earns T+1
+net      = (port - benchmark)                   # <-- benchmark still at T
+```
+`net(T) = [weights(T)·returns(T+1)] − benchmark(T)` — the long leg earns tomorrow, the
+benchmark is charged today. It is a spread between two different days, not an active return.
+
+**Empirically confirmed** (factor `120DTR_CS`, n=8,385 excluding the fake zeros):
+- `corr(net, benchmark same-day T)  = −0.634`
+- `corr(net, benchmark next-day T+1) = +0.537`
+
+A correctly aligned active return should be ~0 against both. The series is dominated by
+market direction on two consecutive days.
+
+### Bug 2 — `min_count=1` yields partial-universe portfolio returns
+
+`t2_optimizer_daily.py:121`. If even ONE country has data the sum returns a value, so on rows
+whose *next* row is a near-holiday (Saturday row → Sunday returns, when only Saudi/Israel/Gulf
+trade) the "portfolio return" is built from 1–3 markets whose weights no longer sum to 1, then
+netted against the FULL benchmark. This is why Saturday rows show mean |ret| 0.776 despite no
+market trading Saturday. (Sunday Gulf trading is legitimate and easily excepted — the bug is
+the partial aggregation, not the Gulf data.)
+
+### Bug 3 — `.fillna(0.0)` converts missing data into fake zero returns
+
+`t2_optimizer_daily.py:128`. Friday's next row is Saturday, when nothing is open anywhere:
+`port` → NaN → `net` → NaN → **filled with 0.0**. Result: **78% of Friday rows are exact
+zeros**, 14.2% of the whole series. These are not "the factor returned 0%" — they are "no data,
+call it zero." Also violates the house rule against silent imputation (`AAA Backup/CLAUDE.md`:
+missing values get explicit NULL plus a logged record).
+
+### Downstream effects
+
+- Daily volatility is understated (14.2% artificial zeros): 21.83% annualising all calendar
+  rows vs 19.58% on non-zero rows.
+- Does not reconcile with monthly `factor_returns`: correlation 0.83, mean abs monthly
+  difference 1.31pp, −3.02%/yr vs −1.44%/yr, sign disagreements in 3 of the last 6 months.
+- Any day-of-week analysis on this table is meaningless.
+
+### Suggested fix (for approval)
+
+1. Shift the benchmark identically (`benchmark.shift(-1)`), or better, compute everything on
+   the RETURN date: `port(T) = weights(T−1)·returns(T)` netted against `benchmark(T)`.
+2. Replace `min_count=1` with a coverage floor — require a minimum share of benchmark weight
+   present, else NaN.
+3. Delete `.fillna(0.0)`; leave NaN and drop non-trading rows.
+4. Reindex to a trading-day calendar, with an explicit exception for Sunday-trading markets
+   (Saudi/Israel/Gulf) rather than a blanket weekend rule.
+5. Check `gdelt_optimizer_daily.py` (36 factors, 147,708 rows) for the same pattern.

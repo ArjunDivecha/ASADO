@@ -143,3 +143,30 @@ missing values get explicit NULL plus a logged record).
 4. Reindex to a trading-day calendar, with an explicit exception for Sunday-trading markets
    (Saudi/Israel/Gulf) rather than a blanket weekend rule.
 5. Check `gdelt_optimizer_daily.py` (36 factors, 147,708 rows) for the same pattern.
+
+### UPDATE 2026-08-09 — bugs 1–3 FIXED upstream; a 4th, deeper bug found and NOT fixed
+
+Fixed in `A Complete/T2 Factor Timing Fuzzy Daily/Step Four Create Monthly Top20 Returns.py`
+(backup: `Backups/Step Four Create Monthly Top20 Returns.py.bak-20260809_222131`), which is
+the canonical source ASADO's `t2_optimizer_daily.py` was ported from:
+- benchmark now netted on the RETURN date (portfolio leg shifted onto it)
+- `MIN_UNIVERSE` (10) coverage floor replaces implicit partial-universe books
+- `.fillna(0.0)` removed; non-trading days masked NaN via `trading_day_mask()`
+
+**Validated on a 4-factor / 2022+ subset (no production file overwritten):**
+`corr(net, benchmark_T+1)` fell from **+0.537 to ~0.007**; exact zeros **14.2% -> 0**.
+Note: `Daily Alpha/daily_alpha_backtest.py` was ALREADY correct — it lags the weights and
+keeps returns/benchmark on the return date. The legacy path now matches it.
+
+**BUG 4 (upstream, NOT fixed, needs owner decision).** `Portfolio_Data.xlsx` sheet `Returns`
+has a corrupted date axis:
+- **Friday rows are all-zero in 131 of 131 weeks** since 2024.
+- **Sunday rows carry real US equity returns** (mean |ret| 0.0057) — the US market does not
+  trade Sunday.
+- The sheet averages ~6 populated rows per week for a 5-session week.
+
+So the row LABELS do not correspond to trading sessions. The fix above makes the netting
+internally consistent (both legs on the same row, whatever that row is), so the active-return
+SERIES is now valid — but its date stamps still inherit this upstream offset. Fixing it means
+changing the date axis of everything downstream, so it is left for Arjun.
+Origin to inspect: `Step Two Point Five Create Benchmark Rets.py`.

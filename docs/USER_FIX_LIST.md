@@ -9,6 +9,33 @@ Newest items at the top. When you fix one, delete the entry or mark it done.
 
 ## Open
 
+### 6. T2_Optimizer.xlsx "Monthly_Net_Returns" sheet missing/renamed "Date" column — breaks daily panel build
+- **Symptom (2026-08-11 07:30 launchd run, `asado-daily`):** `build_daily_panels.py`
+  Stage 1 fails with `KeyError: 'Date'` in `load_factor_returns_daily()`
+  (`scripts/build_daily_panels.py:359`), which reads
+  `Data/work/t2_daily/T2_Optimizer.xlsx`, sheet `Monthly_Net_Returns`, and expects a
+  literal `Date` column.
+- **Trigger:** `Data/work/t2_daily/T2_Optimizer.xlsx` was rewritten by the upstream
+  T2 feed at 08:19 today (mtime), i.e. between the two most recent daily runs — its
+  `Monthly_Net_Returns` sheet no longer exposes a column literally named `Date`
+  (renamed, reordered, or replaced by an index/date-as-header layout). Not
+  independently confirmed by reading the sheet in this session — see Verification
+  note in the fixer report for 2026-08-11.
+- **Why not a same-session fix:** this is a T2-feed schema change, which
+  `CLAUDE.md`'s house rule reserves for Arjun's review ("do not fix
+  monthly-collector or T2-feed bugs without approval — append to
+  `docs/USER_FIX_LIST.md` instead"), and this fixer agent's sandbox does not permit
+  running Python/openpyxl to positively confirm the new column layout before
+  proposing a patch.
+- **Proposed fix (needs approval + confirmation of new column name):** once the
+  actual current header of `Monthly_Net_Returns` is confirmed (e.g. via
+  `python -c "import pandas as pd; print(pd.read_excel(path, sheet_name='Monthly_Net_Returns', nrows=0).columns.tolist())"`),
+  either (a) update `scripts/build_daily_panels.py:358-359` to read the new column
+  name, or (b) if the upstream T2 export was corrupted, ask the feed owner to
+  restore a `Date` column. Do not blind-guess the rename.
+
+---
+
 ### 5. CPI-revision consensus dates are calendar month-end, not true availability date — needs decision
 - **Symptom (GPT-5.6 review 2026-07-10):** `cons_cpi_rev3m_12m` / the `cpi_rev`
   family carries month-end dates (e.g. `2026-07-31` today), which are future-dated

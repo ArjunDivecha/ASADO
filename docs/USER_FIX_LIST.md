@@ -10,6 +10,9 @@ Newest items at the top. When you fix one, delete the entry or mark it done.
 ## Open
 
 ### 6. T2_Optimizer.xlsx "Monthly_Net_Returns" sheet missing/renamed "Date" column — breaks daily panel build
+- **STILL FAILING 2026-08-12 07:30 launchd run** — second consecutive weekday
+  failure, identical `KeyError: 'Date'` at the same line. Not self-healing;
+  needs Arjun's attention.
 - **Symptom (2026-08-11 07:30 launchd run, `asado-daily`):** `build_daily_panels.py`
   Stage 1 fails with `KeyError: 'Date'` in `load_factor_returns_daily()`
   (`scripts/build_daily_panels.py:359`), which reads

@@ -1196,3 +1196,59 @@ CONSEQUENCES:
 ---
 SESSION END: 2026-08-08 01:45 PDT | Agent: Claude Code (Opus 5)
 ---
+
+---
+SESSION START: 2026-08-13 08:05 PDT | Agent: Claude Code (Fable 5)
+
+Fixed the silent zero-fill that took asado-daily AND asado-loop-daily dark for
+two days (commit fbb94cc, scripts/build_t2_master_daily.py).
+
+WHAT HAPPENED: on 2026-08-11 the tot_return_index_gross_dvds Bloomberg pull
+returned NaN for all 34 tickers across the ENTIRE 1999-2026 history — and
+reported success after 1146s. clean_excel() fills NaN with 0, so a total data
+outage never surfaced as missing data; it became a wall of 0.0 returns that is
+indistinguishable from a long run of flat days.
+
+Both job failures descend from that one event:
+- asado-daily: every factor's net return summed to exactly 0, t2_optimizer_daily
+  dropped all of them (the `net.abs().sum() > 0` filter), wrote a ZERO-COLUMN
+  T2_Optimizer.xlsx; pd.read_excel then names the column "Unnamed: 0" and
+  build_daily_panels.py:359 raises KeyError: 'Date'.
+- asado-loop-daily: loopdb.py:194 drops ret==0.0 rows as non-trading
+  placeholders, which now drops EVERY row -> empty returns panel -> NINE build_*
+  steps failed. build_jst_risk_report was merely the one visible in Overseer's
+  400-line tail. The non-fatal fable_claims "invalid date field format: NaT" is
+  the same cause again: build_dislocations got run_date=NaT and wrote 45 rows
+  with date=NaT, which build_fable_connections.py:479 then read back.
+Last good run for both: 08-10. NO code change was involved — data only.
+
+THE FIX: assert_tri_has_data() runs immediately after the TRI sheet loads and
+raises if it has zero populated numeric cells, naming the likely Bloomberg cause
+and explicitly saying not to hand-fill the sheet. It logs coverage otherwise and
+warns below 50%, so a PARTIAL outage is visible too. clean_excel() now logs how
+many cells it filled — no silent imputation.
+Verified three ways: fires on the real broken 08-12 workbook (9722 rows, 34
+country columns, 0 populated cells), silent on fully-populated data, proceeds
+with a log line on partial coverage.
+
+REJECTED: removing the fillna(0) globally. clean_excel is applied to many sheets
+and a blanket change risks breaking legitimate sparse series; the defensible
+guard is at the single point where the one sheet that drives every return
+variable enters the pipeline.
+
+CONTEXT: the root trigger was a Bloomberg terminal-wide quota HARD STOP
+(activated 08-12 23:42 PDT, markers 'workflow review needed' + 'code:-4002').
+Arjun cleared it at 08:05 on 08-13 after verifying with ASADO's own preflight.
+The 08:23 retry passed the Bloomberg gate and the pipeline restarted.
+
+NOT TOUCHED — needs Arjun. family_registry has been RED since at least 07-29:
+unclassified variables KEEPLIST_93_HGB_WALKFWD and WIDE_DEEP_RAW_HGB_WALKFWD.
+family_registry.py raises on unknown variables BY DESIGN, because the family
+determines the deflated-Sharpe trial count N a hypothesis is charged against —
+classifying these without Arjun would silently change his multiple-testing
+accounting. Note also the third reported "unclassified variable" is '': 
+build_governance_scorecard.py:145 defaults a missing signal_spec.variable to "",
+so a hypothesis with NO signal variable is reported as if it were a taxonomy
+gap. Two different problems wearing one message.
+
+SESSION END: 2026-08-13 08:27 PDT | Agent: Claude Code (Fable 5)

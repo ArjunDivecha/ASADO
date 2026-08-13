@@ -1015,7 +1015,12 @@ def run(as_of: Optional[str] = None) -> int:
         con.execute(
             """
             CREATE TABLE IF NOT EXISTS dislocation_daily (
-                date VARCHAR, dislocation_id VARCHAR, detector VARCHAR,
+                -- DATE, not VARCHAR (migrated 2026-08-13). As VARCHAR this
+                -- column accepted the literal string 'NaT' from a crashed run,
+                -- which broke every consumer doing CAST(date AS DATE) and made
+                -- max(date) return 'NaT' lexicographically ('N' > '2'). A typed
+                -- column makes the database itself reject that class of value.
+                date DATE, dislocation_id VARCHAR, detector VARCHAR,
                 archetype VARCHAR, entity VARCHAR, direction VARCHAR,
                 severity DOUBLE, components_json VARCHAR, regime_context VARCHAR,
                 status VARCHAR, first_seen VARCHAR, days_active BIGINT,

@@ -1252,3 +1252,57 @@ so a hypothesis with NO signal variable is reported as if it were a taxonomy
 gap. Two different problems wearing one message.
 
 SESSION END: 2026-08-13 08:27 PDT | Agent: Claude Code (Fable 5)
+
+---
+SESSION START: 2026-08-13 09:25 PDT | Agent: Claude Code (Fable 5)
+
+Cleared the last of the 2026-08-11 NaT incident. Loop went 9 hard failures ->
+0 across today.
+
+WHAT WAS LEFT. After the Bloomberg/TRI fix (fbb94cc) the returns panel was
+healthy again (t2_factors_daily.1DRet: 224,418 nonzero through 08-13; loop
+returns_panel max 2026-08-12) and 7 of the 9 failing loop steps recovered on
+their own. Two did not, and BOTH had the same cause: 45 rows in
+dislocation_daily carrying the literal string 'NaT' in a VARCHAR date column,
+written by the crashed 08-11/08-12 runs. Consequences out of all proportion to
+45 rows:
+  - build_gap_episodes.py:266 and build_price_state died on
+    'Conversion Error: invalid date field format: "NaT"' whenever they cast the
+    column;
+  - build_evidence_packs.py:219 then reported the MISLEADING
+    "dislocation_daily is empty — run build_dislocations.py first", sending the
+    operator to rerun a script that had already succeeded;
+  - max(date) returned 'NaT' lexicographically ('N' > '2'), which is what fed a
+    NaT into build_fable_connections;
+  - the governance summary printed 'dislocations=45 as-of NaT' — i.e. the
+    corrupt rows were being presented as TODAY'S state;
+  - and rebuilding never helped, because the poison survived every rerun. That
+    is why Overseer kept reporting remediation exhausted.
+
+FIXED IN THREE LAYERS (deliberately, so no single one is load-bearing):
+ 1. 53e23ef build_dislocations refuses to run when run_date/data_date is NaT,
+    naming the real upstream cause. Mechanism worth remembering: pd.NaT.date()
+    does NOT raise, it returns NaT, so str() of it is the string 'NaT' — the
+    INSERT succeeded and the crash only came later at strftime.
+ 2. Data repair (Arjun approved): DELETE the 45 rows. Full table backed up first
+    to Data/backups/dislocation_daily_FULL_20260813_094011.csv (2394 rows) plus
+    the 45 rows alone in dislocation_daily_NaT_rows_20260813_090527.csv.
+ 3. a71b854 column typed VARCHAR -> DATE, so the DATABASE rejects this class of
+    value regardless of writer. Migrated with USING TRY_CAST: 2349 in, 2349 out,
+    0 nulls — nothing silently nulled. DDL updated so a fresh DB is typed too.
+
+VERIFIED, not assumed: build_dislocations exit 0 (+53 rows for 2026-08-12, and
+it now writes brief_2026_08_12.md — it had been emitting brief_2026_06_10.md,
+two months stale, because an empty panel made data_date collapse);
+build_gap_episodes exit 0; build_price_state exit 0; build_evidence_packs exit 0.
+Also swept the whole loop DB: 0 'NaT' strings remain in any VARCHAR column.
+(A scan flagged gap_holdout_daily.candidate_id, gap_outcomes.candidate_signature
+and gdelt_articles_recent.seendate — all FALSE POSITIVES: the first two matched
+only because "candidate" contains "date", and GDELT's seendate is natively
+20260730T043000Z. Recorded so nobody re-investigates them.)
+
+NOT DONE — first_seen is still VARCHAR and also holds dates. Same latent class,
+lower risk (nothing casts it today). Left alone deliberately rather than widening
+an unrequested schema change.
+
+SESSION END: 2026-08-13 09:50 PDT | Agent: Claude Code (Fable 5)

@@ -1,0 +1,670 @@
+---
+name: asado-debugging-playbook
+description: >
+  Symptom-to-triage runbook for the ASADO daily/monthly pipeline's REAL failure
+  modes, each with the incident that produced it. Use this when something is
+  broken or looks wrong: the nightly pipeline failed or a launchd job errored, a
+  DuckDB "Conflicting lock" appears, Neo4j / graph steps are down, the dislocation
+  brief is stale while everything looks green, a launchd job silently isn't
+  running, the Bloomberg pull is hanging or failing, GDELT is rate-limiting, a
+  loop/detector step crashed, or you suspect silent data corruption (wrong
+  ticker/country). It routes each symptom to the exact log to open, the exact
+  command to run, and the expected output, and it restates the hard STOP rules so
+  a zero-context session cannot make production worse. Do NOT use this to DESIGN a
+  change (use asado-change-control), to answer a research/experiment question (use
+  asado-research-protocol), to check whether an idea is already dead (use
+  asado-graveyard), or for routine operation/health checks with nothing broken
+  (use asado-operations). For any fix that touches the monthly collectors or the
+  T2/Bloomberg feed, STOP — that needs the user's approval, never a silent fix.
+---
+
+# ASADO Debugging Playbook
+
+You are triaging a live production system. **The main checkout at
+`/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO` IS production** — launchd
+runs directly from this tree. Never `git checkout`/`git switch` a branch here, never
+"just try" a fix on the monthly collectors or the T2/Bloomberg feed, and never open
+either `.duckdb` file with a long-lived connection while diagnosing (an idle read-only
+handle is itself a failure mode — see Symptom 2).
+
+Quote every path — they contain spaces. All paths below are absolute.
+
+## Two laws that override any fix you are tempted to make
+
+1. **FAIL IS FAIL.** No silent fallback, no simulated success. If a step failed,
+   report it failed with the real error. If a fix would touch a **monthly collector,
+   `setup_duckdb.py` rebuild, or any T2/Bloomberg feed**, STOP and ask the user —
+   the repo convention is to *append the bug to `docs/USER_FIX_LIST.md`*, not fix it
+   (`AGENTS.md` / repo AGENTS.md: "Do not fix monthly-collector / T2-feed bugs
+   without approval").
+2. **Exit code 0 ≠ healthy.** This pipeline is fail-soft by design; green means "the
+   process finished," not "the output is fresh and correct." Always confirm the
+   *artifact* (Symptom 4), not just the exit code.
+
+## Triage table (symptom → jump)
+
+| Symptom you observe | First move | Section |
+|---|---|---|
+| Nightly pipeline failed / no brief this morning | Read `asado_daily_launchd.log` then `asado_daily_runner.log` | [1](#s1) |
+| `IOException ... Conflicting lock is held in ... (PID n)` | Read the guard's culprit line; identify holder before killing | [2](#s2) |
+| Neo4j down / graph steps failing / `bolt` refused | Read `neo4j_guard.log`; check bolt 7687 | [3](#s3) |
+| Everything green but brief looks days old | `ls Data/dislocations/`; compare date-in-filename to today | [4](#s4) |
+| A launchd job isn't running at all | `launchctl list | grep asado`; check PATH/conda; then tell corrupted-plist ([5a](#s5a)) apart from throttled-but-valid ([5b](#s5b)) | [5](#s5) |
+| Bloomberg pull hanging / never ready | Read runner log; check Parallels VM + preflight | [6](#s6) |
+| GDELT rate-limited / evidence packs partial | Do NOT retry-loop; understand cooldown-resets-on-probe | [7](#s7) |
+| A single loop/detector step crashed | Re-run just that step with `--only`; read PARTIAL vs FAIL | [8](#s8) |
+| Numbers look wrong / suspected corruption | Verify ticker↔country; report, don't fix | [9](#s9) |
+| — | Durable hazards + how to check current status | [10](#s10) |
+
+---
+
+## The launchd jobs and their logs
+
+Reference snapshot of what's installed; jobs get added/removed occasionally, so treat
+this as a starting map, not a guaranteed-current inventory. Reconcile against the live
+set with `launchctl list | grep -Ei 'asado|neo4j|fdt'` (second column = last exit code)
+before assuming this list is complete.
+
+| launchd label | When | Runs | Its log file (in `Data/logs/`) |
+|---|---|---|---|
+| `com.arjundivecha.asado-daily` | weekdays 07:30 | `caffeinate -i scripts/run_asado_daily.sh` | `asado_daily_launchd.log` (launchd stdout) + `asado_daily_runner.log` (runner's own log) |
+| `com.arjundivecha.asado-loop-daily` | daily 11:30 | `venv/bin/python scripts/loop/loop_daily_job.py` (safety net) | `loop_daily_launchd.log` |
+| `com.arjundivecha.asado-loop-heartbeat` | daily 12:45 | `scripts/loop/heartbeat.py --watchdog` | `loop_heartbeat_launchd.log` |
+| `com.arjundivecha.neo4j-guard` | login + every 30 min | `scripts/ops/neo4j_guard.sh` | `neo4j_guard_launchd.log` (0-byte wrapper) + `neo4j_guard.log` (guard's own log) |
+| `com.arjundivecha.asado-predmkt-daily` | 06:30 | `scripts/predmkt_daily_job.py` | `predmkt_launchd.log` |
+| `com.arjundivecha.asado-predmkt-equity-harvest` | 16:45 | `scripts/predmkt_equity_daily_job.py` | `predmkt_equity_daily.log` |
+| `com.arjundivecha.asado-predmkt-equity-poller` | every 600 s | `scripts/poll_predmkt_intraday.py` | `predmkt_equity_poller.log` |
+
+All log paths above are the files that **actually exist** in
+`/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/logs/` (verified by `ls`),
+and they match the log-path constants inside the runner and guard scripts
+(`run_asado_daily.sh:52`, `neo4j_guard.sh:52`).
+
+> **CONFIRMED, recurring:** the files in `~/Library/LaunchAgents/` periodically get
+> stripped to a bare JSON array of just `ProgramArguments` (e.g.
+> `com.arjundivecha.asado-daily.plist` shrunk to 123 bytes, no `StandardOutPath`
+> key), so `plutil -extract StandardOutPath raw <plist>` **fails**. Do not trust a
+> plist file on disk to tell you the log path here. The authoritative sources are (a)
+> the actual files in `Data/logs/`, and (b) `launchctl print gui/$(id -u)/<label>`.
+> The **repo-root** `*.plist` files are TEMPLATES and are NOT what launchd loaded
+> (build-tracer finding). Ground truth for "is it installed / what was its exit code"
+> is always `launchctl`, never a plist file. First seen in the 2026-07-06 review, it
+> recurred on **2026-07-09** and caused a missed daily run — full forensics and fix in
+> [Symptom 5a](#s5a). That miss also surfaced a **second, separable** failure mode
+> (schedule throttled after repeated failures, plist untouched) — see
+> [Symptom 5b](#s5b). Do not assume "stripped plist" any time a job doesn't fire;
+> check which one you actually have before touching anything.
+
+Quick health snapshot:
+
+```bash
+launchctl list | grep -E 'asado|neo4j'
+# col 1 = PID (- if not running now), col 2 = last exit code, col 3 = label
+```
+
+---
+
+<a id="s1"></a>
+## 1. Nightly pipeline failed / no brief this morning
+
+**What runs and in what order.** `com.arjundivecha.asado-daily` (07:30 weekdays) →
+`scripts/run_asado_daily.sh` → `scripts/daily_update.py --resume` → `daily_update.py`
+runs the loop (`scripts/loop/loop_daily_job.py`) as its LAST stage. Separately,
+`com.arjundivecha.asado-loop-daily` re-runs the loop at 11:30 as a safety net, and the
+heartbeat watchdog runs at 12:45.
+
+**Read the logs in this order — outer to inner:**
+
+```bash
+cd "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO"
+tail -50 "Data/logs/asado_daily_launchd.log"     # launchd-level: did the job even fire?
+tail -80 "Data/logs/asado_daily_runner.log"      # runner decisions: preflight, retries, alerts
+ls -t Data/logs/daily_update_2*.log | head -1    # newest per-run pipeline log
+```
+
+The runner writes a per-run pipeline log at
+`Data/logs/daily_update_YYYY_MM_DD_HHMMSS.log` and a resume checkpoint at
+`Data/logs/daily_update_progress_YYYY_MM_DD.json` (`daily_update.py:171-172`). A clean
+abort inside the pipeline is stamped `ABORTED at <stage>`; the runner greps that line
+to build its iMessage alert (`run_asado_daily.sh:155-157`).
+
+**Distinguish the three failure classes:**
+
+- **Bloomberg preflight never passed** → the runner log ends with
+  `"Bloomberg still not ready at deadline"` and `"Aborting: Bloomberg unavailable"`,
+  and there is **no** `daily_update_*.log` for today. The pipeline deliberately did NOT
+  run on stale prices (`run_asado_daily.sh:129-136`). Go to [Symptom 6](#s6).
+- **A pipeline/loop step failed** → today's `daily_update_*.log` exists and contains
+  `ABORTED at <stage>` (pipeline stage) or a `!!! STEP FAILED: <name>` line (loop
+  step). Go to [Symptom 8](#s8).
+- **DuckDB lock** → any log contains `Conflicting lock is held in ... (PID n)` or
+  `Could not set lock`. Go to [Symptom 2](#s2).
+
+**Note on the 07:30 vs 11:30 pair:** the loop takes a non-blocking singleton flock
+(`Data/loop/.loop_daily.lock`, `loop_daily_job.py:175-190`). If the 07:30 chained run
+is still going at 11:30, the 11:30 safety net prints `"Another full loop run is in
+progress — skipping"` and exits 0 (`loop_daily_job.py:415-417`). That is normal, not a
+failure.
+
+---
+
+<a id="s2"></a>
+## 2. DuckDB lock error — `Conflicting lock is held in ... (PID n)`
+
+DuckDB is one-writer / many-readers on a single file. **A single stray process holding
+either DB — even an idle read-only handle — blocks every nightly writer.** In practice
+the squatters are Codex Desktop analysis-sandbox kernels under `~/.Codex-science/`
+that open `Data/asado.duckdb` and never close it. This is exactly what killed the
+nightly daily-panels build AND the predmkt job on **2026-07-02 and 2026-07-03**
+(`scripts/duckdb_lock_guard.py:22-24`; guard wired in commit `fc1e0d2`, 2026-07-03).
+
+**The guard's behaviour** (`guarded_connect()`, `scripts/duckdb_lock_guard.py:206`),
+which wraps the ~11 core builders:
+
+1. On a lock error it parses the culprit from DuckDB's own message with the regex
+   `Conflicting lock is held in (.+?) \(PID (\d+)\)` (`:93`). That gives it
+   `(exe_path, PID)`.
+2. It kills the holder **only if** the holder's path/command matches a killable pattern
+   (default: the single substring `.Codex-science`, `:84`) **AND** `lsof` confirms that
+   exact PID still holds the DB file open (`:245-253`, the guard against PID reuse). It
+   never kills its own process/parent, and clears at most `MAX_KILLS = 5` stacked
+   read-only squatters per call (`:88`).
+3. If the holder is **not** killable (e.g. a legitimate overlapping ASADO job like a
+   monthly `setup_duckdb` rebuild), it waits with backoff up to the budget (default
+   **300 s**, `:90`), then raises a loud `RuntimeError` naming the holder.
+
+**How to read the guard's messages** in the log:
+
+- `LOCK GUARD: ... is locked by killable squatter PID n (...)` then `killing lock
+  squatter PID n` → it self-healed; no action needed.
+- `LOCK GUARD: ... locked by non-killable PID n (...) — waiting` → it is waiting out a
+  process it won't kill. Find out what PID `n` is: `ps -o command= -p <n>`.
+- `RuntimeError: Database ... is still locked by PID n (<exe>) after 300s` → it gave up
+  loudly (`:277-284`). Now you decide.
+
+**Decide: add a killable pattern, or wait.**
+
+- If PID `n` is a **stray sandbox / notebook / editor** kernel (not an ASADO pipeline
+  process), it is safe to let the guard clear it. Add its path substring to the killable
+  set for the next run via env, e.g.:
+  ```bash
+  ASADO_LOCK_GUARD_KILLABLE=".Codex-science,jupyter" \
+    "/Users/.../ASADO/venv/bin/python" scripts/daily_update.py --resume
+  ```
+- If PID `n` is a **real ASADO job** (another `daily_update`, `setup_duckdb`,
+  `monthly_update`), do NOT kill it. Let it finish and re-run.
+
+**Env knobs** (`scripts/duckdb_lock_guard.py:41-44`):
+
+- `ASADO_LOCK_GUARD_KILL=0` — disable killing entirely (wait-only). Use when unsure.
+- `ASADO_LOCK_GUARD_KILLABLE=a,b,c` — replace the killable substring list.
+- `ASADO_LOCK_GUARD_WAIT_S=600` — extend the wait budget past 300 s.
+
+**Two UNGUARDED writers — a real hole to know about.** The guard wraps the daily/core
+builders, but the two **monthly** GDELT-deep writers do NOT use `guarded_connect()` and
+will raise a raw DuckDB lock exception with no self-heal:
+`scripts/load_gdelt_deep_to_duckdb.py:126` and `scripts/build_gdelt_deep_cs.py:142`
+(monthly steps ~10-13). If a monthly run dies on a lock at one of those, that is why.
+**Fixing those touches the monthly pipeline → approval required (append to
+`docs/USER_FIX_LIST.md`).** Also unguarded (reads, generally harmless but can be the
+squatter themselves): `db_bridge.py`, the MCP server, the Streamlit frontend.
+
+---
+
+<a id="s3"></a>
+## 3. Neo4j down / graph steps failing
+
+Neo4j runs under Homebrew launchd (`homebrew.mxcl.neo4j`, `neo4j console`) at
+`bolt://localhost:7687` (UI `http://localhost:7474`). The self-healing guard is
+`scripts/ops/neo4j_guard.sh` (login + every 30 min).
+
+**The recurring failure (the "stale pidfile" story):** after a hard crash / power loss,
+Neo4j never deletes its PID file; the OS recycles that PID to something unrelated; on
+next boot `neo4j console` sees "Neo4j is already running (pid:NNN)" and refuses to start.
+`RunAtLoad` alone can't fix it because the failure is *inside* the start command. A
+pidfile guard existed in-repo (commit `69174a1`) **but its plist was never installed**,
+so Neo4j failed again on 2026-06-20 (`f6651c0`) — a textbook "deployed ≠ committed" trap.
+The guard now installed does: probe bolt 7687 (`neo4j_guard.sh:59`) → if down, wait a
+~30 s grace for a legit startup (`:70-76`) → `brew services stop neo4j` (`:84`) → delete
+every stale PID file at `/opt/homebrew/Cellar/neo4j/*/libexec/run/neo4j.pid` (`:92-95`)
+→ `brew services start neo4j` and poll 60 s (`:100-108`). Exit 0 = healthy/recovered,
+exit 1 = still down after restart (`:44`).
+
+**Triage:**
+
+```bash
+cd "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO"
+nc -z -G 2 localhost 7687 && echo "bolt UP" || echo "bolt DOWN"
+tail -40 "Data/logs/neo4j_guard.log"      # what the guard checked/cleared/recovered
+brew services list | grep neo4j
+```
+
+- Guard log ends `RECOVERED: bolt 7687 open` → healthy; if a loop graph step still failed
+  it was a transient it has since fixed. Re-run just that step ([Symptom 8](#s8)).
+- Guard log ends `FAILED: bolt 7687 still down ~60s after restart — manual attention
+  needed` → Neo4j genuinely won't start. This is an infra problem, not a code bug; do
+  NOT edit pipeline code. Inspect the Neo4j server log and surface it to the user.
+
+**CRITICAL — "graph ran" ≠ "graph fresh".** `scripts/build_graph_features.py:127-156`
+does a socket probe and, if Neo4j is unreachable, **falls back to the last PIT graph
+snapshot** and continues. So a green loop with Neo4j down can silently ship *stale* graph
+features. The coupling is intentionally soft (`monthly_update.py:1069-1099`,
+`daily_update.py:214-215`), but it means: if graph-derived numbers look stale, check bolt
+7687 was actually up *at run time*, not just now. Also note the 128-d PCA state embeddings
+live **only** in Neo4j (`Country.state_embedding`) — if Neo4j was rebuilt, embeddings must
+be rebuilt too.
+
+Credentials (from repo AGENTS.md): `neo4j` / `mythos2026`.
+
+---
+
+<a id="s4"></a>
+## 4. Stale artifacts while everything is green
+
+**This is the most dangerous failure mode because nothing errors.** The scar: the
+identical `brief_2026_06_16.md` was auto-committed **15 times over 3 days** while the
+pipeline reported green (commits `ce01ea4..251a63f`); the loop had silently degraded and
+the brief was frozen, and nobody noticed because exit codes stayed 0.
+
+**Check brief freshness directly — never trust the exit code here:**
+
+```bash
+cd "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO"
+ls -lt Data/dislocations/brief_*.md | head -5
+```
+
+The date is in the **filename** (`brief_YYYY_MM_DD.md`) and inside the file. On a healthy
+weekday the newest brief's date should be the last trading day. If the newest brief is
+days old while the loop "ran," the loop is degraded — go to [Symptom 8](#s8) to find which
+step stopped producing.
+
+**The automated watchdog for exactly this** is `scripts/loop/heartbeat.py --watchdog`
+(the 12:45 job). It reads `Data/loop/governance/heartbeat.json`
+(`heartbeat.py:60`) and alerts if that heartbeat is missing or older than
+`WATCHDOG_STALE_HOURS = 2` (`heartbeat.py:63,161-177`). `compute_health()` also flags a
+missing OR *uncommitted* brief and any fail/stale manifest steps (`heartbeat.py:102-143`).
+To check health by hand:
+
+```bash
+tail -20 "Data/logs/loop_heartbeat_launchd.log"
+cat "Data/loop/governance/heartbeat.json"     # brief_path, brief_committed, fail/stale steps
+```
+
+> Benign look-alike: on a normal day the brief is auto-committed roughly twice (morning
+> regen + midday regen) with different timestamps — that is NOT a stuck loop
+> (git-archaeologist finding). A stuck loop is the *same date* re-committed across
+> multiple *days*.
+
+---
+
+<a id="s5"></a>
+## 5. A launchd job isn't running / `conda: command not found`
+
+**First, is it even installed and what was its last exit?**
+
+```bash
+launchctl list | grep -E 'asado|neo4j'
+```
+
+If a job is missing from this list, it is **not installed** — the `*.plist` files in the
+**repo root are templates, not the installed jobs** (build-tracer finding). Do not assume
+"the plist is in the repo" means "the job is scheduled." Ground truth is `launchctl`.
+
+**`launchctl list`'s exit code is not evidence the job ran today.** Col 2 is the
+*last-recorded* exit code, which persists from whenever the job last actually ran — it
+does not mean "ran this morning." Before trusting a green exit code, confirm a fresh
+artifact exists for *today* (a new `daily_update_YYYY_MM_DD_*.log`, a new brief) — this
+is the same trap as [Symptom 4](#s4), just one layer further out. The 2026-07-09 incident
+below started exactly this way: `launchctl list` showed `asado-daily` at exit 0, but that
+was Jul 8's exit code — the job never fired on Jul 9 at all.
+
+**A job silently not firing has (at least) two distinct root causes.** They look
+identical from `launchctl list` — no PID, a stale-but-green exit code, no new log — but
+have different forensics and different fixes. Diagnose which one you have before touching
+anything:
+
+| | [5a](#s5a) Corrupted plist | [5b](#s5b) Repeated-failure throttle |
+|---|---|---|
+| `plutil -lint <plist>` | **fails** (invalid plist) | **passes** (valid plist) |
+| `launchctl print` calendar interval | present (cached from an earlier valid load) or absent | present, looks correct |
+| Root cause | on-disk `.plist` file itself got overwritten/truncated | launchd/backgroundtaskmanagementd suppressed the trigger after prior crashes; file was never touched |
+| Fix | rewrite the plist, then reload | reload (bootout+bootstrap) to force a clean re-arm; **rewriting content alone won't help** |
+
+**The classic PATH gotcha:** launchd's environment does **not** include
+`/opt/homebrew/bin`, so a bare `conda` invocation fails with `command not found`. The
+scripts already defend against this by invoking conda / python by **absolute path** —
+if you write or edit any launchd-invoked script, keep that pattern:
+
+- `scripts/run_asado_daily.sh:61` sets an explicit `PATH` including `/opt/homebrew/bin`.
+- Absolute conda/venv fallbacks live at `loop_daily_job.py:160-164`,
+  `daily_update.py:96-98`, `run_asado_daily.sh:61`.
+
+To see a job's full loaded definition (including its real stdout/stderr paths, which the
+stripped plist files won't tell you):
+
+```bash
+launchctl print "gui/$(id -u)/com.arjundivecha.asado-daily"
+```
+
+If the installed job and the repo template disagree, the **installed** one is what runs.
+Reconciling them is a change → see `asado-change-control` before editing.
+
+---
+
+<a id="s5a"></a>
+### 5a. Corrupted plist — stripped to a bare `ProgramArguments` JSON array
+
+**The scar (2026-07-09):** `com.arjundivecha.asado-daily` didn't fire at its 07:30
+weekday trigger. The Mac never slept overnight (`pmset -g log` showed no sleep/wake gap),
+other ASADO launchd jobs fired fine that same morning (`asado-predmkt-daily` at 06:30,
+`neo4j-guard` every 30 min, the equity poller every 10 min), so this wasn't a
+system-wide launchd or power problem — it was specific to this one job.
+
+**Two forensic tells that make this diagnosable in minutes instead of an hour:**
+
+1. **The `plutil`-escaping signature.** A corrupted plist's content looks like:
+   ```
+   ["\/usr\/bin\/caffeinate","-i","\/Users\/arjundivecha\/Dropbox\/AAA Backup\/A Working\/ASADO\/scripts\/run_asado_daily.sh"]
+   ```
+   The **backslash-escaped forward slashes** (`\/`) are the signature of Apple's
+   `plutil -convert json` output — Python's `json.dump` does not escape slashes by
+   default. That escaping means whatever overwrote the file most likely read the plist
+   via `plutil -convert json` (or an equivalent JSON view), extracted just the
+   `ProgramArguments` array, and wrote *that fragment* back onto the original `.plist`
+   path — clobbering `Label`, `StartCalendarInterval`, `StandardOutPath`, everything
+   else. Confirm fast: `plutil -lint <plist>` fails, and `head -c200 <plist>` shows a
+   bare `[...]` instead of `<?xml ... <plist> <dict>`.
+2. **The batch-glob timestamp pattern.** The corrupting write hits *all*
+   `com.arjundivecha.asado-*` (and sibling) plists in one shot, at the identical
+   to-the-second mtime, while unrelated non-ASADO LaunchAgents on the same machine are
+   untouched. Confirm fast:
+   ```bash
+   for f in ~/Library/LaunchAgents/com.arjundivecha.*.plist; do stat -f "%Sm  %N" "$f"; done | sort
+   ```
+   A cluster of identical timestamps across only the ASADO-prefixed jobs = one external
+   batch operation, not independent decay. In the 2026-07-09 incident, exactly 7 files
+   (`asado-daily`, `asado-loop-daily`, `asado-loop-heartbeat`, `asado-predmkt-daily`,
+   `asado-predmkt-equity-harvest`, `asado-predmkt-equity-poller`, `neo4j-guard`) shared
+   the mtime `00:37:10`; every `aa-*`, `fdt-*`, `overseer-*`, `nightwatch-*`, and
+   `bloomberg-keepalive` plist on the same Mac did not.
+
+**What did NOT explain it — check this before you spend time chasing it:** no script
+inside the ASADO repo writes to `~/Library/LaunchAgents/` (`grep -rl "LaunchAgents"
+--include="*.py" --include="*.sh"` turns up nothing that actually performs the write —
+only a docstring comment). The origin of the overwrite is still **unresolved**; it looks
+like an ad hoc command (plausibly from a past terminal/agent session) rather than a
+committed, repeatable script, since it doesn't recur on a fixed schedule and nothing in
+the repo can produce that exact byte pattern. If it recurs, the fastest way to catch the
+actual writer red-handed is to watch live (e.g. `fs_usage | grep LaunchAgents` or an
+`opensnoop` filter) rather than reconstruct it after the fact from timestamps.
+
+**Important corollary — corruption alone does not explain a missed trigger.** In this
+incident, 3 of the 7 corrupted jobs (`asado-predmkt-daily`, `neo4j-guard`, the equity
+poller) fired *correctly* later that same morning despite being in the identical stripped
+format — evidently because launchd was still running off an in-memory job definition
+cached from an earlier valid load, not off the on-disk file. So if the plist is corrupted
+**and** the job still fired on schedule, the corruption is cosmetic-for-now (fix it before
+next login/reboot regardless) — it is not, by itself, why a *specific* job went silent.
+If a job that shares the same corruption timestamp still failed to fire, look at
+[5b](#s5b) too.
+
+**Fix:**
+
+1. Write a full, valid XML plist (Label, `ProgramArguments`, `WorkingDirectory`,
+   `StartCalendarInterval`, `StandardOutPath`/`StandardErrorPath`, `RunAtLoad`). Copy the
+   structure from a currently-valid template such as
+   `com.arjundivecha.asado-loop-heartbeat.plist` in the repo root — do not hand-roll the
+   DOCTYPE/plist wrapper from memory.
+2. Validate before reloading: `plutil -lint <path>` must say `OK`.
+3. Force a clean re-registration — **editing the file alone is not enough**, because
+   launchd may still be running off a stale in-memory definition:
+   ```bash
+   launchctl bootout "gui/$(id -u)/com.arjundivecha.<label>"
+   launchctl bootstrap "gui/$(id -u)" "/Users/arjundivecha/Library/LaunchAgents/com.arjundivecha.<label>.plist"
+   launchctl print "gui/$(id -u)/com.arjundivecha.<label>" | grep -Ei "state|last exit|properties|calendar"
+   # properties should read "inferred program" with no "managed LWCR" flag afterward,
+   # and the calendar interval should show your intended schedule.
+   ```
+4. If the scheduled window for today was already missed, kick off that day's run
+   manually (the underlying script — e.g. `run_asado_daily.sh` — is resume-safe and
+   documents itself as "safe to run manually any time").
+
+---
+
+<a id="s5b"></a>
+### 5b. Repeated-failure throttle — valid plist, job still doesn't fire
+
+**Distinct from [5a](#s5a) — separable, with a different fix.** A job can go silent with
+a perfectly valid, untouched plist. The tell: `plutil -lint` passes, `launchctl print`
+shows the correct `StartCalendarInterval`, and yet the job did not fire at its scheduled
+time despite the Mac being awake (`pmset -g log` shows no sleep/wake gap covering the
+trigger) and sibling jobs firing normally. If you rewrite the plist content in this case,
+you are fixing nothing — the file was never the problem.
+
+**Working theory (2026-07-09 incident, not fully proven — treat as best-supported, not
+certain):** `com.arjundivecha.asado-daily` had failed hard twice in the preceding week
+(`2026-07-02`, `2026-07-03` — "daily_update failed after retry (exit 1). Alert sent.").
+macOS's `backgroundtaskmanagementd` daemon tracks LWCR-managed LaunchAgents
+(`launchctl print` shows `managed LWCR | has LWCR` in `properties` for these jobs) and can
+throttle/suppress a repeatedly-failing background item's calendar trigger without
+touching the file on disk or changing `launchctl list`'s reported schedule. Corroborating
+but not conclusive: `backgroundtaskmanagementd` logged an explicit enumeration of exactly
+the ASADO job set (including `asado-daily`) hours before the missed trigger:
+```bash
+log show --predicate 'process == "backgroundtaskmanagementd" AND eventMessage CONTAINS "asado"' \
+  --start "<yesterday> 00:00:00" --end "<today> 12:00:00" | grep -E "Identifier:|URL:"
+```
+This is circumstantial — there is no single log line that says "throttled." If you hit
+this again, the way to actually confirm the mechanism is to catch it live: watch
+`backgroundtaskmanagementd` and `launchd` logs (`log stream --predicate ...`) spanning a
+known-missed trigger time, not reconstruct it afterward.
+
+**Fix — different from 5a:** the lever is **resetting the scheduling/failure state**, not
+the file content:
+```bash
+launchctl bootout "gui/$(id -u)/com.arjundivecha.<label>"
+launchctl bootstrap "gui/$(id -u)" "/Users/arjundivecha/Library/LaunchAgents/com.arjundivecha.<label>.plist"
+```
+Rewriting an already-valid plist and reloading it with the *same content* is still worth
+doing (a clean bootout+bootstrap clears whatever cached backoff/throttle state launchd or
+BTM was holding), but do not spend time perfecting the plist XML here — the file was not
+the defect. If the same job throttles repeatedly, that is itself a signal to fix the
+underlying flakiness (the thing causing the repeated hard failures), not just to keep
+force-re-arming the schedule.
+
+---
+
+<a id="s6"></a>
+## 6. Bloomberg pull failing / hanging
+
+Bloomberg data comes through a Parallels "Windows 11" VM running the Bloomberg Terminal;
+the Mac reaches it via the OpusBloomberg conda env. The daily runner has a **preflight
+loop** before it will run the pipeline (`run_asado_daily.sh:90-126`):
+
+1. Ensure the Parallels "Windows 11" VM is running; auto-start it if not (`:92-96`).
+2. Run a real `bloomberg_setup()` data-path test in the OpusBloomberg env (`:101-110`).
+3. If not ready: send **one** iMessage, then retry every 20 min
+   (`RETRY_WAIT=1200`) **until the 11:00 wall-clock deadline** (`DEADLINE_HOUR=11`).
+   There is **no attempt cap** — it is bounded by wall-clock, not tries.
+4. If still not ready at 11:00 → send a failure iMessage and **exit 1**. It deliberately
+   does NOT fall back to `--skip-bloomberg` (that would build today's factors on stale
+   prices — FAIL IS FAIL, `:129-136`).
+
+**Triage:**
+
+```bash
+cd "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO"
+grep -E 'Bloomberg|Parallels|preflight|deadline' "Data/logs/asado_daily_runner.log" | tail -20
+prlctl list | grep -i 'windows 11'          # is the VM running?
+tail -20 "Data/work/loop/bbg_quota_log.csv" # daily API quota usage
+```
+
+- Runner log shows repeated `Bloomberg preflight failed — retrying` then `not ready at
+  deadline` → the Terminal wasn't up/logged in on the VM. This is an environment issue,
+  not a code bug: the user must open/log into Bloomberg Terminal, then
+  `python scripts/daily_update.py --resume`.
+- **Hang** (a pull that never returns): historically a wedged Bloomberg subprocess could
+  hang indefinitely; `scripts/loop/procutil.py` `run_bounded()` (`:14-24,89-119`) now
+  wall-clock-bounds subprocesses so a hang surfaces instead of stalling the loop. If a
+  step is hung, check whether it goes through `run_bounded`.
+- Note the one **pipeline** retry inside the runner waits `PIPELINE_RETRY_WAIT = 1500`
+  (**25 min**), deliberately longer than GDELT's 15-min cooldown (`:56-59`). The runner
+  docstring saying "retry ... after 10 minutes" (`:23`) is **stale** — trust the constant
+  (25 min), not the comment.
+
+**For anything deeper** (BLPAPI/BQL errors, ticker/field selection, connection internals,
+quota limits): STOP here and use the global **`bloomberg-skill`**, which owns the
+OpusBloomberg connection flow and the proven-ticker/field knowledge base. Do not
+re-derive Bloomberg connection logic in this playbook.
+
+---
+
+<a id="s7"></a>
+## 7. GDELT DOC API rate-limit / evidence packs partial
+
+**The one hard rule: never retry-loop against GDELT.** GDELT's DOC 2.0 API rate-limits
+per IP and its ~15-minute cooldown clock **resets on every request** — so a tight retry
+guarantees you re-trip the limit forever. This is why the daily runner's single pipeline
+retry waits 25 min, not 10 (`run_asado_daily.sh:56-59`), and why
+`scripts/loop/build_evidence_packs.py` caps attempts and streams rather than hammering
+(`:44,93,266`).
+
+**Current exit semantics of `build_evidence_packs.py`** (updated 2026-06-11,
+`:299-312`) — note this is NOT a blanket "abort non-zero":
+
+- **exit 1** only when *every* pull failed and *nothing* was written
+  (`n_failed and not n_packs and not n_skipped`).
+- **exit 2 (PARTIAL)** when some countries are missing but others were written; they
+  self-heal next run. The loop job records this as a warning, not a failure
+  (`loop_daily_job.py:436-441`).
+- **exit 0** when packs completed — including when GDELT was rate-limited but the step
+  **failed over to the Gemini Search fallback** so no packs are missing (`:309-311`).
+  A rate limit alone is therefore NOT a failure.
+
+So: if you see `NOTE: GDELT was rate-limited; remaining packs completed via Gemini
+Search fallback`, the step succeeded — do nothing. If you see PARTIAL (exit 2), let the
+next nightly run self-heal it. **Do not add a manual retry loop.** (The Gemini fallback
+needs its API key configured; a missing key can turn a rate-limit into a real failure —
+check the log for the fallback line.)
+
+---
+
+<a id="s8"></a>
+## 8. A single loop / detector step crashed
+
+The nightly loop (`scripts/loop/loop_daily_job.py`) is **47 steps** (matches
+`config/governance_contract.yaml`; the docstring saying ~33/37 is stale). It is
+**fail-soft**: each step gets up to 2 attempts, exit 2 is PARTIAL, `optional:true` steps
+never fail the job, and the job only returns exit 1 at the end if the *required*-failure
+list is non-empty (`loop_daily_job.py:428-485`).
+
+**Re-run just the failed step** (this skips the singleton lock — it is operator-driven,
+`loop_daily_job.py:411-417`):
+
+```bash
+cd "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO" && source venv/bin/activate
+python scripts/loop/loop_daily_job.py --only <step_name>
+# an unknown name prints the full list of valid step names and returns 2
+```
+
+**Read the per-step status lines** to know what actually happened
+(`loop_daily_job.py:434-450`):
+
+- `~~~ STEP PARTIAL: <name> (exit 2)` → kept its completed work, missing part self-heals
+  next run. Warning, not failure.
+- `~~~ OPTIONAL STEP FAILED: <name>` → an `optional:true` step (Bloomberg-down,
+  Neo4j-down, GDELT-limited, etc.) failed; treated as a warning by design.
+- `!!! STEP FAILED: <name> (exit n)` → a **required** step failed; this is what turns the
+  job exit to 1. This is the one that needs real diagnosis.
+
+`optional:true`/`false` come from `config/governance_contract.yaml` (`_load_optional_steps`,
+`loop_daily_job.py:361-368`). **20 of 47** steps are `optional:false` (required); the
+other 27 degrade gracefully.
+
+**Known-fragile steps to suspect first (detectors).** `build_dislocations.py` runs
+detectors D1–D5, D7–D10 (D6 is blocked on insufficient history; D8 is bookkeeping,
+severity 0). The detector dispatch has **no top-level try/except**, and detectors D2, D5,
+D7 have **zero internal error handling** (architect finding) — so a single bad row can
+crash the whole required detector step and starve the 4 downstream readers of
+`dislocation_daily`. If a required step crashed with a raw traceback, it is very often
+one of D2/D5/D7. Read the traceback, identify the offending input, and **report it** —
+do not paper over it with a bare `except`.
+
+---
+
+<a id="s9"></a>
+## 9. Suspected silent data corruption (numbers look wrong)
+
+The scar here is a **ticker↔country mismatch**: `GSAB10YR` was being treated as Saudi
+Arabia's 10-year when it is in fact **South Africa's** 10Y; dead EM `* Index` 2Y/5Y/10Y
+generics were silently wrong until replaced by `GT<CCY><n>Y Govt` (repo AGENTS.md,
+"Bloomberg ticker hygiene"). Bad tickers don't error — they return *a* number, just the
+wrong country's.
+
+**Habit when a country's series looks off:** verify the ticker actually maps to that
+country before trusting the value. The Rosetta Stone is
+`config/country_mapping.json` (34 T2 names → source codes). Cross-check the ticker's real
+issuer/country against Bloomberg's `NAME`/description via the **`bloomberg-skill`** rather
+than assuming the ticker string.
+
+**USER_FIX_LIST protocol — report, don't fix.** If you find a suspected data-quality or
+feed bug, especially in a **monthly collector or the T2/Bloomberg feed**: STOP. Do NOT
+edit the collector. **Append a clear description to `docs/USER_FIX_LIST.md`** and tell the
+user. This is a hard rule: only the user decides fixes to those feeds
+(`AGENTS.md` / repo AGENTS.md). Silently "correcting" a ticker could re-map a whole
+history and is exactly the kind of change that must be reviewed.
+
+Also useful: the returns-first / leakage QA check lives at
+`scripts/qa/validate_returns_first.py` — country and factor returns are the source of
+truth everything else must join back to.
+
+---
+
+<a id="s10"></a>
+## 10. Durable hazards (structural, not a point-in-time snapshot)
+
+These are facts about how the code is *built*, not a status report — they stay true
+until someone changes the underlying code, unlike a launchd exit code or an untracked-file
+list, which drift constantly. Do not maintain a "current known issues" list in this skill;
+check live state instead (below).
+
+- **`tests/loop/test_gap_engine.py:143-145`** (`test_live_gap_engine_tables_if_present`)
+  opens the **real production loop DB** read-only. Running `python -m pytest tests/`
+  therefore touches production — avoid it during the 06:00–08:30 PT nightly window
+  (build-tracer finding). This is a structural property of the test file; it stays true
+  until someone rewrites that test.
+- **Two UNGUARDED monthly writers** (`load_gdelt_deep_to_duckdb.py:126`,
+  `build_gdelt_deep_cs.py:142`) — see [Symptom 2](#s2). Structural property of those
+  scripts; stays true until someone routes them through `guarded_connect()`.
+- **Regime/label-tagging code has a known failure shape** — a tagger can fire the right
+  internal rule but `return` the wrong label string, and nothing enforces the two agree.
+  See **asado-change-control** §5 for the durable lesson and how to check any specific
+  tagger for this before trusting its output.
+
+**To find out what's *actually* broken right now** (don't trust any hardcoded list,
+including ones from a past handover):
+```bash
+launchctl list | grep -Ei 'asado|neo4j|fdt'     # col 2 = last exit code, non-zero = failed
+cd "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO" && git status --short   # untracked/modified files, live
+```
+
+---
+
+## When NOT to use this skill
+
+- **Designing or classifying a change** (is this safe? what gate does it need?) →
+  **`asado-change-control`**.
+- **A research / experiment / harness question** (run a signal, read a verdict, register
+  a family) → **`asado-research-protocol`**.
+- **Checking whether an idea is already dead** before proposing it →
+  **`asado-graveyard`**.
+- **Routine operation with nothing broken** (schedules, manual runs, health checks,
+  frontends, MCP) → **`asado-operations`**; orientation / doc-authority → **`asado-start-here`**.
+
+## The STOP rule, restated (do not skip)
+
+For **any** fix that touches a **monthly collector, `setup_duckdb.py`, or a
+T2/Bloomberg feed**: STOP and get the user's approval. Append the issue to
+`/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/docs/USER_FIX_LIST.md` and report
+it — do not fix it yourself. FAIL IS FAIL: never mask a failure with a silent fallback or
+a simulated success.

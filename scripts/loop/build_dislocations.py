@@ -883,6 +883,23 @@ def run(as_of: Optional[str] = None) -> int:
         ret_piv = returns_panel(con)
         data_date = ret_piv.index.max()
         run_date = pd.Timestamp(as_of) if as_of else data_date
+        # FAIL IS FAIL: never stamp rows with a non-date. dislocation_daily.date
+        # is VARCHAR, so a NaT run_date does not fail the INSERT - it writes the
+        # literal string "NaT". On 2026-08-11/12 an empty returns panel produced
+        # exactly that: 45 poisoned rows that then broke EVERY consumer casting
+        # the column (build_gap_episodes.py:266 and build_price_state both die
+        # on 'Conversion Error: invalid date field format: "NaT"'), and made the
+        # governance summary report 'dislocations=45 as-of NaT' as if it were
+        # today's state. Refuse up front instead of corrupting the table.
+        if pd.isna(run_date) or pd.isna(data_date):
+            raise RuntimeError(
+                "dislocations: run date is NaT — the returns panel is empty "
+                f"(rows={len(ret_piv)}). Refusing to write rows stamped 'NaT' "
+                "into dislocation_daily, which would poison every downstream "
+                "CAST(date AS DATE). Fix the returns panel first: check that "
+                "t2_factors_daily.1DRet has nonzero values for recent dates "
+                "(an empty Bloomberg pull zero-fills it)."
+            )
         log(f"run date {run_date.date()} (latest return data {data_date.date()})")
 
         ret5 = trailing_ret(ret_piv, 5)

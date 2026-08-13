@@ -169,11 +169,53 @@ def standardize_date(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def assert_tri_has_data(tri: pd.DataFrame, sheet: str, source: Path) -> None:
+    """FAIL IS FAIL: refuse to build returns from an empty Total Return Index.
+
+    Every *DRet / *DTR column is derived from this one sheet, and clean_excel()
+    fills NaN with 0. So an all-NaN TRI does not surface as missing data — it
+    silently becomes a wall of 0.0 returns that looks like a legitimate series
+    of flat days. Downstream that is indistinguishable from real data until it
+    detonates far away: on 2026-08-11 a Bloomberg pull returned NaN for all 34
+    tickers across the entire 1999-2026 history, the zeros propagated into
+    t2_factors_daily, the optimizer dropped every factor whose net return summed
+    to zero, and asado-daily died with a bare KeyError: 'Date' while
+    asado-loop-daily lost nine steps to an empty returns panel. Nothing in the
+    logs named the real cause. Hence this guard, at the point of entry.
+    """
+    values = tri.drop(columns=["Country"], errors="ignore")
+    values = values.select_dtypes("number")
+    populated = int(values.notna().sum().sum()) if not values.empty else 0
+    if populated == 0:
+        raise ValueError(
+            f"Total Return Index sheet {sheet!r} in {source} contains no numeric "
+            f"data ({len(tri)} rows, {values.shape[1]} country columns, 0 populated "
+            "cells). Every return variable derives from this sheet, so building "
+            "would emit all-zero returns rather than fail. Refusing. This is "
+            "almost always an upstream Bloomberg problem (an empty "
+            "tot_return_index_gross_dvds pull, or a quota hard stop) — re-pull "
+            "before rebuilding; do NOT clean or hand-fill this sheet."
+        )
+    coverage = populated / max(values.size, 1)
+    logger.info("TRI %r: %d/%d cells populated (%.1f%%) across %d countries",
+                sheet, populated, values.size, 100 * coverage, values.shape[1])
+    if coverage < 0.5:
+        logger.warning(
+            "TRI coverage is only %.1f%% — returns built from this will be "
+            "mostly zeros after NaN-fill. Check the Bloomberg pull before "
+            "trusting today's factors.", 100 * coverage)
+
+
 def clean_excel(df: pd.DataFrame) -> pd.DataFrame:
     df = df.replace([np.inf, -np.inf], np.nan)
+    filled = 0
     for col in df.columns:
         if col != "Country" and pd.api.types.is_numeric_dtype(df[col]):
+            filled += int(df[col].isna().sum())
             df[col] = df[col].fillna(0).round(6)
+    if filled:
+        # No silent imputation: these zeros are manufactured, not observed.
+        logger.info("clean_excel: filled %d missing numeric cells with 0", filled)
     if len(df) > 50000:
         df = df.iloc[-50000:].reset_index(drop=True)
     return df
@@ -240,6 +282,7 @@ def main() -> int:
     logger.info("Loading daily Bloomberg workbook: %s (%d sheets)", bbg_path, len(sheet_names))
     tri_name = find("tot return index") or find("tot return index ") or "Tot Return Index "
     tri = load_sheet(xl, tri_name, clean=False)
+    assert_tri_has_data(tri, tri_name, bbg_path)
 
     with pd.ExcelWriter(str(out_path), engine="xlsxwriter",
                         engine_kwargs={"options": {"strings_to_numbers": True,

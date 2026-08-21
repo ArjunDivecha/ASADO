@@ -252,3 +252,34 @@ Options, evidence, and reverted code:
 Related, cosmetic only: `build_t2_master.py:309` counts cleaned cells as
 `(series != winsorized).sum()`, and `NaN != NaN` is `True`, so the build log over-reports —
 it credits every leading-NaN cell as "winsorized". Log message only; no data affected.
+
+---
+
+## 2026-08-21 — commodity betas ported to the MONTHLY builder; two follow-ups open
+
+`scripts/build_t2_master.py` v1.2 now writes country **betas** to Gold/Copper/Oil/Agriculture
+(and beta × 12M commodity return to the ` 12` sheets), ported from the monthly repo's
+`Step One Create T2Master.py` (commit 397207b) with the backfilled first 120 months replaced
+by an honest `min_periods=36` burn-in. Approved by Arjun 2026-08-21. Two things were
+deliberately left alone:
+
+**1. `scripts/build_t2_master_daily.py:95-96` still broadcasts.**
+```python
+"Gold": (120, False), "Copper": (120, False), "Oil": (120, False),
+"Agriculture": (120, False), "Currency": (120, False),
+```
+The DAILY panel therefore still has the zero-cross-sectional-dispersion problem the monthly
+port just fixed — its commodity `_CS` z-scores are 0/0 and are being NaN'd by the guard added
+in `t2_normalize_daily.py` the same day. Out of the approved scope; needs its own decision
+(a daily beta would want a different window than 120 months).
+
+**2. `scripts/t2_optimizer.py:175-176` STEP4_EXCL still excludes all eight commodity `_CS`
+factors.** That exclusion was correct while the variables were broadcast — they carried no
+information. Now that they are betas the exclusion is arguably obsolete: the monthly repo
+removed its equivalent list and reports IRs of Gold 12_CS 0.46, Oil_CS 0.39, Copper_CS 0.37,
+Gold_CS 0.33. NOT changed here, because in ASADO a new signal earns its place through the
+harness, not by being switched straight into the production optimizer.
+
+**Verdict provenance.** Any loop-DB verdict or graveyard entry naming `Gold`, `Copper`, `Oil`,
+`Agriculture` or their ` 12` / `_CS` / `_TS` derivatives was earned under the OLD broadcast
+semantics. Same names, different variables from 2026-08-21 onward. Old verdicts do not transfer.

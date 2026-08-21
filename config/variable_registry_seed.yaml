@@ -1251,10 +1251,13 @@
 - variable: Agriculture
   base_variable: Agriculture
   normalization: raw
-  definition: Global agriculture commodity price index level (broadcast to all countries).
+  definition: Country-specific trailing beta to the agriculture price, from a rolling 120-month
+    regression of the country's 1-month total return on agriculture's 1-month return
+    (min_periods 36). Varies by country. Semantic break 2026-08-21 (ASADO build_t2_master.py v1.2) - was the global agriculture commodity price index level, broadcast
+    identically to all 34 countries, giving zero cross-sectional dispersion.
   source_provider: T2/Bloomberg
   source_series_id: ''
-  units: index level
+  units: beta
   cross_country_comparable: true
   native_frequency: M
   publication_lag: ''
@@ -1273,10 +1276,12 @@
 - variable: Agriculture 12
   base_variable: Agriculture 12
   normalization: raw
-  definition: 12-period percent change in the agriculture commodity index.
+  definition: The country's agriculture beta multiplied by agriculture's 12-month return. Semantic break 2026-08-21 (ASADO build_t2_master.py v1.2) - was
+    the 12-period percent change in the agriculture commodity index,
+    identical across countries.
   source_provider: T2/Bloomberg
   source_series_id: ''
-  units: percent change
+  units: beta x fractional return
   cross_country_comparable: true
   native_frequency: M
   publication_lag: ''
@@ -3555,10 +3560,13 @@
 - variable: Copper
   base_variable: Copper
   normalization: raw
-  definition: Copper spot price in USD per metric ton (global series broadcast to all countries).
+  definition: Country-specific trailing beta to the copper price, from a rolling 120-month
+    regression of the country's 1-month total return on copper's 1-month return
+    (min_periods 36). Varies by country. Semantic break 2026-08-21 (ASADO build_t2_master.py v1.2) - was the copper spot price in USD per metric ton, broadcast identically to
+    all 34 countries, giving zero cross-sectional dispersion.
   source_provider: T2/Bloomberg
   source_series_id: ''
-  units: USD/mt
+  units: beta
   cross_country_comparable: true
   native_frequency: M
   publication_lag: ''
@@ -3577,10 +3585,11 @@
 - variable: Copper 12
   base_variable: Copper 12
   normalization: raw
-  definition: 12-period percent change in the copper price.
+  definition: The country's copper beta multiplied by copper's 12-month return. Semantic break 2026-08-21 (ASADO build_t2_master.py v1.2) - was
+    the 12-period percent change in the copper price, identical across countries.
   source_provider: T2/Bloomberg
   source_series_id: ''
-  units: percent change
+  units: beta x fractional return
   cross_country_comparable: true
   native_frequency: M
   publication_lag: ''
@@ -7050,10 +7059,13 @@
 - variable: Gold
   base_variable: Gold
   normalization: raw
-  definition: Gold spot price in USD per troy ounce (global series broadcast to all countries).
+  definition: Country-specific trailing beta to the gold price, from a rolling 120-month
+    regression of the country's 1-month total return on gold's 1-month return
+    (min_periods 36). Varies by country. Semantic break 2026-08-21 (ASADO build_t2_master.py v1.2) - was the gold spot price in USD per troy ounce, broadcast identically to all
+    34 countries, giving zero cross-sectional dispersion.
   source_provider: T2/Bloomberg
   source_series_id: ''
-  units: USD/oz
+  units: beta
   cross_country_comparable: true
   native_frequency: M
   publication_lag: ''
@@ -7072,11 +7084,11 @@
 - variable: Gold 12
   base_variable: Gold 12
   normalization: raw
-  definition: 12-period percent change in the gold price (verified against recomputed 12-month change,
-    corr 0.9998).
+  definition: The country's gold beta multiplied by gold's 12-month return. Semantic break 2026-08-21 (ASADO build_t2_master.py v1.2) - was
+    the 12-period percent change in the gold price, identical across countries.
   source_provider: T2/Bloomberg
   source_series_id: ''
-  units: percent change
+  units: beta x fractional return
   cross_country_comparable: true
   native_frequency: M
   publication_lag: ''
@@ -12087,10 +12099,13 @@
 - variable: Oil
   base_variable: Oil
   normalization: raw
-  definition: Crude oil spot price in USD per barrel (global series broadcast to all countries).
+  definition: Country-specific trailing beta to the crude oil price, from a rolling 120-month
+    regression of the country's 1-month total return on crude oil's 1-month return
+    (min_periods 36). Varies by country. Semantic break 2026-08-21 (ASADO build_t2_master.py v1.2) - was the crude oil spot price in USD per barrel, broadcast identically to
+    all 34 countries, giving zero cross-sectional dispersion.
   source_provider: T2/Bloomberg
   source_series_id: ''
-  units: USD/bbl
+  units: beta
   cross_country_comparable: true
   native_frequency: M
   publication_lag: ''
@@ -12109,10 +12124,12 @@
 - variable: Oil 12
   base_variable: Oil 12
   normalization: raw
-  definition: 12-period percent change in the crude oil price.
+  definition: The country's crude oil beta multiplied by crude oil's 12-month return. Semantic break 2026-08-21 (ASADO build_t2_master.py v1.2) - was
+    the 12-period percent change in the crude oil price, identical across
+    countries.
   source_provider: T2/Bloomberg
   source_series_id: ''
-  units: percent change
+  units: beta x fractional return
   cross_country_comparable: true
   native_frequency: M
   publication_lag: ''

@@ -25,8 +25,8 @@ OUTPUT FILES:
 - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/econ/
     T2 Master.xlsx
 
-VERSION: 1.1
-LAST UPDATED: 2026-06-07
+VERSION: 1.2
+LAST UPDATED: 2026-08-21
 AUTHOR: Arjun Divecha (with Claude)
 
 DESCRIPTION:
@@ -42,7 +42,24 @@ Phase 1 — P2P Scores (from Step Zero Create P2P Scores.py):
 Phase 2 — T2 Master (from Step One Create T2Master.py):
   Reads T2 Bloomberg Master.xlsx (ASADO-generated from live blpapi).
   Computes forward returns (1M/3M/6M/9M/12M), trailing returns (1M/3M/12M),
-  12-1M spread, commodity/FX/bond changes, 120MA signal, and merges P2P.
+  12-1M spread, FX/bond changes, commodity BETAS, 120MA signal, merges P2P.
+
+  COMMODITY SEMANTIC BREAK, 2026-08-21 (v1.2) -- read this before comparing
+  any output to a pre-2026-08-21 T2 Master or applying an older verdict:
+    Gold, Copper, Oil, Agriculture
+        WAS  the raw commodity price, broadcast identically to all 34 countries
+        NOW  each country's trailing beta to that commodity
+             (rolling 120 months, min_periods 36, on 1M total returns)
+    Gold 12, Copper 12, Oil 12, Agriculture 12
+        WAS  the 12-month change in the commodity price (identical per country)
+        NOW  that country's beta x the commodity's 12-month return
+  The old form had ZERO cross-sectional dispersion, so Gold_CS / Copper_CS /
+  Oil_CS / Agriculture_CS were 0/0 and carried no information. Any loop-DB
+  verdict or graveyard entry on those eight variable names was earned under
+  the OLD semantics and does not transfer.
+  Ported from "A Complete/T2 Factor Timing Fuzzy/Step One Create T2Master.py"
+  (commit 397207b), with the backfilled first 120 months replaced by an honest
+  min_periods=36 burn-in. See _commodity_betas for the measurement.
   Writes T2 Master.xlsx to T2 Factor Timing Fuzzy, T2 GDELT, and T2 Econ.
 
 DEPENDENCIES:
@@ -293,6 +310,108 @@ def _trailing_returns(data: pd.DataFrame, months: int) -> pd.DataFrame:
     return returns
 
 
+# ── Commodity betas ──────────────────────────────────────────────────────────
+# Ported 2026-08-21 from "A Complete/T2 Factor Timing Fuzzy/Step One Create
+# T2Master.py" (commit 397207b, calculate_commodity_beta_and_scaled_returns).
+#
+# WHY: the Bloomberg workbook broadcasts ONE commodity price across all 34
+# country columns. Cross-sectional dispersion is therefore exactly zero, the
+# _CS z-score is 0/0, and Gold_CS / Copper_CS / Oil_CS / Agriculture_CS carry
+# no information at all. Each country's BETA to the commodity does vary
+# cross-sectionally (South Africa 0.81 vs U.S. 0.14 for Gold), so the _CS
+# factor becomes meaningful.
+#
+# DELIBERATE DEVIATION FROM THE MONTHLY REPO: it uses rolling(120,
+# min_periods=120) and then BACKFILLS the first 120 months with the first
+# computable beta -- on the shipped file that is 121 of 319 months (37.9% of
+# the sample, 2000-02 to 2010-02) carrying a beta estimated through Feb 2010.
+# That is a ten-year look-ahead. Measured against a causal estimate over that
+# block the ordering mostly survives (Gold rank-corr +0.80, Copper +0.79) but
+# Oil does not: its backfill error 0.119 exceeds its own cross-sectional
+# dispersion 0.075, and Agriculture falls to +0.05 in its worst month.
+#
+# ASADO uses rolling(120, min_periods=36) instead. Months 36-119 behave as an
+# expanding window (honest partial estimates); from month 120 the construction
+# is IDENTICAL to the monthly repo, so the two pipelines agree post-2010 rather
+# than ASADO becoming a third definition. Cost: the first 36 months are NaN.
+COMMODITY_SHEETS = ("Gold", "Copper", "Oil", "Agriculture")
+BETA_WINDOW = 120
+BETA_MIN_PERIODS = 36
+
+
+def _country_monthly_returns(tot_ret: pd.DataFrame) -> pd.DataFrame:
+    """1-month percentage returns per country from the Total Return Index."""
+    out = pd.DataFrame(index=tot_ret.index)
+    for col in tot_ret.columns[1:]:
+        out[col] = pd.to_numeric(tot_ret[col], errors="coerce").astype("float64").pct_change()
+    return out
+
+
+def _commodity_betas(
+    com_data: pd.DataFrame,
+    country_1m_rets: pd.DataFrame,
+    label: str = "",
+    window: int = BETA_WINDOW,
+    min_periods: int = BETA_MIN_PERIODS,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Trailing country betas to a commodity, and beta-scaled 12M commodity return.
+
+    Returns (betas_df, scaled_12m_df), both in the standard
+    (date column + one column per country) sheet shape.
+    """
+    # The input sheet broadcasts one price across every country column, so any
+    # column is the commodity. Fail loudly if that ever stops being true, rather
+    # than silently regressing to "Singapore's column".
+    numeric = com_data.iloc[:, 1:].apply(pd.to_numeric, errors="coerce")
+    xs_spread = numeric.std(axis=1).max()
+    if pd.notna(xs_spread) and xs_spread > 1e-9:
+        raise ValueError(
+            f"Commodity sheet '{label}' is NOT broadcast across countries "
+            f"(max cross-sectional std {xs_spread:.6g}). _commodity_betas assumes a "
+            "single shared price series; a country-specific input needs a different "
+            "code path."
+        )
+
+    com_price = pd.to_numeric(com_data.iloc[:, 1], errors="coerce").astype("float64")
+    com_1m = com_price.pct_change()
+    com_12m = (com_price / com_price.shift(12)) - 1
+
+    betas = pd.DataFrame(index=com_data.index)
+    for col in country_1m_rets.columns:
+        y = country_1m_rets[col]
+        cov = y.rolling(window, min_periods=min_periods).cov(com_1m)
+        var = com_1m.rolling(window, min_periods=min_periods).var()
+        betas[col] = (cov / var).astype("float64")
+
+    # Late-inception countries have no own-history beta yet. Fill with the
+    # CONTEMPORANEOUS cross-sectional mean (same date only -- no look-ahead).
+    # Logged, not silent, per the data-handling rule.
+    xs_mean = betas.mean(axis=1)
+    fillable = betas.isna() & xs_mean.notna().values[:, None]
+    n_filled = int(fillable.sum().sum())
+    if n_filled:
+        betas = betas.apply(lambda c: c.fillna(xs_mean))
+        by_country = fillable.sum()
+        worst = by_country[by_country > 0].sort_values(ascending=False)
+        logger.info(
+            "  %s betas: filled %d cells with the contemporaneous cross-sectional "
+            "mean (late inception). Most affected: %s",
+            label, n_filled,
+            ", ".join(f"{k} {v}" for k, v in worst.head(5).items()),
+        )
+    still_na = int(betas.isna().sum().sum())
+    logger.info("  %s betas: %d cells still NaN (pre-min_periods burn-in)", label, still_na)
+
+    scaled = pd.DataFrame(index=com_data.index)
+    for col in betas.columns:
+        scaled[col] = (betas[col] * com_12m).astype("float64")
+
+    date_col = com_data.columns[0]
+    betas.insert(0, date_col, com_data[date_col])
+    scaled.insert(0, date_col, com_data[date_col])
+    return betas, scaled
+
+
 def _change(data: pd.DataFrame, months: int, absolute: bool = False) -> pd.DataFrame:
     changes = pd.DataFrame(index=data.index)
     changes.insert(0, data.columns[0], data[data.columns[0]])
@@ -437,9 +556,11 @@ def build_t2_master() -> bytes:
         spread.to_excel(writer, sheet_name="12-1MTR", index=False)
 
         # ── Commodity / FX / bond changes ───────────────────────────────────
+        # Gold/Copper/Oil/Agriculture are NOT here any more -- they are written
+        # as betas below. Leaving them would also collide on the "Gold 12" etc.
+        # sheet names and make xlsxwriter raise.
         change_specs = {
-            "Gold": (12, False), "Copper": (12, False), "Oil": (12, False),
-            "Agriculture": (12, False), "Currency": (12, False),
+            "Currency": (12, False),
             "10Yr Bond": (12, True), "Best EPS": (36, False),
             "Trailing EPS": (36, False),
         }
@@ -451,6 +572,20 @@ def build_t2_master() -> bytes:
                     writer, sheet_name=f"{sn} {months}", index=False
                 )
 
+        # ── Commodity betas (replaces the raw 12-month price change) ────────
+        logger.info("Processing commodity betas (rolling %d, min_periods %d)",
+                    BETA_WINDOW, BETA_MIN_PERIODS)
+        country_1m = _country_monthly_returns(tot_ret)
+        for sn in COMMODITY_SHEETS:
+            if sn not in excel_file.sheet_names:
+                logger.warning("  commodity sheet %s missing from Bloomberg master", sn)
+                continue
+            logger.info("  %s", sn)
+            com = _load_bloomberg_sheet(excel_file, sn)
+            betas, scaled = _commodity_betas(com, country_1m, label=sn)
+            betas.to_excel(writer, sheet_name=sn, index=False)
+            scaled.to_excel(writer, sheet_name=f"{sn} 12", index=False)
+
         # ── 120MA Signal ────────────────────────────────────────────────────
         if "PX_LAST" in excel_file.sheet_names and "120MA" in excel_file.sheet_names:
             logger.info("  120MA Signal")
@@ -460,6 +595,13 @@ def build_t2_master() -> bytes:
 
         # ── All other sheets (cleaned copies) ──────────────────────────────
         for sn in sheet_names:
+            if sn in COMMODITY_SHEETS:
+                # Already written above as betas. Skipping also keeps the betas
+                # out of _clean_sheet, whose full-sample winsorizer is still
+                # look-ahead pending the docs/T2_CAUSAL_CLEANING_2026-08-21.md
+                # decision -- letting it touch them would re-inject the very
+                # leak the rolling window removes.
+                continue
             logger.info("  sheet: %s", sn)
             data = pd.read_excel(excel_file, sheet_name=sn)
             data = data.iloc[2:].reset_index(drop=True)

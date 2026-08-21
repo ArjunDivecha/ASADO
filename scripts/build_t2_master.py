@@ -93,7 +93,6 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 from dateutil.relativedelta import relativedelta
-from scipy import stats
 from scipy.stats import linregress
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -241,54 +240,94 @@ def _standardize_date(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def _check_local_outliers(
+# ── Outlier handling ─────────────────────────────────────────────────────────
+# REPLACED 2026-08-21 (Arjun's decision, option (b) of
+# docs/T2_CAUSAL_CLEANING_2026-08-21.md). What was here until now:
+#
+#   _winsorize            clipped every observation to bounds from the
+#                         FULL-SAMPLE median and MAD, so whether a 2008 point
+#                         was clipped depended on 2024 data.
+#   _check_local_outliers judged point i against a CENTRED +/-20-month window
+#                         and replaced it with a mean including the 20 months
+#                         AFTER it.
+#
+# Both were look-ahead, and the cleaned sheets reach unified_panel as
+# source='t2' (30.6% of feature_panel), so the leak reached harness verdicts.
+#
+# The obvious repair -- make the same statistics causal -- was implemented,
+# measured and REJECTED: median +/- k*MAD clipping of a RETAINED LEVEL is
+# ill-posed for a trending series. The full-sample version only escaped it
+# because the full-sample median sits mid-trend, which IS the look-ahead. Made
+# causal the band anchors on the early sample and shears off the later trend
+# (13.5% of Copper, 9.7% of Oil clipped). Rolling-60/120 did not rescue it.
+#
+# So the winsorizer is GONE, not made causal. What remains is a single causal
+# spike guard whose only job is catching fat-fingers. Measured on the real
+# workbook, over the sheets actually cleaned after the commodity-beta port, it
+# touches 0.260% of cells versus 0.910% for the leaking rule it replaces --
+# causal AND about 3.5x gentler.
+#
+# Two details that matter:
+#   * strictly PRIOR window -- a causal detector cannot wait for the future to
+#     confirm a new level.
+#   * CLIP TO THE BAND EDGE, never replace with the trailing mean. Replacing
+#     turns every genuine regime shift into data destruction, because the
+#     detector cannot tell a spike from a step. Clipping keeps the direction
+#     and most of the magnitude of a real move.
+SPIKE_SPAN = 20            # EWM span of the trailing window
+SPIKE_SIGMA = 6.0          # deviations before a point is treated as a spike
+SPIKE_MIN_HISTORY = 10     # prior observations required before the guard arms
+
+
+def _causal_spike_clips(
     series: pd.Series,
-    window_size: int = 20,
-    sigma_threshold: float = 4.0,
+    span: int = SPIKE_SPAN,
+    sigma: float = SPIKE_SIGMA,
+    min_history: int = SPIKE_MIN_HISTORY,
 ) -> List[Dict]:
+    """Points more than `sigma` trailing EWM deviations from the trailing mean.
+
+    Returns [{"index": i, "new_value": clipped}] computed from ONLY series[:i].
+    """
     series = series.astype("float64")
-    outliers = []
+    out: List[Dict] = []
     for i in range(len(series)):
-        start = max(0, i - window_size)
-        end = min(len(series), i + window_size + 1)
-        window = pd.concat([series[start:i], series[i + 1 : end]])
-        if len(window) < 10:
+        window = series[max(0, i - span):i]      # strictly prior
+        if len(window) < min_history:
             continue
-        local_mean = window.ewm(span=window_size).mean().iloc[-1]
-        local_std = window.ewm(span=window_size).std().iloc[-1]
-        if local_std <= np.finfo(float).eps:
+        mean = window.ewm(span=span).mean().iloc[-1]
+        std = window.ewm(span=span).std().iloc[-1]
+        if not np.isfinite(std) or std <= np.finfo(float).eps:
             continue
-        if abs((series[i] - local_mean) / local_std) > sigma_threshold:
-            outliers.append({"index": i, "new_value": float(local_mean)})
-    return outliers
-
-
-def _winsorize(series: pd.Series, mad_threshold: float = 5.0) -> pd.Series:
-    series = series.astype("float64")
-    median = series.median()
-    mad = stats.median_abs_deviation(series, scale="normal")
-    lb = median - mad_threshold * mad
-    ub = median + mad_threshold * mad
-    return series.clip(lower=lb, upper=ub)
+        value = series.iloc[i]
+        if not np.isfinite(value):
+            continue
+        z = (value - mean) / std
+        if abs(z) > sigma:
+            out.append({"index": i, "new_value": float(mean + np.sign(z) * sigma * std)})
+    return out
 
 
 def _clean_sheet(data: pd.DataFrame) -> pd.DataFrame:
-    """Forward-fill, winsorize, and remove local outliers per column."""
+    """Forward-fill, then clip causal spikes. No winsorization -- see above."""
     data = data.ffill().infer_objects()
-    n_wins = n_local = 0
+    n_cells = n_clipped = 0
     for col in data.columns[1:]:
         series = pd.to_numeric(data[col], errors="coerce").astype("float64")
         if series.isna().all():
             continue
-        winsorized = _winsorize(series)
-        n_wins += int((series != winsorized).sum())
-        local_outliers = _check_local_outliers(winsorized)
-        n_local += len(local_outliers)
-        for o in local_outliers:
-            winsorized.iloc[o["index"]] = o["new_value"]
-        data[col] = winsorized
-    if n_wins + n_local > 0:
-        logger.info("  cleaned: %d winsorized, %d local outliers", n_wins, n_local)
+        n_cells += int(series.notna().sum())
+        for o in _causal_spike_clips(series):
+            series.iloc[o["index"]] = o["new_value"]
+            n_clipped += 1
+        data[col] = series
+    if n_clipped:
+        # Counted over POPULATED cells only. The previous counter used
+        # `(series != winsorized).sum()`, and NaN != NaN is True, so every
+        # leading-NaN cell was reported as cleaned -- MCAP logged 1,429
+        # "winsorized", exactly its 1,429 NaN cells.
+        logger.info("  cleaned: %d spikes clipped of %d populated cells (%.3f%%)",
+                    n_clipped, n_cells, 100.0 * n_clipped / max(n_cells, 1))
     return data
 
 

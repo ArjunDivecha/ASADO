@@ -349,3 +349,87 @@ edits against main's older lineage — a spike guard with no commodity betas, a 
 existed nowhere else. Both were **local only**; `origin/main` (`cccd553`) was never touched and
 no force-push was involved. They are preserved at tag `discarded/main-autocheckpoints-20260821`
 (`dd766d6`) and that tag is safe to delete.
+
+---
+
+## 2026-08-21 — DAILY lane: 1.3M missing cells are being written as exact 0.0 (found, NOT fixed)
+
+Surfaced by the full daily run of 2026-08-21. `clean_excel` in
+`scripts/build_t2_master_daily.py` fills every missing numeric cell with `0`. Where Bloomberg
+genuinely has **no data at all**, that fabricates a real-looking value: a P/B of 0, a dividend
+yield of 0, a cash flow of 0. Measured on this run, source-NaN → output-zero, per sheet:
+
+| sheet | missing in source | zeros in output | first date Bloomberg has ANY data |
+|---|---|---|---|
+| Shiller PE | 127,324 | 127,324 | 1999-12-31 |
+| Best ROE | 82,117 | 82,117 | **2005-07-04** |
+| Best Cash Flow | 81,949 | 83,464 | **2005-03-15** |
+| Positive PE | 81,725 | 81,725 | **2005-03-15** |
+| Best PBK | 81,533 | 81,533 | **2005-02-08** |
+| Best Div Yield | 81,494 | 81,494 | **2005-03-14** |
+| Best Price Sales | 68,305 | 68,305 | 2000-01-25 |
+| Best PE / BEST EPS | 63,680 / 63,674 | 63,965 / 63,674 | 1999-12-31 |
+| MCAP / Mcap Weights | 44,184 each | 44,184 each | 1999-12-31 |
+| 10Yr Bond | 45,815 | 45,827 | 1999-12-31 |
+| *(+9 more)* | | | |
+| **total** | **1,299,823** | | |
+
+**Five sheets have no Bloomberg data whatsoever before 2005**, so their entire pre-2005 daily
+history is fabricated zeros — e.g. `Best Cash Flow` is exactly 0.0 for all 34 countries on
+1,901 consecutive dates, 1999-12-31 → 2005-03-14, then real values from 2005-03-15.
+
+**Consequences.** `_CS` on those dates is saved by the guard added 2026-08-21 (all values
+identical → dispersion zero → NaN, logged). `_TS` is **not** protected: a five-year run of
+exact 0.0 followed by a step to real values makes the 2005 transition look like an enormous
+outlier to the expanding z-score, and every pre-2005 `_TS` value is derived from fabricated data.
+
+**Not fixed.** This is T2-feed code, and it sits next to `clean_excel`'s global `fillna(0)`,
+which is Arjun's decided behaviour from the 2026-08-10 revert. Note the distinction though:
+that decision was about *price/return* sheets and the `Fill=P` pull convention. This is
+different — filling an absent fundamental with 0 is not a convention choice, it asserts a
+value Bloomberg never reported. The monthly lane is unaffected (it does not use `clean_excel`).
+
+Cheapest honest fix if wanted: leave these cells NaN (as the commodity beta sheets already do
+via `clean_excel_keep_na`), or start each sheet at its first real date.
+
+---
+
+## 2026-08-21 — Bloomberg API stopped negotiating mid-morning (ACTION NEEDED on the Windows side)
+
+During the manual full daily run (10:31–10:57) the Bloomberg API went from working to refusing
+sessions. The T2 daily pull at 10:31 succeeded (290s, 58.1 MB). By ~10:50 six loop Layer-1
+collectors could not connect, and it is **still failing now**:
+
+```
+Windows 11 is running                    OK
+Bloomberg is running (7 processes)       OK
+Port 8194 reachable on 10.211.55.3       OK
+BLPAPI session negotiation               FAILS
+  "Session negotiation failed for 10.211.55.3:8194 result = 1"
+  "Failed BBCOMM session negotiation"
+  "Platform failed 3 consecutive times, stopped trying to reconnect"
+```
+
+TCP reaches the VM and the Bloomberg processes are alive, so this is not the VM being down —
+it is the Terminal not accepting API sessions. Usual causes: the Terminal logged itself out or
+the screen locked, the account got logged in somewhere else, or `bbcomm.exe` needs a restart.
+**Requires someone on the Windows side to log the Terminal back in.**
+
+Affected (all fail-soft — "existing parquet untouched", so no data was corrupted):
+`collect_etf_flows_bbg.py`, `collect_consensus_bbg.py`, `collect_market_implied_bbg.py`,
+`collect_sov_ratings_bql.py`, `collect_eco_surprise_bbg.py`.
+
+Impact was small **only because the scheduled 09:13 nightly had already refreshed those files
+at 09:29–09:32**, so they are ~1.5 h stale rather than missing. Had the manual run been the
+day's only run, five Layer-1 inputs would have gone a full day stale while the pipeline still
+reported `ALL STEPS OK`.
+
+**The reporting gap is the real issue.** `daily_update.py` printed `ALL STEPS OK` for 12/12
+stages while six collectors inside the loop stage failed. Fail-soft is right for these — a dead
+Terminal should not kill the brief — but the summary should surface degraded sub-steps rather
+than showing a clean bill of health. Worth a "N sub-collectors failed, data is stale" line in
+the summary block.
+
+Separately: `consensus_signals.parquet`, `market_implied_signals.parquet` and
+`eco_surprise_signals.parquet` are all dated **2026-07-14** — five weeks stale, unrelated to
+today's outage. Worth checking whether anything still rebuilds them.

@@ -20,6 +20,27 @@ DESCRIPTION:
     1DRet/5DRet/... instead of 1MRet/3MRet/..., and the daily reference's extra
     data-quality cleaning (winsorize + EWM outlier adjust).
 
+    COMMODITY SEMANTIC BREAK, 2026-08-21 -- read this before comparing any
+    output to an earlier daily master or applying an older verdict:
+      Gold, Copper, Oil, Agriculture
+          WAS  the raw commodity price, broadcast identically to all 34 countries
+          NOW  each country's beta to that commodity
+      Gold 120, Copper 120, Oil 120, Agriculture 120
+          WAS  the 120-period change in the commodity price (identical per country)
+          NOW  that country's beta x the commodity's 120-period return
+    The 120-period HORIZON is unchanged; only the country dimension is new. The
+    old form had ZERO cross-sectional dispersion, so Gold_CS / Copper_CS /
+    Oil_CS / Agriculture_CS were 0/0 and carried no information. Any loop-DB
+    verdict or graveyard entry on those eight names, or their _CS / _TS
+    derivatives, was earned under the OLD semantics and does not transfer.
+
+    The beta is computed on MONTH-END resampled returns using the identical
+    rolling(120, min_periods=36) window as the monthly builder, then stamped
+    effective the day after each month-end and forward-filled onto the daily
+    grid -- point-in-time by construction, and one definition of "commodity
+    beta" across both cadences (measured parity vs the monthly builder:
+    rank-corr +0.997 to +0.9995).
+
 INPUT FILES:
     - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/t2/
         T2 Bloomberg Master Daily.xlsx   (ASADO-generated, collect_t2_bloomberg.py --daily)

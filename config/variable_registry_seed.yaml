@@ -1299,10 +1299,16 @@
 - variable: Agriculture 120
   base_variable: Agriculture 120
   normalization: raw
-  definition: 120-period percent change in the agriculture commodity index.
+  definition: The country's agriculture beta multiplied by agriculture's 120-period return, on the DAILY
+    grid. The beta is computed on month-end resampled returns with the same rolling
+    120-month, min_periods 36 window the monthly builder uses, then stamped effective
+    the day after each month-end and forward-filled, so it is point-in-time. The
+    120-period horizon is unchanged. Semantic break 2026-08-21 (ASADO build_t2_master_daily.py) - was
+    the 120-period percent change in the agriculture commodity index, identical
+    across countries.
   source_provider: T2/Bloomberg
   source_series_id: ''
-  units: percent change
+  units: beta x fractional return
   cross_country_comparable: true
   native_frequency: D
   publication_lag: ''
@@ -3607,10 +3613,15 @@
 - variable: Copper 120
   base_variable: Copper 120
   normalization: raw
-  definition: 120-period percent change in the copper price.
+  definition: The country's copper beta multiplied by copper's 120-period return, on the DAILY
+    grid. The beta is computed on month-end resampled returns with the same rolling
+    120-month, min_periods 36 window the monthly builder uses, then stamped effective
+    the day after each month-end and forward-filled, so it is point-in-time. The
+    120-period horizon is unchanged. Semantic break 2026-08-21 (ASADO build_t2_master_daily.py) - was
+    the 120-period percent change in the copper price, identical across countries.
   source_provider: T2/Bloomberg
   source_series_id: ''
-  units: percent change
+  units: beta x fractional return
   cross_country_comparable: true
   native_frequency: D
   publication_lag: ''
@@ -7106,10 +7117,15 @@
 - variable: Gold 120
   base_variable: Gold 120
   normalization: raw
-  definition: 120-period percent change in the gold price (verified on the daily surface, corr 0.9999).
+  definition: The country's gold beta multiplied by gold's 120-period return, on the DAILY
+    grid. The beta is computed on month-end resampled returns with the same rolling
+    120-month, min_periods 36 window the monthly builder uses, then stamped effective
+    the day after each month-end and forward-filled, so it is point-in-time. The
+    120-period horizon is unchanged. Semantic break 2026-08-21 (ASADO build_t2_master_daily.py) - was
+    the 120-period percent change in the gold price, identical across countries.
   source_provider: T2/Bloomberg
   source_series_id: ''
-  units: percent change
+  units: beta x fractional return
   cross_country_comparable: true
   native_frequency: D
   publication_lag: ''
@@ -12147,10 +12163,15 @@
 - variable: Oil 120
   base_variable: Oil 120
   normalization: raw
-  definition: 120-period percent change in the crude oil price.
+  definition: The country's crude oil beta multiplied by crude oil's 120-period return, on the DAILY
+    grid. The beta is computed on month-end resampled returns with the same rolling
+    120-month, min_periods 36 window the monthly builder uses, then stamped effective
+    the day after each month-end and forward-filled, so it is point-in-time. The
+    120-period horizon is unchanged. Semantic break 2026-08-21 (ASADO build_t2_master_daily.py) - was
+    the 120-period percent change in the crude oil price, identical across countries.
   source_provider: T2/Bloomberg
   source_series_id: ''
-  units: percent change
+  units: beta x fractional return
   cross_country_comparable: true
   native_frequency: D
   publication_lag: ''

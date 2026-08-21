@@ -299,3 +299,28 @@ match nothing, meaning the variable they were meant to skip is being evaluated b
 Arjun fixed the `129MA_TS` typo in the monthly repo in the same commit that introduced the
 betas (397207b). ASADO still has it. Both are one-line fixes, but each **changes what Step
 Three evaluates**, which is beyond the approved commodity scope — hence flagged, not fixed.
+
+---
+
+## 2026-08-21 — daily commodity broadcast RESOLVED
+
+The `build_t2_master_daily.py:95-96` item logged earlier today is **fixed**. The daily lane now
+carries country commodity betas, computed on month-end resampled returns with the same
+`rolling(120, min_periods=36)` window as the monthly builder, stamped effective the day after
+each month-end and forward-filled onto the daily grid.
+
+Deliberately NOT estimated from daily returns: the daily workbook is a CALENDAR-day grid
+(9,730 rows / 26.6 years ≈ 366 per year), so a "2520-row" window would be ~6.9 years rather
+than 10; and daily betas of Asian markets against commodity closes are mechanically attenuated
+by non-synchronous trading. Resampling dodges both and keeps one definition across cadences.
+
+**Two notes, neither blocking:**
+
+1. **These factors reach `t2_optimizer_daily.py` on the next nightly run** — it has no
+   commodity exclusion list, so nothing gates them. That script is already logged in this file
+   as a port of the OLD pre-fix Step Four carrying its defects plus `min_count=1` partial-universe
+   summing. The new factors flow into a known-defective consumer. Context, not a reason to hold.
+2. **`clean_excel`'s global `fillna(0)` was left alone.** It would have turned the 36-month beta
+   burn-in into a fabricated beta of 0 — a claim of "no commodity exposure", not a gap — so the
+   8 beta sheets go through a scoped `clean_excel_keep_na` instead. The global behaviour is
+   Arjun's decided call from the 2026-08-10 revert and was not re-litigated.

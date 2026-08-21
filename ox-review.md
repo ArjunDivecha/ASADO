@@ -216,3 +216,45 @@ Tier 1 item 4 (`is_forecast` separation).
 
 The same self-test also shows every country mapping to "Iran Sanctions" — Ox's `collect(s)[0]`
 `SUBJECT_TO` finding, visible in normal output.
+
+---
+
+## Tier 1 addendum — 2026-08-21
+
+**Items 1–4 landed and verified** (commit `c5c3b62`): the `cs_zscore` zero-dispersion guard
+in `t2_normalize_daily.py` / `t2_normalize.py` (Copper 232/232 dates now NaN and logged,
+0 infinities; Tot Return Index unchanged, std 0.9852); the `feature_panel_observed` view
+(3,248,529 rows, `max_date` **2026-08-01** vs 2100-12-01 on the parent views); and
+`db_bridge`'s short-lived guarded connections, lazy Neo4j driver, and `<= CURRENT_DATE`
+date bound — `country_profile('Turkey')` now returns 2026-08-01 with 255 factor rows
+instead of 2100-12-01 with 12 projections.
+
+**Item 5 — making the T2 spine causal — was implemented, measured, and REVERTED.**
+`scripts/build_t2_master.py` is unmodified at HEAD. Full write-up:
+[docs/T2_CAUSAL_CLEANING_2026-08-21.md](file:///Users/arjundivecha/Dropbox/AAA%20Backup/A%20Working/ASADO/docs/T2_CAUSAL_CLEANING_2026-08-21.md).
+
+Three things in that report retract or revise what this document said:
+
+1. **My Tier 1 plan was wrong about the remedy.** I wrote *"adopt the daily builder's
+   expanding-window pattern, which already exists correctly in this codebase
+   (`t2_normalize_daily.py:75-85`)."* The analogy does not hold. There the expanding
+   statistic *produces* the output (a z-score); in `_clean_sheet` it is used to *clip a level
+   that is then retained*. Measured, the expanding version clips **13.5% of Copper and 9.7%
+   of Oil** — it anchors the band on the early sample and shears off the later trend. It is
+   worse than the leak. Rolling-60 and rolling-120 do not rescue it; the statistic itself is
+   ill-posed for trending levels, not the window.
+
+2. **My severity number was inflated by a counting bug of my own.** I counted clipped cells
+   as `(series != winsorized).sum()`; `NaN != NaN` is `True`, so leading NaNs counted as
+   clips. MCAP's reported 1,429 clipped was exactly its 1,429 NaN cells. **The 7.69% figure
+   is retracted; the correct source-workbook figure is 0.804%**, which reconciles with the
+   0.72% measured earlier on the `t2_master` output (different denominator). Production
+   carries the same pattern at `build_t2_master.py:309` but only for a log line — no data
+   is affected.
+
+3. **A better fix exists and is measured.** Dropping the winsorizer and keeping only a
+   causal trailing spike guard that *clips to the band* rather than replacing with the
+   trailing mean is fully point-in-time and touches **0.236%** of cells — less than the
+   current leaking rule — with Copper, Gold and Agriculture untouched. It awaits Arjun's
+   decision because it changes the T2 feed's cleaning philosophy rather than fixing a bug
+   in it.

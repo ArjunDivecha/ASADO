@@ -228,3 +228,27 @@ convention:
   benchmark is also T+1->T+2. Both legs now earn the same period, and the deliberate 2-day
   implementation lag documented in the original header is preserved.
 - Validation stands: corr(net, benchmark_T+1) +0.537 -> +0.007; exact zeros 14.2% -> 0.
+
+---
+
+## 2026-08-21 — T2 spine `_clean_sheet` uses future data (DECISION REQUIRED, not fixed)
+
+`scripts/build_t2_master.py:_winsorize` clips to **full-sample** median±5·MAD, and
+`_check_local_outliers` judges each point against a **centred** ±20-month window and replaces
+it with a mean including the 20 months after it. Both are look-ahead. The cleaned sheets feed
+the monthly optimizer and are unioned into `unified_panel` as `source='t2'` (1,085,246 rows =
+30.6% of `feature_panel`), so the leak reaches recorded harness verdicts.
+
+**Magnitude: 0.804% of populated source cells** (337,990 cells, 39 sheets). Small.
+
+Per house rule this is T2-feed code and is **not** being fixed without approval. A causal fix
+was built and measured; the obvious one (expanding window) makes the data *worse* — it clips
+13.5% of Copper and 9.7% of Oil. The recommended alternative (drop the winsorizer, keep a
+causal clip-to-band spike guard) touches only 0.236%, less than today's leaking rule.
+
+Options, evidence, and reverted code:
+[docs/T2_CAUSAL_CLEANING_2026-08-21.md](file:///Users/arjundivecha/Dropbox/AAA%20Backup/A%20Working/ASADO/docs/T2_CAUSAL_CLEANING_2026-08-21.md)
+
+Related, cosmetic only: `build_t2_master.py:309` counts cleaned cells as
+`(series != winsorized).sum()`, and `NaN != NaN` is `True`, so the build log over-reports —
+it credits every leading-NaN cell as "winsorized". Log message only; no data affected.

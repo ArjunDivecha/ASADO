@@ -76,6 +76,12 @@ BUILT-IN PRESETS (--preset):
   growth_hot         ECO_GROWTH_SURPRISE_Z >= +1.5 prints (monthly anchor)
   growth_cold        ECO_GROWTH_SURPRISE_Z <= -1.5 prints
   inflation_hot      ECO_INFL_SURPRISE_Z  >= +1.5 prints
+  release_growth_hot / release_growth_cold    Release-date stamped growth surprise (daily anchor)
+  release_inflation_hot / release_inflation_cold Release-date stamped inflation surprise (daily anchor)
+  release_gdp_hot / release_gdp_cold          Release-date stamped GDP surprise (daily anchor)
+  release_sentiment_hot / release_sentiment_cold Release-date stamped sentiment surprise (daily anchor)
+  release_pmi_hot / release_pmi_cold          Release-date stamped PMI surprise (daily anchor)
+  release_cpi_hot / release_cpi_cold          Release-date stamped CPI surprise (daily anchor)
   dislocation        dislocation_daily rows; --detector D4 filters; anchor
                      next_day; sign from the row's direction where present
   event_log          asado.event_log curated registry; --category filters
@@ -178,6 +184,32 @@ def preset_events(con, preset: str, args) -> tuple[pd.DataFrame, str]:
             f"SELECT date, country, {sign} AS sign FROM eco_surprise_signals "
             f"WHERE variable = ? AND value {op} ?", [var, thr]).fetchdf()
         return df, "next_month"
+
+    if preset.startswith("release_"):
+        # Release-date stamped macro surprises from release_events_signals (anchor=next_day)
+        sub = preset.replace("release_", "")
+        var_map = {
+            "growth_hot": ("RELEASE_GROWTH_SURPRISE_Z", ">=", 1.0),
+            "growth_cold": ("RELEASE_GROWTH_SURPRISE_Z", "<=", -1.0),
+            "inflation_hot": ("RELEASE_INFL_SURPRISE_Z", ">=", -1.0),  # hot inflation presumed headwind for eq
+            "inflation_cold": ("RELEASE_INFL_SURPRISE_Z", "<=", 1.0),
+            "gdp_hot": ("RELEASE_GDP_SURPRISE_Z", ">=", 1.0),
+            "gdp_cold": ("RELEASE_GDP_SURPRISE_Z", "<=", -1.0),
+            "sentiment_hot": ("RELEASE_SENTIMENT_SURPRISE_Z", ">=", 1.0),
+            "sentiment_cold": ("RELEASE_SENTIMENT_SURPRISE_Z", "<=", -1.0),
+            "pmi_hot": ("RELEASE_PMI_SURPRISE_Z", ">=", 1.0),
+            "pmi_cold": ("RELEASE_PMI_SURPRISE_Z", "<=", -1.0),
+            "cpi_hot": ("RELEASE_CPI_SURPRISE_Z", ">=", -1.0),  # hot cpi presumed headwind for eq
+            "cpi_cold": ("RELEASE_CPI_SURPRISE_Z", "<=", 1.0),
+        }
+        if sub not in var_map:
+            raise ValueError(f"unknown release preset {preset!r}")
+        var, op, sign = var_map[sub]
+        thr = args.threshold if op == ">=" else -args.threshold
+        df = con.execute(
+            f"SELECT date, country, {sign} AS sign FROM release_events_signals "
+            f"WHERE variable = ? AND value {op} ?", [var, thr]).fetchdf()
+        return df, "next_day"
 
     if preset == "dislocation":
         det_clause, params = "", []
@@ -457,6 +489,12 @@ def main() -> int:
     src = p.add_mutually_exclusive_group(required=True)
     src.add_argument("--preset", choices=["rating_downgrade", "rating_upgrade", "cds_inversion",
                                           "growth_hot", "growth_cold", "inflation_hot",
+                                          "release_growth_hot", "release_growth_cold",
+                                          "release_inflation_hot", "release_inflation_cold",
+                                          "release_gdp_hot", "release_gdp_cold",
+                                          "release_sentiment_hot", "release_sentiment_cold",
+                                          "release_pmi_hot", "release_pmi_cold",
+                                          "release_cpi_hot", "release_cpi_cold",
                                           "dislocation", "event_log"])
     src.add_argument("--events-sql", help="SQL returning date, country[, sign] (loop connection).")
     p.add_argument("--name", help="Study name (required for --events-sql; overrides preset name).")

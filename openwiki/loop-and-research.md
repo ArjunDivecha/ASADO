@@ -60,6 +60,12 @@ Key points:
 - Full-sample rows are descriptive-only and should not be treated as priors.
 - The review queue is a triage surface, not evidence of return alpha.
 
+### Release-date stamped economic surprise layer & event studies
+`scripts/loop/load_release_events.py` and `scripts/loop/event_study.py` manage point-in-time macro release surprises:
+- Ingests 41,349 release events across 10 concepts (CPI, Core CPI, PPI, GDP, Unemployment, Employment, PMI, IP, Retail Sales, Consumer Confidence) and 31 countries (1996-2026).
+- Preserves exact announcement date (`release_date`) and tradeable date (`signal_date`), stored in `release_events_daily` and `release_events_signals`.
+- Enables true daily event studies (`anchor=next_day`) in `event_study.py` across release presets (`release_growth_hot/cold`, `release_inflation_hot/cold`, `release_gdp_hot/cold`, `release_sentiment_hot/cold`, `release_pmi_hot/cold`, `release_cpi_hot/cold`).
+
 ### JST risk report and long-cycle context
 `build_jst_risk_report.py` and `docs/JST_MACROHISTORY_CALIBRATION.md` show another important distinction: JST macrohistory is an isolated calibration corpus, not a factor feed. The docs in `AGENTS.md` reinforce that it should never be merged into the normal factor panels.
 

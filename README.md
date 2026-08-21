@@ -323,6 +323,11 @@ state lives in a **separate DuckDB** — `Data/loop/asado_loop.duckdb` — so mo
    ACTUAL_RELEASE vs BN_SURVEY_MEDIAN on ECO release tickers (CPI YoY 31 countries, unemployment,
    GDP, Markit PMI) → `eco_surprise_monthly` + `eco_surprise_signals` (per-print surprise z,
    growth/inflation surprise composites).
+23b. `load_release_events.py` — **release-date stamped economic surprise layer** (from Economic Surprise Lab):
+   41,349 point-in-time release-stamped events across 213 Bloomberg ECO tickers and 10 macro concepts
+   (CPI, Core CPI, PPI, GDP, Unemployment, Employment, PMI, IP, Retail Sales, Consumer Confidence)
+   for 31 countries (1996-2026) → `release_events_daily` + `release_events_signals` (expanding-window
+   z-scores, anchor=next_day daily event studies).
 24. `build_graph_features_pit.py` — **point-in-time graph features** (see "The graph machine"
    below): PIT trade/bank/twohop/holder gaps + Katz, hub-amplified and trade-bloc features from
    the stored edge vintages → `graph_features_pit_daily`.
@@ -404,8 +409,9 @@ sweeps Kalshi + Polymarket for new candidates to curate.
   returns around discrete events with market-adjusted abnormal returns, bootstrap CIs,
   next_day/next_month anchoring, and PDF/xlsx/JSON outputs to `Data/loop/event_studies/`.
   Presets: `rating_downgrade`, `rating_upgrade`, `cds_inversion`, `growth_hot`,
-  `growth_cold`, `inflation_hot`, `dislocation` (filterable by detector), `event_log`
-  (curated registry), or arbitrary `--events-sql`. Verified findings (2026-06-12):
+  `growth_cold`, `inflation_hot`, `release_growth_hot/cold`, `release_inflation_hot/cold`,
+  `release_gdp_hot/cold`, `release_sentiment_hot/cold`, `release_pmi_hot/cold`, `release_cpi_hot/cold`,
+  `dislocation` (filterable by detector), `event_log` (curated registry), or arbitrary `--events-sql`. Verified findings (2026-06-12):
   sovereign rating downgrades → −0.7% abnormal return in 5 trading days (t≈−2.0,
   73 events since 2008), drifting to −2.1% at 63 days; CDS 1Y/5Y curve inversions →
   −4.5% at 63 days (t≈−2.4, 41 events) — the 1Y CDS layer's payoff is event-conditional,

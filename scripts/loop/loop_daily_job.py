@@ -265,6 +265,8 @@ STEPS = [
     ("collect_eco_surprise_bbg",
      [CONDA, "run", "-p", BBG_ENV, "python", "scripts/loop/collect_eco_surprise_bbg.py"]),
     ("load_eco_surprise", [PY, "scripts/loop/load_eco_surprise.py"]),
+    # Release-date stamped economic surprises (41k events, 10 concepts, anchor=next_day):
+    ("load_release_events", [PY, "scripts/loop/load_release_events.py"]),
     # ── The graph machine (2026-06-12 build-out) ──────────────────────────
     # PIT graph features: full rebuild each night from the stored edge
     # vintages (graph_edge_vintages; ~5 s). The vintage COLLECTOR

@@ -230,6 +230,12 @@ steps:
     expected_outputs:
       - {kind: loop_db_table, table: eco_surprise_signals}
 
+  - name: load_release_events
+    governance: false
+    optional: true          # reads Data/work/loop/release_events.parquet
+    expected_outputs:
+      - {kind: loop_db_table, table: release_events_signals}
+
   - name: build_graph_features_pit
     governance: false
     optional: false

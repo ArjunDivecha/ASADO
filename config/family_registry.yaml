@@ -42,8 +42,8 @@ families:
     variable_prefixes: ["GRAPH", "LL_", "SIM_"]   # GRAPH covers GRAPH* and GRAPHP*
 
   eco_surprise:
-    description: "Economic-release actual-vs-survey surprises (CPI/GDP/PMI/unemployment composites)."
-    variable_prefixes: ["ECO_"]
+    description: "Economic-release actual-vs-survey surprises (CPI/GDP/PMI/unemployment/sentiment/activity composites, monthly + release-date stamped)."
+    variable_prefixes: ["ECO_", "RELEASE_"]
 
   fx_implied:
     description: "FX options-implied stress: implied vol, 25D risk reversals, butterflies, vol term structure, forward carry."

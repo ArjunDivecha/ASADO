@@ -1306,3 +1306,25 @@ lower risk (nothing casts it today). Left alone deliberately rather than widenin
 an unrequested schema change.
 
 SESSION END: 2026-08-13 09:50 PDT | Agent: Claude Code (Fable 5)
+
+---
+SESSION START: 2026-08-13 13:20 PDT | Agent: Antigravity (Gemini 3.7 Flash)
+
+### Ingestion of Economic Surprise Lab (ESL Phase R2) Data Layer
+
+#### What Was Built & Ingested:
+1. **Data Source:** Copied `/Users/arjundivecha/Dropbox/AAA Backup/A Working/Economic Surprise Lab/data/events/release_events_r2.parquet` to `Data/work/loop/release_events.parquet` (41,349 point-in-time events, 213 Bloomberg ECO tickers, 31 countries, 1996-2026 across 10 concepts: CPI, Core CPI, PPI, GDP, Unemployment, Employment, PMI, IP, Retail Sales, Consumer Confidence).
+2. **DuckDB Loader:** Built `scripts/loop/load_release_events.py` generating:
+   - `release_events_daily` (47,990 rows broadcast across 34 T2 country buckets) with exact `release_date`, `signal_date`, `reference_period`, `actual_first_print`, `bn_survey_median`, `surprise`, and expanding winsorized $\pm 3\sigma$ `surprise_z`.
+   - `release_events_signals` (61,782 daily tidy signals) with per-concept series plus composite `RELEASE_GROWTH_SURPRISE_Z` and `RELEASE_INFL_SURPRISE_Z`.
+3. **Pipeline Orchestrator & Governance:**
+   - Added `load_release_events` step to `scripts/loop/loop_daily_job.py`.
+   - Registered step in `config/governance_contract.yaml` and tables in `config/loop_schema_contract.yaml`.
+   - Mapped `RELEASE_` prefix to family `eco_surprise` in `config/family_registry.yaml`.
+4. **Event-Study Engine:**
+   - Added `anchor=next_day` presets to `scripts/loop/event_study.py`: `release_growth_hot/cold`, `release_inflation_hot/cold`, `release_gdp_hot/cold`, `release_sentiment_hot/cold`, `release_pmi_hot/cold`, `release_cpi_hot/cold`.
+5. **Tests & Docs:**
+   - Added unit test suite `tests/loop/test_release_events.py` (all tests passing).
+   - Updated `README.md`, `CLAUDE.md`, `AGENTS.md`, `openwiki/loop-and-research.md`, and created report `docs/ECONOMIC_SURPRISE_INGESTION_REPORT_2026_08_13.md`.
+
+SESSION END: 2026-08-13 13:25 PDT | Agent: Antigravity (Gemini 3.7 Flash)

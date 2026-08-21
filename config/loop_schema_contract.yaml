@@ -159,6 +159,14 @@ tables:
   eco_surprise_signals:
     optional: true
     columns: *tidy
+  release_events_daily:
+    optional: true
+    columns: [release_date, signal_date, reference_period, country, macro_country,
+              concept, ticker, actual_first_print, bn_survey_median, surprise,
+              surprise_z, release_date_source]
+  release_events_signals:
+    optional: true
+    columns: *tidy
   consensus_signals:
     optional: true
     columns: *tidy

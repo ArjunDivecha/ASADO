@@ -163,6 +163,9 @@ Whichever you pick, the change only takes effect at the next monthly rebuild.
 - Variant table — [.../variant_sweep.xlsx](file:///Users/arjundivecha/Dropbox/AAA%20Backup/A%20Working/ASADO/Data/work/experiments/t2_causal_clean_20260821/variant_sweep.xlsx)
 - Per-sheet detail — [.../per_sheet_detail.xlsx](file:///Users/arjundivecha/Dropbox/AAA%20Backup/A%20Working/ASADO/Data/work/experiments/t2_causal_clean_20260821/per_sheet_detail.xlsx)
 - Sweep log — [.../variant_sweep.log](file:///Users/arjundivecha/Dropbox/AAA%20Backup/A%20Working/ASADO/Data/work/experiments/t2_causal_clean_20260821/variant_sweep.log)
-- First (superseded, NaN-inflated) measurement — [.../measure_causal_clean.py](file:///Users/arjundivecha/Dropbox/AAA%20Backup/A%20Working/ASADO/Data/work/experiments/t2_causal_clean_20260821/measure_causal_clean.py)
+- **Superseded, do not use** — the first measurement and its outputs carry the retracted
+  NaN-inflated 7.69% figure and are prefixed `SUPERSEDED_NaN-inflated_` in that directory:
+  `..._measure_causal_clean.py`, `..._impact_by_sheet.xlsx`, `..._impact_summary.json`,
+  `..._measure.log`
 - **Reverted code** — [.../causal_patch_REJECTED.diff](file:///Users/arjundivecha/Dropbox/AAA%20Backup/A%20Working/ASADO/Data/work/experiments/t2_causal_clean_20260821/causal_patch_REJECTED.diff)
 - Pre-Tier-1 backups — [/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/backups/tier1_20260821_010600/](file:///Users/arjundivecha/Dropbox/AAA%20Backup/A%20Working/ASADO/Data/backups/tier1_20260821_010600/)

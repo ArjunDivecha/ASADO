@@ -283,3 +283,19 @@ harness, not by being switched straight into the production optimizer.
 **Verdict provenance.** Any loop-DB verdict or graveyard entry naming `Gold`, `Copper`, `Oil`,
 `Agriculture` or their ` 12` / `_CS` / `_TS` derivatives was earned under the OLD broadcast
 semantics. Same names, different variables from 2026-08-21 onward. Old verdicts do not transfer.
+
+---
+
+## 2026-08-21 — two dead entries in `t2_optimizer.py` STEP3_SKIP (found, NOT fixed)
+
+While removing the commodity exclusions I noticed two entries in `STEP3_SKIP` that appear to
+match nothing, meaning the variable they were meant to skip is being evaluated by Step Three:
+
+| entry | problem |
+|---|---|
+| `"129MA_TS"` | almost certainly a typo for `"120MA_TS"`. `120MA_CS` is skipped right beside it, and `STEP4_EXCL` skips both `120MA_CS` and `120MA_TS`. |
+| `"Tot Return Index_CS"` | the real variable carries a trailing space in the sheet name; `STEP4_EXCL` spells it `"Tot Return Index _CS"`. Same for the `_TS` pair. |
+
+Arjun fixed the `129MA_TS` typo in the monthly repo in the same commit that introduced the
+betas (397207b). ASADO still has it. Both are one-line fixes, but each **changes what Step
+Three evaluates**, which is beyond the approved commodity scope — hence flagged, not fixed.

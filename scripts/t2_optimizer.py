@@ -71,11 +71,26 @@ def _load_benchmark(benchmark_path: Path) -> pd.Series:
 # =============================================================================
 # STEP THREE — exposure (country weights) → T2_Top_20_Exposure.csv
 # =============================================================================
+# 2026-08-21: the eight commodity entries (Agriculture/Copper/Gold/Oil _CS
+# and _TS) were REMOVED. They were skipped because the underlying variables
+# were one commodity price broadcast identically to all 34 countries -- zero
+# cross-sectional dispersion, so _CS was 0/0 and _TS gave every country the
+# same score. build_t2_master.py v1.2 replaced them with country-specific
+# betas, so they now differentiate and are evaluated. Mirrors the monthly
+# repo's "Step Three Top20 Portfolios Fast.py" (commit 397207b).
+#
+# NOT fixed here, flagged instead -- two entries in this list appear to be
+# dead, i.e. they skip nothing and the variable they meant to skip is being
+# evaluated:
+#   "129MA_TS"             -- almost certainly a typo for "120MA_TS"
+#   "Tot Return Index_CS"  -- the real variable carries a trailing space in
+#                             the sheet name, and STEP4_EXCL below spells it
+#                             "Tot Return Index _CS"
+# Both change what Step Three evaluates, which is beyond the approved
+# commodity scope. See docs/USER_FIX_LIST.md.
 STEP3_SKIP = [
     "1MRet", "3MRet", "6MRet", "9MRet", "12MRet",
-    "120MA_CS", "129MA_TS", "Agriculture_TS", "Agriculture_CS",
-    "Copper_TS", "Copper_CS", "Gold_CS", "Gold_TS",
-    "Oil_CS", "Oil_TS", "MCAP Adj_CS", "MCAP Adj_TS",
+    "120MA_CS", "129MA_TS", "MCAP Adj_CS", "MCAP Adj_TS",
     "MCAP_CS", "MCAP_TS", "PX_LAST_CS", "PX_LAST_TS",
     "Tot Return Index_CS", "Tot Return Index_TS",
     "Currency_CS", "Currency_TS", "BEST EPS_CS", "BEST EPS_TS",
@@ -169,11 +184,14 @@ def run_step_three(work_dir: Path, cfg: dict | None = None) -> Path:
 # =============================================================================
 # STEP FOUR — net returns → T2_Optimizer.xlsx (Monthly_Net_Returns) + T60.xlsx
 # =============================================================================
+# 2026-08-21: the eight commodity _CS entries were REMOVED for the same
+# reason as STEP3_SKIP above -- they are country betas now, not a broadcast
+# price. Mirrors the monthly repo's "Step Four Create Monthly Top20 Returns
+# FAST.py" (commit 397207b).
 STEP4_EXCL = [
     "3MRet", "6MRet", "9MRet", "12MRet",
     "120MA_CS", "120MA_TS", "12MTR_CS", "12MTR_TS",
-    "Agriculture_CS", "Agriculture 12_CS", "Copper_CS", "Copper 12_CS",
-    "Gold_CS", "Gold 12_CS", "Oil_CS", "Oil 12_CS", "BEST EPS_CS",
+    "BEST EPS_CS",
     "Currency_CS", "MCAP_CS", "MCAP_TS", "MCAP Adj_CS", "MCAP Adj_TS",
     "PX_LAST_CS", "PX_LAST_TS", "Tot Return Index _CS", "Tot Return Index _TS",
     "Trailing EPS_CS", "Trailing EPS_TS",

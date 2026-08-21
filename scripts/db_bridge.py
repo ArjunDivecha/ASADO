@@ -42,12 +42,17 @@ USAGE:
 =============================================================================
 """
 
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-import duckdb
 import pandas as pd
 from neo4j import GraphDatabase
+
+try:
+    from scripts.duckdb_lock_guard import guarded_connect
+except ImportError:  # run as `python scripts/db_bridge.py` (scripts/ is sys.path[0])
+    from duckdb_lock_guard import guarded_connect
 
 BASE_DIR = Path(__file__).parent.parent
 DB_PATH = BASE_DIR / "Data" / "asado.duckdb"
@@ -74,17 +79,48 @@ class AsadoDB:
             neo4j_pass: Neo4j password.
         """
         self._duckdb_path = duckdb_path or DB_PATH
-        self._duck = duckdb.connect(str(self._duckdb_path), read_only=True)
-
-        self._neo4j_driver = GraphDatabase.driver(neo4j_uri, auth=(neo4j_user, neo4j_pass))
-        self._neo4j_driver.verify_connectivity()
+        # FIX 2026-08-21: no persistent DuckDB connection is opened here.
+        # A long-lived read-only handle is exactly the "squatter" that blocks the
+        # nightly writers (the 2026-07-02/03 pipeline failures). Every query now
+        # opens and closes its own guarded connection -- see _connect().
+        self._neo4j_uri = neo4j_uri
+        self._neo4j_auth = (neo4j_user, neo4j_pass)
+        # FIX 2026-08-21: Neo4j is now connected LAZILY. Previously __init__ called
+        # verify_connectivity(), so pure-DuckDB work (MCP run_duckdb_sql, Streamlit,
+        # cockpit) hard-failed whenever Neo4j was down -- contradicting the loop's
+        # optional-Neo4j governance contract.
+        self._neo4j_driver_obj = None
         self._factor_surface_name: Optional[str] = None
         self._ff_region_map: Optional[Dict[str, Any]] = None
+
+    @contextmanager
+    def _connect(self):
+        """Short-lived, lock-guarded, read-only DuckDB connection.
+
+        House law (ASADO CLAUDE.md): never hold a DuckDB connection, even an idle
+        read-only one -- DuckDB is one-writer/many-readers and a stray holder
+        blocks the nightly writers.
+        """
+        con = guarded_connect(self._duckdb_path, read_only=True)
+        try:
+            yield con
+        finally:
+            con.close()
+
+    @property
+    def _neo4j_driver(self):
+        """Neo4j driver, created on first actual use (not at construction)."""
+        if self._neo4j_driver_obj is None:
+            driver = GraphDatabase.driver(self._neo4j_uri, auth=self._neo4j_auth)
+            driver.verify_connectivity()
+            self._neo4j_driver_obj = driver
+        return self._neo4j_driver_obj
 
     def _factor_surface(self) -> str:
         """Return the default factor-query surface, preferring feature_panel when present."""
         if self._factor_surface_name is None:
-            tables = {row[0] for row in self._duck.execute("SHOW TABLES").fetchall()}
+            with self._connect() as con:
+                tables = {row[0] for row in con.execute("SHOW TABLES").fetchall()}
             self._factor_surface_name = "feature_panel" if "feature_panel" in tables else "unified_panel"
         return self._factor_surface_name
 
@@ -101,9 +137,10 @@ class AsadoDB:
         Returns:
             pandas DataFrame with query results.
         """
-        if params:
-            return self._duck.execute(sql, params).fetchdf()
-        return self._duck.execute(sql).fetchdf()
+        with self._connect() as con:
+            if params:
+                return con.execute(sql, params).fetchdf()
+            return con.execute(sql).fetchdf()
 
     def query_graph(self, cypher: str, **params) -> List[Dict[str, Any]]:
         """
@@ -140,18 +177,20 @@ class AsadoDB:
             actual_date = date
         else:
             date_filter = f"AND date = (SELECT MAX(date) FROM {surface} WHERE country = '{country}')"
-            actual_date = self._duck.execute(f"""
-                SELECT MAX(date) FROM {surface}
-                WHERE country = '{country}'
-            """).fetchone()[0]
+            with self._connect() as con:
+                actual_date = con.execute(f"""
+                    SELECT MAX(date) FROM {surface}
+                    WHERE country = '{country}'
+                """).fetchone()[0]
 
-        factors_df = self._duck.execute(f"""
-            SELECT variable, value, source
-            FROM {surface}
-            WHERE country = '{country}'
-            {date_filter}
-            ORDER BY source, variable
-        """).fetchdf()
+        with self._connect() as con:
+            factors_df = con.execute(f"""
+                SELECT variable, value, source
+                FROM {surface}
+                WHERE country = '{country}'
+                {date_filter}
+                ORDER BY source, variable
+            """).fetchdf()
 
         graph = {}
         with self._neo4j_driver.session() as session:
@@ -223,7 +262,8 @@ class AsadoDB:
         else:
             date_clause = f"= (SELECT MAX(date) FROM {surface} WHERE variable = '{variable}')"
 
-        return self._duck.execute(f"""
+        with self._connect() as con:
+            return con.execute(f"""
             SELECT country, value, date
             FROM {surface}
             WHERE variable = '{variable}'
@@ -299,10 +339,11 @@ class AsadoDB:
         if end_date:
             clauses.append(f"date <= '{end_date}'")
         where = " AND ".join(clauses)
-        df = self._duck.execute(f"""
-            SELECT date, region, frequency, variable, value, units
-            FROM ff_factors WHERE {where} ORDER BY variable, date
-        """).fetchdf()
+        with self._connect() as con:
+            df = con.execute(f"""
+                SELECT date, region, frequency, variable, value, units
+                FROM ff_factors WHERE {where} ORDER BY variable, date
+            """).fetchdf()
 
         if units == "decimal":
             df["value"] = df["value"] / 100.0
@@ -319,16 +360,17 @@ class AsadoDB:
         Update Neo4j HAS_FACTOR_EXPOSURE edges from the latest DuckDB data.
         Deletes existing edges and recreates from the most recent date.
         """
-        latest_date = self._duck.execute(
-            "SELECT MAX(date) FROM unified_panel WHERE variable = '1MRet'"
-        ).fetchone()[0]
+        with self._connect() as con:
+            latest_date = con.execute(
+                "SELECT MAX(date) FROM unified_panel WHERE variable = '1MRet'"
+            ).fetchone()[0]
 
-        latest = self._duck.execute("""
-            SELECT country, variable, value
-            FROM unified_panel
-            WHERE date = ?
-            AND value IS NOT NULL
-        """, [latest_date]).fetchdf()
+            latest = con.execute("""
+                SELECT country, variable, value
+                FROM unified_panel
+                WHERE date = ?
+                AND value IS NOT NULL
+            """, [latest_date]).fetchdf()
 
         with self._neo4j_driver.session() as session:
             session.run("MATCH ()-[r:HAS_FACTOR_EXPOSURE]->() DELETE r")
@@ -351,7 +393,8 @@ class AsadoDB:
 
     def tables(self) -> List[str]:
         """List all DuckDB tables."""
-        return [r[0] for r in self._duck.execute("SHOW TABLES").fetchall()]
+        with self._connect() as con:
+            return [r[0] for r in con.execute("SHOW TABLES").fetchall()]
 
     def graph_stats(self) -> Dict[str, int]:
         """Get node and edge counts from Neo4j."""
@@ -377,9 +420,11 @@ class AsadoDB:
         return stats
 
     def close(self):
-        """Clean shutdown of both database connections."""
-        self._duck.close()
-        self._neo4j_driver.close()
+        """Clean shutdown. DuckDB connections are already short-lived (see
+        _connect); only a lazily-created Neo4j driver may need closing."""
+        if self._neo4j_driver_obj is not None:
+            self._neo4j_driver_obj.close()
+            self._neo4j_driver_obj = None
 
     def __enter__(self):
         return self

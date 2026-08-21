@@ -50,7 +50,7 @@ OUTPUT FILES:
     /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/factor_top20_membership_panel.parquet
         Tidy long format: (date, country, factor, weight, source). Sparse:
         only rows where weight > 0 are stored.
-    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/run_history.json
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/processed/optimizer_run_history.json
         Append-only record of last 24 runs (success/failure per source).
     /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/logs/collect_optimizer_returns_<timestamp>.log
         Log file created by the logging module on each run.
@@ -100,7 +100,7 @@ DATA_DIR = BASE_DIR / "Data"
 PROCESSED_DIR = DATA_DIR / "processed"
 BACKUP_DIR = DATA_DIR / "backups"
 LOG_DIR = DATA_DIR / "logs"
-RUN_HISTORY_PATH = PROCESSED_DIR / "run_history.json"
+RUN_HISTORY_PATH = PROCESSED_DIR / "optimizer_run_history.json"
 
 RETURNS_PQ = PROCESSED_DIR / "factor_returns_panel.parquet"
 MEMBERSHIP_PQ = PROCESSED_DIR / "factor_top20_membership_panel.parquet"

@@ -18,7 +18,7 @@ OUTPUT FILES:
       gdelt_deep_event   — 16 vars (curated CAMEO/Goldstein event aggregates)
       gdelt_deep_gcam    — DROPPED (all GCAM emotional dictionaries removed)
 - Data/backups/{ts}/gdelt_deep_panel.parquet — timestamped backup before overwrite
-- Data/processed/run_history.json — appended with run metadata
+- Data/processed/gdelt_deep_run_history.json — appended with run metadata
 
 VERSION: 1.0
 LAST UPDATED: 2026-04-27
@@ -38,7 +38,7 @@ Per the warehouse-ingest plan in docs/gdelt_deep_ingest_plan.md, this collector:
   5. Converts dates: signal_month_end_date + 1 day = first of next month.
      Verified by spearman rank corr = 1.000 against existing gdelt_panel.
   6. Melts to tidy long format and tags each variable with its source family.
-  7. Writes parquet, backs up the prior version, appends run_history.json.
+  7. Writes parquet, backs up the prior version, appends gdelt_deep_run_history.json.
 
 DEPENDENCIES:
 - pandas, numpy, pyarrow
@@ -98,7 +98,7 @@ DEEP_PARQUET = Path(
 )
 COUNTRY_MAPPING_JSON = CONFIG_DIR / "country_mapping.json"
 OUT_PARQUET = PROCESSED_DIR / "gdelt_deep_panel.parquet"
-RUN_HISTORY_JSON = PROCESSED_DIR / "run_history.json"
+RUN_HISTORY_JSON = PROCESSED_DIR / "gdelt_deep_run_history.json"
 
 for d in (PROCESSED_DIR, BACKUP_DIR, LOG_DIR):
     d.mkdir(parents=True, exist_ok=True)

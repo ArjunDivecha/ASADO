@@ -59,7 +59,7 @@ NOTES:
 - Each source wrapped in try/except — pipeline never fails entirely
 - Monthly-safe: if a source fails, existing data for that source is preserved
 - Timestamped backup saved before every overwrite
-- Run history tracked in Data/processed/run_history.json
+- Run history tracked in Data/processed/external_run_history.json
 - Runtime target: under 10 minutes
 =============================================================================
 """
@@ -176,7 +176,7 @@ COLLECTOR_SOURCE_KEYS = {
 PANEL_PATH = PROCESSED_DIR / "external_factors_panel.parquet"
 CSV_PATH   = PROCESSED_DIR / "external_factors_panel.csv"
 CAT_PATH   = PROCESSED_DIR / "external_variable_catalog.csv"
-HISTORY_PATH = PROCESSED_DIR / "run_history.json"
+HISTORY_PATH = PROCESSED_DIR / "external_run_history.json"
 BACKUP_DIR = DATA_DIR / "backups"
 
 
@@ -264,7 +264,7 @@ def save_run_history(history: Dict) -> None:
 
 def record_run(source_status: Dict[str, str], panel: pd.DataFrame,
                elapsed: float) -> None:
-    """Append a run entry to run_history.json."""
+    """Append a run entry to external_run_history.json."""
     history = load_run_history()
     entry = {
         "timestamp": datetime.now().isoformat(),

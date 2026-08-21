@@ -1326,8 +1326,7 @@
 - variable: Agriculture 120_CS
   base_variable: Agriculture 120
   normalization: _CS
-  definition: 'Cross-sectional z-score (across the 34-country panel) of: 120-period percent change in
-    the agriculture commodity index.'
+  definition: 'Cross-sectional z-score (across the 34-country panel) of: The country''s agriculture beta multiplied by agriculture''s 120-period return, on the DAILY grid. The beta is computed on month-end resampled returns with the same rolling 120-month, min_periods 36 window the monthly builder uses, then stamped effective the day after each month-end and forward-filled, so it is point-in-time. The 120-period horizon is unchanged. Semantic break 2026-08-21 (ASADO build_t2_master_daily.py) - was the 120-period percent change in the agriculture commodity index, identical across countries.'
   source_provider: T2/Bloomberg
   source_series_id: ''
   units: z-score (cross-sectional)
@@ -1348,8 +1347,7 @@
 - variable: Agriculture 120_TS
   base_variable: Agriculture 120
   normalization: _TS
-  definition: 'Time-series z-score (vs own trailing history) of: 120-period percent change in the agriculture
-    commodity index.'
+  definition: 'Time-series z-score (vs own trailing history) of: The country''s agriculture beta multiplied by agriculture''s 120-period return, on the DAILY grid. The beta is computed on month-end resampled returns with the same rolling 120-month, min_periods 36 window the monthly builder uses, then stamped effective the day after each month-end and forward-filled, so it is point-in-time. The 120-period horizon is unchanged. Semantic break 2026-08-21 (ASADO build_t2_master_daily.py) - was the 120-period percent change in the agriculture commodity index, identical across countries.'
   source_provider: T2/Bloomberg
   source_series_id: ''
   units: z-score (time-series)
@@ -1370,8 +1368,7 @@
 - variable: Agriculture 12_CS
   base_variable: Agriculture 12
   normalization: _CS
-  definition: 'Cross-sectional z-score (across the 34-country panel) of: 12-period percent change in the
-    agriculture commodity index.'
+  definition: 'Cross-sectional z-score (across the 34-country panel) of: The country''s agriculture beta multiplied by agriculture''s 12-month return. Semantic break 2026-08-21 (ASADO build_t2_master.py v1.2) - was the 12-period percent change in the agriculture commodity index, identical across countries.'
   source_provider: T2/Bloomberg
   source_series_id: ''
   units: z-score (cross-sectional)
@@ -1392,8 +1389,7 @@
 - variable: Agriculture 12_TS
   base_variable: Agriculture 12
   normalization: _TS
-  definition: 'Time-series z-score (vs own trailing history) of: 12-period percent change in the agriculture
-    commodity index.'
+  definition: 'Time-series z-score (vs own trailing history) of: The country''s agriculture beta multiplied by agriculture''s 12-month return. Semantic break 2026-08-21 (ASADO build_t2_master.py v1.2) - was the 12-period percent change in the agriculture commodity index, identical across countries.'
   source_provider: T2/Bloomberg
   source_series_id: ''
   units: z-score (time-series)
@@ -1414,8 +1410,7 @@
 - variable: Agriculture_CS
   base_variable: Agriculture
   normalization: _CS
-  definition: 'Cross-sectional z-score (across the 34-country panel) of: Global agriculture commodity
-    price index level (broadcast to all countries).'
+  definition: 'Cross-sectional z-score (across the 34-country panel) of: Country-specific trailing beta to the agriculture price, from a rolling 120-month regression of the country''s 1-month total return on agriculture''s 1-month return (min_periods 36). Varies by country. Semantic break 2026-08-21 (ASADO build_t2_master.py v1.2) - was the global agriculture commodity price index level, broadcast identically to all 34 countries, giving zero cross-sectional dispersion.'
   source_provider: T2/Bloomberg
   source_series_id: ''
   units: z-score (cross-sectional)
@@ -1437,8 +1432,7 @@
 - variable: Agriculture_TS
   base_variable: Agriculture
   normalization: _TS
-  definition: 'Time-series z-score (vs own trailing history) of: Global agriculture commodity price index
-    level (broadcast to all countries).'
+  definition: 'Time-series z-score (vs own trailing history) of: Country-specific trailing beta to the agriculture price, from a rolling 120-month regression of the country''s 1-month total return on agriculture''s 1-month return (min_periods 36). Varies by country. Semantic break 2026-08-21 (ASADO build_t2_master.py v1.2) - was the global agriculture commodity price index level, broadcast identically to all 34 countries, giving zero cross-sectional dispersion.'
   source_provider: T2/Bloomberg
   source_series_id: ''
   units: z-score (time-series)
@@ -3639,8 +3633,7 @@
 - variable: Copper 120_CS
   base_variable: Copper 120
   normalization: _CS
-  definition: 'Cross-sectional z-score (across the 34-country panel) of: 120-period percent change in
-    the copper price.'
+  definition: 'Cross-sectional z-score (across the 34-country panel) of: The country''s copper beta multiplied by copper''s 120-period return, on the DAILY grid. The beta is computed on month-end resampled returns with the same rolling 120-month, min_periods 36 window the monthly builder uses, then stamped effective the day after each month-end and forward-filled, so it is point-in-time. The 120-period horizon is unchanged. Semantic break 2026-08-21 (ASADO build_t2_master_daily.py) - was the 120-period percent change in the copper price, identical across countries.'
   source_provider: T2/Bloomberg
   source_series_id: ''
   units: z-score (cross-sectional)
@@ -3661,8 +3654,7 @@
 - variable: Copper 120_TS
   base_variable: Copper 120
   normalization: _TS
-  definition: 'Time-series z-score (vs own trailing history) of: 120-period percent change in the copper
-    price.'
+  definition: 'Time-series z-score (vs own trailing history) of: The country''s copper beta multiplied by copper''s 120-period return, on the DAILY grid. The beta is computed on month-end resampled returns with the same rolling 120-month, min_periods 36 window the monthly builder uses, then stamped effective the day after each month-end and forward-filled, so it is point-in-time. The 120-period horizon is unchanged. Semantic break 2026-08-21 (ASADO build_t2_master_daily.py) - was the 120-period percent change in the copper price, identical across countries.'
   source_provider: T2/Bloomberg
   source_series_id: ''
   units: z-score (time-series)
@@ -3683,8 +3675,7 @@
 - variable: Copper 12_CS
   base_variable: Copper 12
   normalization: _CS
-  definition: 'Cross-sectional z-score (across the 34-country panel) of: 12-period percent change in the
-    copper price.'
+  definition: 'Cross-sectional z-score (across the 34-country panel) of: The country''s copper beta multiplied by copper''s 12-month return. Semantic break 2026-08-21 (ASADO build_t2_master.py v1.2) - was the 12-period percent change in the copper price, identical across countries.'
   source_provider: T2/Bloomberg
   source_series_id: ''
   units: z-score (cross-sectional)
@@ -3705,8 +3696,7 @@
 - variable: Copper 12_TS
   base_variable: Copper 12
   normalization: _TS
-  definition: 'Time-series z-score (vs own trailing history) of: 12-period percent change in the copper
-    price.'
+  definition: 'Time-series z-score (vs own trailing history) of: The country''s copper beta multiplied by copper''s 12-month return. Semantic break 2026-08-21 (ASADO build_t2_master.py v1.2) - was the 12-period percent change in the copper price, identical across countries.'
   source_provider: T2/Bloomberg
   source_series_id: ''
   units: z-score (time-series)
@@ -3727,8 +3717,7 @@
 - variable: Copper_CS
   base_variable: Copper
   normalization: _CS
-  definition: 'Cross-sectional z-score (across the 34-country panel) of: Copper spot price in USD per
-    metric ton (global series broadcast to all countries).'
+  definition: 'Cross-sectional z-score (across the 34-country panel) of: Country-specific trailing beta to the copper price, from a rolling 120-month regression of the country''s 1-month total return on copper''s 1-month return (min_periods 36). Varies by country. Semantic break 2026-08-21 (ASADO build_t2_master.py v1.2) - was the copper spot price in USD per metric ton, broadcast identically to all 34 countries, giving zero cross-sectional dispersion.'
   source_provider: T2/Bloomberg
   source_series_id: ''
   units: z-score (cross-sectional)
@@ -3750,8 +3739,7 @@
 - variable: Copper_TS
   base_variable: Copper
   normalization: _TS
-  definition: 'Time-series z-score (vs own trailing history) of: Copper spot price in USD per metric ton
-    (global series broadcast to all countries).'
+  definition: 'Time-series z-score (vs own trailing history) of: Country-specific trailing beta to the copper price, from a rolling 120-month regression of the country''s 1-month total return on copper''s 1-month return (min_periods 36). Varies by country. Semantic break 2026-08-21 (ASADO build_t2_master.py v1.2) - was the copper spot price in USD per metric ton, broadcast identically to all 34 countries, giving zero cross-sectional dispersion.'
   source_provider: T2/Bloomberg
   source_series_id: ''
   units: z-score (time-series)
@@ -7144,8 +7132,7 @@
 - variable: Gold 120_CS
   base_variable: Gold 120
   normalization: _CS
-  definition: 'Cross-sectional z-score (across the 34-country panel) of: 120-period percent change in
-    the gold price (verified on the daily surface, corr 0.9999).'
+  definition: 'Cross-sectional z-score (across the 34-country panel) of: The country''s gold beta multiplied by gold''s 120-period return, on the DAILY grid. The beta is computed on month-end resampled returns with the same rolling 120-month, min_periods 36 window the monthly builder uses, then stamped effective the day after each month-end and forward-filled, so it is point-in-time. The 120-period horizon is unchanged. Semantic break 2026-08-21 (ASADO build_t2_master_daily.py) - was the 120-period percent change in the gold price, identical across countries.'
   source_provider: T2/Bloomberg
   source_series_id: ''
   units: z-score (cross-sectional)
@@ -7167,8 +7154,7 @@
 - variable: Gold 120_TS
   base_variable: Gold 120
   normalization: _TS
-  definition: 'Time-series z-score (vs own trailing history) of: 120-period percent change in the gold
-    price (verified on the daily surface, corr 0.9999).'
+  definition: 'Time-series z-score (vs own trailing history) of: The country''s gold beta multiplied by gold''s 120-period return, on the DAILY grid. The beta is computed on month-end resampled returns with the same rolling 120-month, min_periods 36 window the monthly builder uses, then stamped effective the day after each month-end and forward-filled, so it is point-in-time. The 120-period horizon is unchanged. Semantic break 2026-08-21 (ASADO build_t2_master_daily.py) - was the 120-period percent change in the gold price, identical across countries.'
   source_provider: T2/Bloomberg
   source_series_id: ''
   units: z-score (time-series)
@@ -7190,8 +7176,7 @@
 - variable: Gold 12_CS
   base_variable: Gold 12
   normalization: _CS
-  definition: 'Cross-sectional z-score (across the 34-country panel) of: 12-period percent change in the
-    gold price (verified against recomputed 12-month change, corr 0.9998).'
+  definition: 'Cross-sectional z-score (across the 34-country panel) of: The country''s gold beta multiplied by gold''s 12-month return. Semantic break 2026-08-21 (ASADO build_t2_master.py v1.2) - was the 12-period percent change in the gold price, identical across countries.'
   source_provider: T2/Bloomberg
   source_series_id: ''
   units: z-score (cross-sectional)
@@ -7212,8 +7197,7 @@
 - variable: Gold 12_TS
   base_variable: Gold 12
   normalization: _TS
-  definition: 'Time-series z-score (vs own trailing history) of: 12-period percent change in the gold
-    price (verified against recomputed 12-month change, corr 0.9998).'
+  definition: 'Time-series z-score (vs own trailing history) of: The country''s gold beta multiplied by gold''s 12-month return. Semantic break 2026-08-21 (ASADO build_t2_master.py v1.2) - was the 12-period percent change in the gold price, identical across countries.'
   source_provider: T2/Bloomberg
   source_series_id: ''
   units: z-score (time-series)
@@ -7234,8 +7218,7 @@
 - variable: Gold_CS
   base_variable: Gold
   normalization: _CS
-  definition: 'Cross-sectional z-score (across the 34-country panel) of: Gold spot price in USD per troy
-    ounce (global series broadcast to all countries).'
+  definition: 'Cross-sectional z-score (across the 34-country panel) of: Country-specific trailing beta to the gold price, from a rolling 120-month regression of the country''s 1-month total return on gold''s 1-month return (min_periods 36). Varies by country. Semantic break 2026-08-21 (ASADO build_t2_master.py v1.2) - was the gold spot price in USD per troy ounce, broadcast identically to all 34 countries, giving zero cross-sectional dispersion.'
   source_provider: T2/Bloomberg
   source_series_id: ''
   units: z-score (cross-sectional)
@@ -7257,8 +7240,7 @@
 - variable: Gold_TS
   base_variable: Gold
   normalization: _TS
-  definition: 'Time-series z-score (vs own trailing history) of: Gold spot price in USD per troy ounce
-    (global series broadcast to all countries).'
+  definition: 'Time-series z-score (vs own trailing history) of: Country-specific trailing beta to the gold price, from a rolling 120-month regression of the country''s 1-month total return on gold''s 1-month return (min_periods 36). Varies by country. Semantic break 2026-08-21 (ASADO build_t2_master.py v1.2) - was the gold spot price in USD per troy ounce, broadcast identically to all 34 countries, giving zero cross-sectional dispersion.'
   source_provider: T2/Bloomberg
   source_series_id: ''
   units: z-score (time-series)
@@ -12189,8 +12171,7 @@
 - variable: Oil 120_CS
   base_variable: Oil 120
   normalization: _CS
-  definition: 'Cross-sectional z-score (across the 34-country panel) of: 120-period percent change in
-    the crude oil price.'
+  definition: 'Cross-sectional z-score (across the 34-country panel) of: The country''s crude oil beta multiplied by crude oil''s 120-period return, on the DAILY grid. The beta is computed on month-end resampled returns with the same rolling 120-month, min_periods 36 window the monthly builder uses, then stamped effective the day after each month-end and forward-filled, so it is point-in-time. The 120-period horizon is unchanged. Semantic break 2026-08-21 (ASADO build_t2_master_daily.py) - was the 120-period percent change in the crude oil price, identical across countries.'
   source_provider: T2/Bloomberg
   source_series_id: ''
   units: z-score (cross-sectional)
@@ -12211,8 +12192,7 @@
 - variable: Oil 120_TS
   base_variable: Oil 120
   normalization: _TS
-  definition: 'Time-series z-score (vs own trailing history) of: 120-period percent change in the crude
-    oil price.'
+  definition: 'Time-series z-score (vs own trailing history) of: The country''s crude oil beta multiplied by crude oil''s 120-period return, on the DAILY grid. The beta is computed on month-end resampled returns with the same rolling 120-month, min_periods 36 window the monthly builder uses, then stamped effective the day after each month-end and forward-filled, so it is point-in-time. The 120-period horizon is unchanged. Semantic break 2026-08-21 (ASADO build_t2_master_daily.py) - was the 120-period percent change in the crude oil price, identical across countries.'
   source_provider: T2/Bloomberg
   source_series_id: ''
   units: z-score (time-series)
@@ -12233,8 +12213,7 @@
 - variable: Oil 12_CS
   base_variable: Oil 12
   normalization: _CS
-  definition: 'Cross-sectional z-score (across the 34-country panel) of: 12-period percent change in the
-    crude oil price.'
+  definition: 'Cross-sectional z-score (across the 34-country panel) of: The country''s crude oil beta multiplied by crude oil''s 12-month return. Semantic break 2026-08-21 (ASADO build_t2_master.py v1.2) - was the 12-period percent change in the crude oil price, identical across countries.'
   source_provider: T2/Bloomberg
   source_series_id: ''
   units: z-score (cross-sectional)
@@ -12255,8 +12234,7 @@
 - variable: Oil 12_TS
   base_variable: Oil 12
   normalization: _TS
-  definition: 'Time-series z-score (vs own trailing history) of: 12-period percent change in the crude
-    oil price.'
+  definition: 'Time-series z-score (vs own trailing history) of: The country''s crude oil beta multiplied by crude oil''s 12-month return. Semantic break 2026-08-21 (ASADO build_t2_master.py v1.2) - was the 12-period percent change in the crude oil price, identical across countries.'
   source_provider: T2/Bloomberg
   source_series_id: ''
   units: z-score (time-series)
@@ -12277,8 +12255,7 @@
 - variable: Oil_CS
   base_variable: Oil
   normalization: _CS
-  definition: 'Cross-sectional z-score (across the 34-country panel) of: Crude oil spot price in USD per
-    barrel (global series broadcast to all countries).'
+  definition: 'Cross-sectional z-score (across the 34-country panel) of: Country-specific trailing beta to the crude oil price, from a rolling 120-month regression of the country''s 1-month total return on crude oil''s 1-month return (min_periods 36). Varies by country. Semantic break 2026-08-21 (ASADO build_t2_master.py v1.2) - was the crude oil spot price in USD per barrel, broadcast identically to all 34 countries, giving zero cross-sectional dispersion.'
   source_provider: T2/Bloomberg
   source_series_id: ''
   units: z-score (cross-sectional)
@@ -12300,8 +12277,7 @@
 - variable: Oil_TS
   base_variable: Oil
   normalization: _TS
-  definition: 'Time-series z-score (vs own trailing history) of: Crude oil spot price in USD per barrel
-    (global series broadcast to all countries).'
+  definition: 'Time-series z-score (vs own trailing history) of: Country-specific trailing beta to the crude oil price, from a rolling 120-month regression of the country''s 1-month total return on crude oil''s 1-month return (min_periods 36). Varies by country. Semantic break 2026-08-21 (ASADO build_t2_master.py v1.2) - was the crude oil spot price in USD per barrel, broadcast identically to all 34 countries, giving zero cross-sectional dispersion.'
   source_provider: T2/Bloomberg
   source_series_id: ''
   units: z-score (time-series)

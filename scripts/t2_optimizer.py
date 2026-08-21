@@ -79,20 +79,20 @@ def _load_benchmark(benchmark_path: Path) -> pd.Series:
 # betas, so they now differentiate and are evaluated. Mirrors the monthly
 # repo's "Step Three Top20 Portfolios Fast.py" (commit 397207b).
 #
-# NOT fixed here, flagged instead -- two entries in this list appear to be
-# dead, i.e. they skip nothing and the variable they meant to skip is being
-# evaluated:
-#   "129MA_TS"             -- almost certainly a typo for "120MA_TS"
-#   "Tot Return Index_CS"  -- the real variable carries a trailing space in
-#                             the sheet name, and STEP4_EXCL below spells it
-#                             "Tot Return Index _CS"
-# Both change what Step Three evaluates, which is beyond the approved
-# commodity scope. See docs/USER_FIX_LIST.md.
+# 2026-08-21, second pass (Arjun approved): THREE entries in this list were
+# DEAD -- they matched no emitted variable, so the variable each was meant to
+# skip was being evaluated by Step Three all along. Checked against the 111
+# variables the normalizer actually emits:
+#   "129MA_TS"             -> "120MA_TS"            (typo; 129MA does not exist)
+#   "Tot Return Index_CS"  -> "Tot Return Index _CS" (the sheet name carries a
+#   "Tot Return Index_TS"  -> "Tot Return Index _TS"  trailing space, as
+#                                                     STEP4_EXCL already spelled it)
+# STEP4_EXCL was checked the same way and has no dead entries.
 STEP3_SKIP = [
     "1MRet", "3MRet", "6MRet", "9MRet", "12MRet",
-    "120MA_CS", "129MA_TS", "MCAP Adj_CS", "MCAP Adj_TS",
+    "120MA_CS", "120MA_TS", "MCAP Adj_CS", "MCAP Adj_TS",
     "MCAP_CS", "MCAP_TS", "PX_LAST_CS", "PX_LAST_TS",
-    "Tot Return Index_CS", "Tot Return Index_TS",
+    "Tot Return Index _CS", "Tot Return Index _TS",
     "Currency_CS", "Currency_TS", "BEST EPS_CS", "BEST EPS_TS",
     "Trailing EPS_CS", "Trailing EPS_TS",
 ]

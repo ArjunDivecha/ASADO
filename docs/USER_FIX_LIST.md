@@ -324,3 +324,28 @@ by non-synchronous trading. Resampling dodges both and keeps one definition acro
    burn-in into a fabricated beta of 0 — a claim of "no commodity exposure", not a gap — so the
    8 beta sheets go through a scoped `clean_excel_keep_na` instead. The global behaviour is
    Arjun's decided call from the 2026-08-10 revert and was not re-litigated.
+
+---
+
+## 2026-08-21 — STEP3_SKIP dead entries RESOLVED (and there were three, not two)
+
+Fixed, Arjun approved. Checked against the 111 variables the normalizer actually emits:
+
+| was | is | note |
+|---|---|---|
+| `"129MA_TS"` | `"120MA_TS"` | typo — no `129MA` variable exists |
+| `"Tot Return Index_CS"` | `"Tot Return Index _CS"` | sheet name carries a trailing space |
+| `"Tot Return Index_TS"` | `"Tot Return Index _TS"` | same; I had only flagged the `_CS` half |
+
+All three matched nothing, so the variable each was meant to skip was being evaluated by Step
+Three all along. Step Three now sees **90 of 111** variables rather than 93. `STEP4_EXCL` was
+checked the same way and has no dead entries.
+
+## 2026-08-21 — the stray `main` commits RESOLVED
+
+`main` is back at `06984bb`. The two auto-checkpoints (`ccd8ba8`, `6f2797f`) that landed on it
+after an unintended `checkout Complexity -> main` captured in-progress `build_t2_master.py`
+edits against main's older lineage — a spike guard with no commodity betas, a hybrid that
+existed nowhere else. Both were **local only**; `origin/main` (`cccd553`) was never touched and
+no force-push was involved. They are preserved at tag `discarded/main-autocheckpoints-20260821`
+(`dd766d6`) and that tag is safe to delete.

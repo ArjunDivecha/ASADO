@@ -92,10 +92,33 @@ COUNTRY_NAMES = [
 FORWARD_PERIODS = [1, 5, 20, 60, 120]
 TRAILING_PERIODS = [1, 5, 20, 120]
 CHANGE_CALCS = {   # name -> (days, is_absolute)
-    "Gold": (120, False), "Copper": (120, False), "Oil": (120, False),
-    "Agriculture": (120, False), "Currency": (120, False),
+    # Gold/Copper/Oil/Agriculture are NOT here any more -- they are written as
+    # betas (see commodity_betas_daily). Leaving them would also collide on the
+    # "Gold 120" etc. sheet names, and the final cleaned-sheets loop swallows
+    # collisions in a try/except, so it would fail SILENTLY rather than loudly.
+    "Currency": (120, False),
     "10Yr Bond": (120, True), "Best EPS": (252, False), "Trailing EPS": (252, False),
 }
+
+# ── Commodity betas (daily lane) ─────────────────────────────────────────────
+# The daily workbook broadcasts ONE commodity price across all 34 country
+# columns, so cross-sectional dispersion is exactly zero and Gold_CS /
+# Copper_CS / Oil_CS / Agriculture_CS are 0/0 -- the same degeneracy fixed on
+# the monthly side in build_t2_master.py v1.2.
+#
+# The beta is deliberately NOT estimated from daily returns. Two reasons:
+#   * this workbook is a CALENDAR-day grid (9,730 rows over 26.6 years =
+#     ~366/yr), so a "2520-row" window would be ~6.9 years, not 10;
+#   * daily betas of Asian markets against commodity closes are mechanically
+#     attenuated by non-synchronous trading.
+# Instead the series are resampled to month-end and run through the IDENTICAL
+# rolling(120, min_periods=36) monthly beta the monthly builder uses, then
+# forward-filled onto the daily grid. One definition of "commodity beta"
+# across both cadences.
+COMMODITY_SHEETS = ("Gold", "Copper", "Oil", "Agriculture")
+BETA_WINDOW_M = 120        # months, matches build_t2_master.BETA_WINDOW
+BETA_MIN_PERIODS_M = 36    # months, matches build_t2_master.BETA_MIN_PERIODS
+COMMODITY_CHANGE_DAYS = 120  # horizon of the " 120" sheets, unchanged
 
 
 # ── cleaning helpers (faithful to reference Step One) ─────────────────────────
@@ -237,6 +260,98 @@ def load_sheet(xl: pd.ExcelFile, sheet: str, clean: bool = True) -> pd.DataFrame
     return df
 
 
+def clean_excel_keep_na(df: pd.DataFrame) -> pd.DataFrame:
+    """clean_excel WITHOUT the fillna(0). For the beta sheets only.
+
+    clean_excel fills every missing numeric cell with 0. For a beta that is a
+    FABRICATED CLAIM -- "this country has no exposure to gold" -- not a gap,
+    and it would apply to the whole 36-month estimation burn-in at the head of
+    the panel. NaN is the honest value there; t2_normalize_daily handles it.
+
+    The global fillna(0) is left alone deliberately: Arjun reverted the
+    code-level fill adjustments in the daily lane on 2026-08-10 in favour of
+    handling it at the Bloomberg pull. This variant is scoped to 8 sheets.
+    """
+    df = df.replace([np.inf, -np.inf], np.nan)
+    n_na = 0
+    for col in df.columns:
+        if col != "Country" and pd.api.types.is_numeric_dtype(df[col]):
+            n_na += int(df[col].isna().sum())
+            df[col] = df[col].round(6)
+    if n_na:
+        logger.info("clean_excel_keep_na: %d cells left as NaN (beta burn-in, NOT zeroed)", n_na)
+    if len(df) > 50000:
+        df = df.iloc[-50000:].reset_index(drop=True)
+    return df
+
+
+def _month_end_last_valid(s: pd.Series) -> pd.Series:
+    """Last VALID observation of each calendar month (never a NaN month-end)."""
+    return s.resample("ME").apply(
+        lambda g: g.dropna().iloc[-1] if g.notna().any() else np.nan)
+
+
+def commodity_betas_daily(com: pd.DataFrame, tri: pd.DataFrame, label: str = "") -> pd.DataFrame:
+    """Country betas to a commodity, computed monthly, stamped onto the daily grid.
+
+    POINT-IN-TIME: the beta whose window ends at month-end M is only knowable
+    AFTER M, so it is stamped effective M + 1 day and forward-filled. A daily
+    date d therefore always carries a beta estimated from data ending strictly
+    BEFORE d. (The documented T2 ElasticNet PIT incident was exactly a one-month
+    stamp error and fabricated +5.1%/yr, so this is stamped by construction and
+    spot-checked, not assumed.)
+    """
+    num = com.iloc[:, 1:].apply(pd.to_numeric, errors="coerce")
+    spread = num.std(axis=1).max()
+    scale = float(np.nanmedian(np.abs(num.to_numpy())))
+    if pd.notna(spread) and scale > 0 and (spread / scale) > 1e-9:
+        raise ValueError(
+            f"Daily commodity sheet '{label}' is NOT broadcast across countries "
+            f"(max cross-sectional std {spread:.6g} vs level {scale:.6g}). "
+            "commodity_betas_daily assumes a single shared price series.")
+
+    daily_idx = pd.to_datetime(com["Country"])
+    com_px = pd.to_numeric(com.iloc[:, 1], errors="coerce").set_axis(daily_idx)
+    com_m = _month_end_last_valid(com_px)
+    com_m_ret = com_m.pct_change()
+
+    tri_idx = pd.to_datetime(tri["Country"])
+    betas_daily = pd.DataFrame({"Country": daily_idx.values})
+    n_fill = 0
+    monthly_betas = {}
+    for col in tri.columns[1:]:
+        c_m = _month_end_last_valid(
+            pd.to_numeric(tri[col], errors="coerce").set_axis(tri_idx))
+        c_m_ret = c_m.pct_change()
+        cov = c_m_ret.rolling(BETA_WINDOW_M, min_periods=BETA_MIN_PERIODS_M).cov(com_m_ret)
+        var = com_m_ret.rolling(BETA_WINDOW_M, min_periods=BETA_MIN_PERIODS_M).var()
+        monthly_betas[col] = cov / var
+
+    mb = pd.DataFrame(monthly_betas)
+    # Contemporaneous cross-sectional mean for late-inception countries. Same
+    # date only -- no look-ahead. Logged, not silent.
+    xs_mean = mb.mean(axis=1)
+    fillable = mb.isna() & xs_mean.notna().values[:, None]
+    n_fill = int(fillable.sum().sum())
+    if n_fill:
+        mb = mb.apply(lambda c: c.fillna(xs_mean))
+        worst = fillable.sum()
+        worst = worst[worst > 0].sort_values(ascending=False)
+        logger.info("  %s betas: filled %d monthly cells with the contemporaneous "
+                    "cross-sectional mean (late inception). Most affected: %s",
+                    label, n_fill, ", ".join(f"{k} {v}" for k, v in worst.head(5).items()))
+
+    # PIT stamp: month-end M -> effective M + 1 day, then ffill onto the grid.
+    mb.index = mb.index + pd.Timedelta(days=1)
+    aligned = mb.reindex(pd.DatetimeIndex(daily_idx), method="ffill")
+    for col in aligned.columns:
+        betas_daily[col] = aligned[col].to_numpy()
+
+    n_na = int(betas_daily.iloc[:, 1:].isna().sum().sum())
+    logger.info("  %s betas: %d daily cells NaN (pre-burn-in, kept as NaN)", label, n_na)
+    return betas_daily
+
+
 def forward_returns(tri: pd.DataFrame, days: int) -> pd.DataFrame:
     out = pd.DataFrame({"Country": tri["Country"]})
     for col in tri.columns[1:]:
@@ -300,6 +415,28 @@ def main() -> int:
         spread = tr[120].drop("Country", axis=1) - tr[5].drop("Country", axis=1)
         spread.insert(0, "Country", tr[120]["Country"])
         clean_excel(spread).to_excel(writer, sheet_name="120-5DTR", index=False)
+        # commodity betas (replace the raw 120-day price change)
+        logger.info("Commodity betas (monthly rolling %d, min_periods %d, ffilled to daily)",
+                    BETA_WINDOW_M, BETA_MIN_PERIODS_M)
+        for nm in COMMODITY_SHEETS:
+            sn = find(nm)
+            if not sn:
+                logger.warning("  commodity sheet %s missing from the daily workbook", nm)
+                continue
+            logger.info("  %s", nm)
+            com = load_sheet(xl, sn, clean=False)
+            betas = commodity_betas_daily(com, tri, label=nm)
+            clean_excel_keep_na(betas.copy()).to_excel(writer, sheet_name=nm, index=False)
+            # scaled sheet keeps the ORIGINAL 120-row horizon, so " 120" still
+            # means what it always meant -- only the country dimension is new.
+            com_chg = change_calc(com, COMMODITY_CHANGE_DAYS, False)
+            scaled = pd.DataFrame({"Country": betas["Country"]})
+            for col in betas.columns[1:]:
+                scaled[col] = betas[col].to_numpy() * pd.to_numeric(
+                    com_chg[col], errors="coerce").to_numpy()
+            clean_excel_keep_na(scaled).to_excel(
+                writer, sheet_name=f"{nm} {COMMODITY_CHANGE_DAYS}", index=False)
+
         # change variables
         for nm, (days, absolute) in CHANGE_CALCS.items():
             sn = find(nm)
@@ -328,6 +465,8 @@ def main() -> int:
             logger.warning("P2P file not found: %s — skipping P2P sheet", p2p_path)
         # original sheets (cleaned)
         for sn in sheet_names:
+            if sn.strip() in COMMODITY_SHEETS:
+                continue   # already written as betas; see CHANGE_CALCS note
             try:
                 clean_excel(load_sheet(xl, sn, clean=True)).to_excel(
                     writer, sheet_name=sn[:31], index=False)

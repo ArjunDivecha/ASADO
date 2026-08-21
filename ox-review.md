@@ -179,3 +179,40 @@ Competent, and I would trust its factual claims by default after this — with t
 it **does not size what it finds** and **did not verify that its own deletion advice was
 safe**. Use its findings; re-derive its numbers before spending money on them; do not action
 recommendation #11 as written.
+
+---
+
+## Tier 0 — IMPLEMENTED 2026-08-21 (commit `5df7214`)
+
+Both items are fixed, tested, and committed. Backups: `Data/backups/tier0_20260821_005837/`.
+
+**1. `run_history.json` collision — was a THREE-way collision, not two.** Ox found
+`collect_external.py:179` and `collect_optimizer_returns.py:103`; `collect_gdelt_deep.py:101`
+is a third writer to the same path, unreported. All three used incompatible schemas and
+destroyed each other every run. The correct convention already existed in-repo
+(`bloomberg_run_history.json` 9.7 KB, `extended_run_history.json` 47.3 KB,
+`imf_run_history.json` 4.8 KB — all healthy, versus the collision victim at 1.1 KB with one
+entry). The three colliders now follow it. The surviving entry was migrated; the ambiguous
+file was **renamed** to `run_history.json.retired-20260821`, not deleted.
+
+**2. `db_bridge.py` lock squatter + Neo4j hard-coupling.** Every query now opens and closes
+its own `guarded_connect()`. Verified by `lsof`: **0 open handles** on `asado.duckdb` after
+construction, during queries, after queries, and with five live `AsadoDB` objects. The Neo4j
+driver is now lazy, so constructing `AsadoDB` against a dead Neo4j succeeds and serves DuckDB
+queries — previously impossible, and the reason MCP/Streamlit/cockpit died whenever Neo4j was
+down.
+
+Verification: full suite **320 passed / 8 skipped / 0 failed**; `db_bridge` self-test passes;
+Neo4j regression 810 nodes / 21,473 edges; no consumer touches the changed internals.
+
+### One finding the fix work surfaced, not in Ox's report
+
+`db_bridge`'s own self-test prints **"Factor values at 2100-12-01"** for Turkey. `country_profile()`
+defaults to `MAX(date)`, which the `DIP_*` projections push to 2100 — so a user-facing profile
+call silently returns demographic projections instead of current data. Ox framed the projection
+pollution as making `max(date)` "meaningless" for freshness monitoring; it is worse than that,
+it is actively serving wrong answers through a public API. This strengthens the case for
+Tier 1 item 4 (`is_forecast` separation).
+
+The same self-test also shows every country mapping to "Iran Sanctions" — Ox's `collect(s)[0]`
+`SUBJECT_TO` finding, visible in normal output.

@@ -13,6 +13,7 @@ OUTPUT FILES:
 - DuckDB table: normalized_panel
 - DuckDB view:  feature_panel
 - DuckDB view:  feature_panel_t2  (feature_panel restricted to the 34 T2 names)
+- DuckDB view:  feature_panel_observed  (feature_panel_t2 minus forecasts/projections)
 
 VERSION: 1.1
 LAST UPDATED: 2026-07-01
@@ -66,6 +67,14 @@ DB_PATH = BASE_DIR / "Data" / "asado.duckdb"
 NORMALIZED_TABLE = "normalized_panel"
 FEATURE_VIEW = "feature_panel"
 FEATURE_VIEW_T2 = "feature_panel_t2"
+FEATURE_VIEW_OBSERVED = "feature_panel_observed"
+
+# Variable families that are FORECASTS/PROJECTIONS, not observations.
+# - IMF_WEO_*: forward values to 2031 with no vintage tracking. Already subject
+#   to "total exclusion" per the T2 ElasticNet PIT Audit (Investment Learnings).
+# - DIP_*: demographic projections running to 2100-12-01 -- these are what make
+#   MAX(date) on the panels meaningless as a freshness signal.
+FORECAST_VARIABLE_PREFIXES = ("IMF_WEO_", "DIP_")
 
 
 def load_t2_names() -> List[str]:
@@ -333,6 +342,8 @@ def build_normalized_features(con: duckdb.DuckDBPyConnection) -> pd.DataFrame:
 
 
 def write_outputs(con: duckdb.DuckDBPyConnection, normalized: pd.DataFrame) -> None:
+    # Drop dependents first: feature_panel_observed -> feature_panel_t2 -> feature_panel
+    con.execute(f"DROP VIEW IF EXISTS {FEATURE_VIEW_OBSERVED}")
     con.execute(f"DROP VIEW IF EXISTS {FEATURE_VIEW_T2}")
     con.execute(f"DROP VIEW IF EXISTS {FEATURE_VIEW}")
     con.execute(f"DROP TABLE IF EXISTS {NORMALIZED_TABLE}")
@@ -396,6 +407,36 @@ def write_outputs(con: duckdb.DuckDBPyConnection, normalized: pd.DataFrame) -> N
         SELECT date, country, value, variable, source
         FROM {FEATURE_VIEW}
         WHERE country IN ({t2_quoted})
+        """
+    )
+
+    # 2026-08-21: the OBSERVATIONS-ONLY surface. Same motivation as
+    # feature_panel_t2 above -- stop every consumer re-filtering by hand -- but for
+    # forecasts rather than countries.
+    #
+    # Why this is needed: feature_panel carries 14,872 future-dated rows, so
+    # MAX(date) on it returns 2100-12-01 and is unusable as a freshness signal.
+    # Worse, it silently produced wrong answers through a public API:
+    # AsadoDB.country_profile() defaults to MAX(date), so asking for a country's
+    # current factor values returned DIP_* demographic projections dated
+    # 2100-12-01 instead of today's data.
+    #
+    # Two filters, both needed:
+    #   - forecast VARIABLE families (IMF_WEO_*, DIP_*) are projections at EVERY
+    #     date, including historical ones, so a date filter alone misses them;
+    #   - date <= CURRENT_DATE catches pre-created next-period placeholder rows
+    #     (e.g. gdelt's 2026-09-01) and is evaluated per query, so the view stays
+    #     correct without rebuilds.
+    forecast_pred = " AND ".join(
+        f"variable NOT LIKE '{pfx}%'" for pfx in FORECAST_VARIABLE_PREFIXES
+    )
+    con.execute(
+        f"""
+        CREATE VIEW {FEATURE_VIEW_OBSERVED} AS
+        SELECT date, country, value, variable, source
+        FROM {FEATURE_VIEW_T2}
+        WHERE date <= CURRENT_DATE
+          AND {forecast_pred}
         """
     )
 
@@ -509,6 +550,11 @@ def main() -> None:
         print(f"  normalized_panel: {norm_count:,} rows, {norm_vars} variables")
         print(f"  feature_panel:    {feature_count:,} rows, {feature_vars} variables")
         print(f"  feature_panel_t2: {t2_count:,} rows, {t2_countries} countries (T2-only default view)")
+        obs = con.execute(
+            f"SELECT COUNT(*), MAX(date) FROM {FEATURE_VIEW_OBSERVED}"
+        ).fetchone()
+        print(f"  feature_panel_observed: {obs[0]:,} rows, max_date={obs[1]} "
+              f"(T2 countries, forecasts excluded -- usable freshness signal)")
 
         sample = con.execute(
             f"""

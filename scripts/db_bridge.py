@@ -176,11 +176,20 @@ class AsadoDB:
             date_filter = f"AND date = '{date}'"
             actual_date = date
         else:
-            date_filter = f"AND date = (SELECT MAX(date) FROM {surface} WHERE country = '{country}')"
+            # FIX 2026-08-21: "latest available" must mean latest OBSERVED.
+            # The panels carry forecast rows (DIP_* demographic projections run to
+            # 2100-12-01, IMF_WEO_* to 2031), so a bare MAX(date) resolved to
+            # 2100-12-01 and this method silently returned demographic projections
+            # instead of the country's current factor values -- a public API
+            # returning wrong answers, not merely an unusable freshness signal.
+            date_filter = (
+                f"AND date = (SELECT MAX(date) FROM {surface} "
+                f"WHERE country = '{country}' AND date <= CURRENT_DATE)"
+            )
             with self._connect() as con:
                 actual_date = con.execute(f"""
                     SELECT MAX(date) FROM {surface}
-                    WHERE country = '{country}'
+                    WHERE country = '{country}' AND date <= CURRENT_DATE
                 """).fetchone()[0]
 
         with self._connect() as con:
@@ -260,7 +269,15 @@ class AsadoDB:
         if date:
             date_clause = f"= '{date}'"
         else:
-            date_clause = f"= (SELECT MAX(date) FROM {surface} WHERE variable = '{variable}')"
+            # FIX 2026-08-21: latest OBSERVED date, same reason as country_profile.
+            # Deliberately filtered by DATE ONLY, not by variable name: asking for
+            # a snapshot OF a forecast variable (e.g. IMF_WEO_GDP_Growth) is a
+            # legitimate query and must still return that variable's own latest
+            # published values rather than an empty frame.
+            date_clause = (
+                f"= (SELECT MAX(date) FROM {surface} "
+                f"WHERE variable = '{variable}' AND date <= CURRENT_DATE)"
+            )
 
         with self._connect() as con:
             return con.execute(f"""

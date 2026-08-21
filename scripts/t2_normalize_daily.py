@@ -70,10 +70,46 @@ INVERT_NORM = {
 }
 
 
-def cs_zscore(df: pd.DataFrame) -> pd.DataFrame:
+# FIX 2026-08-21: cross-sectional dispersion at or below this is treated as NO
+# dispersion. Not an arbitrary tolerance -- a globally broadcast series has 34
+# byte-identical values, so `value - mean` is float rounding residue (~1e-16)
+# rather than exactly 0, and `std` is ~0. Dividing gave +/-inf with essentially
+# random sign (the observed ~50/50 split).
+CS_DISPERSION_EPS = 1e-12
+
+
+def cs_zscore(df: pd.DataFrame, label: str = "") -> pd.DataFrame:
+    """Per-date cross-sectional z-score across countries.
+
+    Rows with no cross-sectional dispersion yield NaN (undefined), never +/-inf.
+
+    Why this guard exists: `ts_zscore` below has always guarded `std == 0`; this
+    function did not. Commodity sheets (Copper, Agriculture, Oil, Gold) are ONE
+    global price replicated across all 34 countries, so their cross-sectional std
+    is zero on EVERY date -- which is why the infinities were concentrated there
+    (Copper_CS 148,546 rows, Agriculture_CS 144,364 as of 2026-08-21; 1,126,590
+    infinities across t2_factors_daily in total, 3.14% of the table).
+
+    NaN rather than 0.0 is deliberate: +/-inf poisons min/max/mean wherever these
+    values are aggregated, which was the actual harm. NaN is skipped by pandas /
+    SQL aggregates, whereas 0.0 would silently bias means toward zero and let a
+    variable with no cross-sectional information masquerade as a real neutral
+    score in factor screens.
+    """
     means = df.mean(axis=1)
     stds = df.std(axis=1)   # ddof=1
-    return df.sub(means, axis=0).div(stds, axis=0)
+    z = df.sub(means, axis=0).div(stds, axis=0)
+
+    degenerate = ~np.isfinite(stds) | (stds.abs() <= CS_DISPERSION_EPS)
+    n_bad = int(degenerate.sum())
+    if n_bad:
+        z.loc[degenerate, :] = np.nan
+        logger.info(
+            "  %s: %d of %d dates had zero cross-sectional dispersion -> _CS set NaN "
+            "(globally-broadcast series carry no cross-sectional signal)",
+            label or "cs_zscore", n_bad, len(stds),
+        )
+    return z
 
 
 def ts_zscore(df: pd.DataFrame) -> pd.DataFrame:
@@ -128,7 +164,7 @@ def main() -> int:
         if sheet in COPY_DIRECT:
             parts.append(tidy(df, sheet))
             continue
-        cs = cs_zscore(df)
+        cs = cs_zscore(df, label=sheet)
         ts = ts_zscore(df)
         if sheet in INVERT_NORM:
             cs = -cs

@@ -147,6 +147,20 @@ def normalize_data(master_path: Path, out_dir: Path, write_xlsx: bool = True,
                 cs_means = cs_df.mean(axis=1)
                 cs_stds = cs_df.std(axis=1)
                 cs_norm = (cs_df.subtract(cs_means, axis=0)).divide(cs_stds, axis=0)
+                # FIX 2026-08-21: guard zero cross-sectional dispersion, mirroring
+                # the `ts_std == 0` guard the _TS branch below has always had.
+                # Globally-broadcast sheets (commodities) are one value replicated
+                # across all 34 countries, so cs_stds is ~0 on every date and the
+                # division produced +/-inf (17,782 rows in t2_master as of
+                # 2026-08-21). NaN is correct: the z-score is undefined, and unlike
+                # +/-inf it does not poison downstream min/max/mean.
+                _cs_degenerate = ~np.isfinite(cs_stds) | (cs_stds.abs() <= 1e-12)
+                if _cs_degenerate.any():
+                    cs_norm.loc[_cs_degenerate, :] = np.nan
+                    logger.info(
+                        "  %s: %d of %d dates had zero cross-sectional dispersion "
+                        "-> _CS set NaN", sheet_name, int(_cs_degenerate.sum()), len(cs_stds)
+                    )
                 if sheet_name in invert_norm:
                     cs_norm = -1 * cs_norm
                 variants["CS"] = cs_norm

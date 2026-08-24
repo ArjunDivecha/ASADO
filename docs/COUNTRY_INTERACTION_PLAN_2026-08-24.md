@@ -1,6 +1,8 @@
 # Country Interactions — plan of record (2026-08-24)
 
-**Status: PROPOSED — nothing here is implemented; discussion first.**
+**Status: APPROVED 2026-08-24 (Arjun: "do all of it"), with three carve-outs that stay
+his decisions: GSDB license, GDELT bilateral aggregation change, swap-line curation.
+Implementation spec: `docs/country_interaction_program/00-INDEX.md` (WP-01..WP-12).**
 Consolidates and supersedes as *plans*: `ox-graph-research.md` (14 ideas),
 `ox-graph-deep-dive.md` (ideas #15–35 + the six-roles map, which this plan adopts as its
 spine), and the Neo4j findings from the 2026-08-24 session. Those documents remain the

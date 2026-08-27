@@ -10,9 +10,15 @@
 #     (A8, future: reads `scorecard_dimensions` below — NOT a separate hand list —
 #      so the run-manifest expectations and the scorecard dimensions cannot drift)
 #
-# VERSION: 1.3
-# LAST UPDATED: 2026-07-01
+# VERSION: 1.4
+# LAST UPDATED: 2026-08-24
 # AUTHOR: Arjun Divecha (built by agent session, Governance Layer PRD v1.2, item A1)
+#   v1.4: WP-02 — REMOVED build_graph_features. That step built the v1
+#         graph_features_daily surface, whose pre-2026-06 history applies a
+#         2026 Neo4j snapshot backward (look-ahead L-05). The nightly now
+#         builds only graph_features_pit_daily. The v1 table and its builder
+#         are kept OUT of the nightly but retained for the frozen
+#         ref16_frozen INV4 reference roster.
 #   v1.1: added check_loop_schema (data-structures audit R5 — consumer-column
 #         drift guard over config/loop_schema_contract.yaml)
 #   v1.3: Triptych Prediction Prior Layer — build_triptych_scan (required;
@@ -115,12 +121,6 @@ steps:
     optional: true          # 7-day freshness gate: parquet not rewritten nightly
     expected_outputs:
       - {kind: loop_db_table, table: tot_trade_shares}
-
-  - name: build_graph_features
-    governance: false
-    optional: false
-    expected_outputs:
-      - {kind: file, path_template: "Data/loop/graph_features_daily.parquet", staleness: mtime}
 
   - name: build_forward_calendar
     governance: false

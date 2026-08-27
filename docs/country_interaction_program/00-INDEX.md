@@ -15,7 +15,7 @@ Update the status table here (this file) in the same commit as the WP.
 | WP | title | phase | model | depends on | status |
 |---|---|---|---|---|---|
 | 01 | D2 detector fix batch | 0 | SONNET | — | **DONE 2026-08-24** (gate v2 attribution PASS after Arjun's fix-forward; v1 gate retired as miscalibrated) |
-| 02 | v1 feature retirement + gate-roster v2 | 0 | SONNET (STOP branch → OPUS) | 01 | TODO |
+| 02 | v1 feature retirement + gate-roster v2 | 0 | SONNET (STOP branch → OPUS) | 01 | **DONE 2026-08-24** — re-arm SURVIVES the PIT surface (v2 = re-armed, consec 2); 14/318 historical gate-months differ |
 | 03 | Neo4j hygiene (forecast dates, SUBJECT_TO) | 0 | SONNET | — | TODO |
 | 04 | PIT interval edges (`applies_to`) + Neo4j load | 1 | SONNET | 03 | TODO |
 | 05 | Ego-network evidence packs | 1 | SONNET | — | TODO |

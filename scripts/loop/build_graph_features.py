@@ -70,6 +70,14 @@ USAGE:
  python scripts/loop/build_graph_features.py          # full rebuild (~1 min)
  python scripts/loop/build_graph_features.py --check  # verify existing table
 =============================================================================
+
+
+RETIRED from the nightly 2026-08-24 (WP-02): this builds the v1
+graph_features_daily surface, whose pre-2026-06 history applies a 2026
+Neo4j snapshot backward (look-ahead L-05). The nightly now builds only
+graph_features_pit_daily (build_graph_features_pit.py). Kept, and the v1
+TABLE kept in the DB, solely for the frozen ref16_frozen INV4
+known-answer reference roster. Do not re-wire into the nightly.
 """
 
 from __future__ import annotations

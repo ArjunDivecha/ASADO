@@ -216,7 +216,6 @@ STEPS = [
     ("build_cockpit_data", [PY, "cos_mockups/build_cockpit_data.py"]),
     ("make_live_cockpit", [PY, "cos_mockups/make_live_cockpit.py"]),
     ("build_tot_shares", [PY, "scripts/loop/build_tot_shares.py"]),
-    ("build_graph_features", [PY, "scripts/loop/build_graph_features.py"]),
     ("build_forward_calendar", [PY, "scripts/loop/build_forward_calendar.py"]),
     # Bloomberg flows (KR/TW/TH/PH/ID) must run BEFORE the NSDL step: it only
     # writes the parquet (no duckdb in the OpusBloomberg env); the NSDL step

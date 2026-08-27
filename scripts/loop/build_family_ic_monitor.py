@@ -52,11 +52,11 @@ on a deliberate re-issue -- never on every live re-verdict. Two roles:
     (`ref16_frozen`, network_spillover only), used ONLY for the INV4
     known-answer backfill comparison.
 Rosters are read from the committed data file
-`scripts/loop/family_ic_roster_v1.json`.
+`scripts/loop/family_ic_roster_v2.json`.
 
 INPUT FILES (all absolute paths)
 --------------------------------
-- /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/loop/family_ic_roster_v1.json
+- /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/loop/family_ic_roster_v2.json
     Frozen family rosters (members, tables, sources, directions, universes).
 - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/asado_loop.duckdb
     The DURABLE loop DB. READ: member signal tables (graph_features_daily,
@@ -138,7 +138,7 @@ _log = logging.getLogger("family_ic_monitor")
 # ─────────────────────────────────────────────────────────────────────────────
 # Paths & constants
 # ─────────────────────────────────────────────────────────────────────────────
-ROSTER_PATH = Path(__file__).resolve().parent / "family_ic_roster_v1.json"
+ROSTER_PATH = Path(__file__).resolve().parent / "family_ic_roster_v2.json"
 WORK_LOOP_DIR = BASE_DIR / "Data" / "work" / "loop"
 STATUS_PATH = WORK_LOOP_DIR / "family_ic_status.json"
 

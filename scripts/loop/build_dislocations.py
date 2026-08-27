@@ -330,17 +330,33 @@ def d1_tot_impulse(con, ret21: pd.DataFrame, run_date: pd.Timestamp) -> list[dic
     return rows
 
 
-def d2_graph_propagation(con, ret21: pd.DataFrame) -> list[dict]:
+def d2_graph_propagation(con, ret21: pd.DataFrame, run_date: pd.Timestamp) -> list[dict]:
+    """A2. WP-01 (2026-08-24, Arjun-approved fix-forward): repointed from
+    graph_features_daily (v1, the quarantined look-ahead surface -- its
+    pre-2026-06 history applies a 2026 Neo4j snapshot backward) to
+    graph_features_pit_daily. Added a freshness guard (a stale/empty PIT
+    feed must produce a loud DETECTOR_DEGRADED row, never a silently-
+    narrower scan -- the D5 sin) and the own-price gate on branch 1 that
+    branch 2 always had (own_z was computed and never checked; the ungated
+    branch was the documented "global wobble lights up 34 countries"
+    defect). Measured effect of the gate: D2 goes from ~5.3 fired rows/day
+    (98% of days) to ~0.8/day (39% of days), with the surviving rows a
+    near-strict subset of the old -- deliberate, see the WP-01 shadow run.
+    """
     rows = []
-    gap = pivot_var(con, "graph_features_daily", "GRAPH_TRADE_NBR_RET_GAP_21D", qualified=False)
-    twohop = pivot_var(con, "graph_features_daily", "GRAPH_TWOHOP_TRADE_GAP_21D", qualified=False)
+    gap = pivot_var(con, "graph_features_pit_daily", "GRAPHP_TRADE_NBR_RET_GAP_21D", qualified=False)
+    twohop = pivot_var(con, "graph_features_pit_daily", "GRAPHP_TWOHOP_TRADE_GAP_21D", qualified=False)
+
+    latest_dates = [idx.max() for idx in (gap.index, twohop.index) if len(idx)]
+    if not latest_dates or (run_date - max(latest_dates)).days > 5:
+        stale = {"graph_features_pit_daily": str(max(latest_dates).date()) if latest_dates else "NO DATA"}
+        return [degraded_row("D2", "A2", "graph_features_pit_daily", stale,
+                             "graph PIT feed is stale (>5 calendar days behind run date) or empty - skipping D2 scan")]
 
     for c in gap.columns:
         z = zscore_last(gap[c])
-        if np.isnan(z) or abs(z) < 1.5:
-            pass
-        else:
-            own_z = zscore_last(ret21[c]) if c in ret21 else np.nan
+        own_z = zscore_last(ret21[c]) if c in ret21 else np.nan
+        if not np.isnan(z) and abs(z) >= 1.5 and not np.isnan(own_z) and abs(own_z) < 0.5:
             rows.append({
                 "detector": "D2", "archetype": "A2", "entity": c,
                 "direction": "long" if z > 0 else "short",
@@ -354,7 +370,6 @@ def d2_graph_propagation(con, ret21: pd.DataFrame) -> list[dict]:
             })
         if c in twohop.columns:
             z2 = zscore_last(twohop[c])
-            own_z = zscore_last(ret21[c]) if c in ret21 else np.nan
             if not np.isnan(z2) and abs(z2) >= 1.5 and not np.isnan(own_z) and abs(own_z) < 0.5:
                 rows.append({
                     "detector": "D2", "archetype": "A2", "entity": c,
@@ -908,7 +923,7 @@ def run(as_of: Optional[str] = None) -> int:
         detected: list[dict] = []
         for name, fn in [
             ("D1", lambda: d1_tot_impulse(con, ret21, run_date)),
-            ("D2", lambda: d2_graph_propagation(con, ret21)),
+            ("D2", lambda: d2_graph_propagation(con, ret21, run_date)),
             ("D3", lambda: d3_revision_momentum(con, ret_piv, run_date)),
             ("D4", lambda: d4_cross_asset(con, ret5, run_date)),
             ("D5", lambda: d5_attention_no_resolution(con, ret5)),

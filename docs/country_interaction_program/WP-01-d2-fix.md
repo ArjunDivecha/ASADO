@@ -68,7 +68,19 @@ The nightly dislocation detector D2 (`scripts/loop/build_dislocations.py`, funct
   condition). Keep the component keys IDENTICAL (`trade_nbr_gap_21d`, `gap_z_3y`,
   `own_ret21_z`, `reading`) — the brief and cockpit parse them.
 
-## Gate (write to `Data/work/experiments/wp01_d2_shadow/`, run BEFORE committing)
+## AMENDED 2026-08-24 (Arjun: "fix this issue") — gate v2
+The original gate below ("<5% of days differ") FAILED at 98.4% (commit 3c1b359,
+STOP-AND-REPORT) and was retired as MISCALIBRATED: old D2 fires ~5.75 rows/day on 98% of
+days, so per-day set equality diverges even when the change is exactly as intended. The
+replacement gate v2 (shadow_d2.py v2.0) asks the correct question — is every differing row
+attributable to exactly the two intended mechanisms (own-price gate, PIT threshold), with
+zero unexplained rows, and is the new detector non-degenerate (fires >=20% of days, more
+selective than old, never noisier). Result: PASS — 1,132 differing rows = 1,111 own_gate
++ 21 pit_threshold + 0 UNEXPLAINED; new D2 fires 1.28 rows/day on 39% of days (was
+5.75/day on 98%). The volume drop is the fix working: the ungated branch was the
+documented "global wobble lights up 34 countries" defect (ox-graph-deep-dive I.4).
+
+## Gate v1 (RETIRED — kept for the record; write to `Data/work/experiments/wp01_d2_shadow/`)
 Write `shadow_d2.py` (with full doc header) that, over the LAST 250 trading days:
 1. Replicates old-D2 logic (v1 table, no own-price gate on branch 1) and new-D2 logic
    (PIT table, gate on) side by side, per day, using `guarded_connect` read-only.

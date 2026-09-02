@@ -188,3 +188,32 @@ The 5 UNCODED events, dropped per the rule: Japan Stewardship Code (2014-02-26),
 Turkey lira crisis (2018-08-10), Pulwama attack (2019-02-14), Hong Kong protests
 (2019-06-09), US Capitol attack (2021-01-06) — none is a government capacity
 action or an official signal.
+
+---
+
+## RESULT 2026-09-02 — NOT SUPPORTED
+
+Run against the locked coding (sha256 `d072…d12bd`, Amendment 1). Full output:
+`Data/work/experiments/prereg_capacity_signalling/RESULTS.md`.
+
+| horizon | CAPACITY mean\|CAR\| | SIGNALLING mean\|CAR\| | diff | boot p |
+|---|---|---|---|---|
+| +1d | 0.0168 | 0.0181 | −0.0013 | 0.834 |
+| +5d | 0.0271 | 0.0254 | +0.0017 | 0.839 |
+| **+21d (headline)** | **0.0419** | **0.0439** | **−0.0020** | **0.828** |
+| +63d | 0.0733 | 0.0688 | +0.0045 | 0.756 |
+
+Effective sample 24 vs 18 event dates (52 vs 31 country-event pairs) — both
+above the floor of 15, so this is a genuine NOT-SUPPORTED, not an abstention.
+
+- **P1 fails**: the +21d difference is the wrong sign at p = 0.828, against a
+  deliberately lenient p < 0.10 bar. No horizon approaches significance.
+- **P2 fails**: persistence 2.49 vs 2.43 — the two buckets decay identically.
+  The predicted signalling mean-reversion is absent.
+- **P3 not evaluable** (recorded in Amendment 1 before results): CAPACITY = 11
+  in the political-only subset, below the floor.
+- Controls unused — they exist to kill a false positive, and there is none.
+
+No further work on this mechanism is licensed in this event set. Re-slicing
+these 48 events is forbidden by §5/§6. Reopening requires a materially larger,
+country-attributed event set and a new pre-registration.

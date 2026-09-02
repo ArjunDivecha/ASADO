@@ -27,7 +27,11 @@ GDELT tone standalone would be re-proposing a ledger kill.
 features (`asado.duckdb.gdelt_factors_daily`), T2 country returns (marking surface).
 
 **Needs pulling (Bloomberg, OpusBloomberg env):** daily `PX_VOLUME` and `TURNOVER` for the
-34 ETFs (`<tkr> US Equity`) and the 34 MSCI local indices (workbook col D), 2010-01-01 → today.
+34 ETFs (`<tkr> US Equity`) and the 34 indices in workbook column D **as given**, 2010-01-01 → today.
+Column D is MSCI local-currency for 30 rows, but SPY/QQQ/IWM map to SPX/CCMP/RTY and ASHR maps
+to SHCOMP, which is the Shanghai Composite, not ASHR's actual benchmark CSI 300 — that row is
+Arjun's mapping choice to confirm. Local (col D) vs dollar (col E) is moot for PX_VOLUME: the
+constituents are identical, only the price denomination differs.
 
 **Probe result 2026-09-02 12:38 PT (Terminal live on 10.211.55.3:8194, quota guard clear):**
 
@@ -61,8 +65,13 @@ All daily, per country, log-ratio to the country's own trailing history (units c
 | `VOL_IDX_ABN5` | log(ADV_5 / ADV_252) on MSCI-index PX_VOLUME | 0 |
 | `VOL_ETF_ABN21` | log(ADV_21 / ADV_252) on ETF PX_VOLUME | 0 |
 | `VOL_GAP_ABN5` | `VOL_ETF_ABN5 − VOL_IDX_ABN5` (US-side attention net of local attention) | 0 |
-| `SENT_CHG21_VOLCONF` | Δ21d of `country_news_sentiment_TS` × max(z252(`VOL_IDX_ABN5`), 0) — a sentiment change counts only to the extent local trading volume confirms it | 0 (GDELT is same-day; declare source so it does not inherit a monthly default lag) |
-| `FLOW_X_VOL21` | `ETF_FLOW_21D_Z` × `VOL_ETF_ABN21` — issuance weighted by whether it arrived on abnormal volume | 0 |
+| `SENT_CHG21_VOLCONF` | Δ21d of `country_news_sentiment_TS` × exp(`VOL_IDX_ABN5`) = Δsent21 × (ADV_5/ADV_252) on index volume — a strictly positive, monotone volume weight, so the sentiment change is scaled by local volume confirmation but never sign-flipped and never zeroed (a max(z,0) gate would tie roughly half the panel at exactly zero every day and break the harness's bottom bucket arbitrarily) | 0 (GDELT is same-day) |
+| `FLOW_X_VOL21` | `ETF_FLOW_21D_Z` × exp(`VOL_ETF_ABN21`) = flow z × (ADV_21/ADV_252) on ETF volume — positive weight only. Multiplying by the signed log-ratio would flip the sign of every flow that arrived on below-normal volume, which is not the mechanism | 0 |
+
+Lag convention (checked in `evaluate_signal.py`): for daily runs the effective lag is
+max(publication lag, 1-day execution embargo); `bloomberg_derived` and `gdelt_derived` are not in
+`ZERO_LAG_SOURCES`, so publication lag defaults to 1 and the effective lag is 1 — identical to what a
+zero-lag source would get. The `source` string is documentation only for these trials.
 
 Corporate-action guard: inherit `load_etf_flows.py`'s 20 % one-day share-change rule (flow
 set to NULL that day). Volume has no equivalent guard; a 1-day volume spike is the signal.
@@ -72,15 +81,21 @@ set to NULL that day). Volume has no equivalent guard; a 1-day volume spike is t
 Every trial pre-registers a mechanism and a direction; the harness (v4: 1-day execution
 embargo, rank IC with NW-t, top-7 vs EW-34 and top7−bottom7 gross, permutation canary,
 deflated Sharpe charged against the family trial count) is the test. Horizons 5d primary,
-21d secondary. Coverage gate ≥ 28 countries on ≥ 95 % of dates.
+21d secondary. Coverage gate ≥ 28 countries on ≥ 95 % of dates — and an INSUFFICIENT_COVERAGE
+verdict still charges a trial to the family (the `ml_combiner_2026_06` rows in the ledger show
+this). So: start 2011-01-01, and use the same 33-name universe (no Saudi Arabia — KSA launched
+2015) that `etf_flow_contra_2026_06.yaml` uses. EDEN/INDA (2012), ASHR (2013), MCHI (2011) still
+leave the early years thin; a coverage table from the pulled data is computed and checked against
+the gate BEFORE the sweep runs, and start dates are moved later if needed, not after a charged
+INSUFFICIENT verdict.
 
 | # | Variable | Direction | Mechanism (pre-registered) | Window |
 |---|---|---|---|---|
-| 1 | `VOL_ETF_ABN5` | higher_is_better | High-volume return premium (Gervais–Kaniel–Mingelgrin): an abnormal volume shock raises visibility and attracts investors who would otherwise not hold the asset, so the country ETF outperforms peers over the following weeks. Tests whether a single-stock anomaly survives at country-basket level. | 2010→ |
-| 2 | `VOL_IDX_ABN5` | higher_is_better | Same visibility mechanism measured where the information actually clears — the local market — rather than in the US wrapper. | 2010→ (index history may allow earlier) |
-| 3 | `VOL_GAP_ABN5` | lower_is_better | ETF volume surging without matching local-market volume is US-side attention/allocator flow with no local information behind it; house prior "surges revert, information sticks" (Compendium 2026-08-14 §2.7) says fade it. | 2010→ |
+| 1 | `VOL_ETF_ABN5` | higher_is_better | High-volume return premium (Gervais–Kaniel–Mingelgrin): an abnormal volume shock raises visibility and attracts investors who would otherwise not hold the asset, so the country ETF outperforms peers over the following weeks. Tests whether a single-stock anomaly survives at country-basket level. | 2011→ |
+| 2 | `VOL_IDX_ABN5` | higher_is_better | Same visibility mechanism measured where the information actually clears — the local market — rather than in the US wrapper. | 2011→ (index history may allow earlier; kept aligned with trial 1) |
+| 3 | `VOL_GAP_ABN5` | lower_is_better | ETF volume surging without matching local-market volume is US-side attention/allocator flow with no local information behind it; house prior "surges revert, information sticks" (Compendium 2026-08-14 §2.7) says fade it. | 2011→ |
 | 4 | `SENT_CHG21_VOLCONF` | higher_is_better | GDELT tone alone is dead because most tone moves carry no priced information; a tone improvement that coincides with abnormal local trading volume is the subset the market is actually acting on, so it should predict relative return where unconfirmed tone does not. This is the "conditioning" role Agenda v2 reserves for GDELT. | 2015-02→ |
-| 5 | `FLOW_X_VOL21` | lower_is_better | Creations that arrive on abnormal ETF volume are chasing flow (retail/allocators after the move); the dead momentum test showed significant negative IC (t −2.0) and the volume condition should isolate the dumb-money component of that reversal. | 2010→ |
+| 5 | `FLOW_X_VOL21` | lower_is_better | Creations that arrive on abnormal ETF volume are chasing flow (retail/allocators after the move); the dead momentum test showed significant negative IC (t −2.0) and the volume condition should isolate the dumb-money component of that reversal. | 2011→ |
 
 Optional 6th (not recommended at first pass): "attention without volume" — z(`attention_shock`) −
 z(`VOL_IDX_ABN5`) as an underreaction proxy. Adds a trial to the deflated-Sharpe count for a

@@ -1,6 +1,8 @@
 # DRAFT — NOT YET RUN. Requires loop tables volume_daily / volume_signals, which do not
 # exist until scripts/loop/collect_volume_bbg.py + load_volume.py are written and run.
 # Design, prior art, and the decisions still open: docs/volume_2026_09/DESIGN.md
+# Transforms: SENT_CHG21_VOLCONF = dSent21 * exp(VOL_IDX_ABN5); FLOW_X_VOL21 = flow_z * exp(VOL_ETF_ABN21)
+# (positive volume weights only, no sign flips, no zero-ties). 33-name universe, no Saudi Arabia.
 # Every entry below is a charged trial against family volume_2026_09 once sweep_signals.py
 # runs without --dry-run. Directions and mechanisms are pre-registration commitments.
 sweep_name: volume_x_sentiment_x_issuance_2026_09
@@ -8,13 +10,14 @@ family_key: volume_2026_09
 archetype: A4
 frequency: daily
 author: fable-session-volume-20260902
-start_date: "2010-01-01"
+start_date: "2011-01-01"
 signals:
   - name: etf_abnormal_volume_5d
     table: volume_signals
     variable: VOL_ETF_ABN5
     direction: higher_is_better
     source: bloomberg_derived
+    universe: "Australia,Brazil,Canada,Chile,ChinaA,ChinaH,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,NASDAQ,Netherlands,Philippines,Poland,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K.,U.S.,US SmallCap,Vietnam"
     mechanism: >
       High-volume return premium at country-basket level: an abnormal volume shock in the
       US-listed country ETF raises the country's visibility and attracts investors who would
@@ -26,6 +29,7 @@ signals:
     variable: VOL_IDX_ABN5
     direction: higher_is_better
     source: bloomberg_derived
+    universe: "Australia,Brazil,Canada,Chile,ChinaA,ChinaH,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,NASDAQ,Netherlands,Philippines,Poland,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K.,U.S.,US SmallCap,Vietnam"
     mechanism: >
       The same visibility and attention mechanism measured where the information actually
       clears, in local-market constituent volume of the MSCI country index, rather than in
@@ -35,6 +39,7 @@ signals:
     variable: VOL_GAP_ABN5
     direction: lower_is_better
     source: bloomberg_derived
+    universe: "Australia,Brazil,Canada,Chile,ChinaA,ChinaH,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,NASDAQ,Netherlands,Philippines,Poland,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K.,U.S.,US SmallCap,Vietnam"
     mechanism: >
       ETF volume surging without a matching surge in local-market volume is US-side attention
       or allocator flow with no local information behind it. The house prior from the
@@ -47,6 +52,7 @@ signals:
     direction: higher_is_better
     source: gdelt_derived
     start_date: "2015-02-18"
+    universe: "Australia,Brazil,Canada,Chile,ChinaA,ChinaH,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,NASDAQ,Netherlands,Philippines,Poland,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K.,U.S.,US SmallCap,Vietnam"
     mechanism: >
       GDELT tone is dead standalone because most tone moves carry no priced information. A
       21-day improvement in country news sentiment that coincides with abnormal local trading
@@ -58,6 +64,7 @@ signals:
     variable: FLOW_X_VOL21
     direction: lower_is_better
     source: bloomberg_derived
+    universe: "Australia,Brazil,Canada,Chile,ChinaA,ChinaH,Denmark,France,Germany,Hong Kong,India,Indonesia,Italy,Japan,Korea,Malaysia,Mexico,NASDAQ,Netherlands,Philippines,Poland,Singapore,South Africa,Spain,Sweden,Switzerland,Taiwan,Thailand,Turkey,U.K.,U.S.,US SmallCap,Vietnam"
     mechanism: >
       ETF creations that arrive on abnormal wrapper volume are chasing flow from retail and
       allocators arriving after the move. The 2026-06 flow-momentum test recorded significant

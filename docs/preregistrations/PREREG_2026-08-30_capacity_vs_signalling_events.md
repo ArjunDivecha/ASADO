@@ -148,3 +148,43 @@ never been run (16 studies on disk, none of them `event_log`).
 - Runner: `scripts/loop/event_study.py --events-sql ...` (custom-events path;
   the built-in `event_log` preset has no bucket column, so the runner passes the
   coded buckets via `--events-sql` against a temp view over `coding.csv`).
+
+---
+
+## AMENDMENT 1 — CODING LOCKED 2026-09-02 (before any CAR was computed)
+
+The blind coding pass is complete and locked. It was performed by a separate
+agent session given ONLY the §3 rule and the six permitted text columns — it was
+not told the mechanism, the predictions, the direction, or that market returns
+were involved at any point.
+
+**`coding.csv` sha256 = `d07229d25c566a16d884a377e9b4726e22ba33788d474dd289fe43966cfd12bd`**
+(`Data/work/experiments/prereg_capacity_signalling/coding.csv`, gitignored data
+path; this hash is the immutable record. Any later CAR computed against a file
+whose hash differs is void.)
+
+Counts: **CAPACITY 25 · SIGNALLING 18 · UNCODED 5** (48 events).
+Integrity verified: same 48 rows, `event_id` order preserved, no other column
+edited, every row carries a coding note.
+
+Both buckets clear the §5 floor of 15 → the main test proceeds.
+
+**Two facts recorded now, before results, because they bound interpretation:**
+
+1. **P3 cannot be evaluated at full strength.** Restricting to the four political
+   categories leaves CAPACITY 11 / SIGNALLING 14. CAPACITY falls below the
+   pre-registered floor of 15, so P3 is reported as **INSUFFICIENT for its own
+   subset** and cannot clear or fail the mechanism on its own. It is descriptive
+   only. This is a consequence of the coding, not a choice made after seeing
+   returns.
+2. **SIGNALLING is substantially an elections bucket** — 11 of its 18 events are
+   `election` (61%), and `election` contributes zero CAPACITY events by
+   construction of the rule (election outcomes reveal intent; capacity arrives at
+   government formation). Any CAPACITY-vs-SIGNALLING difference is therefore
+   partly a "non-election vs election" contrast. Flagged as a confound now; it
+   is not fixable within this event set.
+
+The 5 UNCODED events, dropped per the rule: Japan Stewardship Code (2014-02-26),
+Turkey lira crisis (2018-08-10), Pulwama attack (2019-02-14), Hong Kong protests
+(2019-06-09), US Capitol attack (2021-01-06) — none is a government capacity
+action or an official signal.

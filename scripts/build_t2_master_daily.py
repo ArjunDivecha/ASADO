@@ -267,6 +267,14 @@ def clean_excel(df: pd.DataFrame) -> pd.DataFrame:
 
 def load_sheet(xl: pd.ExcelFile, sheet: str, clean: bool = True) -> pd.DataFrame:
     df = pd.read_excel(xl, sheet_name=sheet, header=None)
+    # 2026-09-02: a healthy upstream sheet carries ~9,700 rows of history. A
+    # near-empty one means the collector wrote during a Bloomberg outage —
+    # abort before the emptiness propagates into "T2 Master Daily.xlsx".
+    if len(df) < 1000:
+        raise SystemExit(
+            f"FATAL: upstream sheet {sheet!r} has only {len(df)} rows "
+            f"(expected ~9,700) — refusing to build the T2 master from a "
+            f"gutted Bloomberg workbook.")
     df = df.iloc[2:].reset_index(drop=True)
     if "Mcap Adj" in sheet or "MCAP Adj" in sheet:
         df = df.iloc[:400]

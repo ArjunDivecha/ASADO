@@ -161,6 +161,17 @@ def main() -> int:
         # but guarantees reproducible output if any sheet ever arrives unsorted.
         df = df.sort_index(kind="stable")
 
+        # 2026-09-02: an empty sheet here means the upstream master was
+        # written from a dead Bloomberg session (it happened 08-26 and 09-02:
+        # every date failed to parse because there were no dates). Refuse with
+        # a diagnosis instead of dying two functions later on an object-dtype
+        # TypeError in np.isfinite.
+        if df.empty:
+            raise SystemExit(
+                f"FATAL: sheet {sheet!r} in {master} has 0 usable rows — the "
+                f"upstream T2 master is gutted (Bloomberg outage write?). "
+                f"Restore the last good master before normalizing.")
+
         if sheet in COPY_DIRECT:
             parts.append(tidy(df, sheet))
             continue

@@ -274,6 +274,43 @@ def main() -> int:
                 v = row[col]
                 ws.cell(r, k, None if pd.isna(v) else float(v))
 
+    # ------------------------------------------------------------------
+    # WRITE GUARD (2026-09-02). Twice now (2026-08-26 and 2026-09-02) this
+    # script overwrote the master with near-empty sheets — Bloomberg answered
+    # nothing during an outage, and the workbook was written anyway with 2-row
+    # sheets, exit 0. Downstream, build_t2_master propagated the empties and
+    # t2_normalize crashed; the 09-02 copy had to be recovered from Dropbox
+    # revision history. Bloomberg data is precious and slow to re-pull:
+    #   1) refuse to save if any data sheet is suspiciously short — a real
+    #      history sheet here carries ~9,700 rows; a floor of 1,000 separates
+    #      "Bloomberg gave us nothing" from any legitimate output;
+    #   2) back up the existing master to a timestamped sibling before
+    #      overwriting, keeping the last 7, so even a failure mode this guard
+    #      doesn't anticipate is a file-copy away from recovery.
+    MIN_SHEET_ROWS = 1000
+    short = {name: wb[name].max_row - 2                 # minus header rows
+             for name in wb.sheetnames if name != "Master"
+             and wb[name].max_row - 2 < MIN_SHEET_ROWS}
+    if short:
+        print(f"\nFATAL: refusing to write {out} — {len(short)} sheet(s) are "
+              f"suspiciously short (< {MIN_SHEET_ROWS} rows): "
+              f"{dict(list(short.items())[:6])} ... Bloomberg likely returned "
+              f"nothing (Terminal logged out / outage). The existing master is "
+              f"left untouched.", flush=True)
+        return 1
+
+    if out.exists():
+        import shutil
+        from datetime import datetime as _dt
+        bdir = out.parent / "backups"
+        bdir.mkdir(exist_ok=True)
+        bak = bdir / f"{out.stem}.{_dt.now():%Y%m%d_%H%M%S}{out.suffix}"
+        shutil.copy2(out, bak)
+        olds = sorted(bdir.glob(f"{out.stem}.*{out.suffix}"))
+        for f in olds[:-7]:
+            f.unlink()
+        print(f"== backed up existing master -> {bak} ==", flush=True)
+
     wb.save(out)
     print(f"\n== wrote {out} ({len(wb.sheetnames)} sheets) ==", flush=True)
     return 0

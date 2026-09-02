@@ -1,0 +1,66 @@
+# DRAFT — NOT YET RUN. Requires loop tables volume_daily / volume_signals, which do not
+# exist until scripts/loop/collect_volume_bbg.py + load_volume.py are written and run.
+# Design, prior art, and the decisions still open: docs/volume_2026_09/DESIGN.md
+# Every entry below is a charged trial against family volume_2026_09 once sweep_signals.py
+# runs without --dry-run. Directions and mechanisms are pre-registration commitments.
+sweep_name: volume_x_sentiment_x_issuance_2026_09
+family_key: volume_2026_09
+archetype: A4
+frequency: daily
+author: fable-session-volume-20260902
+start_date: "2010-01-01"
+signals:
+  - name: etf_abnormal_volume_5d
+    table: volume_signals
+    variable: VOL_ETF_ABN5
+    direction: higher_is_better
+    source: bloomberg_derived
+    mechanism: >
+      High-volume return premium at country-basket level: an abnormal volume shock in the
+      US-listed country ETF raises the country's visibility and attracts investors who would
+      otherwise not hold it, so the ETF outperforms peers over the following weeks. Tests
+      whether the Gervais-Kaniel-Mingelgrin single-stock effect survives aggregation to a
+      34-country ETF universe, where it has never been measured in this record.
+  - name: index_abnormal_volume_5d
+    table: volume_signals
+    variable: VOL_IDX_ABN5
+    direction: higher_is_better
+    source: bloomberg_derived
+    mechanism: >
+      The same visibility and attention mechanism measured where the information actually
+      clears, in local-market constituent volume of the MSCI country index, rather than in
+      the US wrapper whose volume mixes local information with US allocator and retail flow.
+  - name: etf_minus_index_volume_gap_5d
+    table: volume_signals
+    variable: VOL_GAP_ABN5
+    direction: lower_is_better
+    source: bloomberg_derived
+    mechanism: >
+      ETF volume surging without a matching surge in local-market volume is US-side attention
+      or allocator flow with no local information behind it. The house prior from the
+      prediction-market program is that surges revert while information sticks, so a wrapper-
+      only volume surge should be faded: countries with the largest ETF-over-index volume gap
+      underperform peers over the following weeks.
+  - name: sentiment_change_volume_confirmed_21d
+    table: volume_signals
+    variable: SENT_CHG21_VOLCONF
+    direction: higher_is_better
+    source: gdelt_derived
+    start_date: "2015-02-18"
+    mechanism: >
+      GDELT tone is dead standalone because most tone moves carry no priced information. A
+      21-day improvement in country news sentiment that coincides with abnormal local trading
+      volume is the subset of tone changes the market is actually acting on, so it should
+      predict relative country return where unconfirmed tone changes do not. This is the
+      conditioning role the 2026-07 research agenda reserves for GDELT.
+  - name: flow_times_abnormal_volume_21d
+    table: volume_signals
+    variable: FLOW_X_VOL21
+    direction: lower_is_better
+    source: bloomberg_derived
+    mechanism: >
+      ETF creations that arrive on abnormal wrapper volume are chasing flow from retail and
+      allocators arriving after the move. The 2026-06 flow-momentum test recorded significant
+      negative IC, and weighting the 21-day flow z-score by abnormal volume should isolate the
+      dumb-money component of that reversal, so high volume-weighted inflow precedes relative
+      underperformance.

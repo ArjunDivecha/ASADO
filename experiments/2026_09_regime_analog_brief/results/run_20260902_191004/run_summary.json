@@ -1,0 +1,26 @@
+{
+  "run_dir": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/experiments/2026_09_regime_analog_brief/results/run_20260902_191004",
+  "run_ts": "20260902_191004",
+  "data_as_of": {
+    "daily_t2": "2026-09-02",
+    "monthly_t2_panel": "2026-08-01",
+    "wb_brent": "2026-07 (stale, flagged *)",
+    "factor_returns": "2026-07-01"
+  },
+  "part1": {
+    "spearman_H1_vs_sinceJul1": -0.4035923753665689,
+    "avg_pair_corr_H1": 0.3996324170643796,
+    "avg_pair_corr_since_Jul1": 0.18902027510479266,
+    "US10Y_chg_bp_since_Jul1": 30.69999999999995
+  },
+  "part2_verdict": "NULL - pre-registered state-vector analogs indistinguishable from unconditional",
+  "part4_F2_verdict": "DEAD under episode clustering (p 0.27-0.98)",
+  "part5_F1": {
+    "6m_revival_rankcorr": 0.2656,
+    "12m_revival_rankcorr": 0.2107,
+    "econ_spread_6m": 0.0585,
+    "n_episodes": 21,
+    "hit_rate": 0.762,
+    "status": "POST-HOC, survives jackknife/placebo/ex-crisis; 12m fails post-2013"
+  }
+}

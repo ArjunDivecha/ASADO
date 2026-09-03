@@ -63,3 +63,9 @@ journal/**/*.md
 
 # Boundaries-of-TSM experiment outputs (data artifacts, not code)
 experiments/2026_08_boundaries_tsm/results/
+
+# 2026_09 regime-analog brief: data outputs stay out of git (code + markdown only)
+experiments/2026_09_regime_analog_brief/results/**/*.parquet
+experiments/2026_09_regime_analog_brief/results/*.parquet
+experiments/2026_09_regime_analog_brief/results/**/*.xlsx
+experiments/2026_09_regime_analog_brief/results/**/*.pdf

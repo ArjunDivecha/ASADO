@@ -174,6 +174,11 @@ the kind of result that would have looked publishable if I had stopped one step 
 7. This is index-space at monthly frequency, so the expression law (index-space alpha ≈ 0 in the
    US-listed ETF at the US close) applies to any implementation thought.
 
+8. **"Old leadership revives" and "new leadership fades" are close to mirror images.** RC ≤ −0.40
+   means the last-2-month ranking is roughly the inverse of the prior-6-month ranking, so the two
+   rows of the table above are largely one effect presented twice, not two independent
+   confirmations. The load-bearing number is the +5.9% old-minus-new spread, which measures it once.
+
 ---
 
 ## So: does history give a guide?

@@ -1,0 +1,26 @@
+{
+  "phase": "P04",
+  "panel_start": "2012-01-20",
+  "n_scored_origins": 3403,
+  "n_candidate_rows": 148830,
+  "n_eligible_rows": 72872,
+  "n_outer_fits": 25,
+  "first_fit": "2020-07-01",
+  "last_fit": "2026-07-01",
+  "first_inner_trainable_origins": 1331,
+  "hashes": {
+    "candidate_row_keys": "4033259032031c2dc1528e1c2e0ad07a435f8f0f7e1bb14a53366710706f4dd2",
+    "eligible_row_keys": "3f42abe29970d92e1b909ea0ee1603f876fe9ab387f54ff5ef52be3d41be1b36",
+    "splits": "8a283ada92f74f1b738b958505788095723644751ae9c68c6d6c9adbba914050",
+    "features_X": "1afc2ca3fbff20da7feea92147eb91d36838345cd18d8f9594999da45cbbc2e5",
+    "features_S": "6273f561995b90d4910bd893d8eba1389c5127abc10a7082a8aac404b00cea26",
+    "labels_h20_keys": "4033259032031c2dc1528e1c2e0ad07a435f8f0f7e1bb14a53366710706f4dd2"
+  },
+  "checks": {
+    "no_outcome_filtered_eligibility": true,
+    "min_1260_first_inner": true,
+    "july_fits_have_blocks": true,
+    "all_blocks_supported": true
+  },
+  "status": "PASS"
+}

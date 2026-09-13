@@ -38,6 +38,14 @@ GRAPH_MIN_MASS = 0.80
 
 Z_WINDOW, Z_MIN = 252, 126
 
+SESSION_PRIMS = ["P01", "P02", "P03", "P04", "P13", "P14", "P15", "P16"]
+SOURCE_PRIMS = ["P09", "P10", "P12"]            # market-level source-day series
+GLOBAL_PRIMS = ["P21", "P22", "P23", "P24"]
+GRAPH_PRIMS = ["P05", "P06"]
+CONS_PRIMS = ["P17", "P18", "P19", "P20"]
+ALL_PRIMS = (SESSION_PRIMS + GRAPH_PRIMS + SOURCE_PRIMS +
+             CONS_PRIMS + GLOBAL_PRIMS)
+
 
 def zscore_trailing(s: pd.Series, window: int = Z_WINDOW,
                     min_obs: int = Z_MIN) -> pd.Series:

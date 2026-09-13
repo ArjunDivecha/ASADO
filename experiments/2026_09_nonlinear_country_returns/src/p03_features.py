@@ -22,23 +22,16 @@ import numpy as np
 import pandas as pd
 
 from calendars import candidate_origins
-from features import (MARKETS, FRESH_DAYS, asof_values, build_S,
-                      consensus_at_origins, global_source_panel,
-                      graph_impulse, market_source_panel,
-                      neighbor_return_matrix, session_primitives,
-                      zscore_trailing)
+from features import (ALL_PRIMS, CONS_PRIMS, GLOBAL_PRIMS, GRAPH_PRIMS,
+                      MARKETS, SESSION_PRIMS, SOURCE_PRIMS, FRESH_DAYS,
+                      asof_values, build_S, consensus_at_origins,
+                      global_source_panel, graph_impulse,
+                      market_source_panel, neighbor_return_matrix,
+                      session_primitives, zscore_trailing)
 
 EXP = Path(__file__).resolve().parents[1]
 SNAP = Path(json.load(open(EXP / "audit/snapshot_manifest.json"))["snapshot_dir"])
 AUDIT = EXP / "audit"
-
-SESSION_PRIMS = ["P01", "P02", "P03", "P04", "P13", "P14", "P15", "P16"]
-SOURCE_PRIMS = ["P09", "P10", "P12"]            # market-level source-day series
-GLOBAL_PRIMS = ["P21", "P22", "P23", "P24"]
-GRAPH_PRIMS = ["P05", "P06"]
-CONS_PRIMS = ["P17", "P18", "P19", "P20"]
-ALL_PRIMS = (SESSION_PRIMS + GRAPH_PRIMS + SOURCE_PRIMS +
-             CONS_PRIMS + GLOBAL_PRIMS)
 
 
 def sha256(p: Path) -> str:

@@ -1,0 +1,32 @@
+{
+  "artifact": "calendar_store.parquet",
+  "sha256": "2febc404483181f34d2287108b0a287563341d658b80767a141f5aa8d37ca61b",
+  "rows": 149976,
+  "markets": [
+    "Australia",
+    "Brazil",
+    "Canada",
+    "ChinaA",
+    "France",
+    "Germany",
+    "India",
+    "Indonesia",
+    "Italy",
+    "Japan",
+    "Korea",
+    "Mexico",
+    "Netherlands",
+    "Poland",
+    "Singapore",
+    "South Africa",
+    "Spain",
+    "Sweden",
+    "Switzerland",
+    "Thailand",
+    "Turkey",
+    "U.K."
+  ],
+  "convention": "session = UTC date where the USD TRI mark changed vs the prior grid row (repo-audited convention; T2 grid is padded over weekends/holidays). Independently derived from marks; never from forward-return availability. daily_calendar is a presence flag and is NOT used as a session authority. Flat real sessions (0.4% of weekdays) are dropped \u2014 shifts a count, not a mark.",
+  "origin_clock": "23:59:00 UTC; all covered closes precede 23:59 UTC (see utc_close_window), so entry = first session date strictly after the origin date.",
+  "asof_watermark": "2026-09-11"
+}

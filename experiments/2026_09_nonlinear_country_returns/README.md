@@ -6,15 +6,28 @@
 ## Question
 
 Does a pre-specified, pooled nonlinear model (depth-2/≤4-leaf histogram boosting on a
-fixed 16-input economic representation) predict **20-local-session** forward country
+fixed 15-input economic representation, per amendment AM-1) predict **20-local-session** forward country
 equity returns better than independently tuned ridge baselines — using exactly the same
 point-in-time-safe observations?
 
 ## Status
 
 - [x] P00 repository & governance reconciliation — `governance/reconciliation.md` (PASS)
-- [ ] P01 data readiness & source snapshot
-- [ ] P02–P13 per `spec/implementation_backlog.json` (P12/P13 optional)
+- [x] P01 data readiness — `governance/data_readiness.md`; strict spec was
+  BLOCKED_DATA (24-primitive ceiling = 15 markets < 20 floor). Owner-approved
+  **amendment AM-1** (`governance/amendment_AM1.md`): drop P07/P08 bank-neighbor
+  primitives + P11 (3M RR doesn't exist) → 21 primitives, 15-input S,
+  22-market universe, ≥20 eligible from 2010-07.
+- [x] P02 calendars & labels — `audit/P02_gate.json` (PASS). Independent
+  session calendar from TRI mark changes (weekday sessions only; the
+  warehouse `daily_calendar` is a presence flag and was rejected as session
+  authority). 6,765 candidate origins (≥20 sessions), 148,830 h20 rows,
+  440 CENSORED_TAIL preserved. Two-stage reconciliation vs harness `20DRet`:
+  same TRI source (median diff 2.5e-7; 0.43% vintage tail, Indonesia Mar-2020),
+  clock difference is structural (20 padded-grid-rows ≈ 14 sessions vs our
+  20 sessions). Candidate origins are a *superset* — feature eligibility
+  (≥20 markets) is enforced at P04.
+- [ ] P03–P13 per `spec/implementation_backlog.json` (P12/P13 optional)
 
 ## Layout
 

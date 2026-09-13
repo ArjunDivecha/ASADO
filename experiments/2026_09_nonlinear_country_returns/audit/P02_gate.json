@@ -1,0 +1,90 @@
+{
+  "phase": "P02",
+  "status": "PASS",
+  "inputs": {
+    "snapshot": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/experiments/nonlinear_country_returns/snapshot_2026_09_13",
+    "tri_sha256": "37e14c7f960bb34c168667440bc29a92aa75ace3fba2d31d7f56b1e5420009bd",
+    "ref_20dret_sha256": "76311d7648404bfe704848f879d6bd5a5af5a0821043a92fb91cb8e81302f536"
+  },
+  "calendar": {
+    "markets": 22,
+    "sessions_total": 149976,
+    "first_session": "2000-01-04",
+    "last_session": "2026-09-11",
+    "weekend_sessions": 0
+  },
+  "origins": {
+    "candidate_dates_ge_20_markets": 6765,
+    "first": "2000-01-04",
+    "last": "2026-09-10"
+  },
+  "labels_h20": {
+    "rows": 148830,
+    "mature": 148369,
+    "censored_tail": 440,
+    "unresolved_mature": 0,
+    "no_future_session": 21
+  },
+  "reconciliation_vs_20DRet": {
+    "anchor_A_grid_reproduction": {
+      "rows": 214522,
+      "abs_diff_median": 2.519104741749434e-07,
+      "abs_diff_max": 0.35372863897190676,
+      "share_abs_diff_gt_1pct": 0.004330558171189902,
+      "worst_rows": [
+        {
+          "date": "2020-03-03",
+          "country": "Indonesia",
+          "grid_recomputed": -0.08285236102809324,
+          "ret_20d_grid": -0.436581
+        },
+        {
+          "date": "2020-03-05",
+          "country": "Indonesia",
+          "grid_recomputed": -0.09513564519933937,
+          "ret_20d_grid": -0.444798
+        },
+        {
+          "date": "2020-03-04",
+          "country": "Indonesia",
+          "grid_recomputed": -0.10625116495806153,
+          "ret_20d_grid": -0.451654
+        },
+        {
+          "date": "2020-02-28",
+          "country": "Indonesia",
+          "grid_recomputed": -0.05130531520395554,
+          "ret_20d_grid": -0.358096
+        },
+        {
+          "date": "2020-03-25",
+          "country": "Indonesia",
+          "grid_recomputed": -0.010535179835858721,
+          "ret_20d_grid": 0.295092
+        }
+      ],
+      "meaning": "median ~2.5e-7 = stored 6dp rounding => identical TRI source. The ~0.4% tail (Indonesia/Thailand/Brazil, Mar-2020) is stored factor rows vs back-revised TRI marks \u2014 a vintage effect, not a label bug. Our labels use the latest (corrected) marks, which is the right convention for realized outcomes."
+    },
+    "clock_B_session_vs_grid": {
+      "compared_rows": 148809,
+      "label_abs_diff_median": 0.021806974655079962,
+      "label_abs_diff_p95": 0.08333294578880245,
+      "label_abs_diff_max": 0.46061130193815614,
+      "entry_is_next_calendar_day_share": 0.788164694339724,
+      "meaning": "harness 20DRet = 20 padded-GRID-row shift (~14 sessions); study label = 20 local-SESSION shift (~28 calendar days). The gap is a horizon/clock difference, not a defect."
+    }
+  },
+  "checks": {
+    "T08_no_invented_weekend_sessions": true,
+    "T13_censored_rows_preserved": true,
+    "recon_anchor_source_aligned": true,
+    "T27_maturity_enforced": true,
+    "universe_is_am1": true,
+    "T09_newest_date_retained": true
+  },
+  "T09_detail": {
+    "asof": "2026-09-11",
+    "last_session": "2026-09-11",
+    "any_mark_moved_on_asof": true
+  }
+}

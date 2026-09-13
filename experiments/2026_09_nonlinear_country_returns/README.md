@@ -27,7 +27,16 @@ point-in-time-safe observations?
   clock difference is structural (20 padded-grid-rows ≈ 14 sessions vs our
   20 sessions). Candidate origins are a *superset* — feature eligibility
   (≥20 markets) is enforced at P04.
-- [ ] P03–P13 per `spec/implementation_backlog.json` (P12/P13 optional)
+- [x] P03 causal features + S — `audit/P03_gate.json` (PASS). 21 primitives
+  on five natural axes (session / FX-source-day / GLOBAL / graph-daily /
+  consensus-origin), trailing-z per §7.5 (252 obs excl. current, min 126,
+  clip ±3). Graph impulse rebuilt from `graph_edge_vintages` over ALL 31
+  trade neighbors (U.S. ~18% of outbound weight — truncating to the
+  universe was found and fixed). Consensus target F = year(origin)+1, tol
+  0.049pp; P20 uses full F-history (no-event rows are not dropped).
+  89,616 complete rows; ≥20 eligible markets on 3,403 origins from
+  2012-01-20 (P01's 2010-07 + z burn-in).
+- [ ] P04–P13 per `spec/implementation_backlog.json` (P12/P13 optional)
 
 ## Layout
 

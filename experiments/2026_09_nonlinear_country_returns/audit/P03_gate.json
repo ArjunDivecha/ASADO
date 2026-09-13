@@ -1,0 +1,24 @@
+{
+  "phase": "P03",
+  "checks": {
+    "primitives_present": true,
+    "S_dimension_15": true,
+    "X_dimension_21": true,
+    "eligibility_floor_met": true,
+    "no_forward_fields": true
+  },
+  "eligible_markets_per_origin": {
+    "n_origins_ge_20": 3403,
+    "first_ge_20": "2012-01-20",
+    "last": "2026-09-10",
+    "median": 21.0
+  },
+  "panel_rows": 148830,
+  "complete_rows": 89616,
+  "artifacts": {
+    "features_X.parquet": "1afc2ca3fbff20da7feea92147eb91d36838345cd18d8f9594999da45cbbc2e5",
+    "features_S.parquet": "6273f561995b90d4910bd893d8eba1389c5127abc10a7082a8aac404b00cea26",
+    "feature_lineage.parquet": "d621e173b684328e59154fb83a2f9f26865f394d6486bf4d8c3a211354acfbe5"
+  },
+  "status": "PASS"
+}

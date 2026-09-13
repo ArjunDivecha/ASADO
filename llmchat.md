@@ -1328,3 +1328,93 @@ SESSION START: 2026-08-13 13:20 PDT | Agent: Antigravity (Gemini 3.7 Flash)
    - Updated `README.md`, `CLAUDE.md`, `AGENTS.md`, `openwiki/loop-and-research.md`, and created report `docs/ECONOMIC_SURPRISE_INGESTION_REPORT_2026_08_13.md`.
 
 SESSION END: 2026-08-13 13:25 PDT | Agent: Antigravity (Gemini 3.7 Flash)
+
+---
+SESSION START: 2026-09-13 08:55 PDT | Agent: Claude Code (Opus 5)
+---
+
+### Session Summary
+Audited both DuckDB databases against the docs, found README materially out of
+date and the entire 68-object loop DB undocumented anywhere, and reconciled
+README + a new point-in-time inventory doc to the live databases. Also surfaced
+two repo-level findings: the GitHub remote is PUBLIC, and the Neo4j password is
+hardcoded in 14 tracked files.
+
+### Decisions Made
+- Added `docs/DB_INVENTORY_2026_09_13.md` rather than extending
+  `build_factor_reference.py` to read the loop DB. The generator change is the
+  durable fix but is a code change to a pipeline script; it was not requested.
+  The snapshot doc is dated and says so.
+- Did NOT regenerate `docs/factor_reference.md`. Its schema cache
+  (`Data/cache/query_assistant/`) is frozen at 2026-08-09, so regenerating means
+  re-running `build_schema_registry.py` against the live DB — a pipeline action,
+  not a doc edit.
+- Documented the loop DB by subsystem grouping, not as 68 flat rows. Flat listing
+  is the generated doc's job.
+
+### Architecture / Design
+VERIFIED COUNTS (read live 2026-09-13; warehouse + loop reflect the 2026-09-11/12
+nightly, predmkt reaches 2026-09-13):
+- `Data/asado.duckdb`: **44 objects** (36 tables + 8 views), 79,530,271 rows.
+- `Data/loop/asado_loop.duckdb`: **68 objects** (66 tables + 2 views), 13,631,123 rows.
+- Neo4j: **810 nodes, 21,486 relationships**. Node labels: Factor 673, Country 43,
+  DataSource 38, CentralBank 31, CrisisEvent 15, SanctionsProgram 6, Commodity 4.
+  Relationship types now include `LEADS` (223) and `SIMILAR_TO` (170) written back
+  by `write_graph_discoveries.py`.
+
+WHAT README HAD WRONG (all corrected this session):
+- "37 objects (33 tables + 4 views)" -> 44 (36 + 8).
+- `unified_panel` "~12.1M rows" -> 2,586,851. The 12.1M figure was off by ~4.7x.
+- `gdelt_factors_daily` "~10.2M rows / 75 vars" -> 5,203,054 / 37. This is the
+  2026-07 GDELT theme retirement showing up; the doc never caught up.
+- `normalized_panel` ~0.8M/~294 -> 964,935/299; `feature_panel` ~3.3M/~720 ->
+  3,551,786/730; `factor_returns_daily` ~180 factors -> 142.
+- Neo4j "~1,174 nodes / ~30K edges" -> 810 / 21,486.
+- Nightly loop job "33 steps" -> **51** steps in `loop_daily_job.py:192`.
+- 12 warehouse objects and 28 loop objects were named nowhere in README.
+  `docs/factor_reference.md` names **zero** of the 68 loop objects.
+
+### Constraints & Gotchas
+- `docs/factor_reference.md` covers only the main warehouse. Anyone asking "what
+  is in the ASADO database" from that doc alone sees none of the loop DB, which
+  is where every nightly-collected market series and the whole research record lives.
+- **The GitHub remote `ArjunDivecha/ASADO` is PUBLIC** (verified via `gh`, created
+  2026-04-12, no license). Local `main` is 238 commits ahead of `origin/main` and
+  8 behind (8 automated OpenWiki commits exist only on the remote), so the branches
+  have diverged and a plain push will be rejected. Remote content is frozen at
+  2026-08-13.
+- **`NEO4J_PASS = "mythos2026"` is hardcoded** in `scripts/db_bridge.py:62` and
+  appears in 14 tracked files, 14 of which are already on the public remote. It
+  landed in the initial commit `cd19c01` (2026-04-12), so it is in history from
+  day one. Localhost-only service, so bounded exposure, but it is public.
+- Daily-data findings from the 2026-09-05 session that were never recorded:
+  Bloomberg ECFC consensus (`CONS_GDP_PCT`/`CONS_CPI_PCT`) revises ~25 and ~23
+  times/yr per country with correlation to same-day local equity return of +0.013
+  and -0.013 — genuinely new macro information, orthogonal to price. By contrast
+  the T2 daily commodity LEVELS (`Oil`, `Gold`, `Copper`, `Agriculture`) step only
+  ~12x/yr: they are monthly content on a daily grid, not daily commodity prices.
+  `GDP` changes once a year, `Current Account` four times.
+- `daily_calendar` lags one day by construction: it is derived from `1DRet`, which
+  is a FORWARD return, so the newest trading day always reads zero and is flagged
+  non-trading. All 106,339 non-trading-day `1DRet` rows are a literal `0.0`.
+- Stale/dead surfaces recorded in the new inventory doc: `predmkt_resolutions`
+  empty; `release_events_*` stop 2026-07-10; `tariff_intensity_by_country` dead
+  since 2026-07-01 (its markets expired, and the signal emits no row rather than a
+  stale one); 81 predmkt markets have price history but no metadata row.
+
+### What To Build Next
+1. Extend `scripts/build_factor_reference.py` to read the loop DB as well, so the
+   68 loop objects appear in a generated doc and this snapshot stops being needed.
+2. Move `NEO4J_PASS` to an environment variable and rotate the password.
+3. Prediction-market discovery: stop dropping expired markets from
+   `predmkt_market_meta`, so historical prices stay joinable to their category.
+
+### Context for Next Session
+README now states verified counts for both databases and carries a dated Project
+status section written for an outside reader, because Arjun intends the public
+repo to be readable by people outside the project. Numbers in README are stamped
+to the 2026-09-11/12 nightly — re-verify before quoting them as current.
+
+---
+SESSION END: 2026-09-13 09:20 PDT | Agent: Claude Code (Opus 5)
+---

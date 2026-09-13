@@ -18,7 +18,44 @@ return surfaces; macro, commodity, prediction-market, GDELT, Bloomberg, and grap
 *explanatory context* unless explicitly joined back to returns.
 
 > Live, per-variable detail is auto-generated each rebuild — see **[`docs/factor_reference.md`](docs/factor_reference.md)**
-> and the latest **[`docs/DATABASE_AUDIT_2026_06_09.md`](docs/DATABASE_AUDIT_2026_06_09.md)**.
+> (warehouse only) and the complete two-database snapshot in
+> **[`docs/DB_INVENTORY_2026_09_13.md`](docs/DB_INVENTORY_2026_09_13.md)**.
+
+---
+
+## Project status (2026-09-13)
+
+**What it is.** A data warehouse plus a nightly research engine for 34 country equity markets.
+The warehouse holds ~79.5M rows across 44 tables and views; a second database holds the research
+loop's own state — nightly-collected market data, derived signals, and the full record of every
+idea that has been tested. A Neo4j graph carries the trade, banking and portfolio relationships
+between countries.
+
+**What runs on its own.** Two scheduled jobs. A nightly loop of 51 steps collects sovereign yields
+and CDS, FX options-implied stress, country-ETF flows, Bloomberg consensus forecasts, foreign
+equity flows, futures positioning and sovereign ratings; rebuilds the graph, lead-lag and
+fundamental-twin features; runs the dislocation detectors; and writes a dated brief. A second job
+collects prediction markets. A monthly job rebuilds the warehouse and graph from source.
+
+**What the project is actually for.** Trustworthy falsification. Most candidate signals are
+expected to die, and the discipline that kills them honestly is the asset rather than any
+individual signal. That shows up in the numbers: of the hypotheses put through the validation
+harness, the verdict counts are 61 DEAD, 57 WEAK, 36 INSUFFICIENT_COVERAGE and 16 WATCH. Killed
+outright are cross-sectional country momentum, four valuation-percentile signals, nine
+Bloomberg-sourced FX and macro-surprise signals, ETF-flow positioning, and a ridge combiner built
+over the prior survivors. Five whole directory-sized experiments on macro regime conditioning are
+dead, one of them a clean pre-registered null. The record lives in `ledgers/` and is summarised in
+the `asado-graveyard` skill.
+
+**What is still open.** Delayed second-order propagation — a neighbour's move repricing before the
+endpoint does — is the one family that has not been killed, and carries an unexplained 2024–26 sign
+flip. A macro-state model over the warehouse is in design. Prediction-market history began
+2026-06-10 and is too short to backtest.
+
+**Honest caveats.** Numbers here reflect the 2026-09-11/12 nightly run. Some surfaces are stale by
+design and some by neglect; they are listed in the inventory doc rather than hidden. This is a
+personal research repository, not a product: there is no packaging, no API stability, and Bloomberg
+data is required for a large part of the daily layer.
 
 ---
 
@@ -119,8 +156,14 @@ hand-maintained Excel files in the pipeline.
 
 ## Warehouse contents (current shape)
 
-DuckDB at `Data/asado.duckdb` (~3.5 GB). **37 objects** (33 tables + 4 views) across five layers.
-Tidy schema everywhere: `(date, country, value, variable, source)`.
+Two DuckDB files. The warehouse at `Data/asado.duckdb` holds **44 objects** (36 tables + 8 views,
+~79.5M rows) across the five layers below. The research loop keeps its own state in
+`Data/loop/asado_loop.duckdb` — **68 objects** (66 tables + 2 views, ~13.6M rows), documented in its
+own section further down. Tidy schema everywhere: `(date, country, value, variable, source)`.
+
+> Counts verified against the live databases on 2026-09-13 (warehouse and loop reflect the
+> 2026-09-11/12 nightly run). Full object-by-object listing:
+> [`docs/DB_INVENTORY_2026_09_13.md`](docs/DB_INVENTORY_2026_09_13.md).
 
 ### Layer 1 — collected sources (feed `unified_panel`)
 ~38 sources. Largest contributors (base variables): **t2** (111), **t2_raw** (53), **gdelt** (93),
@@ -131,32 +174,45 @@ breakdown in the audit doc.)
 ### Layer 2 — query surfaces (country-keyed)
 | Surface | Rows | Variables | Note |
 |---|---:|---:|---|
-| `unified_panel` (view) | ~12.1M | ~426 base | raw cross-source union |
-| `normalized_panel` | ~0.8M | ~294 | `_CS` (cross-sectional) + `_TS` (time-series) z-scores |
-| `feature_panel` (view) | ~3.3M | **~720** | primary query-facing union (raw + normalized) |
+| `unified_panel` (view) | 2.59M | 431 base | raw cross-source union |
+| `normalized_panel` | 965K | 299 | `_CS` (cross-sectional) + `_TS` (time-series) z-scores |
+| `feature_panel` (view) | 3.55M | **730** | primary query-facing union (raw + normalized) |
+| `feature_panel_observed` (view) | 3.25M | 696 | `feature_panel` minus forecast/backfill rows — observed history only |
+| `feature_panel_t2` (view) | 3.32M | 726 | `feature_panel` restricted to the 34-country T2 universe |
 
 ### Layer 3 — daily extension (fresh through the latest run)
 | Table | Rows | Vars |
 |---|---:|---:|
-| `t2_factors_daily` | ~35.6M | 111 |
-| `t2_levels_daily` | ~15.3M | 48 |
-| `gdelt_factors_daily` | ~10.2M | 75 |
-| `gdelt_raw_daily` | ~967K | 45-col (249-country bridge) |
-| `daily_calendar` | ~328K | per-country trading days |
+| `t2_factors_daily` | 35.96M | 111 |
+| `t2_levels_daily` | 15.19M | 48 |
+| `gdelt_factors_daily` | 5.20M | 37 |
+| `gdelt_raw_daily` | 973K | 38-col (249-country bridge) |
+| `daily_calendar` | 332K | per-country trading days |
+| `t2_factors_monthly_from_daily` (view) | 1.16M | month-end snapshot for validation against `t2_master` |
+
+GDELT shrank from ~10.2M rows / 75 variables when the deep theme and GCAM fields were retired in
+2026-07; the surviving 37 are the salient attention/sentiment/risk signals.
+
+**Two traps in the daily layer.** `1DRet/5DRet/20DRet/60DRet/120DRet` are *forward* returns — the
+optimizer's targets, permanently blacklisted as predictors. And on non-trading days `1DRet` is a
+literal `0.0`, so join `daily_calendar` before computing any return or volatility statistic.
 
 ### Layer 4 — returns (outcome source of truth)
 | Table | Factors | Sources |
 |---|---:|---|
 | `factor_returns` (monthly) | ~390 | `t2_optimizer`, `gdelt_optimizer`, `econ_optimizer` |
-| `factor_returns_daily` | ~180 | `t2_optimizer_daily`, `gdelt_optimizer_daily` |
+| `factor_returns_daily` | 142 | `t2_optimizer_daily`, `gdelt_optimizer_daily` |
 | `factor_top20_membership` | ~393 | sparse country membership per factor bucket |
 | `country_factor_attribution` (view) | — | `membership ⨝ returns` = weight × factor_return |
 
 ### Layer 5 — knowledge graph (Neo4j)
-~**1,174 nodes** (Factor, Country ×34, CentralBank ×31, DataSource, CrisisEvent, SanctionsProgram,
-Commodity ×4) and ~**30K edges** (`HAS_FACTOR_EXPOSURE`, `TRADES_WITH`, `HAS_BANKING_EXPOSURE_TO`,
-`HOLDS_PORTFOLIO`, `HAS_CRISIS_HISTORY`, `HAS_CENTRAL_BANK`, `SUBJECT_TO`, `EXPORT_EXPOSED_TO`,
-`DATA_AVAILABLE_FROM`). 34-dim cosine `countryStateIndex` on `Country.state_embedding`.
+**810 nodes** (Factor 673, Country 43, DataSource 38, CentralBank 31, CrisisEvent 15,
+SanctionsProgram 6, Commodity 4) and **21,486 edges** — `HAS_FACTOR_EXPOSURE` 13,759,
+`HOLDS_PORTFOLIO` 3,149, `TRADES_WITH` 1,540, `DATA_AVAILABLE_FROM` 1,244,
+`HAS_BANKING_EXPOSURE_TO` 933, `HAS_CRISIS_HISTORY` 378, `LEADS` 223, `SIMILAR_TO` 170,
+`HAS_CENTRAL_BANK` 31, `SUBJECT_TO` 31, `EXPORT_EXPOSED_TO` 28. `LEADS` and `SIMILAR_TO` are
+written back nightly by `write_graph_discoveries.py`. A 34-dim cosine `countryStateIndex` sits on
+`Country.state_embedding`. (Read live 2026-09-13.)
 
 ### Global commodity surface (NOT country-tiled)
 Commodities are **global series** — one value per date, not tied to a country. They live in:
@@ -181,9 +237,34 @@ Like commodities, they are **isolated** (region-keyed, 8 series) and **never bro
 `scripts/collect_ff_factors.py`; the spanning tool is `scripts/harness/ff_spanning.py` (below).
 
 ### Auxiliary
-`bilateral_portfolio_matrix` (reporter–counterparty ownership), `predmkt_*` (Kalshi/Polymarket
-snapshots + spillovers + composites), `event_log` (curated dated events), `variable_meta`
-(structural metadata), `country_reference`.
+`bilateral_portfolio_matrix` (reporter–counterparty ownership), `event_log` (curated dated events),
+`jst_macrohistory` (Jordà-Schularick-Taylor 1870–2020, 13 countries — isolated, never unioned),
+`demographics_dip`, `country_reference`, and the metadata registry (`variable_meta`,
+`variable_registry`, `variable_registry_facts`, `variable_registry_full`).
+
+Prediction markets have six tables of their own: `predmkt_daily` (Kalshi + Polymarket snapshots),
+`predmkt_signals_daily` (14 country/global composites), `predmkt_market_meta`,
+`predmkt_outcome_meta`, `predmkt_country_spillover` (market → country elasticities), and
+`predmkt_resolutions` (currently empty).
+
+### The loop database — `Data/loop/asado_loop.duckdb`
+
+**68 objects** (66 tables + 2 views, ~13.6M rows). This is where every nightly-collected market
+series and the entire research record lives, and it is deliberately a separate file so a monthly
+warehouse rebuild can never destroy it. `docs/factor_reference.md` does **not** cover it; the full
+listing is in [`docs/DB_INVENTORY_2026_09_13.md`](docs/DB_INVENTORY_2026_09_13.md). Grouped by
+subsystem:
+
+| Group | What is in it |
+|---|---|
+| **Nightly market data** | `sovereign_daily`/`_signals` (10Y/2Y yields, 5Y/1Y CDS, 33 countries, 2005→), `market_implied_daily`/`_signals` (FX implied vol, risk reversals, butterflies, carry; VIX/MOVE/OAS/DXY; 5 commodity futures, 2006→), `etf_flows`/`etf_flow_signals`/`etf_prices_daily`/`etf_total_return_daily`, `consensus_daily`/`_revisions`/`_signals` (Bloomberg ECFC GDP + CPI), `foreign_flows_daily` (6 countries), `cot_weekly`/`cot_signals`, `sov_ratings_monthly`/`sov_rating_changes`, `eco_surprise_*`, `release_events_*`, `weo_vintages`/`weo_revisions`, `valuation_monthly`, `tot_trade_shares`, `forward_calendar` |
+| **Derived features** | `graph_features_pit_daily` (point-in-time trade/bank/two-hop/Katz gaps), `similarity_features_daily`/`similarity_twins`, `leadlag_features_daily`/`leadlag_edges`, `combiner_scores_daily`, `family_ranks_daily`, `triptych_scan`/`triptych_priors` |
+| **Dislocation engine** | `dislocation_daily`, `gap_episodes` and its marks/autopsy/expression/outcome tables, `price_state_daily`/`price_state_surface` |
+| **Governance & research record** | `hypothesis_ledger`, `thesis_ledger`/`thesis_marks`, `methodology_ledger`, `harness_results`, `harness_ic_series`, `family_ic_nightly`, `brier_gate_live` |
+| **Portfolio bridge** | `portfolio_holdings_daily`, `portfolio_summary_daily`, `country_returns_monthly`, `fable_claims`, `live_signals` |
+
+The per-table column contract consumers rely on is declared in
+`config/loop_schema_contract.yaml` and asserted nightly by `scripts/qa/check_loop_schema.py`.
 
 ---
 
@@ -281,7 +362,7 @@ state lives in a **separate DuckDB** — `Data/loop/asado_loop.duckdb` — so mo
 `asado.duckdb` can never destroy it. The main DB is attached read-only as the `asado` schema.
 
 ### Nightly job (launchd, 06:45)
-`scripts/loop/loop_daily_job.py` (`com.arjundivecha.asado-loop-daily`) runs 33 steps, in order
+`scripts/loop/loop_daily_job.py` (`com.arjundivecha.asado-loop-daily`) runs 51 steps, in order
 (each in its own subprocess; one failure never stops the rest, but any failure exits non-zero):
 
 1. `collect_news_bridge.py` — portfolio holdings + 800-ticker ETF closes from the News repo
@@ -551,7 +632,10 @@ Bloomberg quota usage for the loop's nightly pulls is logged append-only to
 ---
 
 ## Reference docs
-- `docs/factor_reference.md` — auto-generated, every table/source/variable + the full graph map.
+- `docs/DB_INVENTORY_2026_09_13.md` — **complete point-in-time listing of both databases** (all 44
+  warehouse objects + all 68 loop objects) plus the Neo4j graph and the known stale surfaces.
+- `docs/factor_reference.md` — auto-generated per-variable reference. **Warehouse only** — it covers
+  none of the loop database, and its schema cache is frozen at 2026-08-09.
 - `docs/DATABASE_AUDIT_2026_06_09.md` — latest full warehouse audit.
 - `docs/DAILY_PIPELINE_REPORT_2026_06_09.md` — daily pipeline build + canonical validation.
 - `CLAUDE.md` — agent/dev guidance and conventions.

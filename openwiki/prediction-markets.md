@@ -1,3 +1,9 @@
+---
+type: "Reference"
+title: "Prediction markets and Brier Gate"
+description: "ASADO's prediction-market surfaces: the general predmkt pipeline and the Brier Gate experiment that tests whether the warehouse adds incremental forecasting value over market prices."
+---
+
 # Prediction markets and Brier Gate
 
 ASADO has two related prediction-market surfaces:
@@ -13,9 +19,10 @@ ASADO has two related prediction-market surfaces:
 - `scripts/discover_predmkt_equity_universe.py`
 - `scripts/poll_predmkt_intraday.py`
 - `scripts/predmkt_equity_daily_job.py`
+- `scripts/loop/discover_predmkt_candidates.py`
 - `scripts/brier_gate/*`
 
-The repo uses curated registries and careful sign conventions. The `AGENTS.md` notes about prediction markets emphasize that the registry and signs matter for country composites and that resolved markets remain in the registry for tracking.
+The repo uses curated registries and careful sign conventions. `config/predmkt_curated.yaml` is the hand-curated Polymarket/Kalshi registry for the 34-country macro universe; `discover_predmkt_candidates.py` automates the *finding* part (drafting candidate registry entries from Kalshi open markets and Polymarket's most-traded markets), but its output is a draft for curation, never an auto-append. The `AGENTS.md` notes about prediction markets emphasize that the registry and signs matter for country composites and that resolved markets remain in the registry for tracking.
 
 ## Brier Gate purpose
 
@@ -72,7 +79,9 @@ The PRD and results docs show the experiment has already been executed and then 
 - `scripts/build_predmkt_panel.py`
 - `scripts/predmkt_daily_job.py`
 - `scripts/discover_predmkt_equity_universe.py`
+- `scripts/loop/discover_predmkt_candidates.py`
 - `config/predmkt_equity_universe.yaml`
+- `config/predmkt_curated.yaml`
 
 ## Where to go next
 

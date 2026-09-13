@@ -1,0 +1,13 @@
+{
+  "package_integrity": "PASS",
+  "draft_json_schema": "PASS",
+  "yaml_parse": "PASS",
+  "acceptance_test_specs": 60,
+  "dependency_linked_tasks": 56,
+  "phases": 14,
+  "required_registered_check": "EXPECTED_FAIL_UNBOUND_DRAFT",
+  "ASADO_database_accessed": false,
+  "study_implemented": false,
+  "backtest_executed": false,
+  "scope": "Validation covers handoff files, references, contracts and default guards, not ASADO data or research results."
+}

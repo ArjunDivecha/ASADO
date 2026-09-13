@@ -1,0 +1,86 @@
+{
+  "phase": "P00",
+  "generated_utc": "2026-09-13T22:20:00Z",
+  "status": "DISCOVERY_ONLY — schema/row-count observations, NOT bound selectors",
+  "access_method": {
+    "parquet_files": "main checkout Data/work/loop/*.parquet read directly (no DB connection held)",
+    "loop_db": "one short read-only loop_connection() session, opened and closed in the same script (seconds); schema + row counts only",
+    "worktree_data_dir": "ASADO-exp-Nonlinear/Data/ contains ONLY git-tracked files (xlsx, dislocations, runs) — no duckdb, no Data/loop, no Data/work. loopdb.BASE_DIR resolves per-worktree, so worktree-local pipeline code cannot reach the live DBs; all data access is via absolute main-tree paths or snapshots."
+  },
+  "sources": {
+    "t2_factors_daily": {
+      "db": "main warehouse, attached read-only as schema 'asado'",
+      "table": "asado.t2_factors_daily",
+      "rows_observed": 35956054,
+      "role": "PRICE/RETURN SOURCE OF TRUTH. Provides USD TRI levels (entry/exit marks) and backward-labeled trading-day returns via loopdb.daily_country_returns(). T2 '1DRet' is a FORWARD calendar-grid label — never consumed directly; the backward-shifted helper is the audited path. 20DRet/60DRet/120DRet are forward labels — hard-blacklisted as predictors AND not usable as labels (label must be constructed independently from TRI levels per PRD)."
+    },
+    "daily_calendar": {
+      "db": "asado.daily_calendar (exists; column detail deferred to P01)",
+      "role": "trading-day calendar reference; the study still builds INDEPENDENT per-market session calendars from TRI marks per P02 — this table is a cross-check, not the calendar of record"
+    },
+    "market_implied_daily": {
+      "db": "loop DB (asado_loop.duckdb) + parquet Data/work/loop/market_implied_daily.parquet",
+      "schema": ["date timestamp", "country string", "value double", "variable string", "source string"],
+      "countries": 31,
+      "sources": ["bloomberg"],
+      "variables": ["CMD_CL1", "CMD_CL2", "CMD_CO1", "CMD_CO2", "CMD_GC1", "CMD_GC2", "CMD_HG1", "CMD_HG2", "CMD_NG1", "CMD_NG2", "FX_BF25_1M_PCT", "FX_CARRY_3M_PCT", "FX_IMPVOL_1M_PCT", "FX_IMPVOL_1W_PCT", "FX_IMPVOL_3M_PCT", "FX_RR25_1M_PCT", "RISK_BBDXY", "RISK_DXY", "RISK_HY_OAS", "RISK_IG_OAS", "RISK_MOVE", "RISK_VIX", "RISK_VIX3M"],
+      "candidate_primitive_bindings": {
+        "P09_atm_fx_iv": "FX_IMPVOL_3M_PCT",
+        "P10_iv_term": "FX_IMPVOL_1W_PCT - FX_IMPVOL_3M_PCT (1W tenor EXISTS — earlier suspected gap resolved)",
+        "P11_risk_reversal": "FX_RR25_1M_PCT — TENSOR MISMATCH: PRD specifies 3M 25-delta RR; table carries 1M only. P01 must either amend tenor or mark UNVERIFIED/BLOCKED. No silent substitution.",
+        "P12_fx_carry": "FX_CARRY_3M_PCT",
+        "P21_vix": "RISK_VIX",
+        "P22_move": "RISK_MOVE",
+        "P23_dxy_momentum": "21-session return of RISK_DXY (derived)",
+        "P24_brent": "CMD_CO1/CMD_CO2 (Brent generics; CL=WTI) — roll convention audit required in P01"
+      }
+    },
+    "sovereign_daily": {
+      "db": "loop DB + parquet Data/work/loop/sovereign_daily.parquet",
+      "schema": ["date timestamp", "country string", "value double", "variable string", "source string"],
+      "countries": 33,
+      "sources": ["bloomberg"],
+      "variables": ["SOV_2Y_YIELD_PCT", "SOV_10Y_YIELD_PCT", "SOV_CDS_1Y_BP", "SOV_CDS_5Y_BP"],
+      "candidate_primitive_bindings": {
+        "P13_sov_10y": "SOV_10Y_YIELD_PCT",
+        "P14_sov_10y_chg": "derived change",
+        "P15_sov_cds": "SOV_CDS_5Y_BP (1Y also present; tenor choice per PRD)",
+        "P16_sov_2s10s": "SOV_2Y_YIELD_PCT / SOV_10Y_YIELD_PCT (2Y EXISTS — earlier suspected gap resolved)"
+      },
+      "known_gaps": "10Y missing for Hong Kong and Vietnam (documented in AGENTS.md); 33 vs 34-country coverage to be quantified per-primitive in P01"
+    },
+    "consensus_daily": {
+      "db": "loop DB + parquet Data/work/loop/consensus_daily.parquet",
+      "schema": ["date timestamp", "country string", "target_year int64", "value double", "variable string", "source string"],
+      "countries": 34,
+      "sources": ["bloomberg_ecfc"],
+      "variables": ["CONS_CPI_PCT", "CONS_GDP_PCT"],
+      "candidate_primitive_bindings": {
+        "P17_P20": "GDP/CPI consensus level + 21-session revision windows. target_year column is PRESENT — fixed-target-year semantics bindable; rollover rule per PRD must be defined at P01 (next calendar year, held fixed inside each origin revision window). Revision path is stored per-series (ECFC year-specific tickers) so 'unchanged consensus' vs 'missing feed' is distinguishable."
+      }
+    },
+    "graph_features_pit_daily": {
+      "db": "loop DB only (no parquet intermediate observed in Data/work/loop/)",
+      "schema": ["date DATE", "country VARCHAR", "value DOUBLE", "variable VARCHAR", "source VARCHAR"],
+      "rows": 1858303,
+      "variables": ["GRAPHP_BANK_NBR_RET_GAP_21D", "GRAPHP_BANK_NBR_RET_GAP_63D", "GRAPHP_BLOC_GAP_21D", "GRAPHP_HOLDER_STRESS_21D", "GRAPHP_HUB_GAP_21D", "GRAPHP_KATZ_TRADE_GAP_21D", "GRAPHP_NBR_DD_COUNT", "GRAPHP_TRADE_NBR_RET_GAP_21D", "GRAPHP_TRADE_NBR_RET_GAP_63D", "GRAPHP_TWOHOP_TRADE_GAP_21D"],
+      "note": "PIT-rebuilt variant (v1 graph_features_daily excluded from nightly for look-ahead L-05 — a 2026 Neo4j snapshot applied backward). Only graph_features_pit_daily is admissible. PRD graph primitives (direction, self/duplicate handling, weight mass >=0.8, >=3 source entities) must be audited against graph_edge_vintages in P01 — these 10 derived variables are candidates, not the raw edges the PRD's graph block describes."
+    },
+    "graph_edge_vintages": {
+      "db": "loop DB only",
+      "schema": ["edge_type VARCHAR", "vintage_end DATE", "applies_from DATE", "focal VARCHAR", "neighbor VARCHAR", "weight DOUBLE"],
+      "rows": 93800,
+      "note": "Has vintage structure (vintage_end/applies_from) — supports the PRD's historical_edge_vintages_required=true. Edge-type inventory and focal/neighbor coverage audit is P01 work."
+    },
+    "weo_vintages": {
+      "db": "loop DB + parquet Data/work/loop/weo_vintages.parquet",
+      "schema": ["vintage string", "vintage_date timestamp", "country string", "target_year int64", "variable string", "value double", "source string"],
+      "note": "TRUE vintage table (36 vintages 2008-04..2026-04) — the repo's only fully-vintaged macro source; available if the PRD's macro primitives need a vintage-correct fallback for unvintaged series"
+    }
+  },
+  "isolation_rules_confirmed": {
+    "forward_return_blacklist": "evaluate_signal.py:159-162 — {1MRet,3MRet,6MRet,9MRet,12MRet,1DRet,5DRet,20DRet,60DRet,120DRet} banned as predictors",
+    "isolated_tables": "ff_factors, jst_macrohistory, factor_returns, factor_top20_membership, country_factor_attribution — never unioned into feature_panel/unified_panel",
+    "graph_v1_excluded": "graph_features_daily (non-PIT) removed from nightly per governance_contract v1.4"
+  }
+}

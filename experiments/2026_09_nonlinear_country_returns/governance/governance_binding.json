@@ -1,0 +1,80 @@
+{
+  "phase": "P00",
+  "generated_utc": "2026-09-13T22:25:00Z",
+  "study": {
+    "local_spec_id": "ASADO_NL_20260913_V1",
+    "title": "ASADO Nonlinear Country-Return Study",
+    "spec_source": "experiments/2026_09_nonlinear_country_returns/spec/ (vendored agent pack; MANIFEST.sha256 PASS)",
+    "worktree": "ASADO-exp-Nonlinear",
+    "branch": "exp/Nonlinear",
+    "base_commit": "a8a8699"
+  },
+  "paths": {
+    "committed_home": "experiments/2026_09_nonlinear_country_returns/",
+    "scratch": "Data/work/experiments/nonlinear_country_returns/ (in MAIN checkout — the worktree has no Data/loop or Data/work; gitignored dirs are not materialized in worktrees)",
+    "decision": "PRD proposed research/nonlinear_country_returns/; reconciled to house convention experiments/<YYYY_MM>_<name>/ per change-control class (a). The vendored pack moved to spec/ inside the experiment dir."
+  },
+  "registration": {
+    "route": "methodology_ledger (ledgers/methodology_ledger.jsonl)",
+    "api": "scripts/loop/ledgers.py register_methodology_experiment(experiment_name, experiment_dir, hypothesis_text, gate_ladder, prd_path, author) -> M_* id; verdict via attach_methodology_verdict(experiment_id, verdict in {DEAD,GRADUATED,WATCH,INSUFFICIENT}, died_at_gate, evidence_path, lesson, gate_results)",
+    "rationale": "Whole-methodology directory experiment, not a single variable. change-control LAW 2: methodology experiments use the separate methodology ledger — hypothesis ledger registration would raise UnclassifiedVariableError (no family prefix) and would corrupt single-variable family trial counts.",
+    "family_registry_charge": "NONE at registration. If P10 native-harness binding produces a standalone ranked signal, that gets its own hypothesis registration + family charge then — decided at that gate, not now.",
+    "timing": "P06 (registration and execution lock) — BEFORE any real outer evaluation. The methodology ledger requires hypothesis_text + a gate ladder written before results."
+  },
+  "prior_exposure_record": [
+    {
+      "id": "M_20260906_001/002/003",
+      "what": "MacroState first-results model contest + bounded tree & neural comparison + missingness-only control (monthly, 12M horizon, 14 primitives -> 4 state composites). All verdicted WATCH on their own gate ladders, 2026-09-06.",
+      "relation": "SAME conceptual lineage (economic-state compression + shallow interactions), DIFFERENT contract: monthly origins/12M horizon vs this study's daily origins/20-local-session horizon; depth-3/7-leaf trees vs fixed depth-2/4-leaf 12-config grid; no nested PIT selection, no formal paired bootstrap/Holm inference. MacroState explicitly states its nonlinear stage was designed after earlier results were seen (development sequence, not fresh confirmation) and that the annual leader's edge collapses under a missingness/US-sleeve control.",
+      "consequence": "Recorded as prior exposure in registration hypothesis_text. This study is NOT fresh confirmation of MacroState and must not quote its numbers as such. Not a blocker: different target, sample, chronology, and inference contract."
+    },
+    {
+      "id": "external: LLM-1M Country Rotation tabular arm",
+      "what": "HGB on 39 raw dossier fields, same-universe walk-forward, 1M horizon: OOS IC +0.027 (t 1.66), WATCH but DSR -0.093.",
+      "relation": "Prior trees-on-raw-features evidence at a different horizon — informs expectations for N_X, not a duplicate."
+    },
+    {
+      "id": "external: T2 Factor Timing Fuzzy IPCA",
+      "what": "Pooled cross-sectional country predictor; ridge L2 failed (OOS rank IC -0.017), listwise cross-entropy reached ~0.2 Sharpe pre-DSR.",
+      "relation": "Prior pooled-model exposure; L2-on-returns weakness is consistent with this study's hypothesis that nonlinearity may matter."
+    },
+    {
+      "id": "ledger families",
+      "what": "63 hypotheses with final verdicts: 26 DEAD, 11 WEAK, 16 INSUFFICIENT_COVERAGE, 10 WATCH. First-order FX/rates/valuation/consensus primitives (the inputs of this study) are individually dead as standalone signals (bbg_skill_2026_06 DEAD x9 incl. FX_RR25_Z252, FX_CARRY_Z252, SOV_2S10S_Z252; valuation_2026_06 DEAD x4; consensus_ecfc DEAD).",
+      "relation": "The study's claim is a NONLINEAR pooled structure, not any single primitive — consistent with the graveyard's second-order law. Individual DEAD primitive verdicts are expected, not a conflict."
+    }
+  ],
+  "conflicts_resolved": [
+    {
+      "conflict": "PRD proposes research/nonlinear_country_returns/ vs house convention experiments/<name>/",
+      "resolution": "House convention wins; PRD itself defers to P00-discovered conventions."
+    },
+    {
+      "conflict": "Worktree has no Data/loop or Data/work (gitignored dirs don't materialize in worktrees); loopdb.BASE_DIR is worktree-relative",
+      "resolution": "All data access via absolute main-tree paths; snapshots land in main-tree Data/work/experiments/nonlinear_country_returns/; worktree pipeline code never runs against live DBs."
+    },
+    {
+      "conflict": "PRD's native-harness gate (P10) vs evaluate_signal.py's actual contract",
+      "resolution": "Harness evaluates ONE variable vs next-period return (NW-t/DSR/gross-Sharpe) — it cannot natively express the 20-session overlapping-label pooled-model contest. P10 binding = a frozen-prediction adapter that hands the harness the study's pre-computed cross-sectional score as if it were a signal column, or a documented 'native qualification unresolved' report. Decided at P10, recorded now."
+    },
+    {
+      "conflict": "market_implied_daily carries FX_RR25_1M_PCT but PRD P11 specifies 3M 25-delta RR",
+      "resolution": "OPEN — flagged for P01. Options: amend tenor (protocol change requiring governance note) or mark UNVERIFIED/BLOCKED. No silent substitution."
+    }
+  ],
+  "hard_rule_compliance": {
+    "no_held_db_connections": "all DB access open-query-close in seconds; exploration off parquet/snapshots",
+    "no_branch_switch_in_main": "work on exp/Nonlinear in ASADO-exp-Nonlinear only",
+    "no_protected_writes": "no writes to Data/processed, Data/loop, shared Data/work, config/, ledgers/ from experiment code; ledger writes only via ledgers.py API at P06",
+    "no_forward_returns_as_predictors": "canonical blacklist respected; labels built independently from TRI levels, not from 20DRet",
+    "no_cost_gating": "evaluation gross-only per 2026-07-13 retraction — consistent with PRD gross-only spec",
+    "no_outer_results_before_P06": "no real outer IC/Sharpe/rankings produced or reported",
+    "no_scheduler_or_collector_changes": "none made"
+  },
+  "verification": {
+    "pit_tests": "tests/loop/test_harness_pit.py + test_pit_lag.py + test_methodology_ledger.py + test_ledger_integrity.py: 46 passed (2026-09-13, main venv, outside quiet window)",
+    "pack_integrity": "spec/PACK_VALIDATION_REPORT.json: PASS; --require-registered EXPECTED_FAIL_UNBOUND_DRAFT",
+    "ledger_folds": "hypothesis ledger folds clean (63 hypotheses); methodology ledger: 5 experiments (3 MacroState WATCH + 2 others)"
+  },
+  "p00_verdict": "RECONCILED — proceed to P01 read-only field-level audit. No governance blockers; one open tenor question (P11 RR 1M vs 3M) deferred to P01 binding, one native-harness adapter decision deferred to P10."
+}

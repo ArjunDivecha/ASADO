@@ -1,0 +1,322 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ASADO study specification envelope",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "status",
+    "specification_only",
+    "bindings",
+    "execution_permissions",
+    "target",
+    "features",
+    "sample",
+    "training",
+    "models",
+    "inference",
+    "phases"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "status": {
+      "enum": [
+        "DRAFT",
+        "REGISTERED"
+      ]
+    },
+    "specification_only": {
+      "type": "boolean"
+    },
+    "bindings": {
+      "type": "object",
+      "required": [
+        "repository_commit",
+        "dirty_diff_hash",
+        "environment_lock_hash",
+        "data_snapshot_hash",
+        "source_manifest_hash",
+        "panel_hash",
+        "split_hash",
+        "native_governance_adapter",
+        "native_gross_gate_spec",
+        "native_family_trial_policy",
+        "registration_receipt",
+        "approval_evidence",
+        "feature_panel_start",
+        "first_outer_fit_cutoff",
+        "last_mature_scored_origin",
+        "economic_entity_map_hash",
+        "calendar_manifest_hash",
+        "all_required_sources_ready"
+      ],
+      "properties": {
+        "repository_commit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "dirty_diff_hash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "environment_lock_hash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "data_snapshot_hash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_manifest_hash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "panel_hash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "split_hash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "native_governance_adapter": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "native_gross_gate_spec": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "native_family_trial_policy": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "registration_receipt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "approval_evidence": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "feature_panel_start": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "first_outer_fit_cutoff": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "last_mature_scored_origin": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "economic_entity_map_hash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "calendar_manifest_hash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "all_required_sources_ready": {
+          "type": "boolean"
+        }
+      }
+    },
+    "target": {
+      "type": "object",
+      "properties": {
+        "primary_horizon_local_sessions": {
+          "const": 20
+        }
+      }
+    },
+    "models": {
+      "type": "object",
+      "required": [
+        "B0",
+        "L_X",
+        "L_S",
+        "L_star",
+        "A_S",
+        "Q_S",
+        "N_S",
+        "N_X"
+      ],
+      "additionalProperties": {
+        "type": "object"
+      }
+    },
+    "features": {
+      "type": "object",
+      "properties": {
+        "primitive_ids": {
+          "type": "array",
+          "minItems": 24,
+          "maxItems": 24,
+          "uniqueItems": true
+        }
+      }
+    },
+    "phases": {
+      "type": "array",
+      "minItems": 14,
+      "maxItems": 14
+    },
+    "execution_permissions": {
+      "type": "object",
+      "properties": {
+        "allow_live_orders": {
+          "const": false
+        },
+        "allow_automatic_alternative_primary": {
+          "const": false
+        },
+        "allow_source_database_writes": {
+          "const": false
+        },
+        "allow_real_outer_evaluation": {
+          "type": "boolean"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "REGISTERED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "bindings": {
+            "properties": {
+              "repository_commit": {
+                "type": "string",
+                "minLength": 1
+              },
+              "dirty_diff_hash": {
+                "type": "string",
+                "minLength": 1
+              },
+              "environment_lock_hash": {
+                "type": "string",
+                "minLength": 1
+              },
+              "data_snapshot_hash": {
+                "type": "string",
+                "minLength": 1
+              },
+              "source_manifest_hash": {
+                "type": "string",
+                "minLength": 1
+              },
+              "panel_hash": {
+                "type": "string",
+                "minLength": 1
+              },
+              "split_hash": {
+                "type": "string",
+                "minLength": 1
+              },
+              "native_governance_adapter": {
+                "type": "string",
+                "minLength": 1
+              },
+              "native_gross_gate_spec": {
+                "type": "string",
+                "minLength": 1
+              },
+              "native_family_trial_policy": {
+                "type": "string",
+                "minLength": 1
+              },
+              "registration_receipt": {
+                "type": "string",
+                "minLength": 1
+              },
+              "approval_evidence": {
+                "type": "string",
+                "minLength": 1
+              },
+              "feature_panel_start": {
+                "type": "string",
+                "minLength": 1
+              },
+              "first_outer_fit_cutoff": {
+                "type": "string",
+                "minLength": 1
+              },
+              "last_mature_scored_origin": {
+                "type": "string",
+                "minLength": 1
+              },
+              "economic_entity_map_hash": {
+                "type": "string",
+                "minLength": 1
+              },
+              "calendar_manifest_hash": {
+                "type": "string",
+                "minLength": 1
+              },
+              "all_required_sources_ready": {
+                "const": true
+              }
+            }
+          },
+          "specification_only": {
+            "const": false
+          },
+          "execution_permissions": {
+            "properties": {
+              "allow_real_outer_evaluation": {
+                "const": true
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": true,
+  "$comment": "Envelope validation is not sufficient for registration: source manifests, timing contracts, hashes and native approval must also be verified by implementation."
+}

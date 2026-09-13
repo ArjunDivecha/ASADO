@@ -1,5 +1,5 @@
 schema_version: '1.0'
-status: BOUND_WITH_BLOCKERS
+status: BOUND_AMENDED_V2
 source_selectors_verified: true
 audit_snapshot: Data/work/experiments/nonlinear_country_returns/snapshot_2026_09_13
 audit_note: >-
@@ -66,7 +66,7 @@ features:
 - id: P07
   alias: bank_neighbor_return_21
   definition: non-self PIT banking-weighted neighbors trailing 21-session return
-  binding_status: BOUND_BUT_LIMITED
+  binding_status: REMOVED_BY_AMENDMENT_AM1
   database: loop
   table_or_view: graph_edge_vintages (edge_type='bank') + t2_levels_daily
   coverage: 21 focal markets ONLY; staggered focal entry (Canada 2008-01,
@@ -76,7 +76,7 @@ features:
   readiness: INSUFFICIENT_COVERAGE
 - id: P08
   alias: bank_neighbor_return_63
-  binding_status: BOUND_BUT_LIMITED
+  binding_status: REMOVED_BY_AMENDMENT_AM1
   same_binding_as: P07
   readiness: INSUFFICIENT_COVERAGE
 - id: P09
@@ -101,7 +101,7 @@ features:
 - id: P11
   alias: fx_rr25_3m_depreciation
   definition: 3M 25-delta risk reversal oriented as local depreciation premium
-  binding_status: SPECIFIED_TENOR_MISSING
+  binding_status: REMOVED_BY_AMENDMENT_AM1
   note: >-
     Collector pulls [PAIR]25R1M only — no 3M RR exists in market_implied_daily or
     anywhere upstream. FX_RR25_1M_PCT (29 markets, sign-normalized so positive =
@@ -203,9 +203,17 @@ features:
     deferred to P02 label/feature build (generic futures, need roll-dating evidence)
   readiness: VERIFIED_HISTORICAL_AVAILABILITY (roll convention to document in P02)
 
+amendment_AM1:
+  ref: governance/amendment_AM1.md
+  removed_primitives: [P07, P08, P11]
+  active_primitive_count: 21
+  X_dimension: 21
+  S_dimension: 15
+  C06_weights: {P09: 0.5, P10: 0.5}
+  C05: removed
 summary:
-  verified: [P01, P02, P03, P04, P05, P06, P09, P10, P12, P14, P17, P18, P19, P20,
-             P21, P22, P23, P24]
-  insufficient_coverage: [P07, P08, P13, P15, P16]
-  missing: [P11]
-  verdict: BLOCKED_DATA under strict complete-case (max 15 markets < 20 floor)
+  verified_active: [P01, P02, P03, P04, P05, P06, P09, P10, P12, P14, P17, P18,
+                    P19, P20, P21, P22, P23, P24]
+  verified_limited_coverage_active: [P13, P15, P16]  # bound by SOV_2Y (27 mkts)
+  removed_by_amendment: [P07, P08, P11]
+  verdict: FEASIBLE under AM-1 — 22 markets, >=20 from 2010-07-01

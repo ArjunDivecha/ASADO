@@ -1,0 +1,573 @@
+{
+  "$schema": "schemas/study.schema.json",
+  "schema_version": "1.0",
+  "title": "ASADO Nonlinear Country-Return Study",
+  "local_spec_id": "ASADO_NL_20260913_V2",
+  "status": "AMENDED_DRAFT_PRE_REGISTRATION",
+  "specification_only": true,
+  "not_an_existing_asado_executable_configuration": true,
+  "design_date": "2026-09-13",
+  "authoritative_prd": "../ASADO_Nonlinear_Study_PRD.md",
+  "source_manifest": "feature_manifest.template.yaml",
+  "bindings": {
+    "repository_commit": null,
+    "dirty_diff_hash": null,
+    "environment_lock_hash": null,
+    "data_snapshot_hash": null,
+    "source_manifest_hash": null,
+    "panel_hash": null,
+    "split_hash": null,
+    "native_governance_adapter": null,
+    "native_gross_gate_spec": null,
+    "native_family_trial_policy": null,
+    "registration_receipt": null,
+    "approval_evidence": null,
+    "feature_panel_start": null,
+    "first_outer_fit_cutoff": null,
+    "last_mature_scored_origin": null,
+    "economic_entity_map_hash": null,
+    "calendar_manifest_hash": null,
+    "all_required_sources_ready": false
+  },
+  "execution_permissions": {
+    "allow_real_outer_evaluation": false,
+    "allow_source_database_writes": false,
+    "allow_source_refresh": false,
+    "allow_external_data_purchase": false,
+    "allow_live_orders": false,
+    "allow_scheduler_activation": false,
+    "allow_automatic_alternative_primary": false,
+    "allow_scientific_threshold_changes_after_exposure": false
+  },
+  "target": {
+    "primary_horizon_local_sessions": 20,
+    "diagnostic_horizons_local_sessions": [
+      5,
+      63
+    ],
+    "diagnostics_use_fixed_20_session_scores": true,
+    "additional_horizon_models_in_core": false,
+    "definition": "TRI_USD(exit) / TRI_USD(entry) - 1",
+    "target_residualized": false,
+    "target_winsorized": false,
+    "native_currency_verification_required": true,
+    "unresolved_mature_outcome_policy": "BLOCK_PRIMARY_INFERENCE_DO_NOT_DELETE_ROW"
+  },
+  "clock": {
+    "origin_time_utc": "23:59:00",
+    "base_origin_rule": "UTC dates with at least 20 scheduled market closes in the mapped universe",
+    "market_row_rule": "scheduled local session that date plus latest eligible source observation under availability policy",
+    "entry": "first scheduled local exchange close strictly after origin",
+    "exit": "20 subsequent local sessions after entry; entry is session zero",
+    "feature_available_at_lte_origin": true,
+    "whole_origin_label_maturity": "max included market label_available_at strictly before fit cutoff",
+    "calendar_independent_of_forward_returns": true,
+    "date_only_market_source_default": "23:59 UTC next UTC business day; requires documented historical observation-date meaning",
+    "forecast_and_outcome_stores_separate": true
+  },
+  "features": {
+    "primitive_ids": [
+      "P01",
+      "P02",
+      "P03",
+      "P04",
+      "P05",
+      "P06",
+      "P09",
+      "P10",
+      "P12",
+      "P13",
+      "P14",
+      "P15",
+      "P16",
+      "P17",
+      "P18",
+      "P19",
+      "P20",
+      "P21",
+      "P22",
+      "P23",
+      "P24"
+    ],
+    "representation_X_dimension": 21,
+    "representation_S_dimension": 15,
+    "state_weights": {
+      "C01": {
+        "P02": 1
+      },
+      "C02": {
+        "P03": 1
+      },
+      "C03": {
+        "P04": 1
+      },
+      "C04": {
+        "P05": 1
+      },
+      "C06": {
+        "P09": 0.5,
+        "P10": 0.5
+      },
+      "C07": {
+        "P12": 1
+      },
+      "C08": {
+        "P15": 1
+      },
+      "C09": {
+        "P16": 1
+      },
+      "C10": {
+        "P17": 1
+      },
+      "C11": {
+        "P18": 1
+      },
+      "C12": {
+        "P19": 0.5,
+        "P20": -0.5
+      },
+      "G01": {
+        "P21": 1
+      },
+      "G02": {
+        "P22": 1
+      },
+      "G03": {
+        "P23": 1
+      },
+      "G04": {
+        "P24": 1
+      }
+    },
+    "standalone_IC_screening": false,
+    "survivor_based_selection": false,
+    "country_ids_as_features": false,
+    "learned_state_bottleneck": false,
+    "graph": {
+      "minimum_source_entities": 3,
+      "minimum_available_weight_mass": 0.8,
+      "exclude_own_entity": true,
+      "one_representative_per_source_entity": true,
+      "historical_edge_vintages_required": true
+    },
+    "consensus": {
+      "forecast_target": "next calendar year, held fixed inside each origin revision window",
+      "revision_window_local_sessions": 21,
+      "arrival_days_count_distinct": true,
+      "days_since_cap": 63,
+      "missing_feed_equals_zero": false
+    },
+    "normalization": {
+      "prior_valid_observations": 252,
+      "minimum_prior_observations": 126,
+      "exclude_current_from_scale": true,
+      "ddof": 1,
+      "clip": [
+        -3,
+        3
+      ],
+      "scale_epsilon": 1e-12,
+      "near_zero_scale": "UNAVAILABLE_COMMON_MASK",
+      "globals_normalized_before_country_join": true,
+      "fold_transform": "date-weighted train-only center and scale"
+    },
+    "freshness": {
+      "daily_max_missed_source_sessions": 1,
+      "daily_max_calendar_days": 4,
+      "consensus_max_unobserved_local_sessions": 5
+    }
+  },
+  "sample": {
+    "minimum_markets_per_origin": 20,
+    "common_complete_case_over_all_24": true,
+    "eligibility_uses_future_outcomes": false,
+    "minimum_initial_inner_train_origins": 1260,
+    "minimum_mature_outer_origins": 756,
+    "minimum_coverage_each_full_outer_year": 0.8,
+    "model_specific_dropped_rows_allowed": false
+  },
+  "training": {
+    "rolling_calendar_years": 8,
+    "outer_refit_months": [
+      1,
+      4,
+      7,
+      10
+    ],
+    "outer_fit_time_utc": "00:00:00 first candidate-origin date on or after quarter start",
+    "annual_retune_month": 7,
+    "first_outer_fit": "first eligible July after 8 calendar years of eligible feature history",
+    "inner_blocks": 4,
+    "inner_block_calendar_months": 6,
+    "inner_refit_offsets_calendar_months": [
+      0,
+      3
+    ],
+    "inner_right_anchor": "latest fully mature origin at annual fit cutoff",
+    "inner_training_start": "fixed left boundary of outer eight-year window",
+    "objective": "equal-origin-weighted squared error",
+    "row_weight": "1 / (number of train origins * markets at origin)",
+    "ridge_weights_sum": 1.0,
+    "tree_weights_mean": 1.0,
+    "selection": "paired one-standard-error parsimony rule",
+    "selection_bootstrap_block_origins": 63,
+    "selection_bootstrap_draws": 1000,
+    "ridge_tie_break": [
+      "largest_lambda"
+    ],
+    "tree_tie_break": [
+      "fewest_stages",
+      "largest_leaf_fraction",
+      "largest_l2",
+      "canonical_config_id"
+    ]
+  },
+  "models": {
+    "B0": {
+      "estimator": "date_weighted_pooled_mean",
+      "tuned": false
+    },
+    "L_X": {
+      "estimator": "ridge",
+      "representation": "X",
+      "tuned": true
+    },
+    "L_S": {
+      "estimator": "ridge",
+      "representation": "S",
+      "tuned": true
+    },
+    "L_star": {
+      "estimator": "inner_only_selector",
+      "choices": [
+        "L_X",
+        "L_S"
+      ],
+      "tuned": false,
+      "tie_break": "L_X"
+    },
+    "A_S": {
+      "estimator": "HistGradientBoostingRegressor",
+      "representation": "S",
+      "max_depth": 1,
+      "max_leaf_nodes": 2,
+      "tuned": true
+    },
+    "Q_S": {
+      "estimator": "ridge",
+      "representation": "quadratic_S",
+      "predictor_dimension": 152,
+      "tuned": true
+    },
+    "N_S": {
+      "estimator": "HistGradientBoostingRegressor",
+      "representation": "S",
+      "max_depth": 2,
+      "max_leaf_nodes": 4,
+      "primary": true,
+      "tuned": true
+    },
+    "N_X": {
+      "estimator": "HistGradientBoostingRegressor",
+      "representation": "X",
+      "max_depth": 2,
+      "max_leaf_nodes": 4,
+      "primary": false,
+      "tuned": true
+    }
+  },
+  "ridge_grid": {
+    "lambda": [
+      1e-05,
+      5.3366992312063123e-05,
+      0.0002848035868435802,
+      0.0015199110829529332,
+      0.008111308307896872,
+      0.04328761281083057,
+      0.2310129700083158,
+      1.232846739442066,
+      6.5793322465756825,
+      35.111917342151344,
+      187.3817422860383,
+      1000.0
+    ],
+    "intercept_penalized": false
+  },
+  "tree_grid": {
+    "loss": "squared_error",
+    "learning_rate": 0.03,
+    "max_bins": 16,
+    "max_iter": [
+      25,
+      50,
+      100
+    ],
+    "leaf_fraction": [
+      0.025,
+      0.05
+    ],
+    "min_samples_leaf_formula": "max(256, ceil(leaf_fraction * N_training_rows))",
+    "l2_regularization": [
+      10,
+      100
+    ],
+    "early_stopping": false,
+    "categorical_features": null,
+    "max_features": 1.0,
+    "warm_start": false,
+    "random_state": 20260913
+  },
+  "leaf_support": {
+    "minimum_distinct_origins": 126,
+    "minimum_20_origin_bins": 12,
+    "minimum_calendar_years": 3,
+    "minimum_markets": 4,
+    "bin_numbering": "fixed base-origin calendar",
+    "audit_every_leaf_of_every_tree": true,
+    "outer_fit_failure": "BLOCKED_FIT_SUPPORT_NO_FALLBACK"
+  },
+  "inference": {
+    "primary_candidate": "N_S",
+    "primary_tests": [
+      {
+        "id": "MSE_LX",
+        "metric": "mean_paired_MSE_gain",
+        "benchmark": "L_X"
+      },
+      {
+        "id": "MSE_LS",
+        "metric": "mean_paired_MSE_gain",
+        "benchmark": "L_S"
+      },
+      {
+        "id": "IC_LSTAR",
+        "metric": "mean_paired_Spearman_IC_gain",
+        "benchmark": "L_star"
+      }
+    ],
+    "minimum_relative_MSE_gain_each_ridge": 0.001,
+    "minimum_IC_increment": 0.01,
+    "require_positive_N_S_mean_IC": true,
+    "require_N_S_MSE_below_B0_and_L_star": true,
+    "bootstrap": "null_centered_moving_blocks",
+    "block_base_origins": 63,
+    "sensitivity_block_base_origins": 126,
+    "draws": 5000,
+    "seed": 20260913,
+    "empty_base_origin_positions_preserved": true,
+    "p_value": "(1 + count(null_mean_star >= observed_mean)) / (draws + 1)",
+    "primary_multiplicity": "Holm",
+    "familywise_alpha": 0.05,
+    "confidence_intervals": "pointwise 95%; not simultaneous",
+    "constant_forecast_or_outcome_IC": 0,
+    "stability_requirements": [
+      "each primary mean increment positive in both fixed calendar halves",
+      "each primary mean increment positive after deleting its most favorable calendar-year bucket"
+    ],
+    "conditional_tests": [
+      {
+        "benchmark": "A_S",
+        "metric": "paired_MSE",
+        "claim": "interaction value"
+      },
+      {
+        "benchmark": "Q_S",
+        "metric": "paired_MSE",
+        "claim": "adaptive partition value"
+      },
+      {
+        "benchmark": "N_X",
+        "metric": "paired_MSE",
+        "claim": "economic compression value"
+      }
+    ],
+    "conditional_direction_guard": "positive mean IC increment for each claimed contrast",
+    "conditional_gate": "all primary tests passed",
+    "conditional_multiplicity": "Holm alpha 0.05"
+  },
+  "controls": {
+    "engineering_inference_size_replications": 100,
+    "inference_size_processes": [
+      "AR1 phi 0.5 zero-mean loss differences",
+      "overlapping 20-innovation sums"
+    ],
+    "inference_calibration_stop": "95% Wilson lower bound on family rejection rate above 0.05",
+    "procedure_replications_per_strength": 100,
+    "generator_calibration": "development window only; no real outer outcomes",
+    "linear_mean": "fixed development L_X with fixed development transform",
+    "noise_common_variance_share": 0.5,
+    "noise_common_AR1": 0.8,
+    "noise_idiosyncratic_AR1": 0.3,
+    "noise_overlap_sessions": 20,
+    "positive_interaction": "C04 * C06 minus development-only linear projection on [1,X]",
+    "strengths_q": [
+      0,
+      0.001,
+      0.005,
+      0.01
+    ],
+    "strong_engineering_q": 0.1,
+    "control_seed": 47291,
+    "coherent_price_path_claim": false,
+    "linear_world_win_is_not_automatically_type_I_error": true
+  },
+  "sensitivities": {
+    "additional_source_lag_sessions": 1,
+    "horizon_associations": [
+      5,
+      63
+    ],
+    "leave_one_training_year_out": true,
+    "leave_region_out_count": 6,
+    "network_placebo_seeds": [
+      61001,
+      61002,
+      61003,
+      61004,
+      61005,
+      61006,
+      61007,
+      61008,
+      61009,
+      61010,
+      61011,
+      61012,
+      61013,
+      61014,
+      61015,
+      61016,
+      61017,
+      61018,
+      61019,
+      61020
+    ],
+    "retune_sensitivities": false,
+    "can_rescue_primary": false
+  },
+  "portfolio": {
+    "top_fraction": 0.2,
+    "bottom_fraction": 0.2,
+    "k_rule": "max(1,floor(0.2*n))",
+    "long_gross_at_entry": 0.5,
+    "short_gross_at_entry": 0.5,
+    "tie_rule": "fractional equal membership across boundary tie group",
+    "sleeves": 20,
+    "sleeve_schedule": "shared planned max exit across all eligible markets",
+    "no_idle_sleeve": "skip portfolio cohort for all models, retain forecast evaluation",
+    "daily_return_source": "marked position and cash NAV, never overlapping forward labels",
+    "cash_return": 0,
+    "cost_or_turnover_kill_gate": false,
+    "native_harness_binding_required": true
+  },
+  "prospective": {
+    "enabled": false,
+    "explicit_owner_scheduler_approval_required": true,
+    "issued_before_entry_required": true,
+    "forecasts_immutable": true,
+    "fixed_analysis_endpoint": null,
+    "endpoint_requires_power_binding": true,
+    "target_power": 0.8,
+    "stop_at_first_significant": false
+  },
+  "neural_extension": {
+    "enabled": false,
+    "separate_registration_required": true,
+    "architecture": "16 -> 8 tanh -> 1 plus linear skip",
+    "parameter_count": 161,
+    "seed_aggregation": "mean forecasts, never best seed",
+    "seeds": [
+      11,
+      29,
+      47,
+      71,
+      101
+    ]
+  },
+  "resources": {
+    "fit_processes": 1,
+    "maximum_compute_threads": 8,
+    "initial_memory_budget_GiB": 32,
+    "benchmark_before_expansion": true,
+    "transient_io_retries": 2
+  },
+  "reproducibility": {
+    "prediction_absolute_tolerance": 1e-10,
+    "float_dtype": "float64",
+    "requires_row_label_split_hash_match": true,
+    "negative_verdict_is_successful_execution": true
+  },
+  "phases": [
+    {
+      "id": "P00",
+      "title": "Repository and governance reconciliation",
+      "optional": false
+    },
+    {
+      "id": "P01",
+      "title": "Data readiness and source snapshot",
+      "optional": false
+    },
+    {
+      "id": "P02",
+      "title": "Independent calendars and labels",
+      "optional": false
+    },
+    {
+      "id": "P03",
+      "title": "Causal features and economic concepts",
+      "optional": false
+    },
+    {
+      "id": "P04",
+      "title": "Common panel and chronological splits",
+      "optional": false
+    },
+    {
+      "id": "P05",
+      "title": "Estimator and inference engineering",
+      "optional": false
+    },
+    {
+      "id": "P06",
+      "title": "Registration and execution lock",
+      "optional": false
+    },
+    {
+      "id": "P07",
+      "title": "Controls and historical replay",
+      "optional": false
+    },
+    {
+      "id": "P08",
+      "title": "Primary forecast evaluation",
+      "optional": false
+    },
+    {
+      "id": "P09",
+      "title": "Mechanism and fragility",
+      "optional": false
+    },
+    {
+      "id": "P10",
+      "title": "Gross portfolio and harness integration",
+      "optional": false
+    },
+    {
+      "id": "P11",
+      "title": "Final verdict and reproduction",
+      "optional": false
+    },
+    {
+      "id": "P12",
+      "title": "Optional prospective shadow operation",
+      "optional": true
+    },
+    {
+      "id": "P13",
+      "title": "Optional separately registered neural extension",
+      "optional": true
+    }
+  ],
+  "amendment": "AM-1: removed P07/P08 (bank-edge coverage) and P11 (3M RR tenor missing); X 24->21, S 16->15, C05 removed, C06=(P09+P10)/2. Owner directive 2026-09-13. See governance/amendment_AM1.md."
+}

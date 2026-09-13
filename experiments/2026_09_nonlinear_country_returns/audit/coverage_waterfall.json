@@ -1,0 +1,243 @@
+{
+ "strict_spec_complete_case_24_primitives": {
+  "description": "All 24 primitives required per (origin, market) row.",
+  "primitive_count": 24,
+  "markets_ever_eligible": 15,
+  "eligible_market_set": [
+   "Australia",
+   "Brazil",
+   "Canada",
+   "France",
+   "Germany",
+   "Italy",
+   "Japan",
+   "Korea",
+   "Mexico",
+   "Netherlands",
+   "South Africa",
+   "Spain",
+   "Sweden",
+   "Switzerland",
+   "U.K."
+  ],
+  "earliest_date_with_20_markets": null,
+  "max_eligible_markets": 15,
+  "eligibility_timeline": [
+   {
+    "date": "2007-10-04",
+    "eligible_markets": 1
+   },
+   {
+    "date": "2007-10-08",
+    "eligible_markets": 6
+   },
+   {
+    "date": "2007-10-22",
+    "eligible_markets": 7
+   },
+   {
+    "date": "2008-01-01",
+    "eligible_markets": 8
+   },
+   {
+    "date": "2008-02-21",
+    "eligible_markets": 9
+   },
+   {
+    "date": "2009-08-25",
+    "eligible_markets": 10
+   },
+   {
+    "date": "2010-01-01",
+    "eligible_markets": 11
+   },
+   {
+    "date": "2010-07-01",
+    "eligible_markets": 12
+   },
+   {
+    "date": "2012-10-01",
+    "eligible_markets": 13
+   },
+   {
+    "date": "2015-03-06",
+    "eligible_markets": 14
+   },
+   {
+    "date": "2015-04-01",
+    "eligible_markets": 15
+   }
+  ],
+  "markets_never_eligible": [
+   "Chile",
+   "ChinaA",
+   "ChinaH",
+   "Denmark",
+   "Hong Kong",
+   "India",
+   "Indonesia",
+   "Malaysia",
+   "NASDAQ",
+   "Philippines",
+   "Poland",
+   "Saudi Arabia",
+   "Singapore",
+   "Taiwan",
+   "Thailand",
+   "Turkey",
+   "U.S.",
+   "US SmallCap",
+   "Vietnam"
+  ],
+  "floor_required": 20,
+  "verdict": "BLOCKED_DATA \u2014 strict 24-primitive complete-case ceiling is 15 markets < 20 floor at EVERY origin"
+ },
+ "amendment_scenarios_measured_not_endorsed": {
+  "A1_drop_bank_neighbor_primitives": {
+   "description": "Drop P07/P08 (bank-claims-weighted neighbor returns); removes C05 from S (16->15 inputs). 22 markets, >=20 from 2010-07-01.",
+   "primitive_count": 22,
+   "markets_ever_eligible": 22,
+   "eligible_market_set": [
+    "Australia",
+    "Brazil",
+    "Canada",
+    "ChinaA",
+    "France",
+    "Germany",
+    "India",
+    "Indonesia",
+    "Italy",
+    "Japan",
+    "Korea",
+    "Mexico",
+    "Netherlands",
+    "Poland",
+    "Singapore",
+    "South Africa",
+    "Spain",
+    "Sweden",
+    "Switzerland",
+    "Thailand",
+    "Turkey",
+    "U.K."
+   ],
+   "earliest_date_with_20_markets": "2010-07-01",
+   "max_eligible_markets": 22,
+   "eligibility_timeline": [
+    {
+     "date": "2007-10-04",
+     "eligible_markets": 1
+    },
+    {
+     "date": "2007-10-08",
+     "eligible_markets": 12
+    },
+    {
+     "date": "2007-10-22",
+     "eligible_markets": 14
+    },
+    {
+     "date": "2008-02-21",
+     "eligible_markets": 16
+    },
+    {
+     "date": "2008-03-05",
+     "eligible_markets": 17
+    },
+    {
+     "date": "2009-08-25",
+     "eligible_markets": 18
+    },
+    {
+     "date": "2010-01-27",
+     "eligible_markets": 19
+    },
+    {
+     "date": "2010-07-01",
+     "eligible_markets": 20
+    },
+    {
+     "date": "2011-02-23",
+     "eligible_markets": 21
+    },
+    {
+     "date": "2015-03-06",
+     "eligible_markets": 22
+    }
+   ]
+  },
+  "A2_holder_edges_for_bank": {
+   "description": "Substitute holder (inbound ownership) edges for bank edges in P07/P08. Changes the economic concept; needs a spec amendment.",
+   "primitive_count": 24,
+   "markets_ever_eligible": 22,
+   "eligible_market_set": [
+    "Australia",
+    "Brazil",
+    "Canada",
+    "ChinaA",
+    "France",
+    "Germany",
+    "India",
+    "Indonesia",
+    "Italy",
+    "Japan",
+    "Korea",
+    "Mexico",
+    "Netherlands",
+    "Poland",
+    "Singapore",
+    "South Africa",
+    "Spain",
+    "Sweden",
+    "Switzerland",
+    "Thailand",
+    "Turkey",
+    "U.K."
+   ],
+   "earliest_date_with_20_markets": "2010-07-01",
+   "max_eligible_markets": 22,
+   "eligibility_timeline": [
+    {
+     "date": "2007-10-04",
+     "eligible_markets": 1
+    },
+    {
+     "date": "2007-10-08",
+     "eligible_markets": 12
+    },
+    {
+     "date": "2007-10-22",
+     "eligible_markets": 14
+    },
+    {
+     "date": "2008-02-21",
+     "eligible_markets": 16
+    },
+    {
+     "date": "2008-03-05",
+     "eligible_markets": 17
+    },
+    {
+     "date": "2009-08-25",
+     "eligible_markets": 18
+    },
+    {
+     "date": "2010-01-27",
+     "eligible_markets": 19
+    },
+    {
+     "date": "2010-07-01",
+     "eligible_markets": 20
+    },
+    {
+     "date": "2011-02-23",
+     "eligible_markets": 21
+    },
+    {
+     "date": "2015-03-06",
+     "eligible_markets": 22
+    }
+   ]
+  }
+ }
+}

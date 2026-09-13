@@ -1,0 +1,39 @@
+{
+ "snapshot_dir": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/experiments/nonlinear_country_returns/snapshot_2026_09_13",
+ "frozen_at": "2026-09-13",
+ "note": "loop-DB and main-DB exports taken minutes apart; watermark = last completed nightly loop run (2026-09-11 data, jobs finish ~07:45 PT); two-DB exports are same-batch because neither DB was written between the exports (Sunday, no writers active).",
+ "files": {
+  "consensus_daily.parquet": {
+   "sha256": "853d1ac62eb82b4cef1da6baf7cf5c8669b294a2cff1377c589d48c853180ffc",
+   "bytes": 2011744
+  },
+  "consensus_revisions.parquet": {
+   "sha256": "814869ebe6984b29a9d0ec16d50e18a4bb4ffbb14cb0ec3c25d40373747ccb79",
+   "bytes": 181516
+  },
+  "daily_calendar.parquet": {
+   "sha256": "c48b5d96f75555c748cc8519f1efa8537729d4b2ea07105d68cb9f0324309fcc",
+   "bytes": 742461
+  },
+  "graph_edge_vintages.parquet": {
+   "sha256": "eed9ff3b4d90f7aab1b1245ea04dbe8a7723ef5f9450af6f72f8967f7daf07c2",
+   "bytes": 774497
+  },
+  "graph_features_pit_daily.parquet": {
+   "sha256": "97f9d51170f6118114bd542296fbdae7cf04bd7c438a71136124c3b1b7485100",
+   "bytes": 14989483
+  },
+  "market_implied_daily.parquet": {
+   "sha256": "be20e69df69788c3dae97cc5b36713a7c299c6ae1ad27fc2428b5858dde89c0e",
+   "bytes": 6133893
+  },
+  "sovereign_daily.parquet": {
+   "sha256": "c97472e5c761c1515a3e06307809b558cb657050b5b9a9492e1047ce059f9ebf",
+   "bytes": 2453443
+  },
+  "t2_levels_daily.parquet": {
+   "sha256": "37e14c7f960bb34c168667440bc29a92aa75ace3fba2d31d7f56b1e5420009bd",
+   "bytes": 82485955
+  }
+ }
+}

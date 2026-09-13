@@ -1,0 +1,211 @@
+schema_version: '1.0'
+status: BOUND_WITH_BLOCKERS
+source_selectors_verified: true
+audit_snapshot: Data/work/experiments/nonlinear_country_returns/snapshot_2026_09_13
+audit_note: >-
+  All bindings verified against the frozen 2026-09-13 snapshot (schemas, per-market
+  first/last dates, row counts). No selector was guessed; no feature substituted.
+  P11's specified 3M tenor does not exist anywhere in the pipeline (collector pulls
+  25R1M only) and is marked MISSING. P07/P08 bank-claim edges cover only 21 focal
+  markets and are marked INSUFFICIENT_COVERAGE. See governance/data_readiness.md —
+  the strict 24-primitive complete-case panel tops out at 15 markets (< 20 floor),
+  so the study as specified is BLOCKED_DATA pending an owner-approved amendment.
+source_database_defaults:
+  warehouse: Data/asado.duckdb (main checkout only — worktree has no Data/)
+  loop: Data/loop/asado_loop.duckdb
+feature_count: 24
+features:
+- id: P01
+  alias: own_return_5
+  definition: own trailing 5 local-session USD total return
+  binding_status: BOUND
+  database: main
+  table_or_view: asado.t2_levels_daily
+  selector: variable = 'Tot Return Index'
+  value_column: value
+  market_or_entity_key: country (T2 names)
+  units_and_quote: USD total-return index level; returns = session-close ratio - 1
+  historical_availability_rule: latest local close strictly before 23:59 UTC origin
+  vintage_policy: none (exchange marks are not revised; corporate-action restatements not expected)
+  readiness: VERIFIED_HISTORICAL_AVAILABILITY
+  coverage: 34/34 markets, 2000-01-01..2026-09-11, ~9751 obs each
+- id: P02
+  alias: own_return_21
+  definition: own trailing 21 local-session USD total return
+  binding_status: BOUND
+  same_binding_as: P01
+  readiness: VERIFIED_HISTORICAL_AVAILABILITY
+- id: P03
+  alias: own_return_63
+  definition: own trailing 63 local-session USD total return
+  binding_status: BOUND
+  same_binding_as: P01
+  readiness: VERIFIED_HISTORICAL_AVAILABILITY
+- id: P04
+  alias: own_realized_vol_21
+  definition: std dev of previous 21 valid one-session total returns
+  binding_status: BOUND
+  same_binding_as: P01
+  readiness: VERIFIED_HISTORICAL_AVAILABILITY
+- id: P05
+  alias: trade_neighbor_return_21
+  definition: non-self PIT trade-weighted neighbors trailing 21-session return
+  binding_status: BOUND
+  database: loop
+  table_or_view: graph_edge_vintages (edge_type='trade') + t2_levels_daily
+  selector: focal = market; weights at latest vintage with applies_from <= origin
+  historical_availability_rule: applies_from is the publication lag; vintage_end = data through
+  coverage: 30 focal markets; focals missing ChinaH, NASDAQ, Taiwan, US SmallCap;
+    Saudi Arabia edges only from 2014-10 vintage; Vietnam from 2006-12
+  readiness: VERIFIED_HISTORICAL_AVAILABILITY (for the 30 focal markets)
+- id: P06
+  alias: trade_neighbor_return_63
+  binding_status: BOUND
+  same_binding_as: P05
+  readiness: VERIFIED_HISTORICAL_AVAILABILITY
+- id: P07
+  alias: bank_neighbor_return_21
+  definition: non-self PIT banking-weighted neighbors trailing 21-session return
+  binding_status: BOUND_BUT_LIMITED
+  database: loop
+  table_or_view: graph_edge_vintages (edge_type='bank') + t2_levels_daily
+  coverage: 21 focal markets ONLY; staggered focal entry (Canada 2008-01,
+    South Africa 2010-01, Spain 2012-10, Italy 2015-04, Philippines 2017-04).
+    Missing focals: ChinaA, ChinaH, India, Indonesia, Malaysia, NASDAQ, Poland,
+    Saudi Arabia, Singapore, Thailand, Turkey, US SmallCap, Vietnam.
+  readiness: INSUFFICIENT_COVERAGE
+- id: P08
+  alias: bank_neighbor_return_63
+  binding_status: BOUND_BUT_LIMITED
+  same_binding_as: P07
+  readiness: INSUFFICIENT_COVERAGE
+- id: P09
+  alias: fx_iv_3m
+  definition: ATM 3M FX implied volatility
+  binding_status: BOUND
+  database: loop
+  table_or_view: market_implied_daily
+  selector: variable = 'FX_IMPVOL_3M_PCT'
+  units_and_quote: percent, annualized; EURUSD surface broadcast to FRA/DEU/ITA/NLD/ESP;
+    USDCNH to ChinaA+ChinaH
+  coverage: 29 markets (none for Denmark, Vietnam, U.S., NASDAQ, US SmallCap —
+    USD numeraire has no pair; Denmark/Vietnam structurally skipped by collector)
+  readiness: VERIFIED_HISTORICAL_AVAILABILITY (for the 29 markets)
+- id: P10
+  alias: fx_iv_term_1w_3m
+  definition: ATM 1W FX implied vol minus ATM 3M
+  binding_status: BOUND
+  selector: variable = 'FX_IMPVOL_1W_PCT' minus 'FX_IMPVOL_3M_PCT'
+  coverage: as P09
+  readiness: VERIFIED_HISTORICAL_AVAILABILITY
+- id: P11
+  alias: fx_rr25_3m_depreciation
+  definition: 3M 25-delta risk reversal oriented as local depreciation premium
+  binding_status: SPECIFIED_TENOR_MISSING
+  note: >-
+    Collector pulls [PAIR]25R1M only — no 3M RR exists in market_implied_daily or
+    anywhere upstream. FX_RR25_1M_PCT (29 markets, sign-normalized so positive =
+    local depreciation premium, matching the specified orientation) is the only
+    candidate and is a DIFFERENT TENOR — recorded as a required amendment, not a
+    substitution.
+  readiness: MISSING
+- id: P12
+  alias: fx_carry_3m
+  definition: 3M carry, audited currency/percentage convention
+  binding_status: BOUND
+  selector: variable = 'FX_CARRY_3M_PCT'
+  units_and_quote: annualized pct, sign = local short rates above USD (documented in
+    collector); derived from [ROOT]3M outright forwards + spot
+  coverage: 30 markets (adds Denmark via USDDKK forward; still none for US complex
+    or Vietnam)
+  readiness: VERIFIED_HISTORICAL_AVAILABILITY
+- id: P13
+  alias: sovereign_yield_2y
+  binding_status: BOUND
+  database: loop
+  table_or_view: sovereign_daily
+  selector: variable = 'SOV_2Y_YIELD_PCT'
+  coverage: 27 markets (missing Chile, Hong Kong, Malaysia, Philippines,
+    Saudi Arabia, Taiwan, Vietnam); Brazil starts 2010-07, Turkey 2006-06
+  readiness: INSUFFICIENT_COVERAGE
+- id: P14
+  alias: sovereign_yield_10y
+  binding_status: BOUND
+  selector: variable = 'SOV_10Y_YIELD_PCT'
+  coverage: 32 markets (missing Hong Kong, Vietnam); late starts: Chile 2014-06,
+    Saudi 2021-06, Taiwan 2011-02
+  readiness: VERIFIED_HISTORICAL_AVAILABILITY (for the 32 markets)
+- id: P15
+  alias: sovereign_curve_2s10s
+  definition: 10Y minus 2Y yield
+  binding_status: BOUND
+  requires: [P13, P14]
+  coverage: limited by SOV_2Y (27 markets)
+  readiness: INSUFFICIENT_COVERAGE
+- id: P16
+  alias: sovereign_yield_2y_change_21
+  definition: 21 local-session change in 2Y yield
+  binding_status: BOUND
+  requires: [P13]
+  coverage: as P13
+  readiness: INSUFFICIENT_COVERAGE
+- id: P17
+  alias: gdp_revision_21
+  definition: 21-session signed sum for unchanged next-calendar-year GDP target
+  binding_status: BOUND
+  database: loop
+  table_or_view: consensus_daily (target_year column; year-specific ECFC tickers
+    store full revision paths — unchanged vs missing distinguishable)
+  forecast_year_field: target_year
+  rollover_rule: target_year = next calendar year after origin, held fixed inside
+    each origin's revision window (per spec) — exact rollover boundary to be frozen
+    at P02
+  coverage: 34 markets, 2007-10 onward; late starts: Netherlands GDP 2012-05,
+    Saudi GDP 2010-09, Vietnam 2011-12
+  readiness: VERIFIED_HISTORICAL_AVAILABILITY
+- id: P18
+  alias: cpi_revision_21
+  binding_status: BOUND
+  same_binding_as: P17 with variable = 'CONS_CPI_PCT'
+  coverage: 34 markets; late starts: Netherlands CPI 2015-03-06, Germany CPI 2009-08-25
+  readiness: VERIFIED_HISTORICAL_AVAILABILITY
+- id: P19
+  alias: revision_arrival_days_21
+  binding_status: BOUND
+  same_binding_as: P17 (distinct days where either series changed beyond
+    documented reporting precision — tolerance to bind at P02)
+  readiness: VERIFIED_HISTORICAL_AVAILABILITY
+- id: P20
+  alias: days_since_revision
+  binding_status: BOUND
+  same_binding_as: P17
+  readiness: VERIFIED_HISTORICAL_AVAILABILITY
+- id: P21
+  alias: global_vix
+  binding_status: BOUND
+  selector: market_implied_daily variable='RISK_VIX', country='GLOBAL'
+  coverage: market-invariant, 2006-01-03 onward
+  readiness: VERIFIED_HISTORICAL_AVAILABILITY
+- id: P22
+  alias: global_move
+  binding_status: BOUND
+  selector: variable='RISK_MOVE', country='GLOBAL'
+  readiness: VERIFIED_HISTORICAL_AVAILABILITY
+- id: P23
+  alias: global_dxy_return_21
+  binding_status: BOUND
+  selector: variable='RISK_DXY', country='GLOBAL'; trailing 21-source-session return
+  readiness: VERIFIED_HISTORICAL_AVAILABILITY
+- id: P24
+  alias: global_brent_return_21
+  binding_status: BOUND
+  selector: variables 'CMD_CO1'/'CMD_CO2', country='GLOBAL'; roll convention audit
+    deferred to P02 label/feature build (generic futures, need roll-dating evidence)
+  readiness: VERIFIED_HISTORICAL_AVAILABILITY (roll convention to document in P02)
+
+summary:
+  verified: [P01, P02, P03, P04, P05, P06, P09, P10, P12, P14, P17, P18, P19, P20,
+             P21, P22, P23, P24]
+  insufficient_coverage: [P07, P08, P13, P15, P16]
+  missing: [P11]
+  verdict: BLOCKED_DATA under strict complete-case (max 15 markets < 20 floor)

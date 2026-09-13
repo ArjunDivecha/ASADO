@@ -1,0 +1,35 @@
+market,currency,fx_options_pair,fx_forward_pair,trade_edge_focal,bank_edge_focal,holder_edge_focal,draft_region
+Australia,AUD,AUDUSD,AUDUSD,True,True,True,Pacific_DM
+Brazil,BRL,USDBRL,USDBRL,True,True,True,LatAm
+Canada,CAD,USDCAD,USDCAD,True,True,True,US
+Chile,CLP,USDCLP,USDCLP,True,True,True,LatAm
+ChinaA,CNH,USDCNH,USDCNH,True,False,True,Asia_EM
+ChinaH,CNH,USDCNH,USDCNH,False,False,False,Asia_EM
+Denmark,DKK,,USDDKK,True,True,True,Europe
+France,EUR,EURUSD,EURUSD,True,True,True,Europe
+Germany,EUR,EURUSD,EURUSD,True,True,True,Europe
+Hong Kong,HKD,USDHKD,USDHKD,True,True,True,Asia_DM
+India,INR,USDINR,USDINR,True,False,True,Asia_EM
+Indonesia,IDR,USDIDR,USDIDR,True,False,True,Asia_EM
+Italy,EUR,EURUSD,EURUSD,True,True,True,Europe
+Japan,JPY,USDJPY,USDJPY,True,True,True,Asia_DM
+Korea,KRW,USDKRW,USDKRW,True,True,True,Asia_EM
+Malaysia,MYR,USDMYR,USDMYR,True,False,True,Asia_EM
+Mexico,MXN,USDMXN,USDMXN,True,True,True,LatAm
+NASDAQ,USD,,,False,False,False,US
+Netherlands,EUR,EURUSD,EURUSD,True,True,True,Europe
+Philippines,PHP,USDPHP,USDPHP,True,True,True,Asia_EM
+Poland,PLN,USDPLN,USDPLN,True,False,True,Europe
+Saudi Arabia,SAR,USDSAR,USDSAR,True,False,True,MEA
+Singapore,SGD,USDSGD,USDSGD,True,False,True,Asia_DM
+South Africa,ZAR,USDZAR,USDZAR,True,True,True,MEA
+Spain,EUR,EURUSD,EURUSD,True,True,True,Europe
+Sweden,SEK,USDSEK,USDSEK,True,True,True,Europe
+Switzerland,CHF,USDCHF,USDCHF,True,True,True,Europe
+Taiwan,TWD,USDTWD,USDTWD,False,True,True,Asia_EM
+Thailand,THB,USDTHB,USDTHB,True,False,True,Asia_EM
+Turkey,TRY,USDTRY,USDTRY,True,False,True,Europe
+U.K.,GBP,GBPUSD,GBPUSD,True,True,True,Europe
+U.S.,USD,,,True,True,True,US
+US SmallCap,USD,,,False,False,False,US
+Vietnam,VND,,,True,False,True,Asia_EM

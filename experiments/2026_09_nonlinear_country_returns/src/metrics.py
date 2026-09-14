@@ -131,15 +131,23 @@ def primary_tests(tab: pd.DataFrame, seed_base: int = MASTER_SEED):
     mse_x = (tab["L_X_mse"] - tab["N_S_mse"]).to_numpy()
     mse_s = (tab["L_S_mse"] - tab["N_S_mse"]).to_numpy()
     ic_ls = (tab["N_S_ic"] - tab["L_star_ic"]).to_numpy()
+
+    def paired_rel_gain(ns, bench):
+        # relative MSE gain on the common both-scored origin set; an
+        # unpaired ratio would let partial coverage hide failed quarters
+        a, b = ns.to_numpy(dtype=float), bench.to_numpy(dtype=float)
+        m = np.isfinite(a) & np.isfinite(b)
+        if m.sum() < 30:
+            return None
+        return float(1 - np.nanmean(a[m]) / np.nanmean(b[m]))
+
     tests = [
         {"name": "mse_gain_vs_L_X", "d": mse_x,
          "point": float(np.nanmean(mse_x)),
-         "rel_gain": float(1 - np.nanmean(tab["N_S_mse"]) /
-                           np.nanmean(tab["L_X_mse"]))},
+         "rel_gain": paired_rel_gain(tab["N_S_mse"], tab["L_X_mse"])},
         {"name": "mse_gain_vs_L_S", "d": mse_s,
          "point": float(np.nanmean(mse_s)),
-         "rel_gain": float(1 - np.nanmean(tab["N_S_mse"]) /
-                           np.nanmean(tab["L_S_mse"]))},
+         "rel_gain": paired_rel_gain(tab["N_S_mse"], tab["L_S_mse"])},
         {"name": "ic_gain_vs_L_star", "d": ic_ls,
          "point": float(np.nanmean(ic_ls)),
          "rel_gain": None},

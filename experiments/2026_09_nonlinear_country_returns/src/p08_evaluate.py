@@ -128,6 +128,7 @@ def main() -> None:
 
     # ---- registered gate ladder (12.2) -----------------------------------
     ns_ok = not np.isnan(tab["N_S_mse"]).all()
+    m_pair = tab["N_S_mse"].notna()  # paired absolute-usefulness set
     t = {x["name"]: x for x in tests}
     def gte(v, thr):
         return v is not None and v >= thr
@@ -143,9 +144,11 @@ def main() -> None:
                         and lt(t["ic_gain_vs_L_star"]["p_holm"], 0.05)),
         "absolute": bool(
             ns_ok and
-            np.nanmean(tab["N_S_mse"]) < np.nanmean(tab["B0_mse"]) and
-            np.nanmean(tab["N_S_mse"]) < np.nanmean(tab["L_star_mse"]) and
-            np.nanmean(tab["N_S_ic"]) > 0),
+            tab.loc[m_pair, "N_S_mse"].mean() <
+            tab.loc[m_pair, "B0_mse"].mean() and
+            tab.loc[m_pair, "N_S_mse"].mean() <
+            tab.loc[m_pair, "L_star_mse"].mean() and
+            tab.loc[m_pair, "N_S_ic"].mean() > 0),
         "stability": all(stability(tab, tests)[k]["halves_positive"]
                          and stability(tab, tests)[k]["drop_fav_positive"]
                          for k in ("mse_gain_vs_L_X", "mse_gain_vs_L_S",

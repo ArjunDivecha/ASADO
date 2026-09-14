@@ -72,13 +72,38 @@ def one_rep(task):
             "ns_mean_ic": _nm(tab["N_S_ic"]),
             "blocked_fits": _count_blocked(run_dir),
         }
+        # registered declaration = the full 12.2 gate ladder, mirrored:
+        # three corrected tests + absolute usefulness + stability + coverage
+        from p08_evaluate import stability
+        stab = stability(tab, tests)
+        tp = {x["name"]: x for x in tests}
+        n_orig = len(tab)
+        ns_cov = int(tab["N_S_mse"].notna().sum())
+        m_pair = tab["N_S_mse"].notna()
+        abs_ok = bool(
+            ns_cov and
+            tab.loc[m_pair, "N_S_mse"].mean() <
+            tab.loc[m_pair, "B0_mse"].mean() and
+            tab.loc[m_pair, "N_S_mse"].mean() <
+            tab.loc[m_pair, "L_star_mse"].mean() and
+            tab.loc[m_pair, "N_S_ic"].mean() > 0)
+        dec["n_s_coverage"] = ns_cov
+        dec["n_scored_origins"] = n_orig
         # null metrics = unavailable stream = cannot be declared
         ge = lambda x, t: x is not None and x >= t   # noqa: E731
         lt = lambda x, t: x is not None and x < t    # noqa: E731
         dec["primary_declared"] = bool(
-            ge(tests[0]["rel_gain"], 0.001) and lt(tests[0]["p_holm"], 0.05) and
-            ge(tests[1]["rel_gain"], 0.001) and lt(tests[1]["p_holm"], 0.05) and
-            ge(tests[2]["point"], 0.01) and lt(tests[2]["p_holm"], 0.05))
+            ge(tp["mse_gain_vs_L_X"]["rel_gain"], 0.001)
+            and lt(tp["mse_gain_vs_L_X"]["p_holm"], 0.05)
+            and ge(tp["mse_gain_vs_L_S"]["rel_gain"], 0.001)
+            and lt(tp["mse_gain_vs_L_S"]["p_holm"], 0.05)
+            and ge(tp["ic_gain_vs_L_star"]["point"], 0.01)
+            and lt(tp["ic_gain_vs_L_star"]["p_holm"], 0.05)
+            and abs_ok
+            and all(stab[k]["halves_positive"] and stab[k]["drop_fav_positive"]
+                    for k in ("mse_gain_vs_L_X", "mse_gain_vs_L_S",
+                              "ic_gain_vs_L_star"))
+            and ns_cov == n_orig)
     except Exception as e:  # a crashed rep is a recorded failure, not silent
         return {"q": q, "rep": rep, "status": "CRASHED", "error": str(e)}
     (run_dir / "control_result.json").write_text(json.dumps(dec, indent=1))
@@ -130,11 +155,12 @@ def main():
                 print(f"{i+1}/{len(tasks)} done ({el/60:.0f}m elapsed, "
                       f"~{eta/60:.0f}m left)", flush=True)
     out_p = SCRATCH / "control_summary.json"
-    prev = []
-    if out_p.exists():
-        prev = json.loads(out_p.read_text())
-    out_p.write_text(json.dumps(prev + results, indent=1))
-    print(f"wrote {out_p} ({len(prev) + len(results)} total reps)")
+    prev = json.loads(out_p.read_text()) if out_p.exists() else []
+    merged = {(r["q"], r["rep"]): r for r in prev}
+    for r in results:
+        merged[(r["q"], r["rep"])] = r  # dedupe by (q, rep)
+    out_p.write_text(json.dumps(list(merged.values()), indent=1))
+    print(f"wrote {out_p} ({len(merged)} total reps)")
 
 
 if __name__ == "__main__":

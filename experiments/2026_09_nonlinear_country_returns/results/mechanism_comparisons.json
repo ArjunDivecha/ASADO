@@ -1,0 +1,119 @@
+{
+ "phase": "P09",
+ "primary_pass": false,
+ "contrasts": {
+  "N_S_vs_A_S": {
+   "mean_mse_gain": null,
+   "rel_gain": null,
+   "ic_guard": null,
+   "p_raw": null,
+   "ci95": [
+    null,
+    null
+   ],
+   "p_holm": null,
+   "passes": false,
+   "claim_status": "descriptive_only"
+  },
+  "N_S_vs_Q_S": {
+   "mean_mse_gain": null,
+   "rel_gain": null,
+   "ic_guard": null,
+   "p_raw": null,
+   "ci95": [
+    null,
+    null
+   ],
+   "p_holm": null,
+   "passes": false,
+   "claim_status": "descriptive_only"
+  },
+  "N_S_vs_N_X": {
+   "mean_mse_gain": null,
+   "rel_gain": null,
+   "ic_guard": null,
+   "p_raw": null,
+   "ci95": [
+    null,
+    null
+   ],
+   "p_holm": null,
+   "passes": false,
+   "claim_status": "descriptive_only"
+  }
+ },
+ "descriptive": {
+  "mse_gain_by_year": {
+   "2020": {
+    "mean": NaN,
+    "n": 0,
+    "contrib": 0.0
+   },
+   "2021": {
+    "mean": NaN,
+    "n": 0,
+    "contrib": 0.0
+   },
+   "2022": {
+    "mean": NaN,
+    "n": 0,
+    "contrib": 0.0
+   },
+   "2023": {
+    "mean": NaN,
+    "n": 0,
+    "contrib": 0.0
+   },
+   "2024": {
+    "mean": NaN,
+    "n": 0,
+    "contrib": 0.0
+   },
+   "2025": {
+    "mean": NaN,
+    "n": 0,
+    "contrib": 0.0
+   },
+   "2026": {
+    "mean": NaN,
+    "n": 0,
+    "contrib": 0.0
+   }
+  },
+  "ic_gain_by_year": {
+   "2020": NaN,
+   "2021": NaN,
+   "2022": NaN,
+   "2023": NaN,
+   "2024": NaN,
+   "2025": NaN,
+   "2026": NaN
+  },
+  "mse_gain_by_market": {
+   "Australia": NaN,
+   "Brazil": NaN,
+   "Canada": NaN,
+   "ChinaA": NaN,
+   "France": NaN,
+   "Germany": NaN,
+   "India": NaN,
+   "Indonesia": NaN,
+   "Italy": NaN,
+   "Japan": NaN,
+   "Korea": NaN,
+   "Mexico": NaN,
+   "Netherlands": NaN,
+   "Poland": NaN,
+   "Singapore": NaN,
+   "South Africa": NaN,
+   "Spain": NaN,
+   "Sweden": NaN,
+   "Switzerland": NaN,
+   "Thailand": NaN,
+   "Turkey": NaN,
+   "U.K.": NaN
+  },
+  "_note": "descriptive disaggregation; not a selection rule; volatility-tercile/entity-group cuts computed from preceding training history only"
+ },
+ "gatekeeping": "no affirmative conditional claim unless all primary claims pass; no rescue promotion"
+}

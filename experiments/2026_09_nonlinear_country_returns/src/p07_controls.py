@@ -45,34 +45,42 @@ def one_rep(task):
     try:
         r = ReplayRunner(run_dir, labels_path=lab_p, tag=tag, quiet=True)
         r.run()
+
+        # scored axis under the pseudo-labels = same maturity masks as real
+        from metrics import load_scored
+        scored = load_scored()  # real maturity metadata
+        lab = pd.read_parquet(lab_p)
+        lab["origin_date"] = pd.to_datetime(lab["origin_date"])
+        scored = scored.drop(columns=["label"]).merge(
+            lab[["origin_date", "market", "label"]],
+            on=["origin_date", "market"], how="left")
+        fc = collect_forecasts(run_dir, STREAMS)
+        tab = origin_metric_table(scored, fc, STREAMS)
+        tests = primary_tests(tab)
+
+        def _nm(a):
+            v = np.asarray(a, dtype=float)
+            return float(np.nanmean(v)) if np.isfinite(v).any() else None
+
+        dec = {
+            "q": q, "rep": rep, "status": "ok",
+            "mse_gain_LX": tests[0]["rel_gain"], "p_LX": tests[0]["p_holm"],
+            "mse_gain_LS": tests[1]["rel_gain"], "p_LS": tests[1]["p_holm"],
+            "ic_gain_Lstar": tests[2]["point"], "p_Lstar": tests[2]["p_holm"],
+            "ns_vs_as_ic": _nm(tab["N_S_ic"] - tab["A_S_ic"]),
+            "qs_vs_ls_mse": _nm(tab["L_S_mse"] - tab["Q_S_mse"]),
+            "ns_mean_ic": _nm(tab["N_S_ic"]),
+            "blocked_fits": _count_blocked(run_dir),
+        }
+        # null metrics = unavailable stream = cannot be declared
+        ge = lambda x, t: x is not None and x >= t   # noqa: E731
+        lt = lambda x, t: x is not None and x < t    # noqa: E731
+        dec["primary_declared"] = bool(
+            ge(tests[0]["rel_gain"], 0.001) and lt(tests[0]["p_holm"], 0.05) and
+            ge(tests[1]["rel_gain"], 0.001) and lt(tests[1]["p_holm"], 0.05) and
+            ge(tests[2]["point"], 0.01) and lt(tests[2]["p_holm"], 0.05))
     except Exception as e:  # a crashed rep is a recorded failure, not silent
         return {"q": q, "rep": rep, "status": "CRASHED", "error": str(e)}
-
-    # scored axis under the pseudo-labels = same maturity masks as real
-    from metrics import load_scored
-    scored = load_scored()  # real maturity metadata
-    lab = pd.read_parquet(lab_p)
-    lab["origin_date"] = pd.to_datetime(lab["origin_date"])
-    scored = scored.drop(columns=["label"]).merge(
-        lab[["origin_date", "market", "label"]],
-        on=["origin_date", "market"], how="left")
-    fc = collect_forecasts(run_dir, STREAMS)
-    tab = origin_metric_table(scored, fc, STREAMS)
-    tests = primary_tests(tab)
-    dec = {
-        "q": q, "rep": rep, "status": "ok",
-        "mse_gain_LX": tests[0]["rel_gain"], "p_LX": tests[0]["p_holm"],
-        "mse_gain_LS": tests[1]["rel_gain"], "p_LS": tests[1]["p_holm"],
-        "ic_gain_Lstar": tests[2]["point"], "p_Lstar": tests[2]["p_holm"],
-        "ns_vs_as_ic": float(np.nanmean(tab["N_S_ic"] - tab["A_S_ic"])),
-        "qs_vs_ls_mse": float(np.nanmean(tab["L_S_mse"] - tab["Q_S_mse"])),
-        "ns_mean_ic": float(np.nanmean(tab["N_S_ic"])),
-        "blocked_fits": _count_blocked(run_dir),
-    }
-    dec["primary_declared"] = bool(
-        tests[0]["rel_gain"] >= 0.001 and tests[0]["p_holm"] < 0.05 and
-        tests[1]["rel_gain"] >= 0.001 and tests[1]["p_holm"] < 0.05 and
-        tests[2]["point"] >= 0.01 and tests[2]["p_holm"] < 0.05)
     (run_dir / "control_result.json").write_text(json.dumps(dec, indent=1))
     return dec
 

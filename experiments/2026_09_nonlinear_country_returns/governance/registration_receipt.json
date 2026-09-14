@@ -1,0 +1,37 @@
+{
+ "phase": "P06",
+ "experiment_id": "M_20260913_001",
+ "ledger": "ledgers/methodology_ledger.jsonl",
+ "registration_api": "scripts/loop/ledgers.py::register_methodology_experiment",
+ "protocol_lock_sha256": "7a9bd93ebf122a5a742ecd564bb52ec2c000959dd2ebab8b4929e8ed997e3f4d",
+ "study_config_sha256": "10d32038978eedd3dbbcc2d87622b2a90e7370db5073b1fb42ae687d4e3d2541",
+ "trial_manifest_sha256": "4cb7de63e934cda01b2e6cb2a498998593f2f3e33c841c739c853d4e931ad8d5",
+ "run_plan_sha256": "d807b9ce0d4857fa93119b4eb9cb5972a79e01d86f31167e494f0c11682d44b0",
+ "exposure_log_sha256": "726e975d4282f7512b06bcee813f544a28c010e7b107e4e4be10f9a401045e05",
+ "code_commit": "fa7e51d072815abe32f22dd00af1e6334bc49a14",
+ "approval_evidence": "Owner directives in-session 2026-09-13: 'loosen the blockers and make it run' + 'Drop P11' (AM-1 authorization); this methodology-ledger registration is the repository's authorized approval record per PRD 10.3 \u2014 no independent-review approval is invented.",
+ "hypothesis_text": "A pre-specified pooled nonlinear model \u2014 depth-2 histogram boosting (max 4 leaves) on a fixed 15-input economic representation S \u2014 will predict 20-local-session forward USD country equity returns better than independently tuned ridge models on the same 21 raw primitives (L_X), the same S inputs (L_S), and their annual inner-selected combination (L_star), on an identical point-in-time-safe eligible sample. The claim is about pooled nonlinear STRUCTURE, not any single primitive; the graveyard already holds the individual primitives DEAD as standalone signals, which is expected and not a conflict. PRIOR EXPOSURE DECLARED: MacroState M_20260906_001-003 (same idea family, different monthly/12M contract, no nested PIT inference; its nonlinear stage was designed after earlier results were seen), the LLM-1M tabular HGB arm, and the T2 IPCA pooled-model experiment. This study is not fresh confirmation of any of them. Amendment AM-1 (dropped P07/P08 bank-neighbor primitives and the nonexistent P11 3M risk reversal; 21 primitives, 15-input S, 22-market universe) was approved before any result exposure. A valid negative result is a successful delivery.",
+ "gate_ladder": [
+  {
+   "gate": 1,
+   "description": "Pre-execution integrity: P01-P05 phase gates PASS and all registered hashes verify against on-disk artifacts (validate-registration must pass)"
+  },
+  {
+   "gate": 2,
+   "description": "Inference calibration: empirical familywise rejection rate of the 63-origin block-bootstrap/Holm engine on 100 fixed null replications has 95% Wilson lower bound <= 5% nominal (else INVALID_INFERENCE_CALIBRATION)"
+  },
+  {
+   "gate": 3,
+   "description": "Positive control: the full nested selection procedure detects the planted C04*C06 interaction at moderate variance share (q>=0.005) at a non-trivial rate across >=100 fixed replications"
+  },
+  {
+   "gate": 4,
+   "description": "Primary MSE: N_S outer origin-weighted MSE gain vs BOTH L_X and L_S >= 0.1% relative, Holm-adjusted significance over the primary family"
+  },
+  {
+   "gate": 5,
+   "description": "Primary IC: N_S outer IC gain vs L_star >= 0.01, Holm-adjusted significance over the primary family"
+  }
+ ],
+ "real_outer_evaluation_permitted_after": "M_20260913_001"
+}

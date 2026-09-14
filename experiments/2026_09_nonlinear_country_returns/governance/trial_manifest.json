@@ -1,0 +1,797 @@
+{
+ "phase": "P06",
+ "learners": {
+  "fixed": [
+   "B0",
+   "L_star"
+  ],
+  "tuned": [
+   "L_X",
+   "L_S",
+   "Q_S",
+   "A_S",
+   "N_S",
+   "N_X"
+  ]
+ },
+ "n_candidate_configs": 72,
+ "configs": [
+  {
+   "model": "L_X",
+   "features": "X21",
+   "kind": "ridge",
+   "lambda": 1e-05,
+   "config_id": "L_X|lam=1e-05"
+  },
+  {
+   "model": "L_X",
+   "features": "X21",
+   "kind": "ridge",
+   "lambda": 5.3366992312063123e-05,
+   "config_id": "L_X|lam=5.3367e-05"
+  },
+  {
+   "model": "L_X",
+   "features": "X21",
+   "kind": "ridge",
+   "lambda": 0.0002848035868435802,
+   "config_id": "L_X|lam=0.000284804"
+  },
+  {
+   "model": "L_X",
+   "features": "X21",
+   "kind": "ridge",
+   "lambda": 0.0015199110829529332,
+   "config_id": "L_X|lam=0.00151991"
+  },
+  {
+   "model": "L_X",
+   "features": "X21",
+   "kind": "ridge",
+   "lambda": 0.008111308307896872,
+   "config_id": "L_X|lam=0.00811131"
+  },
+  {
+   "model": "L_X",
+   "features": "X21",
+   "kind": "ridge",
+   "lambda": 0.043287612810830614,
+   "config_id": "L_X|lam=0.0432876"
+  },
+  {
+   "model": "L_X",
+   "features": "X21",
+   "kind": "ridge",
+   "lambda": 0.2310129700083158,
+   "config_id": "L_X|lam=0.231013"
+  },
+  {
+   "model": "L_X",
+   "features": "X21",
+   "kind": "ridge",
+   "lambda": 1.232846739442066,
+   "config_id": "L_X|lam=1.23285"
+  },
+  {
+   "model": "L_X",
+   "features": "X21",
+   "kind": "ridge",
+   "lambda": 6.5793322465756825,
+   "config_id": "L_X|lam=6.57933"
+  },
+  {
+   "model": "L_X",
+   "features": "X21",
+   "kind": "ridge",
+   "lambda": 35.111917342151344,
+   "config_id": "L_X|lam=35.1119"
+  },
+  {
+   "model": "L_X",
+   "features": "X21",
+   "kind": "ridge",
+   "lambda": 187.38174228603867,
+   "config_id": "L_X|lam=187.382"
+  },
+  {
+   "model": "L_X",
+   "features": "X21",
+   "kind": "ridge",
+   "lambda": 1000.0,
+   "config_id": "L_X|lam=1000"
+  },
+  {
+   "model": "L_S",
+   "features": "S15",
+   "kind": "ridge",
+   "lambda": 1e-05,
+   "config_id": "L_S|lam=1e-05"
+  },
+  {
+   "model": "L_S",
+   "features": "S15",
+   "kind": "ridge",
+   "lambda": 5.3366992312063123e-05,
+   "config_id": "L_S|lam=5.3367e-05"
+  },
+  {
+   "model": "L_S",
+   "features": "S15",
+   "kind": "ridge",
+   "lambda": 0.0002848035868435802,
+   "config_id": "L_S|lam=0.000284804"
+  },
+  {
+   "model": "L_S",
+   "features": "S15",
+   "kind": "ridge",
+   "lambda": 0.0015199110829529332,
+   "config_id": "L_S|lam=0.00151991"
+  },
+  {
+   "model": "L_S",
+   "features": "S15",
+   "kind": "ridge",
+   "lambda": 0.008111308307896872,
+   "config_id": "L_S|lam=0.00811131"
+  },
+  {
+   "model": "L_S",
+   "features": "S15",
+   "kind": "ridge",
+   "lambda": 0.043287612810830614,
+   "config_id": "L_S|lam=0.0432876"
+  },
+  {
+   "model": "L_S",
+   "features": "S15",
+   "kind": "ridge",
+   "lambda": 0.2310129700083158,
+   "config_id": "L_S|lam=0.231013"
+  },
+  {
+   "model": "L_S",
+   "features": "S15",
+   "kind": "ridge",
+   "lambda": 1.232846739442066,
+   "config_id": "L_S|lam=1.23285"
+  },
+  {
+   "model": "L_S",
+   "features": "S15",
+   "kind": "ridge",
+   "lambda": 6.5793322465756825,
+   "config_id": "L_S|lam=6.57933"
+  },
+  {
+   "model": "L_S",
+   "features": "S15",
+   "kind": "ridge",
+   "lambda": 35.111917342151344,
+   "config_id": "L_S|lam=35.1119"
+  },
+  {
+   "model": "L_S",
+   "features": "S15",
+   "kind": "ridge",
+   "lambda": 187.38174228603867,
+   "config_id": "L_S|lam=187.382"
+  },
+  {
+   "model": "L_S",
+   "features": "S15",
+   "kind": "ridge",
+   "lambda": 1000.0,
+   "config_id": "L_S|lam=1000"
+  },
+  {
+   "model": "Q_S",
+   "features": "S135",
+   "kind": "ridge",
+   "lambda": 1e-05,
+   "config_id": "Q_S|lam=1e-05"
+  },
+  {
+   "model": "Q_S",
+   "features": "S135",
+   "kind": "ridge",
+   "lambda": 5.3366992312063123e-05,
+   "config_id": "Q_S|lam=5.3367e-05"
+  },
+  {
+   "model": "Q_S",
+   "features": "S135",
+   "kind": "ridge",
+   "lambda": 0.0002848035868435802,
+   "config_id": "Q_S|lam=0.000284804"
+  },
+  {
+   "model": "Q_S",
+   "features": "S135",
+   "kind": "ridge",
+   "lambda": 0.0015199110829529332,
+   "config_id": "Q_S|lam=0.00151991"
+  },
+  {
+   "model": "Q_S",
+   "features": "S135",
+   "kind": "ridge",
+   "lambda": 0.008111308307896872,
+   "config_id": "Q_S|lam=0.00811131"
+  },
+  {
+   "model": "Q_S",
+   "features": "S135",
+   "kind": "ridge",
+   "lambda": 0.043287612810830614,
+   "config_id": "Q_S|lam=0.0432876"
+  },
+  {
+   "model": "Q_S",
+   "features": "S135",
+   "kind": "ridge",
+   "lambda": 0.2310129700083158,
+   "config_id": "Q_S|lam=0.231013"
+  },
+  {
+   "model": "Q_S",
+   "features": "S135",
+   "kind": "ridge",
+   "lambda": 1.232846739442066,
+   "config_id": "Q_S|lam=1.23285"
+  },
+  {
+   "model": "Q_S",
+   "features": "S135",
+   "kind": "ridge",
+   "lambda": 6.5793322465756825,
+   "config_id": "Q_S|lam=6.57933"
+  },
+  {
+   "model": "Q_S",
+   "features": "S135",
+   "kind": "ridge",
+   "lambda": 35.111917342151344,
+   "config_id": "Q_S|lam=35.1119"
+  },
+  {
+   "model": "Q_S",
+   "features": "S135",
+   "kind": "ridge",
+   "lambda": 187.38174228603867,
+   "config_id": "Q_S|lam=187.382"
+  },
+  {
+   "model": "Q_S",
+   "features": "S135",
+   "kind": "ridge",
+   "lambda": 1000.0,
+   "config_id": "Q_S|lam=1000"
+  },
+  {
+   "model": "A_S",
+   "features": "S15",
+   "kind": "tree",
+   "max_iter": 25,
+   "leaf_fraction": 0.025,
+   "l2": 10.0,
+   "depth": 1,
+   "max_leaf_nodes": 2,
+   "config_id": "A_S|it=25|lf=0.025|l2=10"
+  },
+  {
+   "model": "A_S",
+   "features": "S15",
+   "kind": "tree",
+   "max_iter": 25,
+   "leaf_fraction": 0.025,
+   "l2": 100.0,
+   "depth": 1,
+   "max_leaf_nodes": 2,
+   "config_id": "A_S|it=25|lf=0.025|l2=100"
+  },
+  {
+   "model": "A_S",
+   "features": "S15",
+   "kind": "tree",
+   "max_iter": 25,
+   "leaf_fraction": 0.05,
+   "l2": 10.0,
+   "depth": 1,
+   "max_leaf_nodes": 2,
+   "config_id": "A_S|it=25|lf=0.05|l2=10"
+  },
+  {
+   "model": "A_S",
+   "features": "S15",
+   "kind": "tree",
+   "max_iter": 25,
+   "leaf_fraction": 0.05,
+   "l2": 100.0,
+   "depth": 1,
+   "max_leaf_nodes": 2,
+   "config_id": "A_S|it=25|lf=0.05|l2=100"
+  },
+  {
+   "model": "A_S",
+   "features": "S15",
+   "kind": "tree",
+   "max_iter": 50,
+   "leaf_fraction": 0.025,
+   "l2": 10.0,
+   "depth": 1,
+   "max_leaf_nodes": 2,
+   "config_id": "A_S|it=50|lf=0.025|l2=10"
+  },
+  {
+   "model": "A_S",
+   "features": "S15",
+   "kind": "tree",
+   "max_iter": 50,
+   "leaf_fraction": 0.025,
+   "l2": 100.0,
+   "depth": 1,
+   "max_leaf_nodes": 2,
+   "config_id": "A_S|it=50|lf=0.025|l2=100"
+  },
+  {
+   "model": "A_S",
+   "features": "S15",
+   "kind": "tree",
+   "max_iter": 50,
+   "leaf_fraction": 0.05,
+   "l2": 10.0,
+   "depth": 1,
+   "max_leaf_nodes": 2,
+   "config_id": "A_S|it=50|lf=0.05|l2=10"
+  },
+  {
+   "model": "A_S",
+   "features": "S15",
+   "kind": "tree",
+   "max_iter": 50,
+   "leaf_fraction": 0.05,
+   "l2": 100.0,
+   "depth": 1,
+   "max_leaf_nodes": 2,
+   "config_id": "A_S|it=50|lf=0.05|l2=100"
+  },
+  {
+   "model": "A_S",
+   "features": "S15",
+   "kind": "tree",
+   "max_iter": 100,
+   "leaf_fraction": 0.025,
+   "l2": 10.0,
+   "depth": 1,
+   "max_leaf_nodes": 2,
+   "config_id": "A_S|it=100|lf=0.025|l2=10"
+  },
+  {
+   "model": "A_S",
+   "features": "S15",
+   "kind": "tree",
+   "max_iter": 100,
+   "leaf_fraction": 0.025,
+   "l2": 100.0,
+   "depth": 1,
+   "max_leaf_nodes": 2,
+   "config_id": "A_S|it=100|lf=0.025|l2=100"
+  },
+  {
+   "model": "A_S",
+   "features": "S15",
+   "kind": "tree",
+   "max_iter": 100,
+   "leaf_fraction": 0.05,
+   "l2": 10.0,
+   "depth": 1,
+   "max_leaf_nodes": 2,
+   "config_id": "A_S|it=100|lf=0.05|l2=10"
+  },
+  {
+   "model": "A_S",
+   "features": "S15",
+   "kind": "tree",
+   "max_iter": 100,
+   "leaf_fraction": 0.05,
+   "l2": 100.0,
+   "depth": 1,
+   "max_leaf_nodes": 2,
+   "config_id": "A_S|it=100|lf=0.05|l2=100"
+  },
+  {
+   "model": "N_S",
+   "features": "S15",
+   "kind": "tree",
+   "max_iter": 25,
+   "leaf_fraction": 0.025,
+   "l2": 10.0,
+   "depth": 2,
+   "max_leaf_nodes": 4,
+   "config_id": "N_S|it=25|lf=0.025|l2=10"
+  },
+  {
+   "model": "N_S",
+   "features": "S15",
+   "kind": "tree",
+   "max_iter": 25,
+   "leaf_fraction": 0.025,
+   "l2": 100.0,
+   "depth": 2,
+   "max_leaf_nodes": 4,
+   "config_id": "N_S|it=25|lf=0.025|l2=100"
+  },
+  {
+   "model": "N_S",
+   "features": "S15",
+   "kind": "tree",
+   "max_iter": 25,
+   "leaf_fraction": 0.05,
+   "l2": 10.0,
+   "depth": 2,
+   "max_leaf_nodes": 4,
+   "config_id": "N_S|it=25|lf=0.05|l2=10"
+  },
+  {
+   "model": "N_S",
+   "features": "S15",
+   "kind": "tree",
+   "max_iter": 25,
+   "leaf_fraction": 0.05,
+   "l2": 100.0,
+   "depth": 2,
+   "max_leaf_nodes": 4,
+   "config_id": "N_S|it=25|lf=0.05|l2=100"
+  },
+  {
+   "model": "N_S",
+   "features": "S15",
+   "kind": "tree",
+   "max_iter": 50,
+   "leaf_fraction": 0.025,
+   "l2": 10.0,
+   "depth": 2,
+   "max_leaf_nodes": 4,
+   "config_id": "N_S|it=50|lf=0.025|l2=10"
+  },
+  {
+   "model": "N_S",
+   "features": "S15",
+   "kind": "tree",
+   "max_iter": 50,
+   "leaf_fraction": 0.025,
+   "l2": 100.0,
+   "depth": 2,
+   "max_leaf_nodes": 4,
+   "config_id": "N_S|it=50|lf=0.025|l2=100"
+  },
+  {
+   "model": "N_S",
+   "features": "S15",
+   "kind": "tree",
+   "max_iter": 50,
+   "leaf_fraction": 0.05,
+   "l2": 10.0,
+   "depth": 2,
+   "max_leaf_nodes": 4,
+   "config_id": "N_S|it=50|lf=0.05|l2=10"
+  },
+  {
+   "model": "N_S",
+   "features": "S15",
+   "kind": "tree",
+   "max_iter": 50,
+   "leaf_fraction": 0.05,
+   "l2": 100.0,
+   "depth": 2,
+   "max_leaf_nodes": 4,
+   "config_id": "N_S|it=50|lf=0.05|l2=100"
+  },
+  {
+   "model": "N_S",
+   "features": "S15",
+   "kind": "tree",
+   "max_iter": 100,
+   "leaf_fraction": 0.025,
+   "l2": 10.0,
+   "depth": 2,
+   "max_leaf_nodes": 4,
+   "config_id": "N_S|it=100|lf=0.025|l2=10"
+  },
+  {
+   "model": "N_S",
+   "features": "S15",
+   "kind": "tree",
+   "max_iter": 100,
+   "leaf_fraction": 0.025,
+   "l2": 100.0,
+   "depth": 2,
+   "max_leaf_nodes": 4,
+   "config_id": "N_S|it=100|lf=0.025|l2=100"
+  },
+  {
+   "model": "N_S",
+   "features": "S15",
+   "kind": "tree",
+   "max_iter": 100,
+   "leaf_fraction": 0.05,
+   "l2": 10.0,
+   "depth": 2,
+   "max_leaf_nodes": 4,
+   "config_id": "N_S|it=100|lf=0.05|l2=10"
+  },
+  {
+   "model": "N_S",
+   "features": "S15",
+   "kind": "tree",
+   "max_iter": 100,
+   "leaf_fraction": 0.05,
+   "l2": 100.0,
+   "depth": 2,
+   "max_leaf_nodes": 4,
+   "config_id": "N_S|it=100|lf=0.05|l2=100"
+  },
+  {
+   "model": "N_X",
+   "features": "X21",
+   "kind": "tree",
+   "max_iter": 25,
+   "leaf_fraction": 0.025,
+   "l2": 10.0,
+   "depth": 2,
+   "max_leaf_nodes": 4,
+   "config_id": "N_X|it=25|lf=0.025|l2=10"
+  },
+  {
+   "model": "N_X",
+   "features": "X21",
+   "kind": "tree",
+   "max_iter": 25,
+   "leaf_fraction": 0.025,
+   "l2": 100.0,
+   "depth": 2,
+   "max_leaf_nodes": 4,
+   "config_id": "N_X|it=25|lf=0.025|l2=100"
+  },
+  {
+   "model": "N_X",
+   "features": "X21",
+   "kind": "tree",
+   "max_iter": 25,
+   "leaf_fraction": 0.05,
+   "l2": 10.0,
+   "depth": 2,
+   "max_leaf_nodes": 4,
+   "config_id": "N_X|it=25|lf=0.05|l2=10"
+  },
+  {
+   "model": "N_X",
+   "features": "X21",
+   "kind": "tree",
+   "max_iter": 25,
+   "leaf_fraction": 0.05,
+   "l2": 100.0,
+   "depth": 2,
+   "max_leaf_nodes": 4,
+   "config_id": "N_X|it=25|lf=0.05|l2=100"
+  },
+  {
+   "model": "N_X",
+   "features": "X21",
+   "kind": "tree",
+   "max_iter": 50,
+   "leaf_fraction": 0.025,
+   "l2": 10.0,
+   "depth": 2,
+   "max_leaf_nodes": 4,
+   "config_id": "N_X|it=50|lf=0.025|l2=10"
+  },
+  {
+   "model": "N_X",
+   "features": "X21",
+   "kind": "tree",
+   "max_iter": 50,
+   "leaf_fraction": 0.025,
+   "l2": 100.0,
+   "depth": 2,
+   "max_leaf_nodes": 4,
+   "config_id": "N_X|it=50|lf=0.025|l2=100"
+  },
+  {
+   "model": "N_X",
+   "features": "X21",
+   "kind": "tree",
+   "max_iter": 50,
+   "leaf_fraction": 0.05,
+   "l2": 10.0,
+   "depth": 2,
+   "max_leaf_nodes": 4,
+   "config_id": "N_X|it=50|lf=0.05|l2=10"
+  },
+  {
+   "model": "N_X",
+   "features": "X21",
+   "kind": "tree",
+   "max_iter": 50,
+   "leaf_fraction": 0.05,
+   "l2": 100.0,
+   "depth": 2,
+   "max_leaf_nodes": 4,
+   "config_id": "N_X|it=50|lf=0.05|l2=100"
+  },
+  {
+   "model": "N_X",
+   "features": "X21",
+   "kind": "tree",
+   "max_iter": 100,
+   "leaf_fraction": 0.025,
+   "l2": 10.0,
+   "depth": 2,
+   "max_leaf_nodes": 4,
+   "config_id": "N_X|it=100|lf=0.025|l2=10"
+  },
+  {
+   "model": "N_X",
+   "features": "X21",
+   "kind": "tree",
+   "max_iter": 100,
+   "leaf_fraction": 0.025,
+   "l2": 100.0,
+   "depth": 2,
+   "max_leaf_nodes": 4,
+   "config_id": "N_X|it=100|lf=0.025|l2=100"
+  },
+  {
+   "model": "N_X",
+   "features": "X21",
+   "kind": "tree",
+   "max_iter": 100,
+   "leaf_fraction": 0.05,
+   "l2": 10.0,
+   "depth": 2,
+   "max_leaf_nodes": 4,
+   "config_id": "N_X|it=100|lf=0.05|l2=10"
+  },
+  {
+   "model": "N_X",
+   "features": "X21",
+   "kind": "tree",
+   "max_iter": 100,
+   "leaf_fraction": 0.05,
+   "l2": 100.0,
+   "depth": 2,
+   "max_leaf_nodes": 4,
+   "config_id": "N_X|it=100|lf=0.05|l2=100"
+  }
+ ],
+ "outer_fits": [
+  {
+   "fit_cutoff": "2020-07-01",
+   "retunes": true,
+   "n_inner_fits": 8
+  },
+  {
+   "fit_cutoff": "2020-10-01",
+   "retunes": false,
+   "n_inner_fits": 0
+  },
+  {
+   "fit_cutoff": "2021-01-04",
+   "retunes": false,
+   "n_inner_fits": 0
+  },
+  {
+   "fit_cutoff": "2021-04-01",
+   "retunes": false,
+   "n_inner_fits": 0
+  },
+  {
+   "fit_cutoff": "2021-07-01",
+   "retunes": true,
+   "n_inner_fits": 8
+  },
+  {
+   "fit_cutoff": "2021-10-01",
+   "retunes": false,
+   "n_inner_fits": 0
+  },
+  {
+   "fit_cutoff": "2022-01-03",
+   "retunes": false,
+   "n_inner_fits": 0
+  },
+  {
+   "fit_cutoff": "2022-04-01",
+   "retunes": false,
+   "n_inner_fits": 0
+  },
+  {
+   "fit_cutoff": "2022-07-01",
+   "retunes": true,
+   "n_inner_fits": 8
+  },
+  {
+   "fit_cutoff": "2022-10-03",
+   "retunes": false,
+   "n_inner_fits": 0
+  },
+  {
+   "fit_cutoff": "2023-01-03",
+   "retunes": false,
+   "n_inner_fits": 0
+  },
+  {
+   "fit_cutoff": "2023-04-03",
+   "retunes": false,
+   "n_inner_fits": 0
+  },
+  {
+   "fit_cutoff": "2023-07-03",
+   "retunes": true,
+   "n_inner_fits": 8
+  },
+  {
+   "fit_cutoff": "2023-10-04",
+   "retunes": false,
+   "n_inner_fits": 0
+  },
+  {
+   "fit_cutoff": "2024-01-02",
+   "retunes": false,
+   "n_inner_fits": 0
+  },
+  {
+   "fit_cutoff": "2024-04-02",
+   "retunes": false,
+   "n_inner_fits": 0
+  },
+  {
+   "fit_cutoff": "2024-07-01",
+   "retunes": true,
+   "n_inner_fits": 8
+  },
+  {
+   "fit_cutoff": "2024-10-01",
+   "retunes": false,
+   "n_inner_fits": 0
+  },
+  {
+   "fit_cutoff": "2025-01-02",
+   "retunes": false,
+   "n_inner_fits": 0
+  },
+  {
+   "fit_cutoff": "2025-04-01",
+   "retunes": false,
+   "n_inner_fits": 0
+  },
+  {
+   "fit_cutoff": "2025-07-01",
+   "retunes": true,
+   "n_inner_fits": 8
+  },
+  {
+   "fit_cutoff": "2025-10-01",
+   "retunes": false,
+   "n_inner_fits": 0
+  },
+  {
+   "fit_cutoff": "2026-01-02",
+   "retunes": false,
+   "n_inner_fits": 0
+  },
+  {
+   "fit_cutoff": "2026-04-01",
+   "retunes": false,
+   "n_inner_fits": 0
+  },
+  {
+   "fit_cutoff": "2026-07-01",
+   "retunes": true,
+   "n_inner_fits": 8
+  }
+ ],
+ "planned_fits": "25 outer fits x (8 inner fits at annual retunes) x up to 72 configs; non-July fits reuse selected config",
+ "accounting": "nested candidate fits are NOT 72 independent hypothesis claims; full search inventory reported alongside DSR; AM-1 counts as scientific amendment #1"
+}

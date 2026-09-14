@@ -1,0 +1,31 @@
+{
+ "phase": "P06",
+ "sequence": [
+  {
+   "phase": "P07",
+   "what": "inference calibration (100 null reps, Wilson gate) + linear-world + positive controls (q grid) + historical replay runner (immutable forecast persistence, hash-matched restart, no outer metrics in logs)"
+  },
+  {
+   "phase": "P08",
+   "what": "primary outer evaluation on the frozen sample: all 8 streams, per-origin metrics, 63-origin MBB CIs, Holm over 3 primary tests"
+  },
+  {
+   "phase": "P09",
+   "what": "mechanism + fragility: horizon diagnostics (5/63 fixed scores), missingness/coverage, one-source-session-lag sensitivity, leaf composition"
+  },
+  {
+   "phase": "P10",
+   "what": "portfolio/harness binding: frozen-prediction adapter into native harness OR documented unresolved-native report; gross-only"
+  },
+  {
+   "phase": "P11",
+   "what": "final verdict (incl. valid negative), RESULTS.md, model card, REPRODUCE.md, reproduction bundle, methodology verdict via attach_methodology_verdict"
+  }
+ ],
+ "hard_gates": [
+  "no genuine outer metrics before registration receipt exists",
+  "BLOCKED_FIT_SUPPORT -> report, never substitute or loosen",
+  "INVALID_INFERENCE_CALIBRATION -> inference engine barred from primary claims until repaired and versioned",
+  "any post-exposure source/code change = new version + exposure event"
+ ]
+}

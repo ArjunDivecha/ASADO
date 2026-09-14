@@ -95,6 +95,14 @@ about the presence or absence of nonlinear signal. This strengthens the
 interpretation of the headline verdict: the registered contract could
 not evaluate the model class at all.
 
+Correction logged (exposure event `controls_v2`): the first control
+wave exposed an unpaired `rel_gain` (per-stream means over each
+stream's own origins) and a declaration proxy that omitted the
+registered coverage/stability/absolute gates — a q0 rep briefly
+"declared" on a 46% artifact over 30/1467 origins. Both fixed and
+verified (paired gain 1.8%, coverage gate rejects); declarations now
+mirror the full 12.2 ladder.
+
 ## 5. Mechanism / fragility (P09)
 
 Conditional contrasts N_S vs {A_S, Q_S, N_X}: all null (N_S has no

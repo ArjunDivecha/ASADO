@@ -1,0 +1,44 @@
+{
+  "phase": "P05",
+  "sklearn_version_locked": "1.8.0",
+  "hgb_contract": {
+    "loss": "squared_error",
+    "learning_rate": 0.03,
+    "max_bins": 16,
+    "early_stopping": false,
+    "categorical_features": null,
+    "warm_start": false,
+    "random_state": 20260913,
+    "grid_max_iter": [25, 50, 100],
+    "grid_leaf_fraction": [0.025, 0.05],
+    "grid_l2": [10.0, 100.0],
+    "min_samples_leaf_rule": "max(256, ceil(leaf_fraction*N))"
+  },
+  "leaf_support_thresholds": {
+    "min_distinct_origins": 126,
+    "min_distinct_20origin_bins": 12,
+    "min_calendar_years": 3,
+    "min_markets": 4
+  },
+  "quadratic_terms_k15": 135,
+  "ridge_lambdas": 12,
+  "bootstrap": {
+    "block_origins": 63,
+    "draws": 1000
+  },
+  "checks": {
+    "ridge_closed_form_verified": true,
+    "ridge_unpenalized_intercept": true,
+    "row_duplication_split_weight_invariance": true,
+    "fold_fitted_preprocessing_only": true,
+    "hgb_leaf_traversal_parity_1e-10": true,
+    "short_episode_leaf_rejected": true,
+    "unknown_sklearn_internals_fail_closed": true,
+    "bootstrap_gap_positions_preserved": true,
+    "holm_correction": true,
+    "one_se_parsimony_ridge_largest_lambda": true,
+    "deterministic_seeded_grid": true
+  },
+  "synthetic_tests_passed": "14/14 in test_p05_estimators.py; suite 22/22 incl. P02-P04",
+  "status": "PASS"
+}

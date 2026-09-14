@@ -85,6 +85,16 @@ maturity/eligibility metadata only — never genuine label values.
 aggregate distribution + Wilson intervals land in
 `results/control_study.json` on completion.
 
+Early-control observation (from in-flight q0 reps, not the final
+distribution): N_S/N_X are 0/12 admissible at every retune **even under
+purely linear synthetic labels**, and A_S is mostly inadmissible too
+(0–4/12). The support blocking is therefore structural to shallow trees
+on this panel — smooth z-scored state features partition time into
+contiguous leaves spanning far fewer than 126 origins — not evidence
+about the presence or absence of nonlinear signal. This strengthens the
+interpretation of the headline verdict: the registered contract could
+not evaluate the model class at all.
+
 ## 5. Mechanism / fragility (P09)
 
 Conditional contrasts N_S vs {A_S, Q_S, N_X}: all null (N_S has no

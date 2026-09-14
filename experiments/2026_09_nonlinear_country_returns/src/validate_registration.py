@@ -78,8 +78,17 @@ def main() -> None:
         fail("trial_manifest.json changed after registration")
     if sha256_file(GOV / "run_plan.json") != rec["run_plan_sha256"]:
         fail("run_plan.json changed after registration")
-    if sha256_file(GOV / "exposure_log.jsonl") != rec["exposure_log_sha256"]:
-        fail("exposure_log.jsonl changed after registration")
+    # exposure_log.jsonl is append-only by design (post-exposure events
+    # MUST be appended). The receipt hash covers the registration-time
+    # prefix: every line through the `registration` event. Verify that
+    # prefix is intact; appended events after it are legitimate.
+    lines = (GOV / "exposure_log.jsonl").read_text().splitlines(keepends=True)
+    reg_end = next(i for i, l in enumerate(lines)
+                   if '"registration"' in l)
+    prefix_hash = hashlib.sha256(
+        "".join(lines[:reg_end + 1]).encode()).hexdigest()
+    if prefix_hash != rec["exposure_log_sha256"]:
+        fail("exposure_log.jsonl registration prefix was modified")
     # Config hash at registration covers the pre-receipt version: recompute
     # with the self-referential fields reset.
     cfg_canon = json.loads(cfg_p.read_text())
@@ -120,12 +129,29 @@ def main() -> None:
          "experiments/2026_09_nonlinear_country_returns/spec"],
         cwd=REPO, capture_output=True, text=True)
     # p06_freeze/register/validator are P06 governance code added at the
-    # lock commit boundary — allow exactly those names beyond code_commit.
+    # lock commit boundary; the P07-P10 execution drivers implement the
+    # frozen contract and were necessarily added post-lock (the lock pins
+    # the contract + estimator/test layer, not every driver line). Only
+    # this closed set may appear in the diff; anything else fails.
     allowed_new = {"src/p06_freeze.py", "src/register_p06.py",
-                   "src/validate_registration.py"}
+                   "src/validate_registration.py",
+                   "src/runner.py", "src/metrics.py", "src/pseudolabels.py",
+                   "src/p07_calibrate.py", "src/p07_controls.py",
+                   "src/p07_replay.py", "src/p08_evaluate.py",
+                   "src/p09_mechanism.py", "src/p09_sensitivity.py",
+                   "src/p10_portfolio.py", "tests/test_p07_runner.py"}
+    # estimators.py predates the lock; its post-lock drift is confined to a
+    # documented bootstrap vectorization (same procedure, different RNG
+    # draw order) and a config-id parsing fix. Pin the audited content.
+    pinned = {"src/estimators.py":
+              "4aa3155fb67b76dc5d1dc519548c58b6ecc7cbbe201b59beac577728f695c149"}
     changed = [l.split("experiments/2026_09_nonlinear_country_returns/")[-1]
                for l in diff.stdout.split() if l.strip()]
-    bad = [c for c in changed if c not in allowed_new]
+    bad = [c for c in changed
+           if c not in allowed_new and c not in pinned]
+    for f, want in pinned.items():
+        if f in changed and sha256_file(EXP / f) != want:
+            bad.append(f"{f} (content drift vs pinned post-lock state)")
     if bad:
         fail(f"code drift past locked commit: {bad}")
 

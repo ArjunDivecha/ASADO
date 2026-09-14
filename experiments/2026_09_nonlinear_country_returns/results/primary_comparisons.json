@@ -1,0 +1,40 @@
+{
+ "tests": [
+  {
+   "name": "mse_gain_vs_L_X",
+   "point": null,
+   "rel_gain": null,
+   "p_raw": null,
+   "ci95": null,
+   "p_holm": 1.0
+  },
+  {
+   "name": "mse_gain_vs_L_S",
+   "point": null,
+   "rel_gain": null,
+   "p_raw": null,
+   "ci95": null,
+   "p_holm": 1.0
+  },
+  {
+   "name": "ic_gain_vs_L_star",
+   "point": null,
+   "rel_gain": null,
+   "p_raw": null,
+   "ci95": null,
+   "p_holm": 1.0
+  }
+ ],
+ "absolute": {
+  "N_S_mse": NaN,
+  "B0_mse": 0.0038580391535452843,
+  "L_star_mse": 0.0038451390097787386,
+  "N_S_mean_ic": NaN
+ },
+ "bootstrap": {
+  "block": 63,
+  "draws": 5000,
+  "seed_base": 21160913,
+  "note": "pointwise 95% intervals; Holm familywise at 0.05 over the three tests"
+ }
+}

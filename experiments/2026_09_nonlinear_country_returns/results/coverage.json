@@ -1,0 +1,25 @@
+{
+ "n_scored_origins": 1467,
+ "n_scored_rows": 31555,
+ "stream_coverage": {
+  "B0": 1467,
+  "L_X": 1467,
+  "L_S": 1467,
+  "L_star": 1467,
+  "A_S": 899,
+  "Q_S": 1467,
+  "N_S": 0,
+  "N_X": 0
+ },
+ "stream_nan_origins": {
+  "B0": 0,
+  "L_X": 0,
+  "L_S": 0,
+  "L_star": 0,
+  "A_S": 568,
+  "Q_S": 0,
+  "N_S": 1467,
+  "N_X": 1467
+ },
+ "constant_ic_count": 1723
+}

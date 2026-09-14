@@ -1,0 +1,25 @@
+{
+ "phase": "P07-11.1",
+ "T": 1467,
+ "block": 63,
+ "draws": 5000,
+ "nominal": 0.05,
+ "reps": 100,
+ "processes": {
+  "ar1_phi0.5": {
+   "empirical_fwer": 0.03,
+   "rejects": 3,
+   "reps": 100,
+   "wilson95_lb": -0.008243065514586147,
+   "valid": true
+  },
+  "overlap20": {
+   "empirical_fwer": 0.05,
+   "rejects": 5,
+   "reps": 100,
+   "wilson95_lb": 0.0030459577183126058,
+   "valid": true
+  }
+ },
+ "status": "PASS"
+}

@@ -1,0 +1,31 @@
+{
+ "mse_gain_vs_L_X": {
+  "mean_full": null,
+  "halves_positive": false,
+  "drop_fav_positive": false,
+  "reason": "no paired observations (blocked stream)"
+ },
+ "mse_gain_vs_L_S": {
+  "mean_full": null,
+  "halves_positive": false,
+  "drop_fav_positive": false,
+  "reason": "no paired observations (blocked stream)"
+ },
+ "ic_gain_vs_L_star": {
+  "mean_full": null,
+  "halves_positive": false,
+  "drop_fav_positive": false,
+  "reason": "no paired observations (blocked stream)"
+ },
+ "sensitivity_block126": {
+  "mse_gain_vs_L_X": {
+   "p_block126": 0.0001999600079984003
+  },
+  "mse_gain_vs_L_S": {
+   "p_block126": 0.0001999600079984003
+  },
+  "ic_gain_vs_L_star": {
+   "p_block126": 0.0001999600079984003
+  }
+ }
+}

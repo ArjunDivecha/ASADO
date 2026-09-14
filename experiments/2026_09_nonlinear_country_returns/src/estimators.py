@@ -242,12 +242,13 @@ def moving_block_bootstrap(values: np.ndarray, block: int = 63,
     T = len(values)
     nblocks = int(np.ceil(T / block))
     starts = np.arange(0, max(T - block + 1, 1))
-    out = np.empty(draws)
-    for b in range(draws):
-        s = rng.choice(starts, size=nblocks, replace=True)
-        idx = np.concatenate([np.arange(x, x + block) for x in s])[:T]
-        v = values[idx]
-        out[b] = np.nanmean(v) if np.isfinite(v).any() else np.nan
+    # vectorized: all draws' block starts at once, then gather
+    s = rng.choice(starts, size=(draws, nblocks), replace=True)
+    idx = (s[:, :, None] + np.arange(block)[None, None, :]
+           ).reshape(draws, -1)[:, :T]
+    v = values[idx]
+    out = np.nanmean(v, axis=1)
+    out[~np.isfinite(v).any(axis=1)] = np.nan
     return out
 
 
@@ -277,10 +278,17 @@ def one_se_select(per_origin_losses: dict[str, np.ndarray],
         if np.nanmean(d) <= se:
             se_set.append(c)
     if kind == "ridge":
-        # config ids are the lambda strings
-        return max(se_set, key=lambda c: float(c))
+        # config ids are either bare lambda strings or "<model>|lam=<v>"
+        return max(se_set,
+                   key=lambda c: float(c.rsplit("=", 1)[-1]))
     # tree: cfg id encodes (max_iter, leaf_frac, l2)
     def key(c):
+        # cfg id encodes (max_iter, leaf_frac, l2) either as a tuple or a
+        # "<model>|it=<i>|lf=<f>|l2=<l>" string
+        if isinstance(c, str):
+            parts = dict(p.split("=") for p in c.split("|")[1:])
+            return (-float(parts["it"]), -float(parts["lf"]),
+                    -float(parts["l2"]))
         it, lf, l2 = c
         return (-it, -lf, -l2)  # fewer stages, larger leaf frac, larger l2
     return min(se_set, key=lambda c: (key(c), str(c)))

@@ -1,0 +1,14 @@
+{
+ "phase": "P08",
+ "verdict": "INCOMPLETE_REGISTERED_PROCEDURE",
+ "gates": {
+  "validity": true,
+  "mse_vs_LX": false,
+  "mse_vs_LS": false,
+  "ic_vs_Lstar": false,
+  "absolute": false,
+  "stability": false,
+  "coverage": false
+ },
+ "note": "gross-only; a valid negative is a successful delivery; no rescue promotion, horizon change, or model swap"
+}

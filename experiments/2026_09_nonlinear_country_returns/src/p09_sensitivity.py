@@ -37,11 +37,29 @@ SCRATCH = REPLAY.parent / "p09_sens"
 
 
 def frozen_selections() -> dict:
-    """The selected config per (fit, model) from the primary run."""
+    """The selected config per (fit, model) from the primary run, normalized
+    back to inner-selection shape (fit records persist the `fits` dict:
+    ridge entries carry config_id+lambda, tree entries config_id+cfg, blocked
+    entries carry status=BLOCKED_FIT_SUPPORT)."""
     out = {}
     for p in sorted(REPLAY.glob("fit_*.json")):
         rec = json.loads(p.read_text())
-        out[rec["fit_cutoff"]] = rec["selected"]
+        sel = {}
+        for m, e in rec["selected"].items():
+            if e.get("status") == "BLOCKED_FIT_SUPPORT":
+                sel[m] = {"status": "BLOCKED_FIT_SUPPORT"}
+            elif m == "L_star":
+                sel[m] = {"status": "ok", "member": e["member"],
+                          "config_id": e["config_id"]}
+            elif "lambda" in e:
+                sel[m] = {"status": "ok", "config_id": e["config_id"],
+                          "lambda": e["lambda"]}
+            elif "cfg" in e:
+                sel[m] = {"status": "ok", "config_id": e["config_id"],
+                          "cfg": tuple(e["cfg"])}
+            else:
+                sel[m] = e
+        out[rec["fit_cutoff"]] = sel
     return out
 
 
@@ -100,14 +118,14 @@ def main() -> None:
             out["runs"][f"omit_year_{y}"] = {"status": "no_forecasts"}
             continue
         tab = origin_metric_table(scored, fc, STREAMS)
-        out["runs"][f"omit_year_{y}"] = {
-            "status": "ok",
-            "delta_mse_LS": float(np.nanmean(tab["L_S_mse"]
-                                             - base_tab["L_S_mse"])),
-            "delta_ic_LS": float(np.nanmean(tab["L_S_ic"]
-                                            - base_tab["L_S_ic"])),
-        }
-        print(f"omit {y}: dMSE(L_S)={out['runs'][f'omit_year_{y}']['delta_mse_LS']:+.2e}")
+        rec = {"status": "ok"}
+        for mdl in STREAMS:
+            dm = float(np.nanmean(tab[f"{mdl}_mse"] - base_tab[f"{mdl}_mse"]))
+            di = float(np.nanmean(tab[f"{mdl}_ic"] - base_tab[f"{mdl}_ic"]))
+            rec[f"delta_mse_{mdl}"] = dm if np.isfinite(dm) else None
+            rec[f"delta_ic_{mdl}"] = di if np.isfinite(di) else None
+        out["runs"][f"omit_year_{y}"] = rec
+        print(f"omit {y}: dMSE(L_S)={rec['delta_mse_L_S']:+.2e}")
 
     # ---- leave-one-region-out -------------------------------------------
     for reg in regions:
@@ -119,15 +137,14 @@ def main() -> None:
             out["runs"][f"omit_region_{reg}"] = {"status": "no_forecasts"}
             continue
         tab = origin_metric_table(scored, fc, STREAMS)
-        out["runs"][f"omit_region_{reg}"] = {
-            "status": "ok",
-            "delta_mse_LS": float(np.nanmean(tab["L_S_mse"]
-                                             - base_tab["L_S_mse"])),
-            "delta_ic_LS": float(np.nanmean(tab["L_S_ic"]
-                                            - base_tab["L_S_ic"])),
-        }
-        print(f"omit region {reg}: dMSE(L_S)="
-              f"{out['runs'][f'omit_region_{reg}']['delta_mse_LS']:+.2e}")
+        rec = {"status": "ok"}
+        for mdl in STREAMS:
+            dm = float(np.nanmean(tab[f"{mdl}_mse"] - base_tab[f"{mdl}_mse"]))
+            di = float(np.nanmean(tab[f"{mdl}_ic"] - base_tab[f"{mdl}_ic"]))
+            rec[f"delta_mse_{mdl}"] = dm if np.isfinite(dm) else None
+            rec[f"delta_ic_{mdl}"] = di if np.isfinite(di) else None
+        out["runs"][f"omit_region_{reg}"] = rec
+        print(f"omit region {reg}: dMSE(L_S)={rec['delta_mse_L_S']:+.2e}")
 
     # ---- fixed 5/63-session associations (descriptive) -------------------
     lab = pd.read_parquet(AUDIT / "labels.parquet")

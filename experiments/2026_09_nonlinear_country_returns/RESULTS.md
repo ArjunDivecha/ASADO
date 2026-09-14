@@ -34,15 +34,22 @@ exposure.
 
 ## 3. Headline result
 
-**Verdict: `INCOMPLETE_REGISTERED_PROCEDURE`.**
+**Verdict: `INCOMPLETE_REGISTERED_PROCEDURE`** (authoritative run:
+`p07_replay_real_v2`, all 25 fits, frozen base-calendar bin indexing).
 
 The primary candidate N_S (depth-2 histogram boosting on S) and N_X
 produced **zero outer forecasts**: at every one of the 7 annual retunes,
-all 12 tree configurations failed the registered terminal-leaf support
-audit (≥126 distinct origins, ≥12 fixed-20-origin bins, ≥3 calendar
-years, ≥4 markets per leaf) in at least one inner fit, and/or failed the
-audit at the outer refit. A_S (depth-1, 2 leaves) was selected at some
-retunes but additionally failed support at ~10 of 25 outer refits.
+**all 12** tree configurations failed the registered terminal-leaf
+support audit (≥126 distinct origins, ≥12 fixed-20-origin bins, ≥3
+calendar years, ≥4 markets per leaf) in **every** inner fit — a uniform
+structural failure, not a marginal one. The binding constraint is the
+126-origin-per-leaf floor: depth-2 boosting reliably isolates narrow
+episodes into leaves spanning 34–106 origins.
+
+A_S (depth-1, 2 leaves) was admissible at 4 of 7 retunes and issued
+forecasts at 15 of 25 fits (899/1467 origins): selection-level blocking
+under the 2021-07 and 2023-07 retunes, plus outer-fit support failures
+at 2022-10-03 (5 unsupported leaves) and 2026-07-01.
 
 Per the registered decision table: "Mandatory model cannot fit under
 support rules → Incomplete registered procedure. Preserve failures; no
@@ -70,18 +77,55 @@ promotable.
 
 ## 4. Controls (P07 §11.2)
 
-[in progress — 500 replays under frozen pseudo-label generator;
-`Data/work/experiments/nonlinear_country_returns/p07_controls/`]
+In progress — 500 full nested replays under the frozen pseudo-label
+generator (100 each at q = 0 / 0.001 / 0.005 / 0.01 / 0.10), 13 workers.
+The generator reads frozen generator parameters and genuine
+maturity/eligibility metadata only — never genuine label values.
+`Data/work/experiments/nonlinear_country_returns/p07_controls/`;
+aggregate distribution + Wilson intervals land in
+`results/control_study.json` on completion.
 
 ## 5. Mechanism / fragility (P09)
 
-[conditional contrasts are descriptive-only under an incomplete primary;
-sensitivity set manifests in `results/`]
+Conditional contrasts N_S vs {A_S, Q_S, N_X}: all null (N_S has no
+forecasts) and flagged `descriptive_only` — `results/mechanism_comparisons.json`.
+The P09 gatekeeping rule holds: no affirmative conditional claim without
+primary passes.
+
+Frozen sensitivity set (`results/sensitivity_runs.json`):
+
+- Leave-one-training-year-out and leave-one-region-out refits under the
+  frozen selected configurations (no retuning, unchanged evaluation
+  rows) — deltas recorded for every covered stream.
+- Fixed 5/63-session outcome associations of the 20-session scores
+  (diagnostic, no horizon-specific models): h5 IC ≈ +0.010 for
+  L_S/L_X/L_star; h63 IC ≈ −0.006 / +0.006 / +0.006.
+- 126-origin block inference: `results/stability.json`.
+- One-source-session lag variant and the 20-seed network placebo are
+  separate heavy rebuilds (P03/P05-level); manifests noted in
+  `sensitivity_runs.json` and deferred — they cannot change the primary
+  verdict under a zero-coverage N_S.
 
 ## 6. Gross portfolio (P10)
 
-[gross reference portfolio on covered streams only; N_S has no
-expression; see `results/portfolio_gross.json`]
+20-sleeve overlapping-cohort engine, daily TRI marks, fractional ties,
+no exposure on constant scores, gross-only (`results/portfolio_gross.json`,
+`nav_*.parquet`):
+
+| stream | cohorts | skipped origins | gross Sharpe | total ret | maxDD |
+|---|---|---|---|---|---|
+| N_S | — | — | — | — | — | (no forecasts)
+| L_S | 1317 | 170 | +0.08 | +2.3% | −5.9% |
+| L_X | 1321 | 166 | +0.08 | +2.5% | −8.5% |
+| L_star | 1322 | 165 | +0.07 | +2.3% | −8.5% |
+| A_S | 589 | 58 | +0.01 | ~0.0% | −3.2% |
+| B0 | 0 | 0 | 0.00 | 0.0% | 0.0% |
+
+Reference diagnostics only — near-zero gross Sharpe on the covered
+streams; no cost model applied (25bp law retired); no live or paper
+orders; the native harness mapping is a documented qualification
+blocker for a different contract (this study's PIT replay produces
+scored forecasts, not signal registrations).
 
 ## 7. Uncertainty and limitations
 

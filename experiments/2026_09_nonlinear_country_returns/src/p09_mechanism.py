@@ -36,21 +36,29 @@ def conditional_contrasts(tab: pd.DataFrame) -> dict:
     out, raw = {}, []
     for j, (name, other) in enumerate(pairs):
         d = (tab[f"{other}_mse"] - tab["N_S_mse"]).to_numpy()
-        ic_guard = float(np.nanmean(tab["N_S_ic"] - tab[f"{other}_ic"]))
-        p = bootstrap_pvalue(d, seed=MASTER_SEED + 960_000 + j)
-        ci = bootstrap_ci(d, seed=MASTER_SEED + 960_500 + j)
-        out[name] = {"mean_mse_gain": float(np.nanmean(d)),
-                     "rel_gain": float(
-                         1 - np.nanmean(tab["N_S_mse"]) /
-                         np.nanmean(tab[f"{other}_mse"])),
+        icg = np.nanmean(tab["N_S_ic"] - tab[f"{other}_ic"])
+        ic_guard = float(icg) if np.isfinite(icg) else None
+        mg = np.nanmean(d)
+        og = np.nanmean(tab[f"{other}_mse"])
+        ns = np.nanmean(tab["N_S_mse"])
+        if np.isfinite(d).any():
+            p = bootstrap_pvalue(d, seed=MASTER_SEED + 960_000 + j)
+            ci = bootstrap_ci(d, seed=MASTER_SEED + 960_500 + j)
+        else:
+            p, ci = None, [None, None]
+        out[name] = {"mean_mse_gain": float(mg) if np.isfinite(mg) else None,
+                     "rel_gain": (float(1 - ns / og)
+                                  if np.isfinite(ns) and np.isfinite(og)
+                                  else None),
                      "ic_guard": ic_guard, "p_raw": p, "ci95": ci}
-        raw.append(p)
+        raw.append(p if p is not None else 1.0)
     adj = holm_adjust(raw)
     for (name, _), p in zip(pairs, adj):
-        out[name]["p_holm"] = p
+        out[name]["p_holm"] = p if out[name]["p_raw"] is not None else None
         out[name]["passes"] = bool(
-            p < 0.05 and out[name]["mean_mse_gain"] > 0
-            and out[name]["ic_guard"] > 0)
+            out[name]["p_raw"] is not None and p < 0.05
+            and (out[name]["mean_mse_gain"] or 0) > 0
+            and (out[name]["ic_guard"] or 0) > 0)
     return out
 
 
@@ -101,8 +109,10 @@ def main() -> None:
         json.dumps(out, indent=1))
     print("P09 contrasts:")
     for k, v in contrasts.items():
-        print(f"  {k}: gain={v['mean_mse_gain']:.5f} "
-              f"p_holm={v['p_holm']:.3f} {v['claim_status']}")
+        g = v['mean_mse_gain']; ph = v['p_holm']
+        print(f"  {k}: gain={g if g is not None else float('nan'):.5f} "
+              f"p_holm={ph if ph is not None else float('nan')} "
+              f"{v['claim_status']}")
 
 
 if __name__ == "__main__":

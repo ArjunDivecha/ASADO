@@ -42,7 +42,7 @@ def select_members(g: pd.DataFrame, score: str):
     ties split fractionally. Returns (long_weights, short_weights) dicts."""
     n = len(g)
     k = max(1, int(np.floor(0.2 * n)))
-    s = g[score]
+    s = g.set_index("market")[score]
     if s.nunique() <= 1:                      # all-constant: no exposure
         return {}, {}
     ranks_hi = s.rank(ascending=False, method="min")
@@ -99,38 +99,6 @@ def run_portfolio(forecasts: pd.DataFrame, score: str,
                for _ in range(N_SLEEVES)]
     nav_hist, skips, cohorts = [], [], []
 
-    origins = np.sort(fc["origin_date"].unique())
-    # daily mark axis: union of all relevant dates
-    all_days = tri.index
-    for od in origins:
-        g = fc[fc.origin_date == od]
-        lw, sw = select_members(g, score)
-        if not lw and not sw:
-            continue
-        # opportunity calendar: planned max exit across ALL eligible
-        # markets at this origin (not only selected)
-        max_exit = g["exit_date"].max()
-        free = next((i for i, s in enumerate(sleeves)
-                     if s["cohort"] is None), None)
-        if free is None:
-            skips.append(str(pd.Timestamp(od).date()))
-            continue
-        cap = sleeves[free]["capital"]
-        legs = []
-        for m, w in lw.items():
-            e = g[g.market == m].iloc[0]
-            legs.append({"market": m, "side": 1.0, "w": w,
-                         "entry": e["entry_date"], "exit": e["exit_date"]})
-        for m, w in sw.items():
-            e = g[g.market == m].iloc[0]
-            legs.append({"market": m, "side": -1.0, "w": w,
-                         "entry": e["entry_date"], "exit": e["exit_date"]})
-        sleeves[free]["cohort"] = {"origin": od, "cap0": cap,
-                                   "legs": legs, "units": {}}
-        cohorts.append({"origin": str(pd.Timestamp(od).date()),
-                        "sleeve": free, "n_long": len(lw),
-                        "n_short": len(sw), "max_exit": str(max_exit.date())})
-
     # mark daily: open cohort at entry close, value legs at TRI marks,
     # close at exit close. Sleeve NAV = cap0 * (1 + leg P&L weighted).
     def mark(cohort, day):
@@ -150,9 +118,48 @@ def run_portfolio(forecasts: pd.DataFrame, score: str,
         # NAV = cap0 * (1 + 0.5*long_ret + 0.5*(-short_ret)) = 1 + 0.5*tot
         return cohort["cap0"] * (1.0 + 0.5 * tot)
 
-    start = fc["entry_date"].min()
+    origins = np.sort(fc["origin_date"].unique())
+    origin_set = set(pd.Timestamp(o) for o in origins)
+    all_days = tri.index
+    start = pd.Timestamp(origins[0])
     end = tri.index[-1]
+    # interleave on the day axis: free expired sleeves, enter the day's
+    # cohort into a free sleeve, then mark every sleeve.
     for day in all_days[(all_days >= start) & (all_days <= end)]:
+        for s in sleeves:
+            if (s["cohort"] is not None
+                    and all(day > l["exit"] for l in s["cohort"]["legs"])):
+                s["cohort"] = None
+        if day in origin_set:
+            g = fc[fc.origin_date == day]
+            lw, sw = select_members(g, score)
+            if lw or sw:
+                # opportunity calendar: planned max exit across ALL
+                # eligible markets at this origin (not only selected)
+                max_exit = g["exit_date"].max()
+                free = next((i for i, s in enumerate(sleeves)
+                             if s["cohort"] is None), None)
+                if free is None:
+                    skips.append(str(day.date()))
+                else:
+                    cap = sleeves[free]["capital"]
+                    legs = []
+                    for m, w in lw.items():
+                        e = g[g.market == m].iloc[0]
+                        legs.append({"market": m, "side": 1.0, "w": w,
+                                     "entry": e["entry_date"],
+                                     "exit": e["exit_date"]})
+                    for m, w in sw.items():
+                        e = g[g.market == m].iloc[0]
+                        legs.append({"market": m, "side": -1.0, "w": w,
+                                     "entry": e["entry_date"],
+                                     "exit": e["exit_date"]})
+                    sleeves[free]["cohort"] = {"origin": day, "cap0": cap,
+                                               "legs": legs, "units": {}}
+                    cohorts.append(
+                        {"origin": str(day.date()), "sleeve": free,
+                         "n_long": len(lw), "n_short": len(sw),
+                         "max_exit": str(max_exit.date())})
         nav = 0.0
         for s in sleeves:
             if s["cohort"] is None:
@@ -163,10 +170,6 @@ def run_portfolio(forecasts: pd.DataFrame, score: str,
                 nav += s["capital"]
                 continue
             nav += v
-            # close cohort when all legs past exit
-            if all(day >= l["exit"] for l in s["cohort"]["legs"]):
-                s["capital"] = v
-                s["cohort"] = None
         nav_hist.append({"date": day, "nav": nav})
     nav = pd.DataFrame(nav_hist).set_index("date")
     nav["ret"] = nav["nav"].pct_change()
@@ -195,7 +198,13 @@ def main() -> None:
     cal = pd.read_parquet(AUDIT / "calendar_store.parquet")
     tri = build_tri_panel()
     out = {}
-    for m in ("N_S", "L_S", "L_X", "L_star", "B0"):
+    for m in ("N_S", "L_S", "L_X", "L_star", "B0", "A_S"):
+        if fc[m].dropna().empty:
+            out[m] = {"status": "no_forecasts",
+                      "note": "stream issued no scored forecasts; no "
+                              "portfolio constructed"}
+            print(f"{m}: no forecasts — no portfolio")
+            continue
         res = run_portfolio(fc, m, cal, tri)
         nav = res.pop("nav")
         nav.to_parquet(RESULTS / f"nav_{m}.parquet")

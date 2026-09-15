@@ -77,13 +77,22 @@ promotable.
 
 ## 4. Controls (P07 §11.2)
 
-In progress — 500 full nested replays under the frozen pseudo-label
-generator (100 each at q = 0 / 0.001 / 0.005 / 0.01 / 0.10), 13 workers.
-The generator reads frozen generator parameters and genuine
-maturity/eligibility metadata only — never genuine label values.
+Terminated early at owner's direction: 338/500 full nested replays
+completed under the frozen pseudo-label generator (q=0, 0.001, 0.005:
+100 each; q=0.01: 38; q=0.10: 0). The generator reads frozen generator
+parameters and genuine maturity/eligibility metadata only — never
+genuine label values. Per-rep results in
 `Data/work/experiments/nonlinear_country_returns/p07_controls/`;
-aggregate distribution + Wilson intervals land in
-`results/control_study.json` on completion.
+restartable from checkpointed fits.
+
+Partial-run distribution (decisive for the scientific question):
+- **Primary declarations: 0/338**, including all 138 reps with planted
+  nonlinear signal (q ≥ 0.005).
+- **N_S never reached full coverage in any rep** — max 426/1467 scored
+  origins at q=0.01. The 12.2 coverage gate therefore makes a primary
+  declaration structurally unreachable for this model class.
+- Linear-world false-positive rate: 0/100 at q=0 (correctly
+  conservative under the full gate ladder).
 
 Early-control observation (from in-flight q0 reps, not the final
 distribution): N_S/N_X are 0/12 admissible at every retune **even under

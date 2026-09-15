@@ -1418,3 +1418,63 @@ to the 2026-09-11/12 nightly — re-verify before quoting them as current.
 ---
 SESSION END: 2026-09-13 09:20 PDT | Agent: Claude Code (Opus 5)
 ---
+
+---
+SESSION START: 2026-09-15 | Agent: Devin (SWE-2)
+---
+
+### Session Summary
+Completed the ASADO Nonlinear Country Returns study end-to-end on worktree
+`ASADO-exp-Nonlinear` (branch `exp/Nonlinear`, base `a8a8699`), experiment dir
+`experiments/2026_09_nonlinear_country_returns/`. Registered in the methodology
+ledger as `M_20260913_001` under a hash-locked protocol; final verdict
+**INSUFFICIENT** (`died_at_gate: 4`, verdict date 2026-09-13).
+
+### The Result
+The registered primary model — pooled depth-2 histogram boosting on the fixed
+15-input S representation — produced **zero admissible forecasts**: every tree
+config failed the terminal-leaf support audit (>=126 distinct origins, >=12
+twenty-origin bins, >=3 years, >=4 markets per leaf) in every inner block at all
+7 annual retunes of the corrected `real_v2` replay (25 outer fits, 1,467 scored
+origins). P08 = `INCOMPLETE_REGISTERED_PROCEDURE`. This is a coverage result,
+not evidence against nonlinearity. Controls (terminated early at Arjun's
+direction, 338/500 reps) confirmed the block is structural: **0/338 primary
+declarations**, N_S never reached full coverage even with planted nonlinear
+signal (max 426/1467 origins), q=0 FPR 0/100. Linear baselines small: L_S IC
++0.017, L_X +0.007. Investment Learnings entry filed at
+`A Complete/Investment Learnings/ASADO Nonlinear Country Returns.md`.
+
+### Decisions Made
+- Amendment AM-1 (Arjun-approved): dropped bank-neighbor primitives (coverage
+  cap 15 markets) and P11 3M FX RR (does not exist; 1M only, no substitution).
+  Universe: 22 markets, >=20 from 2010-07.
+- Two post-exposure corrections logged as versioned events: `run_v2` (frozen
+  base-calendar leaf indexing; v1 preserved) and `controls_v2` (paired
+  rel_gain + full 12.2 gate ladder in control declarations — a 30-origin
+  partial stream had produced a phantom 46% unpaired "gain").
+- Registration validator now verifies append-only exposure-log prefixes and
+  whitelists the post-lock P07-P10 drivers with `estimators.py` hash-pinned.
+
+### Constraints & Gotchas
+- Dropbox worktree exhibits stale-copy/sync races: `read`/`grep` can show
+  pre-edit content while `git status` says clean. Verify with `git diff` and
+  disk-vs-`git show HEAD:<path>` SHA-256 before trusting file contents.
+- The 126-origin leaf floor is a structural wall for shallow trees on smooth
+  features — future nonlinear studies must pick a contract the feature geometry
+  can satisfy, decided BEFORE registration.
+- Control replays at `Data/work/experiments/nonlinear_country_returns/
+  p07_controls/` are checkpointed and restartable (delete `control_result.json`
+  to recompute metrics; fits resume from `runner_state.json`).
+- `daily_calendar` is a data-presence flag (weekend placeholder rows read True),
+  not a session calendar — sessions must come from TRI mark changes.
+
+### What To Build Next
+1. If re-asking the nonlinear question: new registered contract — relaxed
+   support floor, higher-frequency/rougher features, or a non-tree nonlinear
+   family. The audit/coverage_waterfall.json is the feasibility input.
+2. Merge `exp/Nonlinear` when ready; the methodology-ledger entry and
+   experiment artifacts land with it.
+
+---
+SESSION END: 2026-09-15 | Agent: Devin (SWE-2)
+---

@@ -19,8 +19,9 @@ OUTPUT FILES:
 - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/brier_gate/live_shadow_log.jsonl
   Append-only audit log of every forecast call (prompt hash, samples, raw).
 
-VERSION: 1.0
-LAST UPDATED: 2026-07-04
+VERSION: 1.1
+LAST UPDATED: 2026-09-18
+(1.1: fixed score_resolved() Gamma query — it had never scored a market)
 AUTHOR: Claude Code (for Arjun Divecha)
 
 DESCRIPTION:
@@ -333,7 +334,12 @@ def score_resolved(con: duckdb.DuckDBPyConnection, session: requests.Session) ->
         try:
             resp = session.get(
                 f"{GAMMA_BASE}/markets",
-                params={"condition_ids": ",".join(chunk), "limit": len(chunk)},
+                # Gamma needs one condition_ids param PER id (a comma-joined
+                # string matches nothing) and closed=true (without it, closed
+                # markets are excluded). Both silently returned [] before
+                # 2026-09-18, so nothing was ever scored.
+                params=[("condition_ids", c) for c in chunk]
+                + [("closed", "true"), ("limit", len(chunk))],
                 headers=HEADERS,
                 timeout=30,
             )

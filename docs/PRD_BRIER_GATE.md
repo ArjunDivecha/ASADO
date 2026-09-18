@@ -1,6 +1,12 @@
 # PRD — Brier Gate: Can ASADO + Claude Beat the Prediction-Market Price?
 
 **Owner:** Arjun Divecha
+**LIVE SHADOW VERDICT (2026-09-18): FAIL — shadow paused.** The scorer had never
+scored a forecast (Gamma query bug, fixed in live_shadow.py v1.1). Once scored, 273
+resolved markets (2,220 forecasts, 2026-07-04 → 09-18, DeepSeek V4 Pro max, arm A2)
+show the AI worse than the market: Brier 0.170 vs 0.155; per-market gap +0.013, 95% CI
+[+0.004, +0.023]; theta=0.05 rule loses 8.9c/contract gross. Write-up:
+`A Complete/Investment Learnings/Brier Gate LLM Forecasting.md`.
 **Status:** EXECUTED 2026-07-03/04 — see `docs/BRIER_GATE_RESULTS_2026_07_04.md`.
 **Verdict:** FAIL at Sonnet 5 / DeepSeek V4 Pro tier (market beats every arm decisively;
 warehouse adds nothing). **AMBIGUOUS-POSITIVE at Fable 5 xhigh** (n=89): the warehouse

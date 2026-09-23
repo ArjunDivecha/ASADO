@@ -175,3 +175,14 @@ has the same overlap structure); pooled correlation between target and signal se
 and 0.20; 200 draws each through the full pipeline (with a 200-permutation null per draw).
 The detection rates are committed before the real test runs. If power at 0.10 is below 50%, A3
 is reported as underpowered alongside its result.
+
+### Amendment A3-1 — 2026-09-23, owner direction, before any A3 code was written or run
+
+**U.S. markets excluded.** U.S., NASDAQ and US SmallCap are removed from every part of A3 —
+concept fitting, the target's cross-sectional demeaning, the permutation null and the power
+calibration — leaving 31 markets. Reason: in the MacroState run the U.S. sleeves were held in all
+97 months and supplied more than the model's entire net active gain, so they are the largest
+source of the identity effect A3 is meant to exclude. The 9 principal components are refitted on
+the ex-U.S. panel; the number of concepts stays at 9 (A1's registered count), and the ex-U.S.
+parallel-analysis count is reported alongside as a descriptive check. All other A3 rules are
+unchanged.

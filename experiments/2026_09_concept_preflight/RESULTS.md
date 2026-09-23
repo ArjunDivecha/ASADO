@@ -97,7 +97,11 @@ planted along the panel's three strongest directions and passed through the same
 Realistic country-return signals sit around 0.03–0.10. At those strengths the test fires
 only 12–16% of the time, barely above its 5% false-alarm rate. The reason is structural: the
 slope is fitted across all 36 eigen-directions, and the 33 weak ones drown the few strong ones.
-The spectral-diagnostics spec (`docs/SPECTRAL_DIAGNOSTICS.md` §1) did not anticipate this.
+The chart (`results/check_a_spectral.pdf`) shows a second weakness: a few near-duplicate
+variable pairs (for example `MCAP_CS` and `MCAP Adj_CS`, `Best PE _CS` and `Earnings Yield_CS`)
+create eigenvalues near 10⁻⁴, and dividing by them produces the largest coefficients, which
+pull the fitted slope around. The spectral-diagnostics spec (`docs/SPECTRAL_DIAGNOSTICS.md` §1)
+did not anticipate either problem.
 So A2's null result is a failure to detect, from a test that could not have detected a plausible
 effect. It is not evidence that the return signal lives in the noise.
 

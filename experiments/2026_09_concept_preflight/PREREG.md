@@ -109,3 +109,25 @@ would spend the node experiment's out-of-sample evidence before the experiment i
 `check_a_spectral.json`, charts as PDF, `RESULTS.md`. Frozen inputs under
 `Data/work/experiments/concept_preflight/snapshot_2026_09_23/`. No production table, ledger, or
 config is written.
+
+---
+
+## Amendment A1 — 2026-09-23, before any return or IC was computed
+
+Found while reading the snapshot schema (no returns or statistics had been computed):
+
+1. **Edges exist only for the 31 sovereign tokens.** `graph_edge_vintages` has no rows for
+   NASDAQ, US SmallCap or ChinaH, matching `build_graph_features_pit.py` (sleeves get no graph
+   features). Check B therefore covers the 31 sovereigns as focal countries and as neighbours.
+2. **Singleton regions.** Under `ff_region_map.json`, U.S. (region `US`), Canada
+   (`North_America`) and Japan (`Japan`) have no other member once the focal country and its
+   own sleeves are excluded, so they would drop out of every regression. Fix, using the map's
+   own region definitions: U.S. and Canada form one region (the map describes `North_America` as
+   "US + Canada"); Japan joins `Asia_Pacific_ex_Japan` (Developed Asia-Pacific). Regional means
+   use sovereign tokens only (NASDAQ, US SmallCap, ChinaH excluded) so no market is counted
+   twice, and always exclude the focal country.
+3. **Monthly return validity.** A country-month return is computed only if the country has at
+   least 10 non-zero daily returns in that calendar month; otherwise it is missing. 12-1
+   momentum requires all 11 months present.
+4. **Months used.** Only complete calendar months. Snapshot data run into September 2026, so the
+   last signal month is July 2026 (target August 2026).

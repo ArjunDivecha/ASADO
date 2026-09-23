@@ -186,3 +186,12 @@ source of the identity effect A3 is meant to exclude. The 9 principal components
 the ex-U.S. panel; the number of concepts stays at 9 (A1's registered count), and the ex-U.S.
 parallel-analysis count is reported alongside as a descriptive check. All other A3 rules are
 unchanged.
+
+### A3 power calibration — recorded before the real target was read (2026-09-23 10:28 PT)
+
+Synthetic targets only (`src/check_a3.py --power`, output `results/check_a3_power.json`). Ex-U.S.
+panel: 30 markets, 249 months, 6,304 rows. Detection rate over 200 draws, each against a
+200-permutation null: **6.0% at a planted correlation of 0.05, 25.0% at 0.10, 95.5% at 0.20.**
+Power at 0.10 is below the registered 50% bar, so under the registered rule A3's result will be
+reported as underpowered for signals near 0.10. It is adequately powered for signals of 0.20 and
+above. The decision rule is unchanged.

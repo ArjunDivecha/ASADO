@@ -8,6 +8,14 @@ graveyard and ledgers, Investment Learnings, Quantpedia, and the outside literat
 
 ---
 
+**Status 2026-09-23 (after the pre-flight checks,
+`experiments/2026_09_concept_preflight/RESULTS.md`):** Experiment 2 (relational) is **cancelled**
+— G2 failed for trade, banking and holdings, and the neighbour-gap signal's historical strength
+turned out to be own-country one-month reversal. Experiment 1 (node-level concepts) **proceeds**:
+with U.S. markets removed and country identity stripped out, nine feature concepts explain 11.8%
+of next-year relative-return variation against a 3.1% chance ceiling. The sections below are
+the original design and have not been rewritten.
+
 ## The short answer
 
 The database can support this idea, but not as a new, free-standing program, and not in the

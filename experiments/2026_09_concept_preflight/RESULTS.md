@@ -7,20 +7,24 @@ ledger, production table, or config.*
 
 ## Bottom line
 
-**The relational experiment is cancelled.** None of the three link types — trade, banking or
-portfolio holdings — carries next-month information once a country's own recent returns and its
-region's are accounted for. The standard "neighbours minus own" gap did predict next month
-through 2023, but a diagnostic shows that edge came from the country's *own* last-month return
-reversing, not from its neighbours. That is exactly the case the G2 gate was designed to catch.
-Under WP-11's rule, the diffusion/interaction territory downgrades.
+**The relational experiment is cancelled; the country-level concept experiment goes ahead.**
 
-**The country-level check is split, and its pre-registered verdict rests on a test that turned
-out to have almost no power.** The T2 feature panel clearly holds about nine distinct concepts,
-stable across every sub-period. But the pre-registered test of whether future returns line up
-with those concepts came out exactly at its noise level — and a power check run afterwards shows
-that test would have missed even an implausibly strong planted signal more than half the time.
-Read literally, the pre-registered rule says drop the node-level experiment. Read honestly, the
-check neither supports nor rules it out.
+None of the three link types — trade, banking or portfolio holdings — carries next-month
+information once a country's own recent returns and its region's are accounted for. The standard
+"neighbours minus own" gap did predict next month through 2023, but that edge came from the
+country's *own* last-month return reversing, not from its neighbours — exactly the case the G2
+gate was designed to catch. Under WP-11's rule the diffusion/interaction territory downgrades.
+
+On the country side, the T2 feature panel holds about nine distinct concepts, and — on the
+replacement test A3, with the U.S. markets removed and each country's own average stripped out —
+those nine concepts explain 11.8% of the variation in next-year relative returns, against a
+chance ceiling of 3.1% (p = 0.001). The result survives the two look-ahead checks run afterwards.
+The pre-registered rule therefore says proceed, with at most nine concepts. This is an in-sample
+alignment test, not a forecast: it says the concept directions carry return-relevant signal, not
+that a concept model beats a flat one out of sample. That is what the node experiment has to show.
+
+The original spectral test (A2) was recorded as inconclusive for lack of power, by owner
+decision, and replaced by A3 rather than rerun.
 
 ---
 
@@ -105,22 +109,77 @@ did not anticipate either problem.
 So A2's null result is a failure to detect, from a test that could not have detected a plausible
 effect. It is not evidence that the return signal lives in the noise.
 
-**Decision needed from Arjun.** Either (a) honour the pre-registered rule and drop the node-level
-experiment, or (b) record A2 as inconclusive for lack of power and replace it with a test that
-has power — for example, a pre-registered comparison of how much of the forward cross-section the
-top nine directions explain in-sample against a within-month permutation null. Option (b) is a new
-registration and should not be treated as a rerun that is allowed to reach a different answer.
+**Decision (Arjun, 2026-09-23): option (b).** A2 is recorded as inconclusive for lack of power and
+replaced by A3, registered before it ran (below). A2's own result stands as recorded.
+
+---
+
+## Check A3 — do the nine concepts explain next-year returns better than chance?
+
+Registered in `PREREG.md` (commit f0ec126), with the U.S. markets removed at Arjun's direction
+before any code was written (amendment A3-1, commit d1b9119), and the power calibration committed
+before the real returns were read (commit 6a094a4).
+
+Panel: 30 markets (the 31 non-U.S. markets less Vietnam, which fails the coverage bar), 249
+months, 36 variables. Concepts: the top nine principal components of the features alone. Both the
+concepts and the 12-month relative return have month and country averages removed, so a country
+that simply did well throughout cannot drive the result. Chance is measured by giving each
+country another country's entire return history, 1,000 times.
+
+| Test | R² | Chance, 95th pct | p |
+|---|---:|---:|---:|
+| **12-month, identity removed (primary)** | **0.118** | 0.031 | 0.001 |
+| 12-month, month averages only | 0.056 | 0.020 | 0.001 |
+| 1-month, identity removed | 0.014 | 0.003 | 0.001 |
+
+p = 0.001 is the floor with 1,000 shuffles: none of them matched the real value. **Pre-registered
+decision: proceed with the node-level concept experiment, at most nine concepts.** The ex-U.S.
+concept count from parallel analysis is eight.
+
+**Power.** Calibrated on synthetic targets before the real run: the test catches a planted signal
+of correlation 0.20 95.5% of the time, 0.10 25% of the time, 0.05 6% of the time. By the
+registered bar it is underpowered for signals near 0.10. That caveat matters only for a null
+result; the real result here is far outside chance.
+
+**Could look-ahead in the averaging have manufactured it? No (post-hoc diagnostics,
+`src/diag_a3_bias.py`, not pre-registered).** Removing each country's average over the *whole*
+sample leaks the future for slow-moving features such as price levels, and the shuffle test does
+not reproduce that leak. Two checks:
+
+| Variant | R² | Chance, 95th pct | p |
+|---|---:|---:|---:|
+| Past-only averages (features: earlier months; returns: only already-matured 12-month windows) | 0.120 | 0.037 | 0.001 |
+| Five price-level variables removed, identity removed as in A3 | 0.087 | 0.028 | 0.001 |
+| Both | 0.096 | 0.035 | 0.001 |
+
+**What the strongest concepts are made of** (the four with the largest individual R², 1.4–3.3%
+each; described from their largest loadings, oriented so that a higher score means a higher next-
+year relative return):
+- a size-and-reversal concept: small market capitalisation, weak trailing 12-month and 12-1
+  returns, but firm RSI;
+- a short-term-reversal-and-currency concept: weak 1- and 3-month returns with a strong real
+  exchange rate;
+- an earnings-and-price-level concept: high EPS and price levels relative to peers;
+- a mixed concept of real exchange rate, recent return, volatility and bond yield (negative sign).
+
+So most of the aligned signal is built from price, size, reversal and currency inputs that the T2
+additive predictor already uses. The node experiment's real question is therefore whether a
+small constrained concept layer combines these better than the flat ridge and the additive
+predictor do, out of sample. This check says there is something to combine; it does not say the
+combination wins.
 
 ---
 
 ## Files
 
 - Pre-registration: `PREREG.md`
-- Code: `src/common.py`, `src/check_b_g2.py`, `src/check_a_spectral.py`, `src/power_check_a2.py`
+- Code: `src/common.py`, `src/check_b_g2.py`, `src/check_a_spectral.py`, `src/power_check_a2.py`,
+  `src/check_a3.py`, `src/diag_a3_bias.py`
 - Results (not in git): `results/check_b_g2.json`, `results/check_b_monthly_ic.parquet`,
   `results/check_b_yearly_ic.xlsx`, `results/check_b_cumulative_ic.pdf`, `results/check_b.log`,
   `results/check_a_spectral.json`, `results/check_a_eigen.xlsx`, `results/check_a_spectral.pdf`,
-  `results/check_a_power.json`, `results/check_a.log`
+  `results/check_a_power.json`, `results/check_a.log`, `results/check_a3_power.json`,
+  `results/check_a3.json`, `results/check_a3_null.pdf`, `results/check_a3.log`, `results/diag_a3_bias.json`
 - Frozen inputs: `Data/work/experiments/concept_preflight/snapshot_2026_09_23/`
   (`t2_master`, `t2_factors_daily`, `graph_edge_vintages`). The snapshot `MANIFEST.json` lists
   only the two main-DB tables because the second snapshot call overwrote it; the loop-DB table

@@ -13,7 +13,12 @@ graveyard and ledgers, Investment Learnings, Quantpedia, and the outside literat
 — G2 failed for trade, banking and holdings, and the neighbour-gap signal's historical strength
 turned out to be own-country one-month reversal. Experiment 1 (node-level concepts) **proceeds**:
 with U.S. markets removed and country identity stripped out, nine feature concepts explain 11.8%
-of next-year relative-return variation against a 3.1% chance ceiling. The sections below are
+of next-year relative-return variation against a 3.1% chance ceiling. **Experiment 1 will be run as
+IPCA v2 in the T2 Factor Timing Fuzzy project**, not as a separate ASADO study, so the idea is
+counted as one trial (proposal: `/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 Factor
+Timing Fuzzy/Experiments Deep Dive/IPCA_V2_study_proposal.md`; findings from this program sent
+to that session 2026-09-23, including the identity-control and exposure recommendations). The
+sections below are
 the original design and have not been rewritten.
 
 ## The short answer

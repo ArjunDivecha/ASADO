@@ -131,3 +131,47 @@ Found while reading the snapshot schema (no returns or statistics had been compu
    momentum requires all 11 months present.
 4. **Months used.** Only complete calendar months. Snapshot data run into September 2026, so the
    last signal month is July 2026 (target August 2026).
+
+---
+
+## Check A3 — replacement for A2 (registered 2026-09-23, after A2 was found underpowered)
+
+**Why this exists.** A2's source-slope test detected a planted realistic signal only 12–16% of
+the time (`RESULTS.md`, power check). By owner decision (2026-09-23) A2 is recorded as
+**inconclusive for lack of power**, not as a drop. A3 is a new test, registered here before it
+is run. Its result is final for the node-level concept question: there is no A4.
+
+**Question.** Do the panel's 9 concepts (A1's k_var) explain next-year country returns better
+than chance, once country identity is removed?
+
+**Data.** Identical to Check A: the same 36 `_CS` variables, 2005-01 on, 7,031 complete
+country-months; same 12-month forward relative return built from compounded daily returns.
+
+**Concepts.** The top 9 principal components of the pooled, standardised feature matrix (fitted
+on features only; no return enters).
+
+**Removing identity (primary).** Both the 9 concept scores and the target are two-way demeaned
+(month means and country means removed). This asks whether a country's *changing* concept
+exposures line up with its relative returns, and shuts off the "persistent winner looks like a
+persistent feature" channel that inflated the MacroState result.
+
+**Statistic.** R² from pooled OLS of the demeaned target on the 9 demeaned concept scores.
+
+**Null.** 1,000 country-block permutations: each country's entire target history is reassigned to
+another country, then the same demeaning and regression are applied. This preserves each
+series' own persistence and the overlap of 12-month targets, which a row-wise shuffle would not.
+
+**Decision rule.** Real R² above the null's 95th percentile → the node-level concept experiment
+proceeds, with at most 9 concepts. Otherwise → the node-level concept experiment is dropped, and
+that is final.
+
+**Reported, not gating:** the same test with month-demeaning only (identity channel left open),
+the 1-month target, and each concept's individual contribution.
+
+**Power, established before the real target is touched.** Synthetic targets built from the real
+features plus synthetic noise (no real returns): signal = a random combination of the top-3
+demeaned concept scores; noise = 12-month rolling sums of iid monthly draws per country (so it
+has the same overlap structure); pooled correlation between target and signal set to 0.05, 0.10
+and 0.20; 200 draws each through the full pipeline (with a 200-permutation null per draw).
+The detection rates are committed before the real test runs. If power at 0.10 is below 50%, A3
+is reported as underpowered alongside its result.

@@ -157,72 +157,41 @@ def _p2p_score(prices: pd.Series) -> Optional[float]:
 
 
 def build_p2p_scores() -> pd.DataFrame:
-    """
-    Download monthly ETF prices via yfinance and compute historical P2P scores.
-    Returns a DataFrame with 'Unnamed: 0' (date) column + one column per ticker.
-    """
+    """Download and snapshot adjusted monthly closes; calculate P2P v2."""
     import yfinance as yf
-    import warnings
-    warnings.filterwarnings("ignore")
-
-    if not ASSET_LIST_FILE.exists():
-        raise FileNotFoundError(f"AssetList not found: {ASSET_LIST_FILE}")
-
-    asset_list = pd.read_excel(ASSET_LIST_FILE)
-    tickers = [str(t).strip().upper() for t in asset_list.iloc[:, 0] if pd.notna(t)]
-    logger.info("P2P: downloading %d tickers via yfinance ...", len(tickers))
-
-    data_start = pd.to_datetime("2000-01-01") - relativedelta(months=12)
-
-    # Download SPY first to establish the index
-    spy = yf.download("SPY", start=data_start, interval="1mo", progress=False)["Close"]
-    spy.index = spy.index.tz_localize(None)
-    all_prices = pd.DataFrame(index=spy.index)
-    all_prices["SPY"] = spy
-
+    from p2p_monthly import country_etfs, compute_scores
+    tickers = list(country_etfs().values())
+    configured = pd.read_excel(ASSET_LIST_FILE).iloc[:, 0].dropna().astype(str).tolist()
+    if set(configured) != set(tickers):
+        raise ValueError("AssetList differs from explicit P2P country mapping")
+    series = {}
     for ticker in tickers:
-        try:
-            data = yf.download(ticker, start=data_start, interval="1mo", progress=False)["Close"]
-            data.index = data.index.tz_localize(None)
-            if not data.empty:
-                all_prices[ticker] = data
-        except Exception:
-            continue
-
-    logger.info("P2P: downloaded prices for %d tickers", len(all_prices.columns) - 1)
-
-    # Compute monthly P2P scores from month 12 onward
-    p2p_scores = pd.DataFrame(index=all_prices.index)
-    start_ts = pd.to_datetime("2000-01-01")
-
-    for i in range(12, len(all_prices)):
-        dt = all_prices.index[i]
-        for ticker in tickers:
-            if ticker in all_prices.columns:
-                window = all_prices[ticker].iloc[i - 12 : i + 1]
-                if not window.isna().any() and len(window) > 1:
-                    score = _p2p_score(window)
-                    if score is not None:
-                        p2p_scores.loc[dt, ticker] = score
-
-    p2p_scores = p2p_scores[p2p_scores.index >= start_ts]
-    p2p_scores = p2p_scores.reset_index()
-    p2p_scores = p2p_scores.rename(columns={"index": "Unnamed: 0"})
-
-    logger.info("P2P: computed scores for %d months, %d tickers",
-                len(p2p_scores), len(p2p_scores.columns) - 1)
-    return p2p_scores
+        data = yf.download(ticker, start="1999-01-01", interval="1mo",
+                           auto_adjust=True, progress=False)["Close"]
+        if isinstance(data, pd.DataFrame):
+            data = data[ticker] if ticker in data else data.iloc[:, 0]
+        if data.empty:
+            raise ValueError(f"No P2P price data for {ticker}")
+        data.index = data.index.tz_localize(None)
+        series[ticker] = data
+    prices = pd.DataFrame(series).sort_index()
+    raw_path = P2P_FILE.with_name("P2P_Monthly_Adjusted_Prices.parquet")
+    # Immutable dated source snapshot plus canonical cache for audit/rebuild.
+    archive = raw_path.parent / "backups" / f"p2p_raw_{datetime.now():%Y%m%d_%H%M%S}.parquet"
+    archive.parent.mkdir(parents=True, exist_ok=True)
+    prices.to_parquet(archive)
+    scores = compute_scores(prices, tickers)
+    temp = raw_path.with_suffix(".tmp.parquet")
+    prices.to_parquet(temp)
+    temp.replace(raw_path)
+    scores.attrs["raw_path"] = str(archive)
+    return scores
 
 
 def save_p2p(p2p_df: pd.DataFrame) -> None:
-    with pd.ExcelWriter(str(P2P_FILE), engine="xlsxwriter") as writer:
-        p2p_df.to_excel(writer, sheet_name="Sheet1", index=False)
-        wb = writer.book
-        ws = writer.sheets["Sheet1"]
-        date_fmt = wb.add_format({"num_format": "yyyy-mm-dd"})
-        ws.set_column(0, 0, 12, date_fmt)
-        ws.set_column(1, len(p2p_df.columns) - 1, 8)
-    logger.info("P2P scores saved: %s", P2P_FILE)
+    from p2p_monthly import save_scores
+    save_scores(p2p_df, P2P_FILE, p2p_df.attrs.get("raw_path"))
+    logger.info("P2P v2 scores saved: %s", P2P_FILE)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -556,14 +525,8 @@ def build_t2_master() -> bytes:
 
     # Load P2P
     logger.info("Loading P2P scores: %s", P2P_FILE)
-    p2p_data = pd.read_excel(str(P2P_FILE), engine="openpyxl")
-    if len(p2p_data.columns) <= len(COUNTRY_NAMES):
-        p2p_data.columns = COUNTRY_NAMES[: len(p2p_data.columns)]
-    else:
-        raise ValueError("P2P file has more columns than expected COUNTRY_NAMES list")
-    if "Country" in p2p_data.columns:
-        p2p_data["Country"] = pd.to_datetime(p2p_data["Country"], errors="coerce")
-        p2p_data = p2p_data.iloc[1:].reset_index(drop=True)
+    from p2p_monthly import load_scores
+    p2p_data = load_scores(P2P_FILE)
 
     # ── Write to an in-memory buffer ────────────────────────────────────────
     import io
@@ -694,7 +657,11 @@ def main() -> int:
     # If every output exists and is newer than every input, skip the entire run.
     if not args.force and not args.dry_run and not args.check:
         try:
-            inputs = [BLOOMBERG_FILE, ASSET_LIST_FILE]
+            from p2p_monthly import load_scores
+            load_scores(P2P_FILE)  # reject legacy or stale caches before mtime shortcut
+            inputs = [BLOOMBERG_FILE, ASSET_LIST_FILE, Path(__file__),
+                      Path(__file__).with_name("p2p_monthly.py"),
+                      BASE_DIR / "config/p2p_country_etfs.json"]
             if P2P_FILE.exists():
                 inputs.append(P2P_FILE)
             input_mtimes = [p.stat().st_mtime for p in inputs if p.exists()]

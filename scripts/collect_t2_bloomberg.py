@@ -73,11 +73,9 @@ CALC_SHEETS = ["MCAP Adj", "Mcap Weights"]   # computed; Master is written as sh
 
 def _setup_with_retry():
     from bbg import bloomberg_setup
-    try:
-        bloomberg_setup()
-    except Exception as e:
-        print(f"  bloomberg_setup attempt 1 failed ({e}); retrying once...", flush=True)
-        bloomberg_setup()
+    # Shared setup owns its bounded connectivity retry. Never retry quota or
+    # budget refusals here, or multiply the shared setup's retry count.
+    bloomberg_setup()
 
 
 def rows_to_monthly(rows, field):
@@ -101,6 +99,15 @@ def rows_to_daily(rows, field):
     vals = pd.to_numeric([r.get(field) for r in rows], errors="coerce")
     s = pd.Series(vals, index=idx).sort_index()
     return s[~s.index.duplicated(keep="last")]   # one value per day
+
+
+def minimum_history_rows(is_daily: bool, previous_rows: int = 0) -> int:
+    """Keep daily outage protection and require prior monthly coverage.
+
+    Existing sparse monthly macro sheets have as few as 17 observations.
+    A daily 1,000-row threshold incorrectly rejects every monthly refresh.
+    """
+    return 1000 if is_daily else max(12, previous_rows)
 
 
 def main() -> int:
@@ -149,7 +156,9 @@ def main() -> int:
           f"{start}->{end}, {currency}, {freq} ==", flush=True)
     collapse = rows_to_daily if is_daily else rows_to_monthly
 
-    from bbg import BBG
+    from bbg import BBG, BloombergQuotaError
+    from budget_gate import BloombergBudgetRefused
+    from quota_guard import BloombergHardStop
     _setup_with_retry()
     series = {}
     t0 = _time.time()
@@ -160,6 +169,8 @@ def main() -> int:
             try:
                 batch = bbg.hist_batch(tickers, fld, start, end, periodicity=freq,
                                        currency=currency, calendar_fill=is_daily)
+            except (BloombergQuotaError, BloombergBudgetRefused, BloombergHardStop):
+                raise  # Stop immediately; never continue batches or publish partial data.
             except Exception as e:
                 print(f"  WARN batch failed field={fld}: {e}", flush=True)
                 batch = {}
@@ -188,6 +199,8 @@ def main() -> int:
                 try:
                     batch = bbg.hist_batch(tickers, fld, start, end, periodicity=freq,
                                            calendar_fill=is_daily)
+                except (BloombergQuotaError, BloombergBudgetRefused, BloombergHardStop):
+                    raise  # Preserve terminal-wide quota/budget stop semantics.
                 except Exception as e:
                     print(f"  WARN local batch failed field={fld}: {e}", flush=True)
                     batch = {}
@@ -282,18 +295,45 @@ def main() -> int:
     # t2_normalize crashed; the 09-02 copy had to be recovered from Dropbox
     # revision history. Bloomberg data is precious and slow to re-pull:
     #   1) refuse to save if any data sheet is suspiciously short — a real
-    #      history sheet here carries ~9,700 rows; a floor of 1,000 separates
-    #      "Bloomberg gave us nothing" from any legitimate output;
+    #      daily history carries ~9,700 rows, while monthly sheets must
+    #      instead preserve their existing monthly coverage;
     #   2) back up the existing master to a timestamped sibling before
     #      overwriting, keeping the last 7, so even a failure mode this guard
     #      doesn't anticipate is a file-copy away from recovery.
-    MIN_SHEET_ROWS = 1000
-    short = {name: wb[name].max_row - 2                 # minus header rows
+    previous_rows = {}
+    previous_dates = {}
+    baseline = out if out.exists() else DEFAULT_OUT
+    if not is_daily and baseline.exists():
+        from openpyxl import load_workbook
+        prior = load_workbook(baseline, read_only=True)
+        try:
+            previous_rows = {sheet.title: max(0, sheet.max_row - 2)
+                             for sheet in prior if sheet.title != "Master"}
+            previous_dates = {
+                sheet.title: {pd.Timestamp(row[0]).normalize()
+                              for row in sheet.iter_rows(min_row=3, values_only=True)
+                              if row[0] is not None}
+                for sheet in prior if sheet.title != "Master"
+            }
+        finally:
+            prior.close()
+    lost_dates = {
+        name: sorted(dates - {pd.Timestamp(row[0]).normalize()
+                             for row in wb[name].iter_rows(min_row=3, values_only=True)
+                             if row[0] is not None})
+        for name, dates in previous_dates.items() if name in wb.sheetnames
+    }
+    lost_dates = {name: dates for name, dates in lost_dates.items() if dates}
+    if lost_dates:
+        print(f"FATAL: monthly refresh loses prior observation dates: {lost_dates}", flush=True)
+        return 1
+    short = {name: wb[name].max_row - 2
              for name in wb.sheetnames if name != "Master"
-             and wb[name].max_row - 2 < MIN_SHEET_ROWS}
+             and wb[name].max_row - 2 < minimum_history_rows(
+                 is_daily, previous_rows.get(name, 0))}
     if short:
         print(f"\nFATAL: refusing to write {out} — {len(short)} sheet(s) are "
-              f"suspiciously short (< {MIN_SHEET_ROWS} rows): "
+              f"below the frequency-aware history floor: "
               f"{dict(list(short.items())[:6])} ... Bloomberg likely returned "
               f"nothing (Terminal logged out / outage). The existing master is "
               f"left untouched.", flush=True)

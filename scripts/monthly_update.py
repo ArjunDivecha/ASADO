@@ -840,7 +840,7 @@ def main():
         # in-repo store (Data/gdelt/). Replaces the old shutil copy from
         # A Complete/GDELT — ASADO is now the sole source of truth for GDELT.
         gdelt_ingest_flags = [
-            "--daily", "--save-panels",
+            "--daily", "--save-panels", "--completed-months-only",
             "--country-day-dir", str(GDELT_DIR / "country_day"),
             "--manifest-dir", str(GDELT_DIR / "manifests" / "country_day"),
             "--lookups-dir", str(GDELT_DIR / "lookups"),
@@ -1132,4 +1132,6 @@ def main():
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    from pipeline_lock import pipeline_lock
+    with pipeline_lock():
+        raise SystemExit(main())

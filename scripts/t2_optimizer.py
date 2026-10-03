@@ -198,6 +198,28 @@ STEP4_EXCL = [
 ]
 
 
+def _p2p_net_returns(data, feature, benchmark_returns):
+    """Select from known signals, then measure targets; never rank on outcomes."""
+    weights = _step3_holdings(data, [feature], benchmark_returns)[feature]
+    targets = data.loc[data["variable"] == "1MRet"].pivot(
+        index="date", columns="country", values="value")
+    targets = targets.reindex(index=weights.index, columns=weights.columns)
+    selected = weights > 0
+    available = weights.sum(axis=1).gt(0) & ~(selected & targets.isna()).any(axis=1)
+    returns = (weights * targets.fillna(0)).sum(axis=1)
+    benchmark = benchmark_returns.reindex(weights.index)
+    return (returns - benchmark).where(available & benchmark.notna()).dropna()
+
+
+def _fill_non_p2p_missing(net_df):
+    """Retain legacy handling elsewhere, but never invent absent P2P returns."""
+    filled = net_df.apply(lambda row: row.fillna(row.mean()), axis=1)
+    for feature in ("P2P_CS", "P2P_TS"):
+        if feature in net_df:
+            filled[feature] = net_df[feature]
+    return filled
+
+
 def _step4_net_returns(data: pd.DataFrame, features: list, benchmark_returns: pd.Series,
                        trading_costs: pd.Series) -> Dict[str, pd.Series]:
     returns_data = data[data["variable"] == "1MRet"].copy()
@@ -230,6 +252,9 @@ def _step4_net_returns(data: pd.DataFrame, features: list, benchmark_returns: pd
 
     monthly_net_returns: Dict[str, pd.Series] = {}
     for feature in features:
+        if feature in ("P2P_CS", "P2P_TS"):
+            monthly_net_returns[feature] = _p2p_net_returns(data, feature, benchmark_returns)
+            continue
         if feature not in feature_merged_cache:
             continue
         feat_by_date = feature_merged_cache[feature]
@@ -283,7 +308,7 @@ def run_step_four(work_dir: Path, cfg: dict | None = None) -> Path:
     net_df = net_df[[c for c in net_df.columns if c not in cfg["step4_excl"]]]
 
     # T60.xlsx (60M trailing averages) — same construction as the external step
-    filled = net_df.apply(lambda row: row.fillna(row.mean()), axis=1)
+    filled = _fill_non_p2p_missing(net_df)
     next_month = filled.index[-1] + pd.DateOffset(months=1)
     filled.loc[next_month] = np.nan
     t60 = filled.shift(1).rolling(60, min_periods=1).mean() * 100
@@ -293,7 +318,7 @@ def run_step_four(work_dir: Path, cfg: dict | None = None) -> Path:
         ws.set_column(0, 0, 15, wb.add_format({"num_format": "dd-mmm-yyyy"}))
         ws.set_column(1, len(t60.columns), 12, wb.add_format({"num_format": "0.0000"}))
 
-    net_df = net_df.apply(lambda row: row.fillna(row.mean()), axis=1) * 100
+    net_df = _fill_non_p2p_missing(net_df) * 100
     net_df.sort_index(inplace=True)
     out = work_dir / cfg["optimizer_out"]
     net_df.to_excel(str(out), sheet_name="Monthly_Net_Returns", index_label="Date")

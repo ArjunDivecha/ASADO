@@ -209,19 +209,27 @@ def check_date_grain(rep: Report) -> None:
             rep.add("FAIL", f"{name} has non-first-of-month dates", f"e.g. {bad}")
 
     missing = g.index.difference(t2.index)
-    # Forward-labeled rows (>= the first of NEXT month) are the known
-    # realization-month convention for forward returns during an open month
-    # (see validate_returns_first check 7) — WARN, not FAIL. Historical dates
-    # absent from T2 are the real silent-join bug — FAIL.
-    next_month = (pd.Timestamp.now().normalize() + pd.offsets.MonthBegin(1))
-    hist_missing = [d for d in missing if d < next_month]
-    fwd_missing = [d for d in missing if d >= next_month]
+    # Both producers label observation month M as the first of M+1.
+    # GDELT fullhistory also retains partial observation months, so a label
+    # beyond T2 is not proof that observations exist for that label's month.
+    # Preserve the existing current/future-label advisory policy, but retain
+    # FAIL for missing historical labels. Daily refresh does not rebuild
+    # these monthly workbooks; crossing a month boundary cannot refresh them.
+    this_month_start = pd.Timestamp.now().normalize().replace(day=1)
+    hist_missing = [d for d in missing if d < this_month_start]
+    fwd_missing = [d for d in missing if d >= this_month_start]
     if not missing.empty and not hist_missing:
         rep.add("WARN", "GDELT carries forward-labeled month(s) beyond T2 (open-month convention)",
                 f"{[d.date() for d in fwd_missing][:5]}")
     elif hist_missing:
         rep.add("FAIL", "GDELT has HISTORICAL dates absent from T2",
-                f"{[d.date() for d in hist_missing][:10]}")
+                f"{[d.date() for d in hist_missing][:10]}. "
+                f"Monthly workbook labels: T2 through {t2.index.max().date()}, "
+                f"GDELT through {g.index.max().date()}. "
+                "Labels represent the preceding observation month; GDELT may "
+                "include a partial month. The daily pipeline does not refresh "
+                "these monthly inputs. Refresh and validate the monthly T2 and "
+                "GDELT producers; do not substitute daily completion for monthly freshness.")
     else:
         rep.add("PASS", "GDELT date axis is a clean subset of T2 (full overlap)",
                 f"overlap = {len(g.index.intersection(t2.index))} months")
@@ -282,6 +290,9 @@ def check_t2_internal(rep: Report) -> None:
         if cols != base_cols:
             col_issues.append(f"{sheet}: country columns differ "
                               f"(+{sorted(cols - base_cols)} -{sorted(base_cols - cols)})")
+        if sheet == "P2P" and dates and base_dates and max(dates) < max(base_dates):
+            rep.add("FAIL", "P2P monthly input is stale",
+                    f"P2P through {max(dates).date()}, market labels through {max(base_dates).date()}")
         if dates != base_dates:
             date_issues.append(f"{sheet} ({len(dates)} vs {len(base_dates)})")
     if col_issues:
@@ -294,6 +305,21 @@ def check_t2_internal(rep: Report) -> None:
         rep.add("WARN",
                 f"{len(date_issues)} T2 sheets have shorter/different date axes (natural factor histories)",
                 "; ".join(date_issues[:8]))
+
+
+def check_p2p_contract(rep: Report) -> None:
+    """Verify the producer cache contract against the consumed master sheet."""
+    sys.path.insert(0, str(BASE_DIR / "scripts"))
+    from p2p_monthly import load_scores
+    try:
+        expected = load_scores(T2_WORKBOOK.parent / "P2P_Country_Historical_Scores.xlsx")
+        actual = pd.read_excel(T2_WORKBOOK, "P2P")
+        pd.testing.assert_frame_equal(expected, actual, check_dtype=False, atol=1e-14, rtol=0)
+    except (ValueError, FileNotFoundError, AssertionError) as exc:
+        rep.add("FAIL", "P2P timing/mapping contract failed", str(exc)[:240])
+    else:
+        rep.add("PASS", "P2P v2 completed-month timing and explicit country mapping",
+                f"Latest availability label {expected.Country.max().date()}; no incomplete-month score")
 
 
 # --------------------------------------------------------------------------- #
@@ -523,6 +549,7 @@ def main() -> int:
     check_sleeve_resolution(rep)
     print("\n=== T2 internal consistency ===")
     check_t2_internal(rep)
+    check_p2p_contract(rep)
 
     duckdb_path = args.duckdb or (DUCKDB_PATH if DUCKDB_PATH.exists() else None)
     loop_path = args.loop_duckdb or (LOOP_DUCKDB_PATH if LOOP_DUCKDB_PATH.exists() else None)
@@ -537,7 +564,7 @@ def main() -> int:
         args.out.write_text(rep.to_markdown(), encoding="utf-8")
         print(f"\nWrote {args.out}")
 
-    print("\nRESULT:", "FAIL" if rep.failed else "OK (warnings are by-design caveats)")
+    print("\nRESULT:", "FAIL" if rep.failed else "OK (review warnings above)")
     return 1 if rep.failed else 0
 
 

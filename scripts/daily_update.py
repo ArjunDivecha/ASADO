@@ -283,4 +283,6 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    from pipeline_lock import pipeline_lock
+    with pipeline_lock():
+        raise SystemExit(main())

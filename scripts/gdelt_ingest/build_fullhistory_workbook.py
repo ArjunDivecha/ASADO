@@ -83,6 +83,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Unified pipeline: GDELT → monthly fullhistory workbook"
     )
+    parser.add_argument("--completed-months-only", action="store_true",
+                        help="Exclude partial observation months from monthly production outputs")
     parser.add_argument(
         "--start-date",
         default="2015-02-18",
@@ -460,6 +462,19 @@ def build_daily_metronome_panel(
 # ── Step 4: Export workbook ───────────────────────────────────────────────
 
 
+def completed_observation_months(monthly: pd.DataFrame) -> pd.DataFrame:
+    """Retain only observation months whose calendar end has been observed.
+
+    Labels are shifted to M+1 later; an October 2 observation must not become
+    a completed November 1 monthly predictor. Sparse-country last observations
+    do not change the global calendar completion cutoff.
+    """
+    cutoff = min(pd.to_datetime(monthly["date"]).max().normalize(),
+                 pd.Timestamp.now().normalize())
+    ends = pd.to_datetime(monthly["signal_month_end_date"])
+    return monthly.loc[ends <= cutoff].copy()
+
+
 def prepare_workbook_frame(monthly: pd.DataFrame) -> pd.DataFrame:
     """Prepare the monthly panel for workbook export (same transforms as load_panel)."""
     frame = monthly.copy()
@@ -581,6 +596,9 @@ def main() -> None:
         z_window_months=args.z_window_months,
         min_history_months=args.min_history_months,
     )
+
+    if args.completed_months_only:
+        monthly = completed_observation_months(monthly)
 
     # ── Step 3b: Build daily metronome (if --daily) ──
     daily_metronome = None

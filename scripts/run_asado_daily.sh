@@ -49,6 +49,10 @@ set -uo pipefail
 ASADO="/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO"
 BBG_ENV="/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg/.venv"
 PY="$ASADO/venv/bin/python"
+# The inherited descriptor is validated again by daily_update.py.
+if [[ -z "${ASADO_PIPELINE_LOCK_FD:-}" ]]; then
+    exec "$PY" "$ASADO/scripts/pipeline_lock.py" /bin/bash "$0" "$@"
+fi
 RUNNER_LOG="$ASADO/Data/logs/asado_daily_runner.log"
 RECIPIENT="+15104212111"
 DEADLINE_HOUR=11           # stop waiting for Bloomberg at 11:00

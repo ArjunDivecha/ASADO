@@ -9,6 +9,113 @@ Newest items at the top. When you fix one, delete the entry or mark it done.
 
 ## Open
 
+### 8. collect_t2_bloomberg.py: batched PX_LAST field request (248 tickers) intermittently times out after 90s, tripping the write-guard and aborting the daily pull
+- **Observed 2026-09-28 10:48 run** (`Data/logs/daily_update_2026_09_28_104858.log`):
+  step `T2: daily Bloomberg pull (live blpapi)` failed after 295.7s. Of the 24
+  per-field batched requests, the 17th (`PX_LAST`, 248 tickers — by far the
+  largest single batch; every other field batch is ≤34 tickers) hit
+  `WARN batch failed field=PX_LAST: Bloomberg request exceeded 90s with no
+  RESPONSE`, which the `except` at `collect_t2_bloomberg.py:163-165` turns
+  into an **empty** batch (no internal retry). That cascaded into 14 sheets
+  with 0 rows (`Gold`, `Oil`, `Copper`, `Agriculture`, `REER`, `GDP`, +8
+  more), which correctly tripped the `MIN_SHEET_ROWS` write-guard added
+  2026-09-02 (`collect_t2_bloomberg.py:277-300`) — the guard refused to
+  write and left the existing master untouched, exactly as designed. **This
+  is the guard working, not new corruption**; the underlying Bloomberg
+  timeout is the actual defect worth fixing.
+- **This is a recurring pattern, not a one-off**, all on the same `PX_LAST`
+  batch: the identical `WARN batch failed field=PX_LAST: ... exceeded 90s`
+  line also appears in `daily_update_2026_06_24_062317.log`,
+  `daily_update_2026_08_11_075053.log`, `daily_update_2026_08_12_001401.log`,
+  `daily_update_2026_08_18_073031.log`, `daily_update_2026_08_26_001935.log`,
+  and `daily_update_2026_09_02_002737.log`. Most of those runs got lucky
+  (the retry-by-relaunch or a smaller effective batch happened to land under
+  90s) and finished `STATUS: OK`; 2026-08-26 and 2026-09-02 did NOT get
+  lucky and silently wrote corrupted (near-empty) masters **before** the
+  write-guard existed — 09-02's copy had to be recovered from Dropbox
+  revision history (see the guard's own code comment). 2026-09-28 is the
+  first time the guard caught it live.
+- **Root cause:** `PX_LAST` is requested for 248 tickers in one single
+  `bbg.hist_batch()` call (`collect_t2_bloomberg.py:161-162`), vastly larger
+  than every other field's batch (≤34 tickers) — that size alone is the
+  likely reason it is the one field that keeps brushing the 90s ceiling, and
+  a single timeout currently has **zero retry**, unlike the pipeline-level
+  25-minute `--resume` retry in `run_asado_daily.sh` which is the only
+  safety net today.
+- **Why not a same-session fix:** `collect_t2_bloomberg.py` is the T2/live
+  Bloomberg feed script, which the repo `CLAUDE.md`/`AGENTS.md` house rule
+  reserves for Arjun's approval ("do not fix monthly-collector or T2-feed
+  bugs without approval — append to `docs/USER_FIX_LIST.md` instead").
+- **Proposed fix (needs approval):** either (a) split the `PX_LAST` batch
+  into smaller chunks (e.g. ~40 tickers each, matching the size of every
+  other field that doesn't time out), or (b) add one in-script retry around
+  the `bbg.hist_batch()` call on a timeout before falling back to an empty
+  batch. Either is a small, local change to `collect_t2_bloomberg.py`
+  around lines 158–168 (and the mirrored local-terms loop at 184–197 for
+  symmetry) — not applied here pending Arjun's sign-off.
+- **No action needed to recover today's run**: `run_asado_daily.sh`'s
+  built-in retry already relaunched `daily_update.py --resume` at 11:18:54
+  (attempt 2) and was running a fresh Bloomberg pull as of this report.
+
+---
+
+### 7. t2_normalize_daily.py crashes on commodity-beta sheet (Gold) — `cs_zscore` gets non-numeric `std()`
+- **RECURRED 2026-09-02 00:34 run** — identical crash, same traceback line
+  (`t2_normalize_daily.py:103`), same sheet ordering (`1DTR`/`5DTR`/`20DTR`/
+  `120DTR`/`120-5DTR` normalize cleanly, then the crash on the very next
+  sheet, `Gold`, with zero preceding log line for it — consistent with the
+  hypothesis below). This is now at least the 2nd occurrence since
+  2026-08-26 with no fix applied in between; `asado-daily` has been failing
+  on this same step across multiple runs. Still not runtime-confirmed (this
+  fixer agent's sandbox has no Python/Bash execution — `python3`, `git`,
+  even `unzip` all returned "requires approval" with no way to grant it) but
+  the proposed one-line fix below is unchanged and low-risk. Flagging for
+  priority approval given the repeat.
+- **Symptom (2026-08-26 07:30 launchd run, `asado-daily`):** `T2: normalize daily`
+  step fails with
+  `TypeError: ufunc 'isfinite' not supported for the input types` at
+  `scripts/t2_normalize_daily.py:103`, inside `cs_zscore()`, on
+  `~np.isfinite(stds) | (stds.abs() <= CS_DISPERSION_EPS)` where
+  `stds = df.std(axis=1)` (line 100). This means `stds` came back as
+  object dtype instead of float64. `1DTR`/`5DTR`/`20DTR`/`120DTR`/`120-5DTR`
+  all normalized fine immediately before the crash; per the sheet-write order
+  in `scripts/build_t2_master_daily.py`, the next sheet in the workbook is
+  `Gold` — the first of the four commodity-beta sheets (`Gold`, `Copper`,
+  `Oil`, `Agriculture`, plus their `<name> 120` scaled companions) written via
+  `clean_excel_keep_na()` (`build_t2_master_daily.py:284`), which *deliberately
+  skips* `fillna(0)` so beta burn-in gaps stay NaN.
+- **Root-cause hypothesis (not runtime-confirmed — see below):** a country
+  with a beta series that stays NaN for the whole daily history (e.g.
+  insufficient trailing months for the 36-month burn-in, or excluded from the
+  monthly-beta cross-sectional fill) writes back as an all-blank Excel column.
+  Read back by `t2_normalize_daily.py`, that can surface as an `object`-dtype
+  column that survives the `df.apply(pd.to_numeric, errors="coerce")` step
+  differently than a normal float column, so `df.std(axis=1)` on the full
+  frame returns `object` dtype for at least one row/column, and `np.isfinite`
+  then rejects it. This is a hypothesis from static reading of both scripts,
+  **not confirmed against the actual workbook** — see below.
+- **Why not a same-session fix:** this is the T2 daily feed/normalize
+  pipeline, which `CLAUDE.md`'s house rule reserves for Arjun's review ("do
+  not fix monthly-collector or T2-feed bugs without approval — append to
+  `docs/USER_FIX_LIST.md` instead"), and this fixer agent's sandbox does not
+  permit running Python/pandas to positively identify which column/sheet is
+  actually non-numeric before proposing a patch (same limitation noted on
+  item 6 below).
+- **Proposed fix (needs approval + runtime confirmation):** once a session
+  with Python execution confirms the exact offending sheet/column (e.g.
+  `pd.ExcelFile("Data/work/t2_daily/T2 Master Daily.xlsx").sheet_names` to
+  find the sheet right after `120-5DTR`, then inspect that sheet's `dtypes`
+  after the same read/coerce steps `t2_normalize_daily.py` uses), the minimal
+  fix is almost certainly to make `stds` robust to dtype drift at
+  `scripts/t2_normalize_daily.py:100`:
+  `stds = pd.to_numeric(df.std(axis=1), errors="coerce")` — this is a no-op
+  for the normal (already-float) case, and for the degenerate case it
+  coerces any non-numeric residue to NaN, which the very next line already
+  treats as "no cross-sectional signal" via the existing `~np.isfinite(stds)`
+  branch. Do not blind-apply without confirming the actual dtype first.
+
+---
+
 ### 6. T2_Optimizer.xlsx "Monthly_Net_Returns" sheet missing/renamed "Date" column — breaks daily panel build
 - **STILL FAILING 2026-08-12 07:30 launchd run** — second consecutive weekday
   failure, identical `KeyError: 'Date'` at the same line. Not self-healing;

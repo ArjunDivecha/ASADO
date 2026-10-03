@@ -521,7 +521,7 @@ def call_fable(packet: dict, api_key: str) -> tuple[list[dict], str]:
         "max_tokens": MAX_OUTPUT_TOKENS,
         "system": SYSTEM_PROMPT,
         "tools": [CONNECTIONS_TOOL],
-        "tool_choice": {"type": "tool", "name": "record_connections"},
+        "tool_choice": {"type": "auto"},
         "messages": [{"role": "user", "content":
                       "Tonight's evidence packet (bounded JSON):\n"
                       + json.dumps(packet, ensure_ascii=True, default=str)[:60000]}],

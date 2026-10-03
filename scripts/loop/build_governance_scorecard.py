@@ -140,14 +140,20 @@ def _dim_ledger_integrity():
 def _dim_family_registry():
     try:
         from scripts.loop import ledgers
-        from scripts.loop.family_registry import resolve_family, UnclassifiedVariableError
+        from scripts.loop.family_registry import resolve_family, UnclassifiedVariableError, load_registry
+        reg = load_registry()
         unclassified = []
         for h in ledgers.fold_hypotheses().values():
             var = (h.get("signal_spec") or {}).get("variable", "")
-            try:
-                resolve_family(var)
-            except UnclassifiedVariableError:
-                unclassified.append(var)
+            if var:
+                try:
+                    resolve_family(var)
+                except UnclassifiedVariableError:
+                    unclassified.append(var)
+            else:
+                fam = h.get("canonical_family") or h.get("family_key")
+                if not fam or fam not in reg.get("families", {}):
+                    unclassified.append(f"{h.get('hypothesis_id')}:no_variable_or_family")
     except Exception as exc:  # noqa: BLE001
         return "blind", "family_registry.yaml", f"check failed: {exc}"
     if unclassified:

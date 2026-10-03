@@ -80,3 +80,8 @@ families:
   llm_1m_country_rotation:
     description: "1-month cross-country rotation from the blinded monthly dossier feature set (34 T2 countries): arm A = frozen blinded-LLM sub-scores + walk-forward ridge; arm B = tabular HGB on the raw dossier fields. ONE shared trial budget (17 burn-in arms + 2 OOS arms)."
     variable_prefixes: ["LLM1M_", "TAB1M_"]
+
+  gdelt_narrative_v2:
+    description: "GDELT narrative and story-chain freshness / semantic tabular panels (trials H_20260727_*)."
+    variable_prefixes: ["KEEPLIST_93_HGB_WALKFWD", "WIDE_DEEP_RAW_HGB_WALKFWD", "GDELT2_"]
+

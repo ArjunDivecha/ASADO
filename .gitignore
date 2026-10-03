@@ -69,3 +69,10 @@ experiments/2026_09_regime_analog_brief/results/**/*.parquet
 experiments/2026_09_regime_analog_brief/results/*.parquet
 experiments/2026_09_regime_analog_brief/results/**/*.xlsx
 experiments/2026_09_regime_analog_brief/results/**/*.pdf
+
+# Runtime locks + per-run scratch (2026-10-03 cleanup)
+.llmchat.lock
+Data/.pipeline.lock
+Data/.*.lock
+Data/runs/
+experiments/**/results/*.parquet

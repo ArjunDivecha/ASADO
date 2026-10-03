@@ -1418,3 +1418,195 @@ to the 2026-09-11/12 nightly — re-verify before quoting them as current.
 ---
 SESSION END: 2026-09-13 09:20 PDT | Agent: Claude Code (Opus 5)
 ---
+
+---
+SESSION START: 2026-09-26 15:10 PDT | Agent: Claude Code (auto, sessionend, session 38077053)
+---
+
+### Session Summary
+Overseer's automated repair agent investigated a failed `asado-loop-daily` run (log: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/logs/loop_daily_launchd.log`). It found two failures. It applied **no fixes** and edited **no ASADO files**, because neither had a clearly safe, minimal fix. It wrote a diagnosis and proposed changes instead: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/NightWatch/overseer/state/fixer_reports/asado-loop-daily_2026-09-26.md`. Scratch probe: `/tmp/probe_fable.py`. A probe execution was denied approval, so the reproduction was not completed.
+
+### Decisions Made
+- Left the code untouched and proposed changes for human approval, since the root causes are external or unconfirmed.
+
+### Constraints & Gotchas
+- **`collect_foreign_flows` (the actual FAIL):** the NSDL website reset the connection at `scripts/loop/collect_foreign_flows.py:114`. It failed the same way in at least two earlier runs. The first request has no retry. The reason NSDL resets the connection is unknown.
+- **`build_fable_connections` (a warning, but it turns governance RED):** the Anthropic API returns `400 Bad Request` on every attempt.
+  - The script has not changed since 2026-07-11. The last success was 2026-08-31, so the cause is probably on the API side, such as a model ID or parameter change.
+  - The script discards the error body, and the probe was denied, so the exact cause is **not established**.
+- The nightly run otherwise reached later steps: the combiner, `build_family_ranks` and `family_ic_monitor` all ran OK, and the log tail was at `ews_context`.
+- Unrelated governance issue: unclassified variables in `family_registry`.
+
+### What To Build Next
+1. Log the response body on a 400 in `call_fable` in `scripts/loop/build_fable_connections.py`, then re-run read-only to read the real error. Check the model ID with Context7 or the `claude-api` skill rather than from memory.
+2. Add retries with backoff around the NSDL request in `scripts/loop/collect_foreign_flows.py:114`.
+3. Consider making `collect_foreign_flows` an optional step, like its Bloomberg counterpart.
+
+### Open Questions
+- Why is NSDL resetting connections: rate limiting, blocking, or an outage?
+- What is the exact cause of the Anthropic 400: a deprecated model ID, a token limit, or a payload problem?
+
+### Context for Next Session
+The report file contains commands to reproduce both failures without writing anything. Nothing was changed in the repo, so the next nightly run will likely fail the same way until one of the proposed fixes is approved.
+
+---
+SESSION END: 2026-09-26 15:10 PDT | Agent: Claude Code (auto, sessionend, session 38077053)
+---
+
+---
+SESSION START: 2026-09-26 18:30 PDT | Agent: Claude Code (auto, idle, session 8fddeec9)
+---
+
+### Session Summary
+Arjun asked for a full ASADO review: how to use the collected data to answer "what does the data know that the price doesn't". Nine-agent Understand workflow completed (~2M tokens, 474 tool calls). The seven-lens design panel **failed**: every agent hit the session limit within 16 seconds and returned nothing.
+
+Findings so far:
+- The E1 kill test was already run in `experiments/2026_08_network_spillover_capture` (2026-08-23). The spillover blend earns 16.9% annualized gross top-vs-equal-weight at a 1-day horizon on local country indices, and 25.4% on the six-market futures subset. On the US ETF it earns −2.9% open→close and 1.2% close→close. So the data leads price for about one local session, then it is gone by New York. The family re-armed (R-A gate 3/2 positive month-ends as of 2026-09-23).
+- Snapshot of 250 scored gap outcomes: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/experiments/review_data_vs_price_2026_09_23/snapshot_2026_09_23/`
+- Verification script: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/docs/review_data_vs_price_2026_09_23/verify_e1_split_and_gap_outcomes.py`
+- Review context (scratchpad, temporary): `/private/tmp/claude-501/-Users-arjundivecha-Dropbox-AAA-Backup-A-Working-ASADO/8fddeec9-dc1f-4eb7-9232-c67d51bb16ff/scratchpad/review_context.md`
+
+Also fixed the nightly pipeline. The Bloomberg outage was caused by a quota hard-stop sentinel from 2026-09-15, not the Terminal. Cleared it with Arjun's confirmation (`/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg/outputs/quota_incidents/cleared-20260925T172048.556522Z.json`). The daily run then passed all 12 steps in 31 minutes, and the warehouse is current through 2026-09-24. Log: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/logs/daily_update_2026_09_25_102334.log`. Brief: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/dislocations/brief_2026_09_25.md`.
+
+### Decisions Made
+- Arjun: do not rely on the Bloomberg keepalive. It stays disabled (`com.arjundivecha.bloomberg-keepalive.plist.disabled-20260914`).
+
+### Constraints & Gotchas
+- **Root cause of `build_fable_connections` 400 (now established):** the script auto-picks the newest `claude-fable-*` model, now `claude-fable-5-1`, and forces `tool_choice: {"type":"tool"}` at `scripts/loop/build_fable_connections.py:524`. Fable 5.1 rejects that: "tool_choice: type "tool" and "any" are not supported for this model". A probe with the same body returned 400 with the forced tool and 200 without it.
+- **Family registry RED:** H_20260727_001 (`KEEPLIST_93_HGB_WALKFWD`) and H_20260727_002 (`WIDE_DEEP_RAW_HGB_WALKFWD`) are DEAD and match none of the 11 prefixes in `config/family_registry.yaml`. H_20260727_003 (GDELT story-chain freshness) was registered with a blank variable name and never evaluated. Flagged by `scripts/loop/build_governance_scorecard.py:140-156`. The registry is a governed trust root.
+- **Uncommitted on the production checkout:** 23 hypothesis-ledger verdict lines and 6 methodology-ledger lines (August spillover re-verdicts, MacroState entries).
+
+### What To Build Next
+1. In a worktree, change `tool_choice` to `auto` (or remove it) at `build_fable_connections.py:524`. Tell the system prompt to answer via `record_connections`. Treat a reply with no tool call as a loud failure. Pin the model ID instead of auto-selecting the newest.
+2. Add a `gdelt_narrative` family to `config/family_registry.yaml` listing the two variable names explicitly. Append a `hyp_status` event giving H_20260727_003 a variable name (e.g. `GDELT_CHAIN_FRESHNESS`), or retire it. Consider folding in the `prediction_market` family from the unmerged `ASADO-exp-geopolitical-alpha-now` branch.
+3. Commit the uncommitted ledger lines first.
+4. Re-run the seven-lens design panel for the data-vs-price review.
+
+### Open Questions
+- Approval is pending for the two governed-file fixes: the pipeline code and the trust-root YAML.
+
+### Context for Next Session
+Two fixes are proposed and unapproved. Nothing was edited. The prior entry's `build_fable_connections` 400 diagnosis (cause unknown) is superseded by the root cause above.
+
+---
+SESSION END: 2026-09-26 18:30 PDT | Agent: Claude Code (auto, idle, session 8fddeec9)
+---
+
+---
+SESSION START: 2026-09-28 11:51 PDT | Agent: Claude Code (auto, idle, session 192795b8)
+---
+
+### Session Summary
+Overseer's automated repair agent diagnosed the 2026-09-28 `asado-daily` failure. Step T2 (daily Bloomberg pull, live blpapi) exited 1 after 295.7s. The Bloomberg preflight was clean: Parallels VM up, Terminal running, bbcomm running, port 8194 forwarded and reachable. The cause was a transient "Bloomberg request exceeded 90s" timeout on the oversized `PX_LAST` batch. That batch had 248 tickers, against 34 or fewer for every other field. It is the same failure mode as earlier days, not the quota sentinel from 2026-09-15.
+
+The write-guard added 2026-09-02 refused to save the near-empty sheets and left the existing master untouched, so nothing was corrupted. The pipeline's own 25-minute auto-retry (attempt 2, PID 67309, log `Data/logs/daily_update_2026_09_28_111854.log`) was still running when the session ended. Its outcome is unverified.
+
+### Decisions Made
+- No edit was made to `scripts/collect_t2_bloomberg.py`. The T2/Bloomberg feed is off-limits without Arjun's approval, so the proposed fix was written up instead of applied.
+- The fix was filed as item 8 in `docs/USER_FIX_LIST.md`.
+
+### Constraints & Gotchas
+- This is a recurring failure with 7 prior occurrences. Two of them corrupted data before the 2026-09-02 write-guard existed. One example log is `Data/logs/daily_update_2026_09_02_002737.log`.
+- Exit code 0 does not mean healthy. Confirm the artifact is fresh, for example the date in the `Data/dislocations/` brief filename.
+
+### What To Build Next
+- Get Arjun's approval, then apply the item 8 fix in `collect_t2_bloomberg.py`. It is presumably to split the 248-ticker `PX_LAST` batch into smaller batches. The exact wording is in item 8.
+
+### Open Questions
+- Did the attempt-2 retry succeed? Check the tail of `Data/logs/daily_update_2026_09_28_111854.log` and confirm the warehouse is current through 2026-09-28.
+- Does Arjun approve item 8?
+
+### Context for Next Session
+Files:
+- Report: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/NightWatch/overseer/state/fixer_reports/asado-daily_2026-09-28.md`
+- Fix list: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/docs/USER_FIX_LIST.md`
+- Feed script (unchanged): `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/collect_t2_bloomberg.py`
+
+---
+SESSION END: 2026-09-28 11:51 PDT | Agent: Claude Code (auto, idle, session 192795b8)
+---
+
+---
+SESSION START: 2026-10-01 10:56 PDT | Agent: Claude Code (auto, sessionend, session 22919db1)
+---
+
+### Session Summary
+Overseer's repair agent investigated the 2026-10-01 `asado-daily` "failure". The pipeline did not fail. The manifest's success check read a log that cannot contain its marker. No code was changed.
+
+Sequence on 2026-10-01:
+- **00:20:** after Sep 30's run was aborted when Bloomberg was down past the 11:00 deadline, a catch-up run did all 12 stages and finished OK at 00:46. It wrote `brief_2026_09_30.md`. Its log has 11 `STATUS: OK` lines. What triggered it is unidentified.
+- **07:30:** the scheduled `--resume` run found every stage already OK and skipped them. Skipped stages write nothing to the step log, so the 157-line log holds only the advisory QA stage (`WARN`) and no `STATUS: OK`.
+- **Check replay:** the manifest looks for `STATUS: OK` in the last 6000 lines of the newest log. The 07:30 log gives 0 hits and the 00:20 log gives 11.
+
+### Decisions Made
+- No edit to `scripts/daily_update.py`. It is the production orchestrator, so a change needs the pre-merge checklist (`.claude/skills/asado-change-control/SKILL.md`) and Arjun's approval. A proposed patch was written up instead.
+
+### What To Build Next
+- Preferred fix: make each resumed-skip stage append `STATUS: OK (exit 0, resumed-skip)` to the step log. It is a few lines in `scripts/daily_update.py`. The exact patch and verification steps are in the report.
+- Alternative: repoint the manifest success check at the runner log's "completed OK" line. The manifest is outside this repo, so it was not touched.
+
+### Constraints & Gotchas
+- A resumed run whose stages were all finished earlier the same day will always look failed to a `log_glob` / `STATUS: OK` check. Expect recurrences on any day a catch-up run precedes the 07:30 run.
+- QA stage shows `[FAIL] GDELT has HISTORICAL dates absent from T2: [2026-09-01]`. It is real output but advisory, and never gates the run. The same FAIL appears in the successful 00:20 run. It looks like a month-rollover artifact that the uncommitted edit to `scripts/qa/check_source_alignment.py` does not cover. Unconfirmed, because the T2 September monthly row due date was not checked.
+
+### Open Questions
+- Does Arjun approve the `daily_update.py` resumed-skip patch, or the manifest change?
+- What launched the 00:20 catch-up run?
+- Did the 07:30 skip leave any non-US Oct-1 closes unrefreshed? Unchecked.
+
+### Context for Next Session
+Files:
+- Report: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/NightWatch/overseer/state/fixer_reports/asado-daily_2026-10-01.md`
+- Flagged log (07:30): `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/logs/daily_update_2026_10_01_073010.log`
+- Real run log (00:20): `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/logs/daily_update_2026_10_01_002051.log`
+- Progress checkpoint: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/logs/daily_update_progress_2026_10_01.json`
+- Orchestrator (proposed edit site, unchanged): `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/daily_update.py`
+
+---
+SESSION END: 2026-10-01 10:56 PDT | Agent: Claude Code (auto, sessionend, session 22919db1)
+---
+
+---
+SESSION START: 2026-10-02 12:02 PDT | Agent: Claude Code (auto, sessionend, session bb7ab60d)
+---
+
+### Session Summary
+Overseer's repair agent investigated the 2026-10-02 `asado-daily` failure. Result: the pipeline never started because Bloomberg refused API sessions from 07:30 to at least 11:34. No code was changed. There is no code defect. The `daily_update_2026_10_02` log does not exist.
+
+- **Runner behaved as designed.** `scripts/run_asado_daily.sh` retried every 20 minutes (24 attempts) and aborted at the 11:00 deadline with "Pipeline NOT run".
+- **Failure point.** Every preflight check passed on every attempt (VM, Terminal processes, `bbcomm`, port forward, firewall, TCP). Only the final step failed: `Session negotiation failed … result = 1`.
+- **Loop job.** The seven Bloomberg collectors in the loop job hit the same negotiation failure at 11:30–11:41.
+- **Likely cause.** The Terminal in the Parallels VM is logged out, locked or wedged on the Windows side. This matches the 2026-08-21 entry in `docs/USER_FIX_LIST.md` and the 2026-09-30 failure.
+
+### Decisions Made
+- No edit to the runner script or anything else. A human must restore the Terminal session.
+
+### What To Build Next
+- Human action, then re-run: unlock or log the Terminal back in on the Windows side, then run `scripts/run_asado_daily.sh`. It is safe to re-run, and one successful run covers both missed days.
+- Success check: a new `Data/dislocations/brief_2026_10_01.md` or later, and a `daily_update_2026_10_02_*.log` with `STATUS: OK` lines.
+- Decide whether to restart the Bloomberg keepalive job.
+
+### Constraints & Gotchas
+- **Stale data.** The warehouse is current only through the 2026-09-30 close. The 10-01 07:30 run skipped every stage (the resumed-skip issue in the previous entry), so the 10-01 close was never pulled either.
+- **Stale brief.** At 11:41 the loop re-prepended the Sep-30 brief on stale inputs with governance RED. No data was corrupted.
+- **Keepalive.** The Bloomberg keepalive job has been stopped since 2026-09-14 and probably explains why nothing holds the Terminal session open overnight. Unconfirmed: the quota sentinel and `launchctl` were outside the agent's reach.
+- The agent did not re-probe Bloomberg itself. The latest confirmed failure is 11:31 for the runner and about 11:41 for the loop.
+
+### Open Questions
+- Will Arjun restart the Bloomberg keepalive job?
+- Is the keepalive stoppage the cause of the repeated overnight session loss (09-30 and 10-02)?
+- Does the 10-01 resumed-skip patch from the previous entry still await approval? Yes, nothing about it changed.
+
+### Context for Next Session
+Files:
+- Report: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/NightWatch/overseer/state/fixer_reports/asado-daily_2026-10-02.md`
+- Keepalive report: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/NightWatch/overseer/state/fixer_reports/bloomberg-keepalive_2026-10-02.md`
+- Runner log: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/logs/asado_daily_runner.log`
+- Launchd log: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/logs/asado_daily_launchd.log`
+- Loop log: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/logs/loop_daily_launchd.log`
+- Runner script (unchanged): `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/run_asado_daily.sh`
+- Fix list: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/docs/USER_FIX_LIST.md`
+
+---
+SESSION END: 2026-10-02 12:02 PDT | Agent: Claude Code (auto, sessionend, session bb7ab60d)
+---

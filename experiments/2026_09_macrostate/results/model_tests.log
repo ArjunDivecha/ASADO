@@ -1,0 +1,29 @@
+test_delisting_not_silently_removed (test_stage12.PortfolioTests.test_delisting_not_silently_removed) ... ok
+test_drawdown_includes_initial_loss (test_stage12.PortfolioTests.test_drawdown_includes_initial_loss) ... ok
+test_duplicate_keys_fail (test_stage12.PortfolioTests.test_duplicate_keys_fail) ... ok
+test_equal_weight_hand_calculation (test_stage12.PortfolioTests.test_equal_weight_hand_calculation) ... ok
+test_future_scores_cannot_change_past (test_stage12.PortfolioTests.test_future_scores_cannot_change_past) ... ok
+test_identical_returns_match (test_stage12.PortfolioTests.test_identical_returns_match) ... ok
+test_invalid_return_fails (test_stage12.PortfolioTests.test_invalid_return_fails) ... ok
+test_missing_held_return_fails (test_stage12.PortfolioTests.test_missing_held_return_fails) ... ok
+test_missing_score_fails (test_stage12.PortfolioTests.test_missing_score_fails) ... ok
+test_missing_unheld_return_allowed (test_stage12.PortfolioTests.test_missing_unheld_return_allowed) ... ok
+test_one_month_arithmetic (test_stage12.PortfolioTests.test_one_month_arithmetic) ... ok
+test_skipped_month_fails (test_stage12.PortfolioTests.test_skipped_month_fails) ... ok
+test_ties_canonical (test_stage12.PortfolioTests.test_ties_canonical) ... ok
+test_top20_rounding_34 (test_stage12.PortfolioTests.test_top20_rounding_34) ... ok
+test_vintage_holds_names_until_maturity (test_stage12.PortfolioTests.test_vintage_holds_names_until_maturity) ... ok
+test_vintage_ramp (test_stage12.PortfolioTests.test_vintage_ramp) ... ok
+test_consensus_contiguous_months (test_stage12.TemporalTests.test_consensus_contiguous_months) ... ok
+test_consensus_requires_both_target_years (test_stage12.TemporalTests.test_consensus_requires_both_target_years) ... ok
+test_daily_after_cutoff_excluded (test_stage12.TemporalTests.test_daily_after_cutoff_excluded) ... ok
+test_label_maturity_boundary (test_stage12.TemporalTests.test_label_maturity_boundary) ... ok
+test_normalization_prefix_invariant (test_stage12.TemporalTests.test_normalization_prefix_invariant) ... ok
+test_stale_value_masked (test_stage12.TemporalTests.test_stale_value_masked) ... ok
+test_target_full_window (test_stage12.TemporalTests.test_target_full_window) ... ok
+test_target_missing_interior_not_dropped (test_stage12.TemporalTests.test_target_missing_interior_not_dropped) ... ok
+
+----------------------------------------------------------------------
+Ran 24 tests in 0.151s
+
+OK

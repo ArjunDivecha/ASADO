@@ -1,0 +1,23 @@
+{
+  "version": "stage12-results-first-v1",
+  "scope": "Prepare existing inputs and validate portfolio evaluator; no fitted MacroState contest yet",
+  "primary_comparison": "top ceil(eligible_count * 0.20), equal weight, versus equal weight eligible markets",
+  "broad_benchmark": "also report equal weight all markets with valid trailing price history, even when valuation is unavailable",
+  "selection_fraction": 0.2,
+  "decision_frequency": "monthly",
+  "forecast_horizon_months": [12, 6, 3],
+  "holding_expressions": [1, 12],
+  "costs": 0,
+  "statistical_significance_gate": false,
+  "success_measures": ["cumulative_return", "annualized_return", "maximum_drawdown", "rolling_12m_outperformance_rate", "country_contributions"],
+  "execution_basis": "monthly USD gross total-return index proxy; preceding month-end information to subsequent monthly returns; not executable next-session fills",
+  "missing_outcome_policy": "raise, never delete selected holdings or reweight around missing outcomes",
+  "eligibility": "positive observed TRI at decision, contiguous 12-month return history; scored comparison also requires positive PB and trailing momentum",
+  "normalization": "own-history z using previous 60 completed months, minimum 36 nonmissing observations; clip [-3,3]; never future rows",
+  "input_timing": "daily vendor observations <= completed prior month-end, max age 10 calendar days; monthly workbook at prior month-end with no further forward fill",
+  "vendor_history_status": "conditional historical reconstruction; vendor revisions and Bloomberg carry-forward are not independently certified",
+  "features": ["gdp_expectation", "gdp_revision_3m", "cpi_expectation", "cpi_revision_3m", "yield_2y", "yield_2y_change_3m", "curve_2s10s", "cds_5y", "cds_5y_change_3m", "fx_vol_1m", "fx_vol_change_3m", "cheap_pb", "momentum_12_1", "return_vol_12m"],
+  "controls": "fixed equal-weight cross-sectional cheap-PB rank plus trailing 12-to-1-month momentum rank; evaluator plumbing demonstration only",
+  "model_fitting": false,
+  "source_selection": "fixed from prior economic and provenance audit, no return-based feature selection"
+}

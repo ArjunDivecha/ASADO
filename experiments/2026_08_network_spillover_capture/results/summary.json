@@ -1,0 +1,81 @@
+{
+  "experiment": "2026_08_network_spillover_capture",
+  "status": "SURVIVES_NARROW_FUTURES_CAPTURE_ONLY",
+  "gross_tradable_positive": true,
+  "positive_at_10bp_diagnostic": true,
+  "surviving_expressions_gross": [
+    "etf_close_to_close",
+    "futures"
+  ],
+  "surviving_expressions_at_10bp": [
+    "futures"
+  ],
+  "futures_coverage_max_n": 6,
+  "deployment_authorized": false,
+  "harness_version": 4,
+  "lag_days_effective": 1,
+  "rank_input": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/experiments/flip_autopsy/snapshot_2026_07_13/family_ranks_daily.parquet",
+  "rank_input_sha256": "a685e8b336149a149bef1a1a30fc28175e6fce3190aa9326f452bab8a827e22e",
+  "rank_families": [
+    "graph_bank",
+    "graph_twohop",
+    "leadlag",
+    "twins"
+  ],
+  "futures_map": {
+    "France": "CF",
+    "Germany": "GX",
+    "Hong Kong": "HI",
+    "Japan": "NK",
+    "U.K.": "Z",
+    "U.S.": "ES"
+  },
+  "etf_map": {
+    "Australia": "EWA",
+    "Brazil": "EWZ",
+    "Canada": "EWC",
+    "Chile": "ECH",
+    "ChinaA": "ASHR",
+    "ChinaH": "MCHI",
+    "Denmark": "EDEN",
+    "France": "EWQ",
+    "Germany": "EWG",
+    "Hong Kong": "EWH",
+    "India": "INDA",
+    "Indonesia": "EIDO",
+    "Italy": "EWI",
+    "Japan": "EWJ",
+    "Korea": "EWY",
+    "Malaysia": "EWM",
+    "Mexico": "EWW",
+    "NASDAQ": "QQQ",
+    "Netherlands": "EWN",
+    "Philippines": "EPHE",
+    "Poland": "EPOL",
+    "Saudi Arabia": "KSA",
+    "Singapore": "EWS",
+    "South Africa": "EZA",
+    "Spain": "EWP",
+    "Sweden": "EWD",
+    "Switzerland": "EWL",
+    "Taiwan": "EWT",
+    "Thailand": "THD",
+    "Turkey": "TUR",
+    "U.K.": "EWU",
+    "U.S.": "SPY",
+    "US SmallCap": "IWM",
+    "Vietnam": "VNM"
+  },
+  "cost_cases_bps_one_way": [
+    2.5,
+    5.0,
+    10.0,
+    25.0
+  ],
+  "hold_days": [
+    1,
+    5,
+    21
+  ],
+  "note": "The re-arm gate is not a deployment gate. Formal re-verdict is conditional on capture survival."
+}

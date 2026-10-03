@@ -1,0 +1,1446 @@
+{
+  "schema_version": "1.0",
+  "status": "SPECIFICATION_NOT_EXECUTED",
+  "task_count": 56,
+  "phases": [
+    {
+      "id": "P00",
+      "title": "Repository and governance reconciliation"
+    },
+    {
+      "id": "P01",
+      "title": "Data readiness and source snapshot"
+    },
+    {
+      "id": "P02",
+      "title": "Independent calendars and labels"
+    },
+    {
+      "id": "P03",
+      "title": "Causal features and economic concepts"
+    },
+    {
+      "id": "P04",
+      "title": "Common panel and chronological splits"
+    },
+    {
+      "id": "P05",
+      "title": "Estimator and inference engineering"
+    },
+    {
+      "id": "P06",
+      "title": "Registration and execution lock"
+    },
+    {
+      "id": "P07",
+      "title": "Controls and historical replay"
+    },
+    {
+      "id": "P08",
+      "title": "Primary forecast evaluation"
+    },
+    {
+      "id": "P09",
+      "title": "Mechanism and fragility"
+    },
+    {
+      "id": "P10",
+      "title": "Gross portfolio and harness integration"
+    },
+    {
+      "id": "P11",
+      "title": "Final verdict and reproduction"
+    },
+    {
+      "id": "P12",
+      "title": "Optional prospective shadow operation"
+    },
+    {
+      "id": "P13",
+      "title": "Optional separately registered neural extension"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "NL-P00-01",
+      "phase": "P00",
+      "title": "Read local governance and prior experiment records",
+      "description": "Map every mandatory document and any scientific conflict before modifying code.",
+      "depends_on": [],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T01",
+        "T56"
+      ],
+      "deliverables": [
+        "reconciliation.md"
+      ],
+      "acceptance_criteria": [
+        "Map every mandatory document and any scientific conflict before modifying code.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P00-02",
+      "phase": "P00",
+      "title": "Pin environment and inspect reusable adapters",
+      "description": "Verify package layout, PIT smoke tests, snapshot lifecycle and actual harness behavior.",
+      "depends_on": [
+        "NL-P00-01"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T59"
+      ],
+      "deliverables": [
+        "source_map.json",
+        "environment.lock"
+      ],
+      "acceptance_criteria": [
+        "Verify package layout, PIT smoke tests, snapshot lifecycle and actual harness behavior.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P00-03",
+      "phase": "P00",
+      "title": "Bind methodology registration and inherited family accounting",
+      "description": "Identify an authorized ledger path and current gross qualification rules; preserve historical trials.",
+      "depends_on": [
+        "NL-P00-02"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T58"
+      ],
+      "deliverables": [
+        "governance_binding.json"
+      ],
+      "acceptance_criteria": [
+        "Identify an authorized ledger path and current gross qualification rules; preserve historical trials.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P00-04",
+      "phase": "P00",
+      "title": "Close governance gate",
+      "description": "Produce evidence-backed readiness or a concrete BLOCKED_GOVERNANCE report.",
+      "depends_on": [
+        "NL-P00-03"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T60"
+      ],
+      "deliverables": [
+        "P00_gate.json"
+      ],
+      "acceptance_criteria": [
+        "Produce evidence-backed readiness or a concrete BLOCKED_GOVERNANCE report.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P01-01",
+      "phase": "P01",
+      "title": "Audit all 24 primitive source bindings",
+      "description": "Discover literal selectors, units, tenors, historical availability, collectors, and coverage without inspecting predictive strength.",
+      "depends_on": [
+        "NL-P00-04"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T03",
+        "T15"
+      ],
+      "deliverables": [
+        "feature_manifest.bound.yaml",
+        "availability_evidence.md"
+      ],
+      "acceptance_criteria": [
+        "Discover literal selectors, units, tenors, historical availability, collectors, and coverage without inspecting predictive strength.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P01-02",
+      "phase": "P01",
+      "title": "Build market/entity and feed-availability maps",
+      "description": "Resolve currencies, exchanges, graph representatives, forecast-year identity and staleness contracts.",
+      "depends_on": [
+        "NL-P01-01"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T16",
+        "T17",
+        "T19",
+        "T20"
+      ],
+      "deliverables": [
+        "market_map.csv",
+        "calendar_source_map.json"
+      ],
+      "acceptance_criteria": [
+        "Resolve currencies, exchanges, graph representatives, forecast-year identity and staleness contracts.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P01-03",
+      "phase": "P01",
+      "title": "Export consistent immutable source snapshot",
+      "description": "Coordinate source batch watermarks and write read-only content-addressed extracts.",
+      "depends_on": [
+        "NL-P01-02"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T01",
+        "T02"
+      ],
+      "deliverables": [
+        "snapshot_manifest.json"
+      ],
+      "acceptance_criteria": [
+        "Coordinate source batch watermarks and write read-only content-addressed extracts.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P01-04",
+      "phase": "P01",
+      "title": "Publish coverage waterfall and data gate",
+      "description": "Measure each feature loss and feasible date range; do not change features to improve returns.",
+      "depends_on": [
+        "NL-P01-03"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T03",
+        "T60"
+      ],
+      "deliverables": [
+        "coverage_by_feature_market.parquet",
+        "coverage_waterfall.json",
+        "data_readiness.md"
+      ],
+      "acceptance_criteria": [
+        "Measure each feature loss and feasible date range; do not change features to improve returns.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P02-01",
+      "phase": "P02",
+      "title": "Implement independent multi-exchange calendar",
+      "description": "Model historical sessions, UTC closes, DST and exceptional closures independently of forward returns.",
+      "depends_on": [
+        "NL-P01-04"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T08",
+        "T09",
+        "T10",
+        "T11"
+      ],
+      "deliverables": [
+        "calendar_store.parquet",
+        "calendar_manifest.json"
+      ],
+      "acceptance_criteria": [
+        "Model historical sessions, UTC closes, DST and exceptional closures independently of forward returns.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P02-02",
+      "phase": "P02",
+      "title": "Implement entry/exit and USD total-return labels",
+      "description": "Count entry as zero; verify currency, dividend conventions and label availability.",
+      "depends_on": [
+        "NL-P02-01"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T10",
+        "T12"
+      ],
+      "deliverables": [
+        "labels.parquet",
+        "label_lineage.parquet"
+      ],
+      "acceptance_criteria": [
+        "Count entry as zero; verify currency, dividend conventions and label availability.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P02-03",
+      "phase": "P02",
+      "title": "Implement censoring and unresolved-outcome handling",
+      "description": "Preserve ex-ante rows and block unresolved mature endpoints rather than deleting them.",
+      "depends_on": [
+        "NL-P02-02"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T13",
+        "T27"
+      ],
+      "deliverables": [
+        "outcome_status.parquet"
+      ],
+      "acceptance_criteria": [
+        "Preserve ex-ante rows and block unresolved mature endpoints rather than deleting them.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P02-04",
+      "phase": "P02",
+      "title": "Close calendar and label gate",
+      "description": "Reconcile matching labels to known outcome surfaces; explain clock differences.",
+      "depends_on": [
+        "NL-P02-03"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T08",
+        "T09",
+        "T12"
+      ],
+      "deliverables": [
+        "label_reconciliation.md",
+        "P02_gate.json"
+      ],
+      "acceptance_criteria": [
+        "Reconcile matching labels to known outcome surfaces; explain clock differences.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P03-01",
+      "phase": "P03",
+      "title": "Implement raw PIT primitives and lineage",
+      "description": "Use exact audited definitions and source calendars, with source age/status per cell.",
+      "depends_on": [
+        "NL-P02-04"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T04",
+        "T05",
+        "T06",
+        "T07",
+        "T14"
+      ],
+      "deliverables": [
+        "raw_features.parquet",
+        "feature_lineage.parquet"
+      ],
+      "acceptance_criteria": [
+        "Use exact audited definitions and source calendars, with source age/status per cell.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P03-02",
+      "phase": "P03",
+      "title": "Implement graph and consensus builders",
+      "description": "Enforce known edge direction, no duplicate entity, minimum support, fixed forecast-year revisions, and observed feeds.",
+      "depends_on": [
+        "NL-P03-01"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T16",
+        "T17",
+        "T18",
+        "T20",
+        "T21",
+        "T22"
+      ],
+      "deliverables": [
+        "graph_audit.parquet",
+        "consensus_audit.parquet"
+      ],
+      "acceptance_criteria": [
+        "Enforce known edge direction, no duplicate entity, minimum support, fixed forecast-year revisions, and observed feeds.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P03-03",
+      "phase": "P03",
+      "title": "Implement causal normalization and fixed X/S maps",
+      "description": "Build 24 normalized primitives and 16 concepts using prior-only statistics.",
+      "depends_on": [
+        "NL-P03-02"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T23",
+        "T24",
+        "T25"
+      ],
+      "deliverables": [
+        "normalized_features.parquet",
+        "state_map.json"
+      ],
+      "acceptance_criteria": [
+        "Build 24 normalized primitives and 16 concepts using prior-only statistics.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P03-04",
+      "phase": "P03",
+      "title": "Close feature integrity gate",
+      "description": "Pass historical truncation, future mutation, quote direction and release timing canaries.",
+      "depends_on": [
+        "NL-P03-03"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T04",
+        "T05",
+        "T06",
+        "T14",
+        "T19"
+      ],
+      "deliverables": [
+        "P03_gate.json"
+      ],
+      "acceptance_criteria": [
+        "Pass historical truncation, future mutation, quote direction and release timing canaries.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P04-01",
+      "phase": "P04",
+      "title": "Build ex-ante/common row manifests and separate stores",
+      "description": "All eight forecast streams share all 24-input complete cases; future outcome presence cannot determine eligibility.",
+      "depends_on": [
+        "NL-P03-04"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T13",
+        "T41"
+      ],
+      "deliverables": [
+        "candidate_rows.parquet",
+        "eligible_rows.parquet",
+        "panel_manifest.json"
+      ],
+      "acceptance_criteria": [
+        "All eight forecast streams share all 24-input complete cases; future outcome presence cannot determine eligibility.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P04-02",
+      "phase": "P04",
+      "title": "Implement weighted fold preprocessing",
+      "description": "Train-only scales, exact quadratic expansion and correct relative date weights.",
+      "depends_on": [
+        "NL-P04-01"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T26",
+        "T30",
+        "T32",
+        "T39"
+      ],
+      "deliverables": [
+        "preprocessing_artifacts/"
+      ],
+      "acceptance_criteria": [
+        "Train-only scales, exact quadratic expansion and correct relative date weights.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P04-03",
+      "phase": "P04",
+      "title": "Implement nested annual/quarterly split service",
+      "description": "Eight-year rolling outer schedule, four inner half-year blocks, maturity-aware train access.",
+      "depends_on": [
+        "NL-P04-02"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T27",
+        "T28",
+        "T29"
+      ],
+      "deliverables": [
+        "folds.parquet",
+        "split_manifest.json"
+      ],
+      "acceptance_criteria": [
+        "Eight-year rolling outer schedule, four inner half-year blocks, maturity-aware train access.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P04-04",
+      "phase": "P04",
+      "title": "Close panel/split gate",
+      "description": "Verify masks, chronology, source hash lineage, coverage floor and restricted label access.",
+      "depends_on": [
+        "NL-P04-03"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T06",
+        "T26",
+        "T41",
+        "T45"
+      ],
+      "deliverables": [
+        "P04_gate.json"
+      ],
+      "acceptance_criteria": [
+        "Verify masks, chronology, source hash lineage, coverage floor and restricted label access.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P05-01",
+      "phase": "P05",
+      "title": "Implement B0, ridge, quadratic and linear selector",
+      "description": "Match weighted closed-form fixture; tune independently with deterministic parsimony.",
+      "depends_on": [
+        "NL-P04-04"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T30",
+        "T31",
+        "T32",
+        "T38",
+        "T39"
+      ],
+      "deliverables": [
+        "models/ridge.py",
+        "models/baseline.py",
+        "selection.py"
+      ],
+      "acceptance_criteria": [
+        "Match weighted closed-form fixture; tune independently with deterministic parsimony.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P05-02",
+      "phase": "P05",
+      "title": "Implement histogram learners and leaf support",
+      "description": "Disable internal validation; version-lock leaf traversal and fail on unsupported fits.",
+      "depends_on": [
+        "NL-P05-01"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T33",
+        "T34",
+        "T35",
+        "T36",
+        "T37",
+        "T59"
+      ],
+      "deliverables": [
+        "models/hist_boosting.py",
+        "models/leaf_support.py"
+      ],
+      "acceptance_criteria": [
+        "Disable internal validation; version-lock leaf traversal and fail on unsupported fits.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P05-03",
+      "phase": "P05",
+      "title": "Implement inference and portfolio fixture engines",
+      "description": "Verify loss, ranks, moving blocks, Holm and daily marked-cohort accounting on known cases.",
+      "depends_on": [
+        "NL-P05-02"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T40",
+        "T42",
+        "T43",
+        "T44",
+        "T50",
+        "T51",
+        "T52"
+      ],
+      "deliverables": [
+        "evaluation.py",
+        "portfolios.py",
+        "synthetic_qa.json"
+      ],
+      "acceptance_criteria": [
+        "Verify loss, ranks, moving blocks, Holm and daily marked-cohort accounting on known cases.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P05-04",
+      "phase": "P05",
+      "title": "Benchmark and close engineering gate",
+      "description": "Measure one nested cycle and control replication; demonstrate deterministic resume.",
+      "depends_on": [
+        "NL-P05-03"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T48",
+        "T49",
+        "T57"
+      ],
+      "deliverables": [
+        "benchmark_profile.json",
+        "P05_gate.json"
+      ],
+      "acceptance_criteria": [
+        "Measure one nested cycle and control replication; demonstrate deterministic resume.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P06-01",
+      "phase": "P06",
+      "title": "Resolve final scientific and native-harness bindings",
+      "description": "Freeze actual source/panel dates, masks, grids, controls, thresholds and adapters.",
+      "depends_on": [
+        "NL-P05-04"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T60"
+      ],
+      "deliverables": [
+        "protocol.candidate.json"
+      ],
+      "acceptance_criteria": [
+        "Freeze actual source/panel dates, masks, grids, controls, thresholds and adapters.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P06-02",
+      "phase": "P06",
+      "title": "Implement full registration validation",
+      "description": "Reject null bindings, forbidden lineages, mismatched hashes or changed thresholds.",
+      "depends_on": [
+        "NL-P06-01"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T07",
+        "T49",
+        "T60"
+      ],
+      "deliverables": [
+        "registration_validation.json"
+      ],
+      "acceptance_criteria": [
+        "Reject null bindings, forbidden lineages, mismatched hashes or changed thresholds.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P06-03",
+      "phase": "P06",
+      "title": "Record approval and inherited research exposure",
+      "description": "Register through authorized route, preserving known 2024-26 history and every configuration.",
+      "depends_on": [
+        "NL-P06-02"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T58"
+      ],
+      "deliverables": [
+        "registration_receipt.json",
+        "exposure_log.jsonl",
+        "trial_manifest.json"
+      ],
+      "acceptance_criteria": [
+        "Register through authorized route, preserving known 2024-26 history and every configuration.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P06-04",
+      "phase": "P06",
+      "title": "Lock execution plan",
+      "description": "Content-hash signed protocol and authorize only specified real study phases.",
+      "depends_on": [
+        "NL-P06-03"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T45",
+        "T56",
+        "T60"
+      ],
+      "deliverables": [
+        "protocol.lock.json",
+        "run_plan.json",
+        "P06_gate.json"
+      ],
+      "acceptance_criteria": [
+        "Content-hash signed protocol and authorize only specified real study phases.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P07-01",
+      "phase": "P07",
+      "title": "Run independent inference-size calibration",
+      "description": "Known zero-mean dependent loss processes; report empirical rejection and Wilson uncertainty.",
+      "depends_on": [
+        "NL-P06-04"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T42",
+        "T43",
+        "T44"
+      ],
+      "deliverables": [
+        "inference_calibration.json"
+      ],
+      "acceptance_criteria": [
+        "Known zero-mean dependent loss processes; report empirical rejection and Wilson uncertainty.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P07-02",
+      "phase": "P07",
+      "title": "Run linear-world and interaction power controls",
+      "description": "Development-only calibration, fixed q values, all nested selection repeated, no real outer labels.",
+      "depends_on": [
+        "NL-P07-01"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T46",
+        "T47"
+      ],
+      "deliverables": [
+        "control_results.parquet",
+        "power_report.json"
+      ],
+      "acceptance_criteria": [
+        "Development-only calibration, fixed q values, all nested selection repeated, no real outer labels.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P07-03",
+      "phase": "P07",
+      "title": "Execute all scheduled historical fits and immutable predictions",
+      "description": "Six tuned learners plus B0/L_star, fixed visibility controls and leaf audits.",
+      "depends_on": [
+        "NL-P07-02"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T27",
+        "T33",
+        "T35",
+        "T37",
+        "T45"
+      ],
+      "deliverables": [
+        "fits/",
+        "predictions/",
+        "fit_events.jsonl"
+      ],
+      "acceptance_criteria": [
+        "Six tuned learners plus B0/L_star, fixed visibility controls and leaf audits.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P07-04",
+      "phase": "P07",
+      "title": "Freeze complete prediction population",
+      "description": "Verify completeness/hash parity; blocked fits do not remove periods.",
+      "depends_on": [
+        "NL-P07-03"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T41",
+        "T48",
+        "T49"
+      ],
+      "deliverables": [
+        "prediction_manifest.json",
+        "P07_gate.json"
+      ],
+      "acceptance_criteria": [
+        "Verify completeness/hash parity; blocked fits do not remove periods.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P08-01",
+      "phase": "P08",
+      "title": "Compute paired origin losses and rank IC",
+      "description": "Exact common markets, ties flagged, B0/L_star absolute checks.",
+      "depends_on": [
+        "NL-P07-04"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T39",
+        "T40",
+        "T41"
+      ],
+      "deliverables": [
+        "origin_metrics.parquet"
+      ],
+      "acceptance_criteria": [
+        "Exact common markets, ties flagged, B0/L_star absolute checks.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P08-02",
+      "phase": "P08",
+      "title": "Compute primary intervals and Holm-adjusted tests",
+      "description": "Three registered comparisons, materiality guards, correct null-centered blocks.",
+      "depends_on": [
+        "NL-P08-01"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T42",
+        "T43",
+        "T44"
+      ],
+      "deliverables": [
+        "primary_comparisons.json"
+      ],
+      "acceptance_criteria": [
+        "Three registered comparisons, materiality guards, correct null-centered blocks.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P08-03",
+      "phase": "P08",
+      "title": "Run fixed temporal stability and inference sensitivity",
+      "description": "Frozen halves, year contributions and 126-origin blocks without selecting a winning variant.",
+      "depends_on": [
+        "NL-P08-02"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T41",
+        "T43"
+      ],
+      "deliverables": [
+        "primary_stability.json"
+      ],
+      "acceptance_criteria": [
+        "Frozen halves, year contributions and 126-origin blocks without selecting a winning variant.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P08-04",
+      "phase": "P08",
+      "title": "Issue primary verdict",
+      "description": "Negative scientific result is a valid completed output; no model substitution.",
+      "depends_on": [
+        "NL-P08-03"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T57",
+        "T58"
+      ],
+      "deliverables": [
+        "primary_verdict.json",
+        "P08_gate.json"
+      ],
+      "acceptance_criteria": [
+        "Negative scientific result is a valid completed output; no model substitution.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P09-01",
+      "phase": "P09",
+      "title": "Compute gatekept mechanism and compression contrasts",
+      "description": "Compare N_S with A_S, Q_S, N_X; affirmative claims only after primary pass.",
+      "depends_on": [
+        "NL-P08-04"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T41",
+        "T44"
+      ],
+      "deliverables": [
+        "mechanism_comparisons.json"
+      ],
+      "acceptance_criteria": [
+        "Compare N_S with A_S, Q_S, N_X; affirmative claims only after primary pass.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P09-02",
+      "phase": "P09",
+      "title": "Build support-aware conditional explanations",
+      "description": "Use frozen graph-stress and own-return-stress pairs; mark unsupported cells.",
+      "depends_on": [
+        "NL-P09-01"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T35",
+        "T36"
+      ],
+      "deliverables": [
+        "conditional_response_data.parquet"
+      ],
+      "acceptance_criteria": [
+        "Use frozen graph-stress and own-return-stress pairs; mark unsupported cells.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P09-03",
+      "phase": "P09",
+      "title": "Run fixed sensitivity and graph-placebo suite",
+      "description": "No retuning: lag sensitivity, fixed horizon associations, year/region omissions and 20 seeded network placebos.",
+      "depends_on": [
+        "NL-P09-02"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T04",
+        "T14",
+        "T21",
+        "T27"
+      ],
+      "deliverables": [
+        "sensitivity_manifest.json",
+        "fragility_report.md"
+      ],
+      "acceptance_criteria": [
+        "No retuning: lag sensitivity, fixed horizon associations, year/region omissions and 20 seeded network placebos.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P09-04",
+      "phase": "P09",
+      "title": "Audit evidence-to-claim mapping",
+      "description": "Separate descriptive results, conditional significance and causal speculation.",
+      "depends_on": [
+        "NL-P09-03"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T57",
+        "T58"
+      ],
+      "deliverables": [
+        "P09_gate.json"
+      ],
+      "acceptance_criteria": [
+        "Separate descriptive results, conditional significance and causal speculation.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P10-01",
+      "phase": "P10",
+      "title": "Simulate capital-consistent gross ranking cohorts",
+      "description": "Fixed fractional tie rules, 20 sleeves, common opportunity calendar, no cost gating.",
+      "depends_on": [
+        "NL-P09-04"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T50",
+        "T51",
+        "T52"
+      ],
+      "deliverables": [
+        "memberships.parquet",
+        "paper_positions.parquet",
+        "daily_nav.parquet"
+      ],
+      "acceptance_criteria": [
+        "Fixed fractional tie rules, 20 sleeves, common opportunity calendar, no cost gating.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P10-02",
+      "phase": "P10",
+      "title": "Integrate frozen forecasts with verified native harness",
+      "description": "Prevent implicit target-clock changes, fresh model searches or lost family history.",
+      "depends_on": [
+        "NL-P10-01"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T53",
+        "T58"
+      ],
+      "deliverables": [
+        "native_harness_evidence/",
+        "harness_contract_diff.md"
+      ],
+      "acceptance_criteria": [
+        "Prevent implicit target-clock changes, fresh model searches or lost family history.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P10-03",
+      "phase": "P10",
+      "title": "Audit expression-venue diagnostic",
+      "description": "Verify any ETF mappings, totals and executable clocks separately from primary index evidence.",
+      "depends_on": [
+        "NL-P10-02"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T10",
+        "T12",
+        "T13",
+        "T53"
+      ],
+      "deliverables": [
+        "expression_report.md"
+      ],
+      "acceptance_criteria": [
+        "Verify any ETF mappings, totals and executable clocks separately from primary index evidence.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P10-04",
+      "phase": "P10",
+      "title": "Issue gross qualification status",
+      "description": "Keep predictive evidence distinct from native WATCH and live execution authority.",
+      "depends_on": [
+        "NL-P10-03"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T56",
+        "T57"
+      ],
+      "deliverables": [
+        "gross_verdict.json",
+        "P10_gate.json"
+      ],
+      "acceptance_criteria": [
+        "Keep predictive evidence distinct from native WATCH and live execution authority.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P11-01",
+      "phase": "P11",
+      "title": "Generate complete final research report",
+      "description": "Include all planned positive/negative results, coverage, support, search history and calibrated uncertainty.",
+      "depends_on": [
+        "NL-P10-04"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T57"
+      ],
+      "deliverables": [
+        "RESULTS.md",
+        "RESULTS.html",
+        "model_card.md"
+      ],
+      "acceptance_criteria": [
+        "Include all planned positive/negative results, coverage, support, search history and calibrated uncertainty.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P11-02",
+      "phase": "P11",
+      "title": "Run independent reproduction",
+      "description": "Recompute metrics from frozen forecasts and retrain two full segments in a clean process.",
+      "depends_on": [
+        "NL-P11-01"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T01",
+        "T48",
+        "T49",
+        "T57"
+      ],
+      "deliverables": [
+        "reproduction_report.json",
+        "REPRODUCE.md"
+      ],
+      "acceptance_criteria": [
+        "Recompute metrics from frozen forecasts and retrain two full segments in a clean process.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P11-03",
+      "phase": "P11",
+      "title": "Append native verdict and archive every run",
+      "description": "Use verified methodology record and preserve parent family trial count and failed attempts.",
+      "depends_on": [
+        "NL-P11-02"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T58"
+      ],
+      "deliverables": [
+        "final_registration_event.json",
+        "artifact_index.json"
+      ],
+      "acceptance_criteria": [
+        "Use verified methodology record and preserve parent family trial count and failed attempts.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P11-04",
+      "phase": "P11",
+      "title": "Close project handoff",
+      "description": "Deliver tests, manifests, source-safe artifacts and an honest final status.",
+      "depends_on": [
+        "NL-P11-03"
+      ],
+      "priority": "REQUIRED",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T01",
+        "T56",
+        "T57"
+      ],
+      "deliverables": [
+        "P11_gate.json",
+        "handoff_report.md"
+      ],
+      "acceptance_criteria": [
+        "Deliver tests, manifests, source-safe artifacts and an honest final status.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P12-01",
+      "phase": "P12",
+      "title": "Implement disabled shadow forecast logger",
+      "description": "Reuse frozen pipeline; write forecasts before entry and separate outcomes.",
+      "depends_on": [
+        "NL-P11-04"
+      ],
+      "priority": "OPTIONAL",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T54",
+        "T55",
+        "T56"
+      ],
+      "deliverables": [
+        "shadow.py",
+        "shadow_dry_run.json"
+      ],
+      "acceptance_criteria": [
+        "Reuse frozen pipeline; write forecasts before entry and separate outcomes.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P12-02",
+      "phase": "P12",
+      "title": "Bind prospective power and fixed endpoint",
+      "description": "Simulate dependence-aware power using measured historical loss variance before prospective inference.",
+      "depends_on": [
+        "NL-P12-01"
+      ],
+      "priority": "OPTIONAL",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T58",
+        "T60"
+      ],
+      "deliverables": [
+        "prospective_protocol.json"
+      ],
+      "acceptance_criteria": [
+        "Simulate dependence-aware power using measured historical loss variance before prospective inference.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P12-03",
+      "phase": "P12",
+      "title": "Obtain schedule approval and test failures",
+      "description": "Do not activate launchd/cron without separate authorization; test data gaps and late issuance.",
+      "depends_on": [
+        "NL-P12-02"
+      ],
+      "priority": "OPTIONAL",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T54",
+        "T55",
+        "T56"
+      ],
+      "deliverables": [
+        "scheduler_approval.json",
+        "shadow_operational_tests.json"
+      ],
+      "acceptance_criteria": [
+        "Do not activate launchd/cron without separate authorization; test data gaps and late issuance.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P12-04",
+      "phase": "P12",
+      "title": "Operate immutable paper forecast stream",
+      "description": "Append actual outcomes and report operational coverage; no early significance stopping or trading.",
+      "depends_on": [
+        "NL-P12-03"
+      ],
+      "priority": "OPTIONAL",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T54",
+        "T55",
+        "T56"
+      ],
+      "deliverables": [
+        "shadow_forecasts/",
+        "shadow_outcomes/",
+        "shadow_monitoring.md"
+      ],
+      "acceptance_criteria": [
+        "Append actual outcomes and report operational coverage; no early significance stopping or trading.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P13-01",
+      "phase": "P13",
+      "title": "Register independent neural experiment",
+      "description": "Disclose any exposure to core outcomes; no unregistered rescue.",
+      "depends_on": [
+        "NL-P11-04"
+      ],
+      "priority": "OPTIONAL",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T58",
+        "T60"
+      ],
+      "deliverables": [
+        "neural_protocol.lock.json"
+      ],
+      "acceptance_criteria": [
+        "Disclose any exposure to core outcomes; no unregistered rescue.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P13-02",
+      "phase": "P13",
+      "title": "Implement 161-parameter skip-connected network",
+      "description": "Original return target, 16 inputs, eight tanh units, five-seed average, finite grid.",
+      "depends_on": [
+        "NL-P13-01"
+      ],
+      "priority": "OPTIONAL",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T26",
+        "T27",
+        "T30"
+      ],
+      "deliverables": [
+        "models/neural.py",
+        "neural_unit_tests.json"
+      ],
+      "acceptance_criteria": [
+        "Original return target, 16 inputs, eight tanh units, five-seed average, finite grid.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P13-03",
+      "phase": "P13",
+      "title": "Execute matched neural replay and comparisons",
+      "description": "Same PIT sample and uncertainty safeguards; never select best seed.",
+      "depends_on": [
+        "NL-P13-02"
+      ],
+      "priority": "OPTIONAL",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T41",
+        "T45",
+        "T48"
+      ],
+      "deliverables": [
+        "neural_predictions/",
+        "neural_results.json"
+      ],
+      "acceptance_criteria": [
+        "Same PIT sample and uncertainty safeguards; never select best seed.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    },
+    {
+      "id": "NL-P13-04",
+      "phase": "P13",
+      "title": "Archive separate neural verdict",
+      "description": "No retroactive replacement of N_S core-study primary.",
+      "depends_on": [
+        "NL-P13-03"
+      ],
+      "priority": "OPTIONAL",
+      "status": "NOT_STARTED",
+      "acceptance_test_ids": [
+        "T57",
+        "T58"
+      ],
+      "deliverables": [
+        "NEURAL_RESULTS.md",
+        "neural_ledger_event.json"
+      ],
+      "acceptance_criteria": [
+        "No retroactive replacement of N_S core-study primary.",
+        "All mapped acceptance tests pass or a documented phase blocker is emitted.",
+        "Artifacts are versioned and indexed; no unapproved scientific or production change."
+      ]
+    }
+  ]
+}

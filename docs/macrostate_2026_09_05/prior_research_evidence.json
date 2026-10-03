@@ -1,0 +1,2465 @@
+{
+  "date": "2026-09-05",
+  "inspection": "read existing files, no backtest rerun",
+  "ledger_sha256": "557cf441d51652b38370a4d7c1309e4ad11fa9dbc1d6813a0d9cb471c44476ec",
+  "registered_count": 64,
+  "verdict_count": 63,
+  "latest_verdict_counts": {
+    "WATCH": 10,
+    "DEAD": 26,
+    "WEAK": 11,
+    "INSUFFICIENT_COVERAGE": 16
+  },
+  "primary_horizons": {
+    "1m": 23,
+    "5d": 40
+  },
+  "hypotheses": {
+    "H_20260610_001": {
+      "register_line": 1,
+      "registration": {
+        "ts": "2026-06-10T01:57:44",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260610_001",
+        "author": "agent-overnight",
+        "archetype": "other",
+        "family_key": "momentum_sanity",
+        "mechanism_text": "Sanity-check trial: trailing 12-month country return should positively predict next-month country return via the well-documented cross-sectional momentum effect. This is a harness validation run; the known literature effect should produce a modestly positive IC, confirming the pipeline end to end.",
+        "signal_spec": {
+          "table": "feature_panel",
+          "variable": "12MRet",
+          "source": "t2"
+        },
+        "signal_spec_hash": "681099b119ca4ac67f2ca94219ee5b6ebff920058385893a0973a3871c873cb0",
+        "trial_index": 1,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 2,
+        "verdict": "WATCH",
+        "summary": {
+          "hypothesis_id": "H_20260610_001",
+          "family_key": "momentum_sanity",
+          "run_ts": "2026-06-10T08:57:45+00:00",
+          "frequency": "monthly",
+          "verdict": "WATCH",
+          "primary_horizon": "1m",
+          "mean_ic": 0.2502,
+          "nw_t": 15.411,
+          "deflated_sharpe": 0.8374,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/harness_runs/H_20260610_001_20260610_015745.json"
+        }
+      },
+      "latest_status": "retired"
+    },
+    "H_20260610_002": {
+      "register_line": 4,
+      "registration": {
+        "ts": "2026-06-10T01:59:20",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260610_002",
+        "author": "agent-overnight",
+        "archetype": "other",
+        "family_key": "momentum_sanity",
+        "mechanism_text": "Sanity-check trial 2: trailing 12-minus-1-month country total return (12-1MTR_CS, cross-sectionally normalized, trailing by construction - verified corr +0.81 with raw trailing 12-1) should positively predict next-month country returns via the documented cross-sectional momentum effect. Expect modest IC around 0.02-0.06.",
+        "signal_spec": {
+          "table": "feature_panel",
+          "variable": "12-1MTR_CS",
+          "source": "t2"
+        },
+        "signal_spec_hash": "16d87d6703f213f461fcc9980a8873f236882544a895b95e1b41b0b11e3e4365",
+        "trial_index": 2,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 150,
+        "verdict": "DEAD",
+        "summary": {
+          "hypothesis_id": "H_20260610_002",
+          "family_key": "momentum_sanity",
+          "run_ts": "2026-07-14T14:01:53+00:00",
+          "frequency": "monthly",
+          "verdict": "DEAD",
+          "primary_horizon": "1m",
+          "mean_ic": -0.0025,
+          "nw_t": -0.124,
+          "deflated_sharpe": -0.089,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260610_002_20260714_070153.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260610_003": {
+      "register_line": 6,
+      "registration": {
+        "ts": "2026-06-10T02:10:08",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260610_003",
+        "author": "agent-overnight",
+        "archetype": "A2",
+        "family_key": "graph_trade_gap",
+        "mechanism_text": "Trade-weighted neighbor 21d return minus own 21d return should positively predict the country forward return: when a country trade network has repriced and the country itself has not, the endpoint catches up as the shock propagates through trade channels slower than prices move at the network center. Unconditional daily cross-sectional test of the v1 graph feature.",
+        "signal_spec": {
+          "table": "graph_features_daily",
+          "variable": "GRAPH_TRADE_NBR_RET_GAP_21D"
+        },
+        "signal_spec_hash": "eafa0985fca02be2b175dbc8e57d6be35d1b9c11daeb4eae231b4aa248d41469",
+        "trial_index": 1,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 220,
+        "verdict": "WEAK",
+        "summary": {
+          "hypothesis_id": "H_20260610_003",
+          "family_key": "graph_trade_gap",
+          "run_ts": "2026-08-24T03:40:48+00:00",
+          "frequency": "daily",
+          "verdict": "WEAK",
+          "primary_horizon": "5d",
+          "mean_ic": 0.0105,
+          "nw_t": 1.731,
+          "deflated_sharpe": -0.0066,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/harness_runs/H_20260610_003_20260823_224048.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_001": {
+      "register_line": 9,
+      "registration": {
+        "ts": "2026-06-12T10:51:13",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_001",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A4",
+        "family_key": "bbg_skill_2026_06",
+        "mechanism_text": "Classic carry-premium mechanism applied to country equities: countries whose currencies price high forward-implied carry versus USD offer compensation for devaluation and sudden-stop risk; in normal regimes that risk premium is harvested, so high-carry countries should outperform low-carry countries cross-sectionally over the next weeks, with known crash risk in risk-off episodes that the sub-period table should expose.",
+        "signal_spec": {
+          "table": "market_implied_daily",
+          "variable": "FX_CARRY_3M_PCT"
+        },
+        "signal_spec_hash": "d6b22558ca261f17a91d6ef90f42a0430eb924c0e23cdbbafd077beefed486b8",
+        "trial_index": 1,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 152,
+        "verdict": "DEAD",
+        "summary": {
+          "hypothesis_id": "H_20260612_001",
+          "family_key": "bbg_skill_2026_06",
+          "run_ts": "2026-07-14T14:03:06+00:00",
+          "frequency": "daily",
+          "verdict": "DEAD",
+          "primary_horizon": "5d",
+          "mean_ic": -0.0018,
+          "nw_t": -0.232,
+          "deflated_sharpe": -0.0193,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_001_20260714_070306.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_002": {
+      "register_line": 11,
+      "registration": {
+        "ts": "2026-06-12T10:51:23",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_002",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A4",
+        "family_key": "bbg_skill_2026_06",
+        "mechanism_text": "Change-in-carry variant of the carry hypothesis: a carry level that is high versus the country's own trailing year means forwards have recently moved to price more depreciation or higher local rates; if that move overshoots actual macro deterioration, the country's equity market earns an elevated risk premium afterwards, so a high carry z-score should predict relative outperformance.",
+        "signal_spec": {
+          "table": "market_implied_signals",
+          "variable": "FX_CARRY_Z252"
+        },
+        "signal_spec_hash": "a84b97129eee7e076fb5ee2e42966c7a4185837bb147e437e0ffc43769e906c7",
+        "trial_index": 2,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 153,
+        "verdict": "DEAD",
+        "summary": {
+          "hypothesis_id": "H_20260612_002",
+          "family_key": "bbg_skill_2026_06",
+          "run_ts": "2026-07-14T14:03:45+00:00",
+          "frequency": "daily",
+          "verdict": "DEAD",
+          "primary_horizon": "5d",
+          "mean_ic": 0.008,
+          "nw_t": 1.248,
+          "deflated_sharpe": -0.009,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_002_20260714_070345.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_003": {
+      "register_line": 13,
+      "registration": {
+        "ts": "2026-06-12T10:51:33",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_003",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A4",
+        "family_key": "bbg_skill_2026_06",
+        "mechanism_text": "The one-week minus three-month implied vol slope inverts positive only when the options market prices an imminent event; countries whose near-term vol is unusually elevated versus their own history face event risk that equity prices have historically been slow to fully discount, so a stretched positive term slope should predict near-term underperformance and a calm slope outperformance.",
+        "signal_spec": {
+          "table": "market_implied_signals",
+          "variable": "FX_VOL_TERM_Z252"
+        },
+        "signal_spec_hash": "8730c2fc7c6018e113c381d9025cfd31548f3abcf5a85a5e6799025f88627cbf",
+        "trial_index": 3,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 154,
+        "verdict": "INSUFFICIENT_COVERAGE",
+        "summary": {
+          "hypothesis_id": "H_20260612_003",
+          "family_key": "bbg_skill_2026_06",
+          "run_ts": "2026-07-14T14:03:52+00:00",
+          "frequency": "daily",
+          "verdict": "INSUFFICIENT_COVERAGE",
+          "primary_horizon": "5d",
+          "mean_ic": -0.0023,
+          "nw_t": -0.383,
+          "deflated_sharpe": null,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_003_20260714_070352.json"
+        }
+      },
+      "latest_status": "tested"
+    },
+    "H_20260612_004": {
+      "register_line": 15,
+      "registration": {
+        "ts": "2026-06-12T10:51:37",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_004",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A4",
+        "family_key": "bbg_skill_2026_06",
+        "mechanism_text": "The 25-delta butterfly measures the premium paid for BOTH tails of the currency distribution; a butterfly rich versus its own trailing year means the options market is buying crash-and-spike protection, which historically precedes realized currency stress, and currency stress passes through to equity underperformance in the following weeks for that country.",
+        "signal_spec": {
+          "table": "market_implied_signals",
+          "variable": "FX_BF25_Z252"
+        },
+        "signal_spec_hash": "5d2f80452eade7384566179e45b905835ce7b85ffd8a709dffc1828bebfc0e7a",
+        "trial_index": 4,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 155,
+        "verdict": "INSUFFICIENT_COVERAGE",
+        "summary": {
+          "hypothesis_id": "H_20260612_004",
+          "family_key": "bbg_skill_2026_06",
+          "run_ts": "2026-07-14T14:03:59+00:00",
+          "frequency": "daily",
+          "verdict": "INSUFFICIENT_COVERAGE",
+          "primary_horizon": "5d",
+          "mean_ic": 0.0159,
+          "nw_t": 2.601,
+          "deflated_sharpe": null,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_004_20260714_070359.json"
+        }
+      },
+      "latest_status": "tested"
+    },
+    "H_20260612_005": {
+      "register_line": 17,
+      "registration": {
+        "ts": "2026-06-12T10:51:40",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_005",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A4",
+        "family_key": "bbg_skill_2026_06",
+        "mechanism_text": "The 25-delta risk reversal is the cleanest daily price of devaluation fear; a risk reversal stretched versus its own trailing year means crash protection is being bid, and if equity prices have not yet reflected that repricing the country should underperform over the following days to weeks, which is exactly the disagreement detector D10 trades on and is here tested as a standalone rank.",
+        "signal_spec": {
+          "table": "market_implied_signals",
+          "variable": "FX_RR25_Z252"
+        },
+        "signal_spec_hash": "cfd8edef38ff5c342be18ad7281681bc4742a22a373e9f9d248200bc16d78cfa",
+        "trial_index": 5,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 156,
+        "verdict": "INSUFFICIENT_COVERAGE",
+        "summary": {
+          "hypothesis_id": "H_20260612_005",
+          "family_key": "bbg_skill_2026_06",
+          "run_ts": "2026-07-14T14:04:05+00:00",
+          "frequency": "daily",
+          "verdict": "INSUFFICIENT_COVERAGE",
+          "primary_horizon": "5d",
+          "mean_ic": -0.0018,
+          "nw_t": -0.284,
+          "deflated_sharpe": null,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_005_20260714_070405.json"
+        }
+      },
+      "latest_status": "tested"
+    },
+    "H_20260612_006": {
+      "register_line": 19,
+      "registration": {
+        "ts": "2026-06-12T10:51:44",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_006",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A4",
+        "family_key": "bbg_skill_2026_06",
+        "mechanism_text": "Distress-risk premium mechanism: a CDS curve flat or inverted versus its own history marks a country priced for imminent trouble, and the distressed-asset literature plus our 2026-06-12 cds_inversion event study (post-onset equity outperformance of roughly four percent over a quarter) suggest such pricing overshoots, so LOW slope z should predict relative equity outperformance as the panic premium decays.",
+        "signal_spec": {
+          "table": "sovereign_signals",
+          "variable": "SOV_CDS_SLOPE_Z252"
+        },
+        "signal_spec_hash": "5c14e43ed865ae1d48940c1b4ca241fe143f62375716b94935585b99a9fd682f",
+        "trial_index": 6,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 157,
+        "verdict": "INSUFFICIENT_COVERAGE",
+        "summary": {
+          "hypothesis_id": "H_20260612_006",
+          "family_key": "bbg_skill_2026_06",
+          "run_ts": "2026-07-14T14:04:10+00:00",
+          "frequency": "daily",
+          "verdict": "INSUFFICIENT_COVERAGE",
+          "primary_horizon": "5d",
+          "mean_ic": 0.01,
+          "nw_t": 0.862,
+          "deflated_sharpe": null,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_006_20260714_070410.json"
+        }
+      },
+      "latest_status": "tested"
+    },
+    "H_20260612_007": {
+      "register_line": 21,
+      "registration": {
+        "ts": "2026-06-12T10:51:45",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_007",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A4",
+        "family_key": "bbg_skill_2026_06",
+        "mechanism_text": "A government curve steep versus its own trailing year reflects easing expectations or recovering growth pricing while a flat or inverted curve reflects tightening into slowdown; the recession-predictor literature says equity markets under-react to curve information at the country level, so a high 2s10s z-score should predict relative outperformance over weeks to months.",
+        "signal_spec": {
+          "table": "sovereign_signals",
+          "variable": "SOV_2S10S_Z252"
+        },
+        "signal_spec_hash": "cb3ee765717f98e679a14b7c42b19d227f364dc1a5f70c2d7d5f030c3b77fc0c",
+        "trial_index": 7,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 158,
+        "verdict": "INSUFFICIENT_COVERAGE",
+        "summary": {
+          "hypothesis_id": "H_20260612_007",
+          "family_key": "bbg_skill_2026_06",
+          "run_ts": "2026-07-14T14:04:14+00:00",
+          "frequency": "daily",
+          "verdict": "INSUFFICIENT_COVERAGE",
+          "primary_horizon": "5d",
+          "mean_ic": 0.0178,
+          "nw_t": 2.764,
+          "deflated_sharpe": null,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_007_20260714_070414.json"
+        }
+      },
+      "latest_status": "tested"
+    },
+    "H_20260612_008": {
+      "register_line": 23,
+      "registration": {
+        "ts": "2026-06-12T10:51:49",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_008",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A4",
+        "family_key": "bbg_skill_2026_06",
+        "mechanism_text": "Post-announcement drift mechanism at the macro level: when a country's growth data (GDP, PMI, falling unemployment) beats the economist survey median, the full implication for earnings and policy is incorporated only gradually, so a positive composite growth surprise should predict continued relative equity outperformance over the following one to three months, the macro analogue of post-earnings-announcement drift.",
+        "signal_spec": {
+          "table": "eco_surprise_signals",
+          "variable": "ECO_GROWTH_SURPRISE_Z"
+        },
+        "signal_spec_hash": "e420ed580616d357fcea6ee58f8e182689ad145a073c7cc9ce20c9fde08972a5",
+        "trial_index": 8,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 159,
+        "verdict": "INSUFFICIENT_COVERAGE",
+        "summary": {
+          "hypothesis_id": "H_20260612_008",
+          "family_key": "bbg_skill_2026_06",
+          "run_ts": "2026-07-14T14:04:17+00:00",
+          "frequency": "monthly",
+          "verdict": "INSUFFICIENT_COVERAGE",
+          "primary_horizon": "1m",
+          "mean_ic": 0.009,
+          "nw_t": 0.502,
+          "deflated_sharpe": null,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_008_20260714_070417.json"
+        }
+      },
+      "latest_status": "tested"
+    },
+    "H_20260612_009": {
+      "register_line": 25,
+      "registration": {
+        "ts": "2026-06-12T10:51:49",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_009",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A4",
+        "family_key": "bbg_skill_2026_06",
+        "mechanism_text": "Hot inflation surprises force monetary policy tighter than the market had priced and compress equity multiples with a lag; cool surprises do the reverse, so a country printing inflation above the survey median should underperform peers over the following months while a country printing below should outperform, making LOW inflation surprise z the favorable rank.",
+        "signal_spec": {
+          "table": "eco_surprise_signals",
+          "variable": "ECO_INFL_SURPRISE_Z"
+        },
+        "signal_spec_hash": "f66e5a10f2060329f63fa727fbe615f6ee6cdd9fd184165f4313c3d0bdb896b0",
+        "trial_index": 9,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 160,
+        "verdict": "DEAD",
+        "summary": {
+          "hypothesis_id": "H_20260612_009",
+          "family_key": "bbg_skill_2026_06",
+          "run_ts": "2026-07-14T14:04:17+00:00",
+          "frequency": "monthly",
+          "verdict": "DEAD",
+          "primary_horizon": "1m",
+          "mean_ic": 0.0361,
+          "nw_t": 3.037,
+          "deflated_sharpe": -0.2287,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_009_20260714_070417.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_010": {
+      "register_line": 27,
+      "registration": {
+        "ts": "2026-06-12T12:28:25",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_010",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A4",
+        "family_key": "bbg_skill_2026_06",
+        "mechanism_text": "Re-test of H_20260612_003 on the 26 countries whose options surfaces have stable history since 2008 (round 1 failed the coverage gate from a mis-declared 34-country universe, not from the data): a 1W-minus-3M implied vol slope stretched positive means the options market prices an imminent event, and equities historically under-discount that near-term event risk, so calm term slopes should outperform stretched ones.",
+        "signal_spec": {
+          "table": "market_implied_signals",
+          "variable": "FX_VOL_TERM_Z252"
+        },
+        "signal_spec_hash": "452e993eb621f07ce451b7e1b9c075a180022d6d9dedc0892fc6f9bcae160462",
+        "trial_index": 10,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 161,
+        "verdict": "DEAD",
+        "summary": {
+          "hypothesis_id": "H_20260612_010",
+          "family_key": "bbg_skill_2026_06",
+          "run_ts": "2026-07-14T14:04:52+00:00",
+          "frequency": "daily",
+          "verdict": "DEAD",
+          "primary_horizon": "5d",
+          "mean_ic": -0.0025,
+          "nw_t": -0.42,
+          "deflated_sharpe": -0.0166,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_010_20260714_070452.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_011": {
+      "register_line": 29,
+      "registration": {
+        "ts": "2026-06-12T12:28:36",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_011",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A4",
+        "family_key": "bbg_skill_2026_06",
+        "mechanism_text": "Re-test of H_20260612_004 on the stable 26-country options universe (round 1 coverage-gated by a mis-declared universe while showing IC t-stat near 2.6): a 25-delta butterfly rich versus its own trailing year means both currency tails are being bought, which precedes realized currency stress that passes through to country equity underperformance over the following weeks.",
+        "signal_spec": {
+          "table": "market_implied_signals",
+          "variable": "FX_BF25_Z252"
+        },
+        "signal_spec_hash": "038421f8256b0de1577f015dd21c2958d5f65e11349ccfb7966087280631b30e",
+        "trial_index": 11,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 162,
+        "verdict": "DEAD",
+        "summary": {
+          "hypothesis_id": "H_20260612_011",
+          "family_key": "bbg_skill_2026_06",
+          "run_ts": "2026-07-14T14:05:30+00:00",
+          "frequency": "daily",
+          "verdict": "DEAD",
+          "primary_horizon": "5d",
+          "mean_ic": 0.015,
+          "nw_t": 2.455,
+          "deflated_sharpe": -0.0413,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_011_20260714_070530.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_012": {
+      "register_line": 31,
+      "registration": {
+        "ts": "2026-06-12T12:28:46",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_012",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A4",
+        "family_key": "bbg_skill_2026_06",
+        "mechanism_text": "Re-test of H_20260612_005 on the stable 26-country options universe after the round 1 coverage gate: a risk reversal stretched versus its own trailing year means devaluation protection is being bid, and where equity prices have not yet repriced that fear the country should underperform peers over the following days to weeks, the standalone-rank version of detector D10.",
+        "signal_spec": {
+          "table": "market_implied_signals",
+          "variable": "FX_RR25_Z252"
+        },
+        "signal_spec_hash": "da5fb08b5d4a8b1d0ba113aa566a6e0b62f811fe0e84a06e07c78bb48a32159d",
+        "trial_index": 12,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 163,
+        "verdict": "DEAD",
+        "summary": {
+          "hypothesis_id": "H_20260612_012",
+          "family_key": "bbg_skill_2026_06",
+          "run_ts": "2026-07-14T14:06:07+00:00",
+          "frequency": "daily",
+          "verdict": "DEAD",
+          "primary_horizon": "5d",
+          "mean_ic": -0.0005,
+          "nw_t": -0.07,
+          "deflated_sharpe": -0.0207,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_012_20260714_070607.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_013": {
+      "register_line": 33,
+      "registration": {
+        "ts": "2026-06-12T12:28:56",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_013",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A4",
+        "family_key": "bbg_skill_2026_06",
+        "mechanism_text": "Re-test of H_20260612_007 on the 20 countries with stable daily 2Y and 10Y generics since 2008 (round 1 missed the coverage gate at 94 percent on a 27-country declaration while showing IC t-stat near 2.7): a government curve steep versus its own trailing year reflects easing or recovery expectations that country equity markets incorporate only gradually, so high 2s10s z should predict relative outperformance over weeks to months.",
+        "signal_spec": {
+          "table": "sovereign_signals",
+          "variable": "SOV_2S10S_Z252"
+        },
+        "signal_spec_hash": "f23bbf444463298a0406b7d680ffe2066d44fdb65763c872d97ea0b2297b9dcf",
+        "trial_index": 13,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 164,
+        "verdict": "WEAK",
+        "summary": {
+          "hypothesis_id": "H_20260612_013",
+          "family_key": "bbg_skill_2026_06",
+          "run_ts": "2026-07-14T14:06:44+00:00",
+          "frequency": "daily",
+          "verdict": "WEAK",
+          "primary_horizon": "5d",
+          "mean_ic": 0.0108,
+          "nw_t": 1.565,
+          "deflated_sharpe": 0.0083,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_013_20260714_070644.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_014": {
+      "register_line": 35,
+      "registration": {
+        "ts": "2026-06-12T12:29:06",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_014",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A4",
+        "family_key": "bbg_skill_2026_06",
+        "mechanism_text": "Re-test of H_20260612_008 on the 14 countries whose composite growth surprise has stable monthly coverage since 2008: when growth data beats the economist survey median the earnings and policy implications are priced only gradually, so positive composite growth surprises should predict continued relative outperformance over one to three months, macro post-announcement drift.",
+        "signal_spec": {
+          "table": "eco_surprise_signals",
+          "variable": "ECO_GROWTH_SURPRISE_Z"
+        },
+        "signal_spec_hash": "b4b1e93d243fbd3c301981b8b4b06ae892f4f858443b1118bca3a17fe15cffd8",
+        "trial_index": 14,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 165,
+        "verdict": "DEAD",
+        "summary": {
+          "hypothesis_id": "H_20260612_014",
+          "family_key": "bbg_skill_2026_06",
+          "run_ts": "2026-07-14T14:06:47+00:00",
+          "frequency": "monthly",
+          "verdict": "DEAD",
+          "primary_horizon": "1m",
+          "mean_ic": 0.0046,
+          "nw_t": 0.219,
+          "deflated_sharpe": -0.0985,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_014_20260714_070647.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_015": {
+      "register_line": 37,
+      "registration": {
+        "ts": "2026-06-12T12:29:06",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_015",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A4",
+        "family_key": "bbg_skill_2026_06",
+        "mechanism_text": "FLIPPED re-registration of H_20260612_009, which was DEAD as registered but carried IC t-stat of plus 2.99 in the opposite direction - this is trial two of the idea and is charged to the family accordingly. Proposed mechanism for the reversal: at the country level upside inflation surprises are dominated by demand strength and commodity-terms-of-trade booms (reflation), which lift nominal earnings and equity returns over the following months, outweighing the discount-rate drag that the original disinflation hypothesis assumed.",
+        "signal_spec": {
+          "table": "eco_surprise_signals",
+          "variable": "ECO_INFL_SURPRISE_Z"
+        },
+        "signal_spec_hash": "205567fb788b545ab5b22b42864b81146863d38dba4dc833b91ca68723366f59",
+        "trial_index": 15,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 166,
+        "verdict": "WATCH",
+        "summary": {
+          "hypothesis_id": "H_20260612_015",
+          "family_key": "bbg_skill_2026_06",
+          "run_ts": "2026-07-14T14:06:48+00:00",
+          "frequency": "monthly",
+          "verdict": "WATCH",
+          "primary_horizon": "1m",
+          "mean_ic": 0.0361,
+          "nw_t": 3.037,
+          "deflated_sharpe": 0.0917,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_015_20260714_070648.json"
+        }
+      },
+      "latest_status": "watch"
+    },
+    "H_20260612_016": {
+      "register_line": 39,
+      "registration": {
+        "ts": "2026-06-12T12:42:41",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_016",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "other",
+        "family_key": "valuation_2026_06",
+        "mechanism_text": "Classic country-level mean reversion in cyclically adjusted multiples: when a market trades in the cheap tail of its own ten-year CAPE range, pessimism about its earnings cycle is usually overdone and subsequent multi-month relative returns are above average, while markets in their expensive tail give the reverse, so low CAPE percentile should rank countries positively for forward returns.",
+        "signal_spec": {
+          "table": "valuation_monthly",
+          "variable": "VAL_CAPE_PCTILE_10Y"
+        },
+        "signal_spec_hash": "13f357700d60508087b13b6035c327153598728ce5c22006dba8e8f861248565",
+        "trial_index": 1,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 167,
+        "verdict": "DEAD",
+        "summary": {
+          "hypothesis_id": "H_20260612_016",
+          "family_key": "valuation_2026_06",
+          "run_ts": "2026-07-14T14:06:48+00:00",
+          "frequency": "monthly",
+          "verdict": "DEAD",
+          "primary_horizon": "1m",
+          "mean_ic": 0.011,
+          "nw_t": 0.677,
+          "deflated_sharpe": -0.1263,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_016_20260714_070648.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_017": {
+      "register_line": 41,
+      "registration": {
+        "ts": "2026-06-12T12:42:41",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_017",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "other",
+        "family_key": "valuation_2026_06",
+        "mechanism_text": "Raw cross-country earnings-yield ranking, the bluntest value read: a country whose equity market offers a higher trailing earnings yield than peers compensates holders for risk that is usually overstated relative to realized fundamentals, so high earnings yield countries should earn higher relative returns over the following months despite persistent structural multiple differences across markets working against the raw comparison.",
+        "signal_spec": {
+          "table": "valuation_monthly",
+          "variable": "VAL_EY_PCT"
+        },
+        "signal_spec_hash": "d77a071a665dbacfc6fff742064e36acb54517eea644ec6d854c446365c53386",
+        "trial_index": 2,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 168,
+        "verdict": "INSUFFICIENT_COVERAGE",
+        "summary": {
+          "hypothesis_id": "H_20260612_017",
+          "family_key": "valuation_2026_06",
+          "run_ts": "2026-07-14T14:06:49+00:00",
+          "frequency": "monthly",
+          "verdict": "INSUFFICIENT_COVERAGE",
+          "primary_horizon": "1m",
+          "mean_ic": 0.0284,
+          "nw_t": 1.86,
+          "deflated_sharpe": null,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_017_20260714_070649.json"
+        }
+      },
+      "latest_status": "tested"
+    },
+    "H_20260612_018": {
+      "register_line": 43,
+      "registration": {
+        "ts": "2026-06-12T12:42:41",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_018",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "other",
+        "family_key": "valuation_2026_06",
+        "mechanism_text": "The equity risk premium percentile corrects the valuation read for each country's own rate environment: when the gap between earnings yield and the local ten-year government yield sits high in its ten-year range, equities are cheap relative to the domestic bond alternative and local allocators rotate in over subsequent months, so a high ERP percentile should predict relative outperformance better than unadjusted multiples.",
+        "signal_spec": {
+          "table": "valuation_monthly",
+          "variable": "VAL_ERP_PCT_PCTILE_10Y"
+        },
+        "signal_spec_hash": "acad397ec882c37f7c7d21afaba518d8289ea64419c8d64ec243183561cd552f",
+        "trial_index": 3,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 169,
+        "verdict": "DEAD",
+        "summary": {
+          "hypothesis_id": "H_20260612_018",
+          "family_key": "valuation_2026_06",
+          "run_ts": "2026-07-14T14:06:49+00:00",
+          "frequency": "monthly",
+          "verdict": "DEAD",
+          "primary_horizon": "1m",
+          "mean_ic": -0.0159,
+          "nw_t": -0.994,
+          "deflated_sharpe": -0.1129,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_018_20260714_070649.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_019": {
+      "register_line": 45,
+      "registration": {
+        "ts": "2026-06-12T12:42:42",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_019",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "other",
+        "family_key": "valuation_2026_06",
+        "mechanism_text": "Dividend yield in the high tail of a country's own ten-year range marks capitulation pricing in the most cash-flow-anchored valuation measure: dividends are stickier than earnings, so an elevated dividend yield percentile usually reflects price decline rather than payout growth, and such markets historically recover relative to peers over the following months as the income cushion attracts flows.",
+        "signal_spec": {
+          "table": "valuation_monthly",
+          "variable": "VAL_DY_PCT_PCTILE_10Y"
+        },
+        "signal_spec_hash": "ce6cebf0c6ae967775dbd956e404c19e1f8ee92eaa8f0b11a802808e0c0c1c0d",
+        "trial_index": 4,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 170,
+        "verdict": "DEAD",
+        "summary": {
+          "hypothesis_id": "H_20260612_019",
+          "family_key": "valuation_2026_06",
+          "run_ts": "2026-07-14T14:06:50+00:00",
+          "frequency": "monthly",
+          "verdict": "DEAD",
+          "primary_horizon": "1m",
+          "mean_ic": 0.0008,
+          "nw_t": 0.052,
+          "deflated_sharpe": -0.071,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_019_20260714_070650.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_020": {
+      "register_line": 47,
+      "registration": {
+        "ts": "2026-06-12T12:42:43",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_020",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "other",
+        "family_key": "etf_flows_2026_06",
+        "mechanism_text": "Passive flows are persistent and exert price pressure that is absorbed only gradually: a country ETF whose trailing 21-day net creations run hot versus its own history signals an allocation shift still underway, and because index flows arrive in installments rather than all at once the country should continue to outperform peers over the following days to weeks before the pressure fades or reverts.",
+        "signal_spec": {
+          "table": "etf_flow_signals",
+          "variable": "ETF_FLOW_21D_Z"
+        },
+        "signal_spec_hash": "9128c3a5cc3e53f6f1a49d3eb1bbb3a32f79edc17298c73ccde12b2fabb2fff1",
+        "trial_index": 1,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 171,
+        "verdict": "DEAD",
+        "summary": {
+          "hypothesis_id": "H_20260612_020",
+          "family_key": "etf_flows_2026_06",
+          "run_ts": "2026-07-14T14:07:21+00:00",
+          "frequency": "daily",
+          "verdict": "DEAD",
+          "primary_horizon": "5d",
+          "mean_ic": -0.0109,
+          "nw_t": -2.009,
+          "deflated_sharpe": -0.0287,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_020_20260714_070721.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_021": {
+      "register_line": 49,
+      "registration": {
+        "ts": "2026-06-12T12:42:51",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_021",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "other",
+        "family_key": "etf_flows_2026_06",
+        "mechanism_text": "Short interest in single-country ETFs is the cleanest observable bearish country positioning available at this frequency, and the equity-lending literature finds elevated shorting predicts underperformance because shorts are on average informed: a short-interest ratio stretched versus the country's own two-year history should therefore precede relative underperformance over the following weeks rather than a squeeze.",
+        "signal_spec": {
+          "table": "etf_flow_signals",
+          "variable": "ETF_SHORT_PCT_Z"
+        },
+        "signal_spec_hash": "2576cb8be48ab02676b25fe2f9891e606854a25078636a12384e71ecb28da267",
+        "trial_index": 2,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 172,
+        "verdict": "DEAD",
+        "summary": {
+          "hypothesis_id": "H_20260612_021",
+          "family_key": "etf_flows_2026_06",
+          "run_ts": "2026-07-14T14:07:49+00:00",
+          "frequency": "daily",
+          "verdict": "DEAD",
+          "primary_horizon": "5d",
+          "mean_ic": -0.003,
+          "nw_t": -0.251,
+          "deflated_sharpe": -0.0244,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_021_20260714_070749.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_022": {
+      "register_line": 51,
+      "registration": {
+        "ts": "2026-06-12T12:42:58",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_022",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A2",
+        "family_key": "graph_trade_gap",
+        "mechanism_text": "Slower-frequency version of the trade-linkage catch-up already found WEAK at 21 days: when a country's trade partners have outperformed it over the trailing quarter, the demand impulse transmitted through export orders has not yet reached its earnings prints, so the laggard should converge upward over the following weeks; the 63-day window trades signal freshness for less noise in the neighbor-return estimate.",
+        "signal_spec": {
+          "table": "graph_features_daily",
+          "variable": "GRAPH_TRADE_NBR_RET_GAP_63D"
+        },
+        "signal_spec_hash": "f2e30c659b4231bfe6e4f5d6c88d3c6364e8dc4dd480b817d9a8559b718441b2",
+        "trial_index": 2,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 221,
+        "verdict": "WEAK",
+        "summary": {
+          "hypothesis_id": "H_20260612_022",
+          "family_key": "graph_trade_gap",
+          "run_ts": "2026-08-24T03:41:42+00:00",
+          "frequency": "daily",
+          "verdict": "WEAK",
+          "primary_horizon": "5d",
+          "mean_ic": 0.0086,
+          "nw_t": 1.56,
+          "deflated_sharpe": -0.0006,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/harness_runs/H_20260612_022_20260823_224142.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_023": {
+      "register_line": 53,
+      "registration": {
+        "ts": "2026-06-12T12:43:12",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_023",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A2",
+        "family_key": "graph_trade_gap",
+        "mechanism_text": "Banking-claims linkages transmit funding conditions rather than trade demand: when the countries whose banks hold claims on you have rallied over the trailing month, cross-border credit supply into your economy is loosening before your equity market has repriced it, so a positive banking-weighted neighbor return gap should predict relative outperformance as the funding tailwind feeds through.",
+        "signal_spec": {
+          "table": "graph_features_daily",
+          "variable": "GRAPH_BANK_NBR_RET_GAP_21D"
+        },
+        "signal_spec_hash": "b3ebd654dcfa4c207bcf90dbcb6369b655a0c051565988b775231bac9bcf73a9",
+        "trial_index": 3,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 222,
+        "verdict": "WATCH",
+        "summary": {
+          "hypothesis_id": "H_20260612_023",
+          "family_key": "graph_trade_gap",
+          "run_ts": "2026-08-24T03:42:36+00:00",
+          "frequency": "daily",
+          "verdict": "WATCH",
+          "primary_horizon": "5d",
+          "mean_ic": 0.02,
+          "nw_t": 3.347,
+          "deflated_sharpe": 0.0063,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/harness_runs/H_20260612_023_20260823_224236.json"
+        }
+      },
+      "latest_status": "watch"
+    },
+    "H_20260612_024": {
+      "register_line": 55,
+      "registration": {
+        "ts": "2026-06-12T12:43:26",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_024",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A2",
+        "family_key": "graph_trade_gap",
+        "mechanism_text": "Quarterly-window version of the banking-linkage read: cross-border credit reallocation happens at bank-balance-sheet speed, not daily-trading speed, so a full quarter of creditor-country outperformance is the cleaner indication that funding conditions into the lagging borrower country have genuinely improved, predicting its relative recovery over the following weeks to months.",
+        "signal_spec": {
+          "table": "graph_features_daily",
+          "variable": "GRAPH_BANK_NBR_RET_GAP_63D"
+        },
+        "signal_spec_hash": "95f8923f43380cc30a336446f15d8c46f688a022558f5f22a36ea64e08a961ea",
+        "trial_index": 4,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 223,
+        "verdict": "DEAD",
+        "summary": {
+          "hypothesis_id": "H_20260612_024",
+          "family_key": "graph_trade_gap",
+          "run_ts": "2026-08-24T03:43:30+00:00",
+          "frequency": "daily",
+          "verdict": "DEAD",
+          "primary_horizon": "5d",
+          "mean_ic": 0.0081,
+          "nw_t": 1.303,
+          "deflated_sharpe": -0.0066,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/harness_runs/H_20260612_024_20260823_224330.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_025": {
+      "register_line": 57,
+      "registration": {
+        "ts": "2026-06-12T12:43:40",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_025",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A2",
+        "family_key": "graph_trade_gap",
+        "mechanism_text": "The two-hop trade gap measures demand building at your customers' customers, one extra step removed from anything local analysts watch: because information diffuses along supply chains with a lag at every hop, strength two hops out should be priced even more slowly than direct partner strength, giving the squared-adjacency-weighted return gap predictive power over the following weeks, the original A2 archetype.",
+        "signal_spec": {
+          "table": "graph_features_daily",
+          "variable": "GRAPH_TWOHOP_TRADE_GAP_21D"
+        },
+        "signal_spec_hash": "bcd6ae989045192ed81f2f6c2abdd5e48ee78a505715125d8604224a9d361895",
+        "trial_index": 5,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 224,
+        "verdict": "WEAK",
+        "summary": {
+          "hypothesis_id": "H_20260612_025",
+          "family_key": "graph_trade_gap",
+          "run_ts": "2026-08-24T03:44:25+00:00",
+          "frequency": "daily",
+          "verdict": "WEAK",
+          "primary_horizon": "5d",
+          "mean_ic": 0.0134,
+          "nw_t": 2.429,
+          "deflated_sharpe": -0.0009,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/harness_runs/H_20260612_025_20260823_224425.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_026": {
+      "register_line": 59,
+      "registration": {
+        "ts": "2026-06-12T12:43:54",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_026",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A2",
+        "family_key": "graph_trade_gap",
+        "mechanism_text": "Fire-sale channel: this feature is the ownership-weighted drawdown of the countries that HOLD your equities (negative means your holders are stressed), and stressed foreign holders liquidate their cross-border positions to meet redemptions at home regardless of local fundamentals, so countries whose holder base is in drawdown should underperform over the following weeks while those with healthy holders outperform.",
+        "signal_spec": {
+          "table": "graph_features_daily",
+          "variable": "GRAPH_PORT_HOLDER_STRESS_21D"
+        },
+        "signal_spec_hash": "0912d5f483c7a08e5812a0847ad4a3b4178bc7436f0c3b4aabe02fbe59c9e01b",
+        "trial_index": 6,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 225,
+        "verdict": "DEAD",
+        "summary": {
+          "hypothesis_id": "H_20260612_026",
+          "family_key": "graph_trade_gap",
+          "run_ts": "2026-08-24T03:45:21+00:00",
+          "frequency": "daily",
+          "verdict": "DEAD",
+          "primary_horizon": "5d",
+          "mean_ic": -0.0012,
+          "nw_t": -0.228,
+          "deflated_sharpe": -0.0331,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/harness_runs/H_20260612_026_20260823_224521.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_027": {
+      "register_line": 61,
+      "registration": {
+        "ts": "2026-06-12T12:44:08",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_027",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A2",
+        "family_key": "graph_trade_gap",
+        "mechanism_text": "Contagion breadth read: the trade-share-weighted fraction of a country's partners sitting in deep drawdown measures how much of its external demand base is already impaired, and breadth of partner distress propagates into export orders and sentiment with a lag, so countries surrounded by many drawn-down neighbors should underperform peers whose trade networks are healthy over the following weeks to months.",
+        "signal_spec": {
+          "table": "graph_features_daily",
+          "variable": "GRAPH_NBR_DRAWDOWN_COUNT"
+        },
+        "signal_spec_hash": "4454b7811ea3dcc38023bc96cf67a86de8be568e210dca94047eb66a88aba647",
+        "trial_index": 7,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 226,
+        "verdict": "DEAD",
+        "summary": {
+          "hypothesis_id": "H_20260612_027",
+          "family_key": "graph_trade_gap",
+          "run_ts": "2026-08-24T03:46:17+00:00",
+          "frequency": "daily",
+          "verdict": "DEAD",
+          "primary_horizon": "5d",
+          "mean_ic": -0.0044,
+          "nw_t": -0.774,
+          "deflated_sharpe": -0.0147,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/harness_runs/H_20260612_027_20260823_224617.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_028": {
+      "register_line": 63,
+      "registration": {
+        "ts": "2026-06-12T12:44:23",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_028",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A3",
+        "family_key": "consensus_ecfc_2026_06",
+        "mechanism_text": "Forecast revision momentum, the A3 archetype: economist GDP forecasts are revised in persistent runs because analysts anchor on their prior number and update toward incoming data only partially, so a country whose blended 12-month-ahead consensus growth forecast has been revised up over the trailing quarter should keep receiving upgrades and outperform peers over the following one to three months.",
+        "signal_spec": {
+          "table": "consensus_signals",
+          "variable": "CONS_GDP_REV3M_12M"
+        },
+        "signal_spec_hash": "366116341e701ac3aa7eb307c925c9756e3e0ce92e69743cef2d40071a63c235",
+        "trial_index": 1,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 179,
+        "verdict": "INSUFFICIENT_COVERAGE",
+        "summary": {
+          "hypothesis_id": "H_20260612_028",
+          "family_key": "consensus_ecfc_2026_06",
+          "run_ts": "2026-07-14T14:13:20+00:00",
+          "frequency": "monthly",
+          "verdict": "INSUFFICIENT_COVERAGE",
+          "primary_horizon": "1m",
+          "mean_ic": -0.0211,
+          "nw_t": -1.369,
+          "deflated_sharpe": null,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_028_20260714_071320.json"
+        }
+      },
+      "latest_status": "tested"
+    },
+    "H_20260612_029": {
+      "register_line": 65,
+      "registration": {
+        "ts": "2026-06-12T12:44:23",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_029",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A3",
+        "family_key": "consensus_ecfc_2026_06",
+        "mechanism_text": "Inflation-forecast upgrade momentum read through the reflation lens that the flipped surprise result (H_20260612_015) supports: at the country level, economists revise inflation forecasts up mainly when demand and terms of trade are strengthening, which lifts nominal earnings, so upward CPI consensus revisions over the trailing quarter should predict relative equity outperformance rather than rate-fear underperformance.",
+        "signal_spec": {
+          "table": "consensus_signals",
+          "variable": "CONS_CPI_REV3M_12M"
+        },
+        "signal_spec_hash": "e54d6b2ef5bfd129182917c15897915d7fed55a34eab40c07c0061861e584274",
+        "trial_index": 2,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 180,
+        "verdict": "INSUFFICIENT_COVERAGE",
+        "summary": {
+          "hypothesis_id": "H_20260612_029",
+          "family_key": "consensus_ecfc_2026_06",
+          "run_ts": "2026-07-14T14:13:20+00:00",
+          "frequency": "monthly",
+          "verdict": "INSUFFICIENT_COVERAGE",
+          "primary_horizon": "1m",
+          "mean_ic": 0.0235,
+          "nw_t": 1.656,
+          "deflated_sharpe": null,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_029_20260714_071320.json"
+        }
+      },
+      "latest_status": "tested"
+    },
+    "H_20260612_030": {
+      "register_line": 67,
+      "registration": {
+        "ts": "2026-06-12T12:44:24",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_030",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A4",
+        "family_key": "bbg_skill_2026_06",
+        "mechanism_text": "Currency implied volatility elevated against its own trailing year is the options market pricing macro stress that country equity investors absorb with a lag because the marginal equity holder hedges currency exposure separately: countries with calm currency vol should outperform those whose vol is stretched, the level complement to the term-slope and skew reads already tested in this family.",
+        "signal_spec": {
+          "table": "market_implied_signals",
+          "variable": "FX_IMPVOL_Z252"
+        },
+        "signal_spec_hash": "76e68b53a9156b0961ddcfb164f8bd9daffab21224f1b8c75ace45e97db0472c",
+        "trial_index": 16,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 181,
+        "verdict": "DEAD",
+        "summary": {
+          "hypothesis_id": "H_20260612_030",
+          "family_key": "bbg_skill_2026_06",
+          "run_ts": "2026-07-14T14:13:56+00:00",
+          "frequency": "daily",
+          "verdict": "DEAD",
+          "primary_horizon": "5d",
+          "mean_ic": 0.0079,
+          "nw_t": 1.159,
+          "deflated_sharpe": -0.0378,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_030_20260714_071356.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_031": {
+      "register_line": 69,
+      "registration": {
+        "ts": "2026-06-12T12:45:31",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_031",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A3",
+        "family_key": "consensus_ecfc_2026_06",
+        "mechanism_text": "Re-test of H_20260612_028 from 2013 when the ECFC panel reaches full 34-country coverage (round 1 failed the coverage gate on 2008-2012 thinness): economist GDP forecasts are revised in persistent runs because analysts anchor on their prior number, so a country whose blended 12-month-ahead consensus growth forecast was upgraded over the trailing quarter should keep being upgraded and outperform peers over the following one to three months.",
+        "signal_spec": {
+          "table": "consensus_signals",
+          "variable": "CONS_GDP_REV3M_12M"
+        },
+        "signal_spec_hash": "0cb49d679d20ff3722459bf6fdc97babe2ceaacff2165bb935087eb67540da64",
+        "trial_index": 3,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 182,
+        "verdict": "DEAD",
+        "summary": {
+          "hypothesis_id": "H_20260612_031",
+          "family_key": "consensus_ecfc_2026_06",
+          "run_ts": "2026-07-14T14:14:00+00:00",
+          "frequency": "monthly",
+          "verdict": "DEAD",
+          "primary_horizon": "1m",
+          "mean_ic": -0.0139,
+          "nw_t": -0.759,
+          "deflated_sharpe": -0.1111,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_031_20260714_071400.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_032": {
+      "register_line": 71,
+      "registration": {
+        "ts": "2026-06-12T12:45:31",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_032",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A3",
+        "family_key": "consensus_ecfc_2026_06",
+        "mechanism_text": "Re-test of H_20260612_029 from 2013 when the ECFC panel reaches full coverage (round 1 coverage-gated on early thinness): read through the reflation lens that the flipped surprise result supports, economists revise country inflation forecasts up mainly when demand and terms of trade strengthen, lifting nominal earnings, so upward CPI consensus revisions should predict relative equity outperformance over following months rather than rate-fear underperformance.",
+        "signal_spec": {
+          "table": "consensus_signals",
+          "variable": "CONS_CPI_REV3M_12M"
+        },
+        "signal_spec_hash": "2a1a351cf81f6652f90a199da0c51f0fc737f44f792f772793eca92531455f7a",
+        "trial_index": 4,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 183,
+        "verdict": "WEAK",
+        "summary": {
+          "hypothesis_id": "H_20260612_032",
+          "family_key": "consensus_ecfc_2026_06",
+          "run_ts": "2026-07-14T14:14:01+00:00",
+          "frequency": "monthly",
+          "verdict": "WEAK",
+          "primary_horizon": "1m",
+          "mean_ic": 0.0402,
+          "nw_t": 2.394,
+          "deflated_sharpe": 0.0622,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_032_20260714_071401.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_033": {
+      "register_line": 73,
+      "registration": {
+        "ts": "2026-06-12T12:45:32",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_033",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "other",
+        "family_key": "valuation_2026_06",
+        "mechanism_text": "Re-test of the raw cross-country earnings-yield ranking from mid-2005 when coverage reaches 30-plus countries (round 1 failed the coverage gate on pre-2003 thinness while showing IC t-stat near 2): a country offering a higher trailing earnings yield than peers compensates holders for risk that is usually overstated relative to realized fundamentals, so high earnings yield should earn higher relative returns over following months.",
+        "signal_spec": {
+          "table": "valuation_monthly",
+          "variable": "VAL_EY_PCT"
+        },
+        "signal_spec_hash": "08e855e8c3e5a0f7ae592497fe534745193ab479c9905f310fdd0f80cf082bc9",
+        "trial_index": 5,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 184,
+        "verdict": "DEAD",
+        "summary": {
+          "hypothesis_id": "H_20260612_033",
+          "family_key": "valuation_2026_06",
+          "run_ts": "2026-07-14T14:14:02+00:00",
+          "frequency": "monthly",
+          "verdict": "DEAD",
+          "primary_horizon": "1m",
+          "mean_ic": 0.0087,
+          "nw_t": 0.51,
+          "deflated_sharpe": -0.0186,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_033_20260714_071402.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_034": {
+      "register_line": 75,
+      "registration": {
+        "ts": "2026-06-12T13:05:56",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_034",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A2",
+        "family_key": "graph_trade_gap",
+        "mechanism_text": "Point-in-time re-test of the strongest signal in the ledger (H_20260612_023, nw_t 5.7 on current weights): when the countries whose banks lend to you have rallied over the trailing month, cross-border credit supply is loosening before your equity market has repriced it; now computed with BIS LBS quarterly weights known only at each date, so a surviving result cannot be attributed to edge lookahead.",
+        "signal_spec": {
+          "table": "graph_features_pit_daily",
+          "variable": "GRAPHP_BANK_NBR_RET_GAP_21D"
+        },
+        "signal_spec_hash": "93a3b7171e07f1876df08caaae4426efe2f168dcd42753d3864803055ac02ee4",
+        "trial_index": 8,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 227,
+        "verdict": "INSUFFICIENT_COVERAGE",
+        "summary": {
+          "hypothesis_id": "H_20260612_034",
+          "family_key": "graph_trade_gap",
+          "run_ts": "2026-08-24T03:46:25+00:00",
+          "frequency": "daily",
+          "verdict": "INSUFFICIENT_COVERAGE",
+          "primary_horizon": "5d",
+          "mean_ic": 0.0238,
+          "nw_t": 3.733,
+          "deflated_sharpe": null,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/harness_runs/H_20260612_034_20260823_224625.json"
+        }
+      },
+      "latest_status": "tested"
+    },
+    "H_20260612_035": {
+      "register_line": 77,
+      "registration": {
+        "ts": "2026-06-12T13:06:00",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_035",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A2",
+        "family_key": "graph_trade_gap",
+        "mechanism_text": "Point-in-time re-test of the two-hop supply-chain propagation read (H_20260612_025, nw_t 4.5 on current weights): demand building at your customers' customers diffuses along the trade network with a lag at every hop, so strength two hops out is priced even more slowly than direct partner strength; trade weights are now annual IMF vintages applied only after publication.",
+        "signal_spec": {
+          "table": "graph_features_pit_daily",
+          "variable": "GRAPHP_TWOHOP_TRADE_GAP_21D"
+        },
+        "signal_spec_hash": "afbaa4a46d633af213faf1da4d5ed878e65a9d8cf777dcd777122b69f4b091f0",
+        "trial_index": 9,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 228,
+        "verdict": "WEAK",
+        "summary": {
+          "hypothesis_id": "H_20260612_035",
+          "family_key": "graph_trade_gap",
+          "run_ts": "2026-08-24T03:47:21+00:00",
+          "frequency": "daily",
+          "verdict": "WEAK",
+          "primary_horizon": "5d",
+          "mean_ic": 0.0138,
+          "nw_t": 2.472,
+          "deflated_sharpe": 0.0001,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/harness_runs/H_20260612_035_20260823_224721.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_036": {
+      "register_line": 79,
+      "registration": {
+        "ts": "2026-06-12T13:06:14",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_036",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A2",
+        "family_key": "graph_trade_gap",
+        "mechanism_text": "Point-in-time re-test of the original family anchor (H_20260610_003, WEAK): when a country's direct trade partners outperformed it over the trailing month, the export-demand impulse has not yet reached its earnings prints and the laggard converges upward; weights are now publication-lagged annual IMF trade shares rather than today's map.",
+        "signal_spec": {
+          "table": "graph_features_pit_daily",
+          "variable": "GRAPHP_TRADE_NBR_RET_GAP_21D"
+        },
+        "signal_spec_hash": "df09a170410af1b95884efb1687fddfbcbecf1c56b9972e0d1f918cf8f66b079",
+        "trial_index": 10,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 229,
+        "verdict": "WATCH",
+        "summary": {
+          "hypothesis_id": "H_20260612_036",
+          "family_key": "graph_trade_gap",
+          "run_ts": "2026-08-24T03:48:16+00:00",
+          "frequency": "daily",
+          "verdict": "WATCH",
+          "primary_horizon": "5d",
+          "mean_ic": 0.014,
+          "nw_t": 2.632,
+          "deflated_sharpe": 0.0008,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/harness_runs/H_20260612_036_20260823_224816.json"
+        }
+      },
+      "latest_status": "watch"
+    },
+    "H_20260612_037": {
+      "register_line": 81,
+      "registration": {
+        "ts": "2026-06-12T13:06:29",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_037",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A2",
+        "family_key": "graph_trade_gap",
+        "mechanism_text": "Point-in-time re-test of the quarterly-window trade catch-up (H_20260612_022, nw_t 2.9 on current weights): a full quarter of partner outperformance is the slower, less noisy read of the same export-demand transmission, traded against signal freshness; computed on publication-lagged annual trade vintages.",
+        "signal_spec": {
+          "table": "graph_features_pit_daily",
+          "variable": "GRAPHP_TRADE_NBR_RET_GAP_63D"
+        },
+        "signal_spec_hash": "f6351bfb1bda2021af81d2155a88b2ec6f755b47f91008eba97f81882481b0fb",
+        "trial_index": 11,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 230,
+        "verdict": "DEAD",
+        "summary": {
+          "hypothesis_id": "H_20260612_037",
+          "family_key": "graph_trade_gap",
+          "run_ts": "2026-08-24T03:49:12+00:00",
+          "frequency": "daily",
+          "verdict": "DEAD",
+          "primary_horizon": "5d",
+          "mean_ic": 0.0073,
+          "nw_t": 1.31,
+          "deflated_sharpe": -0.0022,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/harness_runs/H_20260612_037_20260823_224912.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_038": {
+      "register_line": 83,
+      "registration": {
+        "ts": "2026-06-12T13:06:43",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_038",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A2",
+        "family_key": "graph_trade_gap",
+        "mechanism_text": "NEW: Katz propagation generalizes the one-hop and two-hop gaps into a single read summing all paths up to three hops with decay one half per hop, so it captures the full diffusion front of a demand shock through the trade network at once; if information truly travels the network with per-hop lags, the path-weighted aggregate should rank laggards better than any single-hop slice.",
+        "signal_spec": {
+          "table": "graph_features_pit_daily",
+          "variable": "GRAPHP_KATZ_TRADE_GAP_21D"
+        },
+        "signal_spec_hash": "ebccf5597a40dedbf0ca58328c880fa6b447c604d9f1b596347ccff1f41a4533",
+        "trial_index": 12,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 231,
+        "verdict": "WATCH",
+        "summary": {
+          "hypothesis_id": "H_20260612_038",
+          "family_key": "graph_trade_gap",
+          "run_ts": "2026-08-24T03:50:07+00:00",
+          "frequency": "daily",
+          "verdict": "WATCH",
+          "primary_horizon": "5d",
+          "mean_ic": 0.0141,
+          "nw_t": 2.585,
+          "deflated_sharpe": 0.001,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/harness_runs/H_20260612_038_20260823_225007.json"
+        }
+      },
+      "latest_status": "watch"
+    },
+    "H_20260612_039": {
+      "register_line": 85,
+      "registration": {
+        "ts": "2026-06-12T13:06:57",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_039",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A2",
+        "family_key": "graph_trade_gap",
+        "mechanism_text": "NEW: hub amplification scales each trade partner's return by that partner's PageRank centrality before weighting, because a shock at a hub country (one the whole network routes through) transmits to more third parties and feeds back, so hub-partner strength should carry more unpriced information for the focal country than the same strength at a peripheral partner.",
+        "signal_spec": {
+          "table": "graph_features_pit_daily",
+          "variable": "GRAPHP_HUB_GAP_21D"
+        },
+        "signal_spec_hash": "268b2c4cf5d0cc127812a093c1cac18b96d884ac8685bb8931aaca2a9e1ee69b",
+        "trial_index": 13,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 232,
+        "verdict": "WEAK",
+        "summary": {
+          "hypothesis_id": "H_20260612_039",
+          "family_key": "graph_trade_gap",
+          "run_ts": "2026-08-24T03:51:02+00:00",
+          "frequency": "daily",
+          "verdict": "WEAK",
+          "primary_horizon": "5d",
+          "mean_ic": 0.0135,
+          "nw_t": 2.488,
+          "deflated_sharpe": -0.0009,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/harness_runs/H_20260612_039_20260823_225102.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_040": {
+      "register_line": 87,
+      "registration": {
+        "ts": "2026-06-12T13:07:11",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_040",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A2",
+        "family_key": "graph_trade_gap",
+        "mechanism_text": "NEW: spectral clustering on each trade vintage partitions the network into four blocs (regional supply chains in practice), and bloc mates share demand exposure that is broader than any bilateral link; when a country lags the average return of its own bloc the shared-factor move has not yet propagated to it, so the bloc gap should predict catch-up convergence over the following weeks.",
+        "signal_spec": {
+          "table": "graph_features_pit_daily",
+          "variable": "GRAPHP_BLOC_GAP_21D"
+        },
+        "signal_spec_hash": "bbb7dfd43f570e5a9e664709ac8e5d2b7fc84081a7e7fd386955240ddbc135e7",
+        "trial_index": 14,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 233,
+        "verdict": "WEAK",
+        "summary": {
+          "hypothesis_id": "H_20260612_040",
+          "family_key": "graph_trade_gap",
+          "run_ts": "2026-08-24T03:51:57+00:00",
+          "frequency": "daily",
+          "verdict": "WEAK",
+          "primary_horizon": "5d",
+          "mean_ic": 0.0129,
+          "nw_t": 2.543,
+          "deflated_sharpe": 0.0022,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/harness_runs/H_20260612_040_20260823_225157.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_041": {
+      "register_line": 89,
+      "registration": {
+        "ts": "2026-06-12T13:08:21",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_041",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A2",
+        "family_key": "graph_trade_gap",
+        "mechanism_text": "Re-test of the point-in-time banking-claims neighbor gap on the 17 countries whose BIS LBS reporter coverage is stable since 2008 (round one failed the coverage gate on pre-2008 reporter thinness, not on the data): when the countries whose banks hold claims on you rallied over the trailing month, cross-border credit supply into your economy is loosening before your equity market has repriced it, and with publication-lagged quarterly weights a surviving result cannot be attributed to edge lookahead.",
+        "signal_spec": {
+          "table": "graph_features_pit_daily",
+          "variable": "GRAPHP_BANK_NBR_RET_GAP_21D"
+        },
+        "signal_spec_hash": "64b1a75af59f3255bad1c7a5499082788a82aeb73926046176433265a9b3b05a",
+        "trial_index": 15,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 234,
+        "verdict": "WEAK",
+        "summary": {
+          "hypothesis_id": "H_20260612_041",
+          "family_key": "graph_trade_gap",
+          "run_ts": "2026-08-24T03:52:37+00:00",
+          "frequency": "daily",
+          "verdict": "WEAK",
+          "primary_horizon": "5d",
+          "mean_ic": 0.0186,
+          "nw_t": 2.456,
+          "deflated_sharpe": -0.0058,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/harness_runs/H_20260612_041_20260823_225237.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_042": {
+      "register_line": 91,
+      "registration": {
+        "ts": "2026-06-12T13:13:37",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_042",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A2",
+        "family_key": "fund_similarity_2026_06",
+        "mechanism_text": "Countries with near-identical fundamental profiles are exposed to the same macro forces, so their returns should co-move; when a country's five nearest fundamental twins have outperformed it over the trailing month, the shared driver has been priced into the twins but not yet into the laggard, which should converge upward over the following weeks \u2014 pairs-trading logic generalized to a similarity graph.",
+        "signal_spec": {
+          "table": "similarity_features_daily",
+          "variable": "SIM_NBR_RET_GAP_21D"
+        },
+        "signal_spec_hash": "9c9a98ed312f35c358d030c9d1d8531b7ff41f78f9cec7e97f10b11cfe8cc693",
+        "trial_index": 1,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 235,
+        "verdict": "WATCH",
+        "summary": {
+          "hypothesis_id": "H_20260612_042",
+          "family_key": "fund_similarity_2026_06",
+          "run_ts": "2026-08-24T03:53:31+00:00",
+          "frequency": "daily",
+          "verdict": "WATCH",
+          "primary_horizon": "5d",
+          "mean_ic": 0.0149,
+          "nw_t": 3.231,
+          "deflated_sharpe": 0.0102,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/harness_runs/H_20260612_042_20260823_225331.json"
+        }
+      },
+      "latest_status": "watch"
+    },
+    "H_20260612_043": {
+      "register_line": 93,
+      "registration": {
+        "ts": "2026-06-12T13:13:51",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_043",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A2",
+        "family_key": "fund_similarity_2026_06",
+        "mechanism_text": "Quarterly-window version of the twin convergence read: a full quarter of divergence from your fundamental look-alikes is less likely to be microstructure noise and more likely an unpriced gap in how a shared macro driver was incorporated, at the cost of a staler signal; tested separately because the horizon trade-off is a genuine empirical question, not a free parameter to optimize after the fact.",
+        "signal_spec": {
+          "table": "similarity_features_daily",
+          "variable": "SIM_NBR_RET_GAP_63D"
+        },
+        "signal_spec_hash": "4065e955bf024be777f1269a09123419b24f5daf09bed24c0ad5dd858fd58ebb",
+        "trial_index": 2,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 236,
+        "verdict": "WEAK",
+        "summary": {
+          "hypothesis_id": "H_20260612_043",
+          "family_key": "fund_similarity_2026_06",
+          "run_ts": "2026-08-24T03:54:26+00:00",
+          "frequency": "daily",
+          "verdict": "WEAK",
+          "primary_horizon": "5d",
+          "mean_ic": 0.0109,
+          "nw_t": 2.305,
+          "deflated_sharpe": 0.0084,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/harness_runs/H_20260612_043_20260823_225426.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_044": {
+      "register_line": 95,
+      "registration": {
+        "ts": "2026-06-12T13:14:06",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_044",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A2",
+        "family_key": "leadlag_2026_06",
+        "mechanism_text": "Countries that historically lead a follower at one-day lag \u2014 partly timezone sequencing where New York closes after Asia, partly genuine information diffusion through the dominant market \u2014 have already moved today, and the follower incorporates that move only at its next session, so the leader-weighted same-day return should predict the follower's next-day relative return; a next-open implementation captures the timezone leg legitimately.",
+        "signal_spec": {
+          "table": "leadlag_features_daily",
+          "variable": "LL_LEADER_RET_1D"
+        },
+        "signal_spec_hash": "09b52533032c84f581fce4861cfcdfd8241ff133077a6543fabf12c591d0e45c",
+        "trial_index": 1,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 237,
+        "verdict": "INSUFFICIENT_COVERAGE",
+        "summary": {
+          "hypothesis_id": "H_20260612_044",
+          "family_key": "leadlag_2026_06",
+          "run_ts": "2026-08-24T03:54:35+00:00",
+          "frequency": "daily",
+          "verdict": "INSUFFICIENT_COVERAGE",
+          "primary_horizon": "5d",
+          "mean_ic": 0.0017,
+          "nw_t": 0.534,
+          "deflated_sharpe": null,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/harness_runs/H_20260612_044_20260823_225435.json"
+        }
+      },
+      "latest_status": "tested"
+    },
+    "H_20260612_045": {
+      "register_line": 97,
+      "registration": {
+        "ts": "2026-06-12T13:14:10",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_045",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A2",
+        "family_key": "leadlag_2026_06",
+        "mechanism_text": "Weekly version of the leader-follower read: when a country's empirical leaders have outrun it over the trailing five sessions the diffusion chain says the follower has pending catch-up, smoothing out single-day timezone mechanics and isolating the slower information-propagation component of the lead-lag network.",
+        "signal_spec": {
+          "table": "leadlag_features_daily",
+          "variable": "LL_LEADER_GAP_5D"
+        },
+        "signal_spec_hash": "4e020d11df7a158e8148c2b4db2cabc499e0eb7f323bdd8aa0ac45a5f3fb1325",
+        "trial_index": 2,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 238,
+        "verdict": "INSUFFICIENT_COVERAGE",
+        "summary": {
+          "hypothesis_id": "H_20260612_045",
+          "family_key": "leadlag_2026_06",
+          "run_ts": "2026-08-24T03:54:43+00:00",
+          "frequency": "daily",
+          "verdict": "INSUFFICIENT_COVERAGE",
+          "primary_horizon": "5d",
+          "mean_ic": 0.0332,
+          "nw_t": 6.355,
+          "deflated_sharpe": null,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/harness_runs/H_20260612_045_20260823_225443.json"
+        }
+      },
+      "latest_status": "tested"
+    },
+    "H_20260612_046": {
+      "register_line": 99,
+      "registration": {
+        "ts": "2026-06-12T13:14:16",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_046",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "other",
+        "family_key": "etf_flows_2026_06",
+        "mechanism_text": "FLIPPED re-registration of H_20260612_020 (trial three of this family; the momentum direction tested DEAD with significant opposite-sign IC): proposed mechanism for the reversal is that hot trailing creations in single-country ETFs mark retail and allocator chasing after the move has happened, supplying exit liquidity to informed sellers, so stretched inflows precede relative underperformance as the flow pressure unwinds \u2014 the classic dumb-money reversal at country level.",
+        "signal_spec": {
+          "table": "etf_flow_signals",
+          "variable": "ETF_FLOW_21D_Z"
+        },
+        "signal_spec_hash": "761f166059bae53b8e05c263e15975aef3f2377e2f859a0aaa6e6af4e07e39d7",
+        "trial_index": 3,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 197,
+        "verdict": "WEAK",
+        "summary": {
+          "hypothesis_id": "H_20260612_046",
+          "family_key": "etf_flows_2026_06",
+          "run_ts": "2026-07-14T14:23:00+00:00",
+          "frequency": "daily",
+          "verdict": "WEAK",
+          "primary_horizon": "5d",
+          "mean_ic": -0.0109,
+          "nw_t": -2.009,
+          "deflated_sharpe": -0.0004,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_046_20260714_072300.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_047": {
+      "register_line": 101,
+      "registration": {
+        "ts": "2026-06-12T13:15:17",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_047",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A2",
+        "family_key": "leadlag_2026_06",
+        "mechanism_text": "Re-test of the weekly leader-follower convergence gap on the 17 countries that structurally HAVE leaders (Asia and Europe; the U.S. complex leads but is not led, so it cannot be in the follower universe): when a country's empirical leaders outran it over the trailing five sessions the diffusion chain says catch-up is pending, and the five-day window smooths single-day timezone mechanics into the slower information-propagation component.",
+        "signal_spec": {
+          "table": "leadlag_features_daily",
+          "variable": "LL_LEADER_GAP_5D"
+        },
+        "signal_spec_hash": "4cad7a0487f3f747b96a595d07a1743d4bccba3933828e8c10ef0d0df6de2ccc",
+        "trial_index": 3,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 239,
+        "verdict": "INSUFFICIENT_COVERAGE",
+        "summary": {
+          "hypothesis_id": "H_20260612_047",
+          "family_key": "leadlag_2026_06",
+          "run_ts": "2026-08-24T03:54:52+00:00",
+          "frequency": "daily",
+          "verdict": "INSUFFICIENT_COVERAGE",
+          "primary_horizon": "5d",
+          "mean_ic": 0.0324,
+          "nw_t": 5.113,
+          "deflated_sharpe": null,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/harness_runs/H_20260612_047_20260823_225452.json"
+        }
+      },
+      "latest_status": "tested"
+    },
+    "H_20260612_048": {
+      "register_line": 103,
+      "registration": {
+        "ts": "2026-06-12T13:15:22",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_048",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A2",
+        "family_key": "leadlag_2026_06",
+        "mechanism_text": "Re-test of the one-day leader signal on the 16 structural follower countries: leaders' same-day moves \u2014 timezone sequencing plus genuine information diffusion through the dominant market \u2014 are incorporated by followers only at their next session; this is the purest, highest turnover form of the effect, registered to measure how much of the enormous gross IC the cost model destroys.",
+        "signal_spec": {
+          "table": "leadlag_features_daily",
+          "variable": "LL_LEADER_RET_1D"
+        },
+        "signal_spec_hash": "0ea111d7dbff75f3b80859dbcd2a00e9801104802176c7a76511220d1449fd48",
+        "trial_index": 4,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 240,
+        "verdict": "DEAD",
+        "summary": {
+          "hypothesis_id": "H_20260612_048",
+          "family_key": "leadlag_2026_06",
+          "run_ts": "2026-08-24T03:55:41+00:00",
+          "frequency": "daily",
+          "verdict": "DEAD",
+          "primary_horizon": "5d",
+          "mean_ic": 0.0009,
+          "nw_t": 0.238,
+          "deflated_sharpe": -0.0184,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/harness_runs/H_20260612_048_20260823_225541.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_049": {
+      "register_line": 105,
+      "registration": {
+        "ts": "2026-06-12T13:16:24",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_049",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A2",
+        "family_key": "leadlag_2026_06",
+        "mechanism_text": "Final coverage-corrected test of the weekly leader-follower gap on the sixteen structural follower countries (Denmark dropped as the thin member that kept the seventeen-country spec just under the harness's ninety-five percent coverage requirement): when a country's empirical lead-lag leaders outran it over the trailing five sessions, pending catch-up should lift its relative return over the following days.",
+        "signal_spec": {
+          "table": "leadlag_features_daily",
+          "variable": "LL_LEADER_GAP_5D"
+        },
+        "signal_spec_hash": "ffa7c5089624245adaa2f47f96dc7eee8a9a486f991006575bb5b4a7c77ecae6",
+        "trial_index": 5,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 241,
+        "verdict": "WATCH",
+        "summary": {
+          "hypothesis_id": "H_20260612_049",
+          "family_key": "leadlag_2026_06",
+          "run_ts": "2026-08-24T03:56:31+00:00",
+          "frequency": "daily",
+          "verdict": "WATCH",
+          "primary_horizon": "5d",
+          "mean_ic": 0.0291,
+          "nw_t": 4.478,
+          "deflated_sharpe": 0.024,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/harness_runs/H_20260612_049_20260823_225631.json"
+        }
+      },
+      "latest_status": "watch"
+    },
+    "H_20260612_050": {
+      "register_line": 107,
+      "registration": {
+        "ts": "2026-06-12T13:20:01",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_050",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "other",
+        "family_key": "ml_combiner_2026_06",
+        "mechanism_text": "Walk-forward ridge regression combining the seven harness survivors (PIT bank-claims gap, two-hop and Katz trade propagation, fundamental twins gap, CPI consensus revision momentum, flipped inflation surprise, contrarian ETF flows) into one next-month country score; each component carries genuine and partially independent information channels, so a shrinkage-weighted blend should rank countries better and more stably than any single channel, acknowledging that the component list itself was selected in-sample this month and the backtest is therefore a ceiling.",
+        "signal_spec": {
+          "table": "combiner_scores",
+          "variable": "COMBINER_RIDGE_V1"
+        },
+        "signal_spec_hash": "bae625fc3da3e23bae7445e0756d1f56b1af2d4790d82749d58726cb7f2317f3",
+        "trial_index": 1,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 201,
+        "verdict": "INSUFFICIENT_COVERAGE",
+        "summary": {
+          "hypothesis_id": "H_20260612_050",
+          "family_key": "ml_combiner_2026_06",
+          "run_ts": "2026-07-14T14:24:55+00:00",
+          "frequency": "monthly",
+          "verdict": "INSUFFICIENT_COVERAGE",
+          "primary_horizon": "1m",
+          "mean_ic": -0.0023,
+          "nw_t": -0.184,
+          "deflated_sharpe": null,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_050_20260714_072455.json"
+        }
+      },
+      "latest_status": "tested"
+    },
+    "H_20260612_051": {
+      "register_line": 109,
+      "registration": {
+        "ts": "2026-06-12T13:21:27",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_051",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "other",
+        "family_key": "ml_combiner_2026_06",
+        "mechanism_text": "Walk-forward ridge regression combining the seven harness survivors (PIT bank-claims gap, two-hop and Katz trade propagation, fundamental twins gap, CPI consensus revision momentum, flipped inflation surprise, contrarian ETF flows) into one next-month country score; each component carries genuine and partially independent information channels, so a shrinkage-weighted blend should rank countries better and more stably than any single channel, acknowledging that the component list itself was selected in-sample this month and the backtest is therefore a ceiling.",
+        "signal_spec": {
+          "table": "combiner_scores",
+          "variable": "COMBINER_RIDGE_V1",
+          "publication_lag_months": 0
+        },
+        "signal_spec_hash": "9189a9e3db3ebe2db5b8f8ea6e3edd518d60fe9adbf6f6faa058ff3be9cf020b",
+        "trial_index": 2,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 202,
+        "verdict": "INSUFFICIENT_COVERAGE",
+        "summary": {
+          "hypothesis_id": "H_20260612_051",
+          "family_key": "ml_combiner_2026_06",
+          "run_ts": "2026-07-14T14:24:55+00:00",
+          "frequency": "monthly",
+          "verdict": "INSUFFICIENT_COVERAGE",
+          "primary_horizon": "1m",
+          "mean_ic": 0.0213,
+          "nw_t": 1.677,
+          "deflated_sharpe": null,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_051_20260714_072455.json"
+        }
+      },
+      "latest_status": "tested"
+    },
+    "H_20260612_052": {
+      "register_line": 111,
+      "registration": {
+        "ts": "2026-06-12T13:22:05",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_052",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "other",
+        "family_key": "ml_combiner_2026_06",
+        "mechanism_text": "Walk-forward ridge regression combining the seven harness survivors (PIT bank-claims gap, two-hop and Katz trade propagation, fundamental twins gap, CPI consensus revision momentum, flipped inflation surprise, contrarian ETF flows) into one next-month country score; each component carries genuine and partially independent information channels, so a shrinkage-weighted blend should rank countries better and more stably than any single channel, acknowledging that the component list itself was selected in-sample this month and the backtest is therefore a ceiling.",
+        "signal_spec": {
+          "table": "combiner_scores",
+          "variable": "COMBINER_RIDGE_V1",
+          "publication_lag_months": 0
+        },
+        "signal_spec_hash": "9189a9e3db3ebe2db5b8f8ea6e3edd518d60fe9adbf6f6faa058ff3be9cf020b",
+        "trial_index": 3,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 203,
+        "verdict": "DEAD",
+        "summary": {
+          "hypothesis_id": "H_20260612_052",
+          "family_key": "ml_combiner_2026_06",
+          "run_ts": "2026-07-14T14:24:56+00:00",
+          "frequency": "monthly",
+          "verdict": "DEAD",
+          "primary_horizon": "1m",
+          "mean_ic": 0.0129,
+          "nw_t": 0.843,
+          "deflated_sharpe": -0.0069,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_052_20260714_072456.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260612_053": {
+      "register_line": 113,
+      "registration": {
+        "ts": "2026-06-12T13:24:38",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_053",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "other",
+        "family_key": "ml_combiner_2026_06",
+        "mechanism_text": "Daily walk-forward ridge blend of the six daily market-derived harness survivors; the components carry partially independent diffusion channels (credit supply, supply chains, fundamental twins, lead-lag sequencing, flow reversal) all operating at the days-to-weeks horizon, so a shrinkage blend sampled daily should rank countries better and more stably than any single channel \u2014 and unlike the monthly model it does not throw away the horizon where the information actually decays; the component list was selected in-sample this month, so this backtest remains a ceiling pending forward verification.",
+        "signal_spec": {
+          "table": "combiner_scores_daily",
+          "variable": "COMBINER_RIDGE_DAILY_V1"
+        },
+        "signal_spec_hash": "0e6f109f039c5ac5bb587393e9d63bf351ae930a994f2a895aa3a132a890fbbe",
+        "trial_index": 4,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 204,
+        "verdict": "INSUFFICIENT_COVERAGE",
+        "summary": {
+          "hypothesis_id": "H_20260612_053",
+          "family_key": "ml_combiner_2026_06",
+          "run_ts": "2026-07-14T14:25:00+00:00",
+          "frequency": "daily",
+          "verdict": "INSUFFICIENT_COVERAGE",
+          "primary_horizon": "5d",
+          "mean_ic": 0.0289,
+          "nw_t": 5.58,
+          "deflated_sharpe": null,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_053_20260714_072500.json"
+        }
+      },
+      "latest_status": "tested"
+    },
+    "H_20260612_054": {
+      "register_line": 115,
+      "registration": {
+        "ts": "2026-06-12T13:25:16",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_054",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "other",
+        "family_key": "ml_combiner_2026_06",
+        "mechanism_text": "Coverage-corrected final test of the daily ridge blend on the twenty-nine countries every component actually covers: six daily market-derived survivors spanning credit supply, supply-chain diffusion, fundamental twins, lead-lag sequencing and flow reversal, blended walk-forward with yearly refits and scored daily at the days-to-weeks horizon where those channels decay; the component list was selected in-sample this month, so the verdict is a ceiling pending forward verification.",
+        "signal_spec": {
+          "table": "combiner_scores_daily",
+          "variable": "COMBINER_RIDGE_DAILY_V1"
+        },
+        "signal_spec_hash": "414805e0d6e559fcdcd0cbd18886e357e14d7009a54e7cfe3eb83b5373d29e70",
+        "trial_index": 5,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 205,
+        "verdict": "WATCH",
+        "summary": {
+          "hypothesis_id": "H_20260612_054",
+          "family_key": "ml_combiner_2026_06",
+          "run_ts": "2026-07-14T14:25:45+00:00",
+          "frequency": "daily",
+          "verdict": "WATCH",
+          "primary_horizon": "5d",
+          "mean_ic": 0.03,
+          "nw_t": 5.732,
+          "deflated_sharpe": 0.0471,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260612_054_20260714_072545.json"
+        }
+      },
+      "latest_status": "watch"
+    },
+    "H_20260612_055": {
+      "register_line": 117,
+      "registration": {
+        "ts": "2026-06-12T13:44:02",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260612_055",
+        "author": "agent_sweep_2026_06_12",
+        "archetype": "A2",
+        "family_key": "leadlag_2026_06",
+        "mechanism_text": "Final coverage-corrected test of the weekly leader-follower gap on the sixteen structural follower countries (Denmark dropped as the thin member that kept the seventeen-country spec just under the harness's ninety-five percent coverage requirement): when a country's empirical lead-lag leaders outran it over the trailing five sessions, pending catch-up should lift its relative return over the following days.",
+        "signal_spec": {
+          "table": "leadlag_features_daily",
+          "variable": "LL_LEADER_GAP_5D"
+        },
+        "signal_spec_hash": "ffa7c5089624245adaa2f47f96dc7eee8a9a486f991006575bb5b4a7c77ecae6",
+        "trial_index": 6,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 242,
+        "verdict": "WATCH",
+        "summary": {
+          "hypothesis_id": "H_20260612_055",
+          "family_key": "leadlag_2026_06",
+          "run_ts": "2026-08-24T03:57:22+00:00",
+          "frequency": "daily",
+          "verdict": "WATCH",
+          "primary_horizon": "5d",
+          "mean_ic": 0.0291,
+          "nw_t": 4.478,
+          "deflated_sharpe": 0.024,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/loop/harness_runs/H_20260612_055_20260823_225722.json"
+        }
+      },
+      "latest_status": "watch"
+    },
+    "H_20260702_001": {
+      "register_line": 148,
+      "registration": {
+        "ts": "2026-07-02T17:07:42",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260702_001",
+        "author": "agent_triptych_2026_07_02",
+        "model_id": "unknown",
+        "model_version": "unknown",
+        "session_id": "unknown",
+        "archetype": "other",
+        "family_key": "triptych_prior_2026_07",
+        "canonical_family": "triptych_prior",
+        "primary_horizon": 1,
+        "mechanism_text": "Triptych PIT conditional-history queue rule: for each factor-country pair, monthly decile-conditional forward-return histories (point-in-time thresholds, completed forward windows only) occasionally place today's factor reading in an extreme decile whose own history shows a strong, monotone, statistically significant forward-return pattern. The registered rule aggregates, per country, direction times prior confidence over ALL pairs passing the pre-declared live review-queue gates (min 60 records, current-bucket n>=8, |IC t|>=2, R^2>=0.4, extreme decile <=2 or >=9, confidence>=0.2, best row per country-factor pair), reconstructed walk-forward with a one-month factor availability embargo (build_triptych_signal.py). Claim: countries whose conditional histories lean long outperform countries whose histories lean short over the following month. Honesty notes: the underlying scan grid is ~80 factors x 34 countries x 3 normalizations x 2 return modes x 6 horizons; the aggregation over the FULL grid is part of the pre-declared rule (a single trial), not a per-cell search; gate thresholds were fixed in config/triptych_scan.yaml on 2026-07-02 before any forward-return evaluation of this rule; the live queue's global cap of 25 rows is a review-workload device and is deliberately not applied to the aggregate.",
+        "signal_spec": {
+          "table": "triptych_signal_monthly",
+          "variable": "TRIPTYCH_QUEUE_LEAN",
+          "source": "triptych",
+          "publication_lag_months": 0
+        },
+        "signal_spec_hash": "bb5cf1f3ad04b2ebbf0c5311470e39350ddbefb4ce50af99e8f94a44345987e8",
+        "trial_index": 1,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 207,
+        "verdict": "DEAD",
+        "summary": {
+          "hypothesis_id": "H_20260702_001",
+          "family_key": "triptych_prior_2026_07",
+          "run_ts": "2026-07-14T14:26:38+00:00",
+          "frequency": "monthly",
+          "verdict": "DEAD",
+          "primary_horizon": "1m",
+          "mean_ic": -0.0034,
+          "nw_t": -0.239,
+          "deflated_sharpe": -0.0737,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-harness-v4/Data/loop/harness_runs/H_20260702_001_20260714_072638.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260718_001": {
+      "register_line": 208,
+      "registration": {
+        "ts": "2026-07-18T17:44:27",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260718_001",
+        "author": "agent-claude",
+        "model_id": "unknown",
+        "model_version": "unknown",
+        "session_id": "unknown",
+        "archetype": "other",
+        "family_key": "llm_1m_country_rotation",
+        "canonical_family": "llm_1m_country_rotation",
+        "primary_horizon": 1,
+        "mechanism_text": "Blinded frozen LLM (deepseek-v4-pro, temp 0, json_object) reads monthly country dossiers (identity tokens, t_index-only, z-score levels stripped) and emits six graded sub-scores (valuation, momentum_quality, macro_risk, credit_stress, policy_trajectory, factor_alignment) plus a point estimate; a walk-forward ridge (annual January refits, expanding window, alpha=100, 7 features incl. point estimate) maps them to next-month cross-sectional excess returns across 34 T2 countries. Mechanism: an economically-literate frozen reader synthesizes multi-field evidence into consistent graded judgments whose stable linear combination predicts relative country returns. Burn-in 2005-2009 mini-walk-forward mean rank IC +0.0407 (NW-t 1.75). Arm A of two charged OOS trials in family llm_1m_country_rotation (17 burn-in arms recorded against the family budget).",
+        "signal_spec": {
+          "table": "experiments/llm1m (Data/work runs/score_full_01_dspro)",
+          "variable": "LLM1M_SUBSCORE_RIDGE",
+          "source": "deepseek-v4-pro sub-scores + walk-forward ridge (alpha=100, 7f)"
+        },
+        "signal_spec_hash": "6d5258b41e9f73fafe0ff18446fcfd16820894d6722bcd8eeba2193daf24bb4e",
+        "trial_index": 1,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 210,
+        "verdict": "DEAD",
+        "summary": {
+          "hypothesis_id": "H_20260718_001",
+          "family_key": "llm_1m_country_rotation",
+          "run_ts": "2026-07-19T00:48:35.569169+00:00",
+          "frequency": "monthly",
+          "verdict": "DEAD",
+          "primary_horizon": "1m",
+          "mean_ic": 0.0017,
+          "nw_t": 0.121,
+          "deflated_sharpe": -0.1547,
+          "psr": 0.0152,
+          "n_trials_family": 19,
+          "ls_full": {
+            "months": 197,
+            "ann_return": -0.0043,
+            "ann_vol": 0.06,
+            "sharpe": -0.071,
+            "hit_rate": 0.477,
+            "cum_return": -0.0953
+          },
+          "permutation_canary_pass": false,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-llm1m/Data/work/experiments/llm1m/runs/score_full_01_dspro/evaluation/evaluation_summary.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260718_002": {
+      "register_line": 209,
+      "registration": {
+        "ts": "2026-07-18T17:44:27",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260718_002",
+        "author": "agent-claude",
+        "model_id": "unknown",
+        "model_version": "unknown",
+        "session_id": "unknown",
+        "archetype": "other",
+        "family_key": "llm_1m_country_rotation",
+        "canonical_family": "llm_1m_country_rotation",
+        "primary_horizon": 1,
+        "mechanism_text": "Histogram gradient-boosted trees (fixed ex-ante hyperparameters: max_iter=300, max_leaf_nodes=15, lr=0.05, min_samples_leaf=50, l2=1.0) fit walk-forward (annual January refits, expanding window) on the 39 raw numeric fields of the same monthly blinded dossiers predict next-month cross-sectional excess returns across 34 T2 countries. Mechanism: nonlinear interactions among valuation, momentum, credit and rates z-scores carry exploitable 1-month relative-return signal that a 6-bucket LLM sub-score compression cannot express. Burn-in 2005-2009 mini-walk-forward mean rank IC +0.0759 (NW-t 3.62); selected over tabular-ridge (+0.0733) by pre-registered rule. Arm B of two charged OOS trials in family llm_1m_country_rotation.",
+        "signal_spec": {
+          "table": "experiments/llm1m (Data/work runs/full_2026_07_17 dossiers)",
+          "variable": "TAB1M_HGB_DOSSIER",
+          "source": "HGB(max_iter=300,leaves=15,lr=0.05,minleaf=50,l2=1.0) walk-forward"
+        },
+        "signal_spec_hash": "e1aa1697d087518f2f6bf3066ed5a32047bab4fe8d3d89a8ca3eab0006aa7354",
+        "trial_index": 2,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 211,
+        "verdict": "WATCH",
+        "summary": {
+          "hypothesis_id": "H_20260718_002",
+          "family_key": "llm_1m_country_rotation",
+          "run_ts": "2026-07-19T00:48:35.571493+00:00",
+          "frequency": "monthly",
+          "verdict": "WATCH",
+          "primary_horizon": "1m",
+          "mean_ic": 0.027,
+          "nw_t": 1.662,
+          "deflated_sharpe": -0.0925,
+          "psr": 0.096,
+          "n_trials_family": 19,
+          "ls_full": {
+            "months": 197,
+            "ann_return": 0.0095,
+            "ann_vol": 0.0658,
+            "sharpe": 0.145,
+            "hit_rate": 0.503,
+            "cum_return": 0.1285
+          },
+          "permutation_canary_pass": true,
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-llm1m/Data/work/experiments/llm1m/runs/tabular_oos/evaluation/evaluation_summary.json"
+        }
+      },
+      "latest_status": "watch"
+    },
+    "H_20260727_001": {
+      "register_line": 212,
+      "registration": {
+        "ts": "2026-07-27T12:27:11",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260727_001",
+        "author": "fable-session-gdelt-20260727",
+        "archetype": "other",
+        "family_key": "gdelt_narrative_v2",
+        "mechanism_text": "Stage 1a of gdelt_narrative_v2 (lineage: LLM-1M reserved news_sentiment slot + 2026-07-27 freshness audit). Supervised tabular kill-criterion baseline on the PRODUCTION 93-variable ASADO gdelt_panel (treated keep-list, 34 buckets, 2015-09+), augmented with trailing-12M mean and current-minus-12M-mean transforms per variable (motivated by T2 finding that 12m lookback best predicts factor returns). Walk-forward HGB and ridge with fixed ex-ante hyperparameters, expanding window, annual refit; target = next-month cross-sectional rank of bucket return in excess of 34-bucket EW mean. Alignment verified empirically 2026-07-27: gdelt_panel and 1MRet both reference-month stamped (attention/|ret| cross-corr asymmetry 0.100 contemporaneous vs 0.007 lead). This arm is the bar any text/chain/LLM stage must beat incrementally. Design window only; lockbox untouched until separately registered.",
+        "signal_spec": {
+          "table": "gdelt_panel",
+          "variable": "KEEPLIST_93_HGB_WALKFWD",
+          "source": "asado_gdelt",
+          "transforms": "12m_trailing_mean_and_delta",
+          "model": "HGB+ridge fixed ex-ante",
+          "target": "next_month_rank_excess_vs_EW34",
+          "design_window": "2017-01..2021-12",
+          "lockbox": "2022-01..2026-06 UNTOUCHED"
+        },
+        "signal_spec_hash": "9c148d265f82e9a2063b065fd520fd75e519cda9868d63d00de314e18ce1fdd1",
+        "trial_index": 1,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 214,
+        "verdict": "DEAD",
+        "summary": {
+          "hypothesis_id": "H_20260727_001",
+          "family_key": "gdelt_narrative_v2",
+          "run_ts": "2026-07-27T19:30:53.610378+00:00",
+          "frequency": "monthly",
+          "verdict": "DEAD",
+          "scope": "design_window_2017_2021_only_lockbox_untouched",
+          "primary_horizon": "1m",
+          "arms": {
+            "1a_hgb": {
+              "mean_ic": -0.0189,
+              "nw_t": -0.74,
+              "canary_pass": false
+            },
+            "1a_ridge": {
+              "mean_ic": 0.0142,
+              "nw_t": 0.66,
+              "canary_pass": false
+            }
+          },
+          "note": "Design-window kill: neither HGB nor ridge on the 93-var treated keep-list panel (+12m transforms) clears the permutation-canary p95 (~0.028). Supervised mining of the production GDELT semantic scores adds nothing at the monthly horizon; consistent with the known unsupervised IC plateau.",
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/GDELT/output/analysis/stage1_tabular/run_20260727/results.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260727_002": {
+      "register_line": 213,
+      "registration": {
+        "ts": "2026-07-27T12:27:11",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260727_002",
+        "author": "fable-session-gdelt-20260727",
+        "archetype": "other",
+        "family_key": "gdelt_narrative_v2",
+        "mechanism_text": "Stage 1b of gdelt_narrative_v2: same walk-forward design as 1a but on the WIDE untreated feature surface - the ~1,100 numeric columns of country_signal_monthly_deep_treated.parquet (themes, GCAM, events) restricted to the 34 T2 buckets via the PRICE_BUCKETS iso3 map (US buckets share USA news features, China buckets share CHN). No lookback transforms (breadth-vs-depth contrast with 1a is part of the design). Tests whether the keep-list pruning discarded predictive information. Same target, alignment, canaries, and lockbox discipline as 1a.",
+        "signal_spec": {
+          "table": "country_signal_monthly_deep_treated.parquet",
+          "variable": "WIDE_DEEP_RAW_HGB_WALKFWD",
+          "source": "gdelt_deep_treated",
+          "transforms": "none (raw wide arm)",
+          "model": "HGB fixed ex-ante",
+          "target": "next_month_rank_excess_vs_EW34",
+          "design_window": "2017-01..2021-12",
+          "lockbox": "2022-01..2026-06 UNTOUCHED"
+        },
+        "signal_spec_hash": "c5bfb7fa71ddfd114b79cc5b418280292fbada26441356c4fc7bb46bc4e69550",
+        "trial_index": 2,
+        "status": "registered"
+      },
+      "latest_verdict": {
+        "line": 215,
+        "verdict": "DEAD",
+        "summary": {
+          "hypothesis_id": "H_20260727_002",
+          "family_key": "gdelt_narrative_v2",
+          "run_ts": "2026-07-27T19:30:53.610574+00:00",
+          "frequency": "monthly",
+          "verdict": "DEAD",
+          "scope": "design_window_2017_2021_only_lockbox_untouched",
+          "primary_horizon": "1m",
+          "arms": {
+            "1b_hgb": {
+              "mean_ic": -0.0328,
+              "nw_t": -2.22,
+              "canary_pass": false
+            }
+          },
+          "note": "Design-window kill: wide 1,133-col deep panel HGB IC -0.033 (NW-t -2.22), canary FAIL. Significantly NEGATIVE t recorded-not-claimed (classic wide-panel overfit inversion; no sign-flip retest without a new charged trial). Keep-list pruning discarded no monthly-horizon signal.",
+          "result_file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/GDELT/output/analysis/stage1_tabular/run_20260727/results.json"
+        }
+      },
+      "latest_status": "rejected"
+    },
+    "H_20260727_003": {
+      "register_line": 216,
+      "registration": {
+        "ts": "2026-07-27T12:37:04",
+        "event": "hyp_register",
+        "hypothesis_id": "H_20260727_003",
+        "author": "fable-session-gdelt-20260727",
+        "archetype": "other",
+        "family_key": "gdelt_narrative_v2",
+        "mechanism_text": "Stage 2 of gdelt_narrative_v2: chain-age narrative freshness. Markets underreact to new information and overreact to repeated information; the freshness axis is measured by STORY-CHAIN AGE (birth-dated lexical story chains), the component validated by the 2026-07-27 three-episode measurement audit (embedding-novelty variant failed the same audit and is excluded). Chain-age composition (fresh/stale shares), source-breadth-weighted chain birth rate, and tone conditioned on chain age (incl. the fresh-to-stale migration observed in Argentina PASO) are aggregated monthly and evaluated with the identical pre-registered walk-forward harness as trials 1-2. All clustering thresholds frozen in signal_spec BEFORE any feature was computed. Burden: canary pass + deflated Sharpe vs family trial count (3). Trials 1-2 (semantic-score panels) are DEAD in design window; this trial tests information those panels cannot contain.",
+        "signal_spec": {
+          "source": "bq gdelt_stage2.article_pairs (31 countries, 2015-02-18..2026-07-27)",
+          "clustering": "lexical PIT-safe: same-day exact+minhash Jaccard>=0.5 union-find; cross-day chain link Jaccard>=0.35 on capped token signature, 7d window, 60d absorption cap, single-source chains flagged template and excluded from shares",
+          "daily_features": [
+            "n_articles",
+            "log_articles",
+            "chain_birth_rate",
+            "fresh_share_age_le2",
+            "stale_share_age_ge14",
+            "tone_all",
+            "tone_fresh",
+            "tone_stale",
+            "tone_fresh_minus_stale",
+            "mean_chain_age",
+            "singleton_share",
+            "translated_share",
+            "multi_source_born_share"
+          ],
+          "monthly_agg": "calendar-month mean + last-7-day mean per feature; then 12m trailing mean and delta (1a convention)",
+          "model": "HGB + ridge, identical fixed ex-ante hyperparameters as trials 1-2",
+          "target": "next_month_rank_excess_vs_EW34",
+          "design_window": "2017-01..2021-12",
+          "lockbox": "2022-01..2026-06 UNTOUCHED"
+        },
+        "signal_spec_hash": "fffc4040894f42318eca87b5d2902de9181eb5038af923517ffadadb3cb6fac2",
+        "trial_index": 3,
+        "status": "registered"
+      },
+      "latest_verdict": null,
+      "latest_status": null
+    }
+  },
+  "methodology_events": [
+    {
+      "ts": "2026-07-13T14:35:00-07:00",
+      "event": "methodology_register",
+      "experiment_id": "ME_20260713_001",
+      "author": "claude-fable-5",
+      "experiment_name": "2026_07_flip_autopsy",
+      "experiment_dir": "experiments/2026_07_flip_autopsy",
+      "hypothesis_text": "The network_spillover family's post-2024 negative IC is explained by exactly one of: (a) cyclical crowding, (b) regime interaction (real rate / USD trend / dispersion / EM-DM flows), or (c) construction drift in the nightly rebuilds.",
+      "gate_ladder": "Step(i) drift: frozen-vintage vs recompute corr>=0.95 + PIT/non-PIT + constant-universe slices; Step(ii) regime: C1 FDR-significant axis pre-2024 AND C2 counterfactual predicts the bad spell beating 95% of placebo AND C3 observed within 90% CI; Step(iii) crowding: S1 inflow build-up z>=1 2021-23 with reversal AND S2 losses concentrated in high-inflow half; else INCONCLUSIVE -> R-A price gate.",
+      "prd_path": "experiments/2026_07_flip_autopsy/PRD.md",
+      "pre_registered": true,
+      "status": "registered"
+    },
+    {
+      "ts": "2026-07-13T18:55:00-07:00",
+      "event": "methodology_verdict",
+      "experiment_id": "ME_20260713_001",
+      "verdict": "INCONCLUSIVE",
+      "died_at_gate": null,
+      "gate_results": [
+        "(c) drift REJECTED: recompute-vs-frozen family IC corr 0.996; PIT and non-PIT variants both flip; constant-universe still flips; coverage flat 2023 vs 2025",
+        "(b) regime REJECTED: no axis FDR-significant pre-2024 (best NW-t 1.29); counterfactual predicts +0.031 vs observed -0.011 (outside 90% CI); only 72% of placebos beaten",
+        "(a) crowding NOT CONFIRMED: S1 FAIL (2021-23 inflow z +0.15, need >=1.0); S2 weak pass (-0.91% vs -0.70%/mo)"
+      ],
+      "evidence_path": "experiments/2026_07_flip_autopsy/results/RESULTS.md",
+      "lesson": "The flip is real (family IC +0.023 NW-t 4.0 2012-23 -> -0.012 post-2024, LS break 2024-04), market-based, state-independent; slow horizons died first; the walk-forward combiner degraded last (negative only 2026H1). Default action: R-A price gate (two consecutive positive family month-ends re-arm). Lag-1 addendum (a6): ~half the pre-2024 measured IC was same-close/timezone echo (lag-1 pre +0.012 NW-t 2.2); the reachable half is what went negative.",
+      "verdict_date": "2026-07-13",
+      "status": "inconclusive"
+    },
+    {
+      "ts": "2026-07-13T19:20:00-07:00",
+      "event": "methodology_register",
+      "experiment_id": "ME_20260713_002",
+      "author": "claude-fable-5",
+      "experiment_name": "2026_07_dispersion_throttle",
+      "experiment_dir": "experiments/2026_07_dispersion_throttle",
+      "hypothesis_text": "Scaling the daily combiner LS book's gross exposure inversely to smoothed cross-sectional dispersion improves risk-adjusted and drawdown-adjusted returns without selling skew (R1 of regime3_candidates.md).",
+      "gate_ladder": "G1 Sharpe delta >= +0.10; G2 shallower MDD; G3 monthly skew loss <= 0.10; G4 beats identical-shape vol-target control by >= 0.05; G5 beats 95% of 500 circular-shift placebos. ALL required for ALIVE.",
+      "prd_path": "experiments/2026_07_dispersion_throttle/PRD.md",
+      "pre_registered": true,
+      "status": "registered"
+    },
+    {
+      "ts": "2026-07-13T19:35:00-07:00",
+      "event": "methodology_verdict",
+      "experiment_id": "ME_20260713_002",
+      "verdict": "DEAD",
+      "died_at_gate": "G3_skew",
+      "gate_results": [
+        "G1 FAIL: Sharpe delta -0.009",
+        "G2 pass: MDD -12.6% vs -13.2%",
+        "G3 FAIL: monthly skew +2.99 -> +1.29 (sold 1.70 skew)",
+        "G4 FAIL: does not beat vol-target control (+0.04 < +0.05); control itself useless (skew -> +0.57)",
+        "G5 FAIL: beats only 78.8% of placebos",
+        "CORRECTION (Arjun challenge, same day): originally-reported levels (Sharpe 3.26 gross) were a lag-0/1d-hold paper construct at asynchronous local closes (execution fantasy + timezone echo). Decomposition: lag0/1d 3.27 -> lag0/5d 1.76 (matches harness 1.774) -> lag1/1d 1.06 -> lag1/5d 0.97. DEAD re-confirmed on the realistic lag-1 book (delta -0.061, skew still down, loses to vol-target)."
+      ],
+      "evidence_path": "experiments/2026_07_dispersion_throttle/results/RESULTS.md",
+      "lesson": "Inverse-state gross throttles (dispersion OR own-vol) on positively-skewed cross-sectional LS books sell convexity and buy nothing - replicates the AA engine vol-conditioning rejection on a second engine class. ALSO: harness lag-0 ICs are a measurement device; portfolio LEVELS from lag-0 books are never results.",
+      "verdict_date": "2026-07-13",
+      "status": "dead"
+    }
+  ]
+}

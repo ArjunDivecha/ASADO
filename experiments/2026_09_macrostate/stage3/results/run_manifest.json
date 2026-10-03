@@ -1,0 +1,17 @@
+{
+  "experiment_id": "M_20260906_001",
+  "first_forecast": "2018-07-01",
+  "last_forecast": "2026-07-01",
+  "forecast_months": 97,
+  "minimum_markets": 32,
+  "maximum_markets": 33,
+  "fits": 9,
+  "statistical_gate": false,
+  "rows": 3154,
+  "source_status": "conditional vendor-history reconstruction; monthly index-return proxy",
+  "protocol_sha256": "ccb821beb39463c3cb01e98192b34fd87a3e98d55a8783fde4778939f5405221",
+  "input_hashes": {
+    "features.parquet": "8e14fab87d2fe77e7e11a73f71c580bbb1a8960f900324627308d6f373e9893b",
+    "returns.parquet": "8f723c187c01afba1e766f841a3967b678d2b4d40556bf463061f5da14790d8e"
+  }
+}

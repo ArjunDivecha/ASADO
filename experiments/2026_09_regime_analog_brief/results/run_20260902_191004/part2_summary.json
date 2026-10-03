@@ -1,0 +1,18 @@
+{
+  "anchor": "2026-08-31",
+  "anchor_z": {
+    "OIL_3M_z": -1.357,
+    "UST10_CHG3M_z": 0.751,
+    "BREADTH_3M_z": 0.316,
+    "TECHLEAD_3M_z": -0.697,
+    "DISP_3M_z": 0.191,
+    "VOL_z": -0.651
+  },
+  "oil_stale": true,
+  "brent_last_month": "2026-07",
+  "inversion_now": 0.05406006674082313,
+  "n_months_A": 3,
+  "n_months_A3": 27,
+  "n_months_B": 24,
+  "n_months_C": 50
+}

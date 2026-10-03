@@ -1,0 +1,212 @@
+[
+  {
+    "db": "warehouse",
+    "table": "bloomberg_factors",
+    "seconds": 0.026187165989540517
+  },
+  {
+    "db": "warehouse",
+    "table": "demographics_dip",
+    "seconds": 0.012264124932698905
+  },
+  {
+    "db": "warehouse",
+    "table": "extended_factors",
+    "seconds": 0.023295250022783875
+  },
+  {
+    "db": "warehouse",
+    "table": "external_factors",
+    "seconds": 0.0228881249204278
+  },
+  {
+    "db": "warehouse",
+    "table": "feature_panel",
+    "seconds": 0.09206495794933289
+  },
+  {
+    "db": "warehouse",
+    "table": "feature_panel_observed",
+    "seconds": 0.08211779093835503
+  },
+  {
+    "db": "warehouse",
+    "table": "feature_panel_t2",
+    "seconds": 0.07765324995853007
+  },
+  {
+    "db": "warehouse",
+    "table": "gdelt_factors_daily",
+    "seconds": 0.059139000019058585
+  },
+  {
+    "db": "warehouse",
+    "table": "gdelt_panel",
+    "seconds": 0.02713920909445733
+  },
+  {
+    "db": "warehouse",
+    "table": "imf_factors",
+    "seconds": 0.023469958105124533
+  },
+  {
+    "db": "warehouse",
+    "table": "jst_macrohistory",
+    "seconds": 0.016137958969920874
+  },
+  {
+    "db": "warehouse",
+    "table": "macrostructure_factors",
+    "seconds": 0.022031791042536497
+  },
+  {
+    "db": "warehouse",
+    "table": "normalized_panel",
+    "seconds": 0.030188916949555278
+  },
+  {
+    "db": "warehouse",
+    "table": "t2_factors_daily",
+    "seconds": 0.3376824170118198
+  },
+  {
+    "db": "warehouse",
+    "table": "t2_factors_monthly_from_daily",
+    "seconds": 0.0981095420429483
+  },
+  {
+    "db": "warehouse",
+    "table": "t2_levels_daily",
+    "seconds": 0.12636470806319267
+  },
+  {
+    "db": "warehouse",
+    "table": "t2_master",
+    "seconds": 0.03560549998655915
+  },
+  {
+    "db": "warehouse",
+    "table": "t2_raw",
+    "seconds": 0.024890584056265652
+  },
+  {
+    "db": "warehouse",
+    "table": "unified_panel",
+    "seconds": 0.05823087505996227
+  },
+  {
+    "db": "loop",
+    "table": "combiner_scores",
+    "seconds": 0.011925749946385622
+  },
+  {
+    "db": "loop",
+    "table": "combiner_scores_daily",
+    "seconds": 0.021128958906047046
+  },
+  {
+    "db": "loop",
+    "table": "consensus_daily",
+    "seconds": 0.02289608307182789
+  },
+  {
+    "db": "loop",
+    "table": "consensus_signals",
+    "seconds": 0.012803958030417562
+  },
+  {
+    "db": "loop",
+    "table": "eco_surprise_monthly",
+    "seconds": 0.014972042059525847
+  },
+  {
+    "db": "loop",
+    "table": "eco_surprise_signals",
+    "seconds": 0.013866207911632955
+  },
+  {
+    "db": "loop",
+    "table": "etf_flow_signals",
+    "seconds": 0.023410832975059748
+  },
+  {
+    "db": "loop",
+    "table": "etf_flows",
+    "seconds": 0.022181416978128254
+  },
+  {
+    "db": "loop",
+    "table": "foreign_flows_daily",
+    "seconds": 0.016795167000964284
+  },
+  {
+    "db": "loop",
+    "table": "graph_features_daily",
+    "seconds": 0.025021790992468596
+  },
+  {
+    "db": "loop",
+    "table": "graph_features_pit_daily",
+    "seconds": 0.030486916075460613
+  },
+  {
+    "db": "loop",
+    "table": "leadlag_features_daily",
+    "seconds": 0.02012908400502056
+  },
+  {
+    "db": "loop",
+    "table": "market_implied_daily",
+    "seconds": 0.0268727500224486
+  },
+  {
+    "db": "loop",
+    "table": "market_implied_signals",
+    "seconds": 0.024034750065766275
+  },
+  {
+    "db": "loop",
+    "table": "release_events_signals",
+    "seconds": 0.01849666703492403
+  },
+  {
+    "db": "loop",
+    "table": "similarity_features_daily",
+    "seconds": 0.021225833101198077
+  },
+  {
+    "db": "loop",
+    "table": "sov_ratings_monthly",
+    "seconds": 0.012394375051371753
+  },
+  {
+    "db": "loop",
+    "table": "sovereign_daily",
+    "seconds": 0.024115375010296702
+  },
+  {
+    "db": "loop",
+    "table": "sovereign_signals",
+    "seconds": 0.021555333980359137
+  },
+  {
+    "db": "loop",
+    "table": "triptych_signal_monthly",
+    "seconds": 0.012650499935261905
+  },
+  {
+    "db": "loop",
+    "table": "valuation_monthly",
+    "seconds": 0.023043875000439584
+  },
+  {
+    "db": "loop",
+    "table": "weo_revisions",
+    "seconds": 0.012373249977827072
+  },
+  {
+    "db": "loop",
+    "table": "weo_vintages",
+    "seconds": 0.01245462498627603
+  }
+]

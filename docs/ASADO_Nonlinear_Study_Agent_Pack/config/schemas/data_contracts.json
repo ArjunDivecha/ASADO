@@ -1,0 +1,131 @@
+{
+  "schema_version": "1.0",
+  "description": "Minimum logical field contracts. Implementation must assign concrete Arrow/SQL types and validation.",
+  "records": {
+    "feature_cell": {
+      "key": [
+        "origin_at",
+        "market_id",
+        "primitive_id",
+        "feature_version"
+      ],
+      "required": [
+        "value",
+        "value_status",
+        "units",
+        "historically_available_at",
+        "observation_at",
+        "captured_at",
+        "vintage_id",
+        "lineage_id"
+      ],
+      "invariants": [
+        "historically_available_at <= origin_at for eligible cells",
+        "value finite or explicitly unavailable"
+      ]
+    },
+    "ex_ante_row": {
+      "key": [
+        "origin_at",
+        "market_id",
+        "feature_version"
+      ],
+      "required": [
+        "feature_ready",
+        "exclusion_reason",
+        "calendar_version",
+        "planned_entry_at",
+        "planned_exit_at",
+        "feature_hash"
+      ],
+      "invariants": [
+        "eligibility does not depend on future outcome existence",
+        "planned_entry_at > origin_at"
+      ]
+    },
+    "label": {
+      "key": [
+        "origin_at",
+        "market_id",
+        "horizon",
+        "label_version"
+      ],
+      "required": [
+        "value",
+        "status",
+        "entry_at",
+        "exit_at",
+        "label_available_at",
+        "source_hash"
+      ],
+      "invariants": [
+        "do not silently drop unresolved mature label",
+        "training only when all origin labels mature"
+      ]
+    },
+    "forecast": {
+      "key": [
+        "study_id",
+        "run_id",
+        "origin_at",
+        "market_id",
+        "model_id",
+        "horizon"
+      ],
+      "required": [
+        "prediction",
+        "issued_at",
+        "model_fit_at",
+        "fit_id",
+        "feature_hash",
+        "registration_hash",
+        "status"
+      ],
+      "forbidden": [
+        "actual_return",
+        "future_return",
+        "realized_label"
+      ],
+      "invariants": [
+        "immutable after issue",
+        "live issue before entry to count as on-time"
+      ]
+    },
+    "fit": {
+      "key": [
+        "fit_id"
+      ],
+      "required": [
+        "model_id",
+        "config_id",
+        "fit_cutoff",
+        "train_rows_hash",
+        "max_train_label_available_at",
+        "preprocess_hash",
+        "model_hash",
+        "support_audit_hash",
+        "seed",
+        "status"
+      ],
+      "invariants": [
+        "max_train_label_available_at < fit_cutoff"
+      ]
+    },
+    "event": {
+      "key": [
+        "event_id"
+      ],
+      "required": [
+        "event_at",
+        "actor",
+        "event_type",
+        "previous_event_hash",
+        "payload_hash",
+        "reason"
+      ],
+      "invariants": [
+        "append-only"
+      ]
+    }
+  }
+}

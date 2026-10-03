@@ -1,0 +1,427 @@
+{
+  "schema_version": "1.0",
+  "status": "SPECIFICATION_NOT_EXECUTED",
+  "source": "ASADO_Nonlinear_Study_PRD.md section 19",
+  "tests": [
+    {
+      "id": "T01",
+      "test": "Read-only source run",
+      "expected_result": "Source tables/files unchanged",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T02",
+      "test": "Mid-collection snapshot",
+      "expected_result": "Snapshot rejected or coordinated to one completed watermark",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T03",
+      "test": "Unknown source selector",
+      "expected_result": "Registration/build blocked; no guessed substitute",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T04",
+      "test": "Historical truncation",
+      "expected_result": "Features at t equal build using only available-at-t data",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T05",
+      "test": "Future append",
+      "expected_result": "Earlier features and issued predictions unchanged",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T06",
+      "test": "Mutated future target",
+      "expected_result": "Earlier features/masks/fits unaffected until that label can legitimately mature",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T07",
+      "test": "Forward-target alias and renamed descendant",
+      "expected_result": "Both rejected by lineage allowlist/denylist",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T08",
+      "test": "Weekend padded T2 data",
+      "expected_result": "No invented trading-session return observations",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T09",
+      "test": "Newest independent calendar date",
+      "expected_result": "Latest valid session is retained without forward returns",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T10",
+      "test": "Cross-market holiday",
+      "expected_result": "Entry and H-session exit move correctly",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T11",
+      "test": "Daylight-saving/close mapping",
+      "expected_result": "UTC close changes correctly; entry strictly follows origin",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T12",
+      "test": "USD index versus local index",
+      "expected_result": "Correct conversion once, never twice",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T13",
+      "test": "Future/unknown terminal mark",
+      "expected_result": "No retroactive row deletion or zero-return fill",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T14",
+      "test": "Delayed release",
+      "expected_result": "First eligible feature moves with release delay",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T15",
+      "test": "Revised macro/edge without vintage",
+      "expected_result": "Primary feature blocked despite arbitrary lag",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T16",
+      "test": "Next-calendar-year consensus rollover",
+      "expected_result": "No spurious revision from a different forecast year",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T17",
+      "test": "Missing consensus feed",
+      "expected_result": "Missing is not zero revision or no-event evidence",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T18",
+      "test": "Genuine unchanged consensus",
+      "expected_result": "Valid carried state; arrival count stays zero",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T19",
+      "test": "Reversed FX quotation",
+      "expected_result": "Depreciation-premium and carry signs follow manifest",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T20",
+      "test": "Graph self/duplicate entity",
+      "expected_result": "Excluded once; no double weighting",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T21",
+      "test": "Missing graph mass",
+      "expected_result": "Fixed 80%/three-entity support rule enforced",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T22",
+      "test": "Wrong graph direction",
+      "expected_result": "Contract mismatch detected before modelling",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T23",
+      "test": "Future futures back-adjustment",
+      "expected_result": "Historical-return invariance failure blocks input",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T24",
+      "test": "Global normalization",
+      "expected_result": "Global series normalized once and not demeaned to zero",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T25",
+      "test": "Rolling zero scale",
+      "expected_result": "Common unavailable status, no infinity or model-specific fix",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T26",
+      "test": "Fold preprocessing",
+      "expected_result": "Future validation/test values do not change fitted scaler",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T27",
+      "test": "Target maturity across markets",
+      "expected_result": "Whole origin purged until its latest included label is available",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T28",
+      "test": "Fold assignment",
+      "expected_result": "No market at one origin appears in multiple fold roles",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T29",
+      "test": "Eight-year/quarterly boundary fixtures",
+      "expected_result": "Correct rolling dates, quarterly fits, annual selection",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T30",
+      "test": "Row duplication with split weights",
+      "expected_result": "Ridge solution and weighted loss unchanged",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T31",
+      "test": "Hand-derived ridge",
+      "expected_result": "Estimator matches weighted closed form",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T32",
+      "test": "Quadratic expansion",
+      "expected_result": "Exactly 152 ordered predictors, no duplicate intercept",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T33",
+      "test": "Automatic estimator early stopping",
+      "expected_result": "Disabled; actual n_iter matches selected count",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T34",
+      "test": "Accidental country categorical column",
+      "expected_result": "Rejected by schema before fit",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T35",
+      "test": "Exported tree prediction parity",
+      "expected_result": "Traversal reproduces estimator predictions to tolerance",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T36",
+      "test": "Large row-count, short-episode leaf",
+      "expected_result": "Rejected despite satisfying min_samples_leaf",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T37",
+      "test": "Unsupported outer refit",
+      "expected_result": "Study blocked; quarter not silently dropped",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T38",
+      "test": "Parsimony rule tie",
+      "expected_result": "Deterministic pre-specified configuration wins",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T39",
+      "test": "B0 and date weighting",
+      "expected_result": "Equal-origin mean reproduced on ragged panel",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T40",
+      "test": "Constant forecasts/outcomes",
+      "expected_result": "IC=0 with flag, not omitted origin",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T41",
+      "test": "Paired comparison sample",
+      "expected_result": "Row, label, and split hashes identical",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T42",
+      "test": "Bootstrap null centering",
+      "expected_result": "Matches independently computed one-sided test fixture",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T43",
+      "test": "Missing-origin bootstrap blocks",
+      "expected_result": "Time gaps preserved; no compressed outage",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T44",
+      "test": "Holm correction",
+      "expected_result": "Known p-value fixture reproduced",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T45",
+      "test": "Real outer visibility during replay",
+      "expected_result": "No performance summaries printed or consumed",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T46",
+      "test": "Calibration labels",
+      "expected_result": "Genuine outer outcomes never read by pseudo-label generator",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T47",
+      "test": "Known interaction injection",
+      "expected_result": "Signal scale and nonlinearity match frozen generator",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T48",
+      "test": "Interrupted run and resume",
+      "expected_result": "Identical complete artifacts, no duplicated forecasts",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T49",
+      "test": "Changed config on resume",
+      "expected_result": "Cached artifacts rejected by hash mismatch",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T50",
+      "test": "Portfolio ties",
+      "expected_result": "Fractional tied membership; all-constant score has no active exposure",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T51",
+      "test": "Overlapping cohorts",
+      "expected_result": "Capital, cash, entries/exits, and daily marks reconcile",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T52",
+      "test": "Portfolio uses future labels as daily returns",
+      "expected_result": "Explicit failure; daily P&L must come from marked holdings",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T53",
+      "test": "Native harness clock mismatch",
+      "expected_result": "Native qualification blocked, not relabeled",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T54",
+      "test": "Live late forecast",
+      "expected_result": "Flagged late; never counted as on-time issuance",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T55",
+      "test": "Forecast/outcome immutability",
+      "expected_result": "Outcomes appended separately; original forecasts unchanged",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T56",
+      "test": "Default automation permissions",
+      "expected_result": "No scheduler activation, broker orders, or source refresh",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T57",
+      "test": "Independent metrics reproduction",
+      "expected_result": "Stored predictions regenerate all headline statistics",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T58",
+      "test": "Protocol amendment after exposure",
+      "expected_result": "New version/event required; old results preserved",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T59",
+      "test": "Unknown installed tree internals",
+      "expected_result": "Adapter fails closed rather than inventing leaf assignments",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    },
+    {
+      "id": "T60",
+      "test": "Registration with unresolved values",
+      "expected_result": "Freeze command returns blocking errors",
+      "status": "NOT_IMPLEMENTED",
+      "required": true
+    }
+  ]
+}

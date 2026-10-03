@@ -1,0 +1,7 @@
+{
+  "matched_complete_windows": 10181,
+  "unmatched_or_immature": 0,
+  "max_absolute_error": 1.5543122344752192e-15,
+  "within_1e-8": 10181,
+  "note": "Snapshot arithmetic only; does not certify source/FX/availability or future outcome handling."
+}

@@ -1,0 +1,30 @@
+{
+  "unit_tests_passed": 24,
+  "end_to_end_checks": {
+    "gdp_expectation_real_prefix_invariant": true,
+    "gdp_revision_3m_real_prefix_invariant": true,
+    "cpi_expectation_real_prefix_invariant": true,
+    "cpi_revision_3m_real_prefix_invariant": true,
+    "canonical_returns_reconcile": true,
+    "no_future_features": true,
+    "14_primitives": true,
+    "no_model_fitted": true,
+    "contributions_reconcile": true,
+    "growth_composite_mask": true,
+    "inflation_composite_mask": true,
+    "policy_tightness_composite_mask": true,
+    "financial_stress_composite_mask": true,
+    "seed_unchanged": true
+  },
+  "all_passed": true,
+  "runtime": "3.14.3 (main, Feb  3 2026, 15:32:20) [Clang 17.0.0 (clang-1700.6.3.2)]",
+  "input_snapshot": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/experiments/macrostate_stage12/inputs/manifest.json",
+  "prepared_inputs": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/experiments/macrostate_stage12/prepared",
+  "code_sha256": {
+    "verify.py": "e528f9ecc7ba9bbb19761b9a98280cb81d1fa3716bc5a8d68580dc5c92c1dd95",
+    "test_stage12.py": "b5781ecda27d1e10019544940d486d1aa036ea78de9114f57e53210f06faef44",
+    "evaluator.py": "f16b12b57b010d175bc860842d59d3710462fd9a426885e1e51c15aaab8b0e2f",
+    "prepare.py": "f2de9fdbfb3e1e7a45f3affde2c1d69153364080c977ed378981f6f4704363a2"
+  },
+  "contract_sha256": "dc6d4348474cc26eb5ef9b43bc96e95dd5d6494850f64ed7de50b26aa7647df9"
+}

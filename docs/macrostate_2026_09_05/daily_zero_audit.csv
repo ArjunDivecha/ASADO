@@ -1,0 +1,103 @@
+country,variable,n,zero_n,min_v,max_v
+India,Best PE,9745,2012,0.0,33.0862
+Japan,Shiller PE,9745,0,13.8662,67.3721
+Philippines,Shiller PE,9745,0,7.8746,38.7079
+Poland,Shiller PE,9745,4566,0.0,101.6766
+Indonesia,Best PE,9745,2291,0.0,23.9805
+Denmark,Tot Return Index,9745,0,1379.6732,29068.5604
+Taiwan,Tot Return Index,9745,0,128.9448,1996.3775
+Spain,Best PE,9745,2231,0.0,38.3682
+Korea,Shiller PE,9745,0,8.5285,57.7054
+Chile,Best PE,9745,2251,0.0,30.5473
+ChinaH,Tot Return Index,9745,0,13.0318,138.5352
+US SmallCap,Tot Return Index,9745,0,340.017,4368.4158
+ChinaH,Best PE,9745,2288,0.0,29.1382
+US SmallCap,Best PE,9745,0,0.0471,183.8186
+Spain,Tot Return Index,9745,0,209.7598,1461.1178
+Chile,Tot Return Index,9745,0,407.3792,4502.5293
+India,Shiller PE,9745,6302,0.0,42.712
+Indonesia,Shiller PE,9745,9745,0.0,0.0
+Philippines,Best PE,9745,2266,0.0,29.2977
+Poland,Best PE,9745,2251,0.0,23.7842
+Japan,Best PE,9745,1983,0.0,156.8116
+NASDAQ,Tot Return Index,9745,0,1118.1316,34630.1745
+Sweden,Tot Return Index,9745,0,1637.8372,15814.29
+Turkey,Shiller PE,9745,3656,0.0,11.701
+Thailand,Tot Return Index,9745,0,2.1507,42.1463
+ChinaA,Tot Return Index,9745,0,12.9567,139.4953
+Australia,Tot Return Index,9745,0,308.1522,5827.0442
+Saudi Arabia,Shiller PE,9745,7305,0.0,8.102
+Singapore,Shiller PE,9745,0,8.3584,30.5672
+Brazil,Best PE,9745,1150,0.0,61.0085
+Germany,Best PE,9745,117,0.0,142.5756
+France,Best PE,9745,2258,0.0,31.1442
+South Africa,Tot Return Index,9745,0,25.7897,434.4908
+Canada,Tot Return Index,9745,0,498.8225,6990.9219
+Switzerland,Tot Return Index,9745,0,1570.9145,11777.73
+Spain,Shiller PE,9745,9745,0.0,0.0
+Chile,Shiller PE,9745,5847,0.0,21.5331
+Korea,Best PE,9745,2309,0.0,21.8531
+Vietnam,Shiller PE,9745,9745,0.0,0.0
+U.S.,Shiller PE,9745,0,9.6637,40.6295
+Malaysia,Shiller PE,9745,9745,0.0,0.0
+Mexico,Shiller PE,9745,0,1.4522,3.9637
+South Africa,Best PE,9745,2131,0.0,23.1573
+Canada,Best PE,9745,0,7.7782,34.5967
+Switzerland,Best PE,9745,1152,0.0,43.9356
+Brazil,Tot Return Index,9745,0,294.9821,6598.1391
+Germany,Tot Return Index,9745,0,586.0791,3506.6843
+France,Tot Return Index,9745,0,742.2942,3291.0384
+Saudi Arabia,Best PE,9745,7088,0.0,34.9273
+Germany,Shiller PE,9745,0,11.6086,50.7525
+France,Shiller PE,9745,0,8.9725,32.0825
+Brazil,Shiller PE,9745,9745,0.0,0.0
+Vietnam,Tot Return Index,9745,2525,0.0,1359.933
+Singapore,Best PE,9745,2250,0.0,24.4311
+Malaysia,Tot Return Index,9745,0,53.5839,360.5601
+Mexico,Tot Return Index,9745,0,1380.0355,16299.658
+U.S.,Tot Return Index,9745,0,796.9582,12681.4833
+Thailand,Shiller PE,9745,9745,0.0,0.0
+Hong Kong,Best PE,9745,450,0.0,26.1412
+Australia,Shiller PE,9745,0,10.6729,23.3173
+ChinaA,Shiller PE,9745,732,0.0,105.2344
+Italy,Best PE,9745,2282,0.0,25.1282
+Turkey,Tot Return Index,9745,0,84254.309,1002216.5395
+U.K.,Best PE,9745,810,0.0,27.5381
+Netherlands,Best PE,9745,2237,0.0,32.5455
+Vietnam,Best PE,9745,3202,0.0,28.459849
+Canada,Shiller PE,9745,0,12.483,53.5113
+Switzerland,Shiller PE,9745,0,12.9498,35.1961
+South Africa,Shiller PE,9745,0,5.5879,23.2643
+Malaysia,Best PE,9745,2209,0.0,22.6431
+Mexico,Best PE,9745,0,7.6077,321.6226
+Saudi Arabia,Tot Return Index,9745,5354,0.0,485.6669
+U.S.,Best PE,9745,0,9.8885,31.7672
+Singapore,Tot Return Index,9745,0,428.331,5724.6652
+ChinaH,Shiller PE,9745,2,0.0,63.3672
+US SmallCap,Shiller PE,9745,0,10.812,27.4008
+Korea,Tot Return Index,9745,0,0.0936,3.7191
+Denmark,Shiller PE,9745,0,2.7003,10.0385
+Taiwan,Shiller PE,9745,0,10.5726,60.0314
+NASDAQ,Best PE,9745,683,0.0,157.6041
+Sweden,Best PE,9745,2232,0.0,24.4674
+Philippines,Tot Return Index,9745,0,3.8268,47.2645
+Poland,Tot Return Index,9745,0,176.6503,1715.154
+Japan,Tot Return Index,9745,0,1385.5223,5861.237
+Hong Kong,Shiller PE,9745,0,8.9542,29.615783
+Thailand,Best PE,9745,2251,0.0,29.763
+U.K.,Shiller PE,9745,9745,0.0,0.0
+Netherlands,Shiller PE,9745,0,7.2927,50.8344
+Italy,Shiller PE,9745,912,0.0,30.2388
+ChinaA,Best PE,9745,2299,0.0,43.7279
+Australia,Best PE,9745,2126,0.0,28.0014
+Denmark,Best PE,9745,2244,0.0,33.4092
+NASDAQ,Shiller PE,9745,683,0.0,59.7092
+Sweden,Shiller PE,9745,9745,0.0,0.0
+Taiwan,Best PE,9745,2309,0.0,34.948116
+India,Tot Return Index,9745,0,2.3891,55.1158
+Indonesia,Tot Return Index,9745,0,0.0335,1.1096
+Turkey,Best PE,9745,2288,0.0,14.9183
+Hong Kong,Tot Return Index,9745,0,564.3642,4819.6783
+Italy,Tot Return Index,9745,0,206.6182,833.0094
+U.K.,Tot Return Index,9745,0,829.1539,19711.4194
+Netherlands,Tot Return Index,9745,0,976.6913,9183.409

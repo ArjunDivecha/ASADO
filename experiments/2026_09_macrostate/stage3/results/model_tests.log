@@ -1,0 +1,13 @@
+test_future_input_changes_do_not_change_past_predictions (test_models.Models.test_future_input_changes_do_not_change_past_predictions) ... ok
+test_future_target_changes_do_not_change_early_predictions (test_models.Models.test_future_target_changes_do_not_change_early_predictions) ... ok
+test_maturity_exact_boundary (test_models.Models.test_maturity_exact_boundary) ... ok
+test_missing_optional_features_finite (test_models.Models.test_missing_optional_features_finite) ... ok
+test_no_refit_between_annual_boundaries (test_models.Models.test_no_refit_between_annual_boundaries) ... ok
+test_state_primitive_interactions_identical (test_models.Models.test_state_primitive_interactions_identical) ... ok
+test_weights_equal_dates_identities (test_models.Models.test_weights_equal_dates_identities) ... ok
+test_zero_targets_zero_predictions (test_models.Models.test_zero_targets_zero_predictions) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.281s
+
+OK

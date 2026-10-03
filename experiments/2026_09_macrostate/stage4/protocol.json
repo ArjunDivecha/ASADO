@@ -1,0 +1,18 @@
+{
+ "version":"macrostate-first-nonlinear-v1",
+ "prior_results_seen":"Stage3 linear/state/explicit-interaction results were inspected; this is follow-on historical development, not fresh confirmation",
+ "sample":"exact same Stage3 forecast dates, input eligibility, matured training origins, identity/date weights and annual expanding refits",
+ "target":"same relative 12-month USD return, scaled by weighted training mean/std and inverted for forecasts",
+ "arms":["trees_primitives","trees_states","neural_primitives","neural_states"],
+ "inputs":"same Stage3 raw primitive normalization, missingness indicators and market controls; states use the frozen equal-weight representation; no explicit interaction terms added",
+ "trees":{"class":"HistGradientBoostingRegressor","max_iter":200,"learning_rate":0.05,"max_leaf_nodes":7,"max_depth":3,"min_samples_leaf":80,"l2_regularization":1.0,"early_stopping":false,"random_state":20260906},
+ "neural":{"class":"MLPRegressor","hidden_layer_sizes":[16,8],"activation":"relu","solver":"adam","alpha":1.0,"batch_size":128,"learning_rate_init":0.001,"max_iter":300,"tol":0.0,"n_iter_no_change":301,"early_stopping":false,"shuffle":true,"random_state":20260906},
+ "neural_training":"fixed 300-epoch budget, no validation-based selection; report loss and warnings. One seed, not a stability claim.",
+ "parameter_search":false,
+ "thread_limit":1,
+ "statistical_significance_gate":false,
+ "cost_gate":false,
+ "portfolio_rules":"unchanged Stage3 top ceil(0.2*N), monthly and twelve-month vintage expressions, same common and broader equal-weight benchmarks",
+ "success":"compare all four arms with fixed Stage3 baselines; improving primary gross vintage CAGR is a practical historical indication, with drawdowns and country concentration shown. No automatic production promotion.",
+ "limits":"conditional historical vendor data; current 34-market universe; July2018-July2026 historical development; monthly index proxy; no executable-price or prospective claims"
+}

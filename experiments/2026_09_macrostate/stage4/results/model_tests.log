@@ -1,0 +1,9 @@
+test_fixed_iteration_budget (test_nonlinear.NonlinearTests.test_fixed_iteration_budget) ... ok
+test_fixed_seed_repeatable_all_arms (test_nonlinear.NonlinearTests.test_fixed_seed_repeatable_all_arms) ... ok
+test_missing_optional_inputs_supported (test_nonlinear.NonlinearTests.test_missing_optional_inputs_supported) ... ok
+test_unused_future_targets_cannot_change_model (test_nonlinear.NonlinearTests.test_unused_future_targets_cannot_change_model) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.555s
+
+OK

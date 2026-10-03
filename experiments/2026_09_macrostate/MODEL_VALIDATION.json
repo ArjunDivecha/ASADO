@@ -1,0 +1,31 @@
+{
+  "unit_tests_passed": 36,
+  "checks": {
+    "stage3_reproduces_saved_predictions": true,
+    "stage3_labels_known_at_fit": true,
+    "stage3_minimum_60_training_origins": true,
+    "stage4_reproduces_saved_predictions": true,
+    "stage4_labels_known_at_fit": true,
+    "stage4_minimum_60_training_origins": true,
+    "market_only_real_future_target_canary": true,
+    "primitives_real_future_target_canary": true,
+    "states_real_future_target_canary": true,
+    "states_interactions_real_future_target_canary": true,
+    "primitives_interactions_real_future_target_canary": true,
+    "all_arms_identical_date_country_rows": true,
+    "same_value_momentum_baseline": true,
+    "1m_identical_benchmarks": true,
+    "12m_identical_benchmarks": true
+  },
+  "all_passed": true,
+  "code_sha256": {
+    "evaluator.py": "f16b12b57b010d175bc860842d59d3710462fd9a426885e1e51c15aaab8b0e2f",
+    "prepare.py": "f2de9fdbfb3e1e7a45f3affde2c1d69153364080c977ed378981f6f4704363a2",
+    "stage3/run.py": "a28526ba67aa7a3cb6f8397e35d1fd403ccffd4414c4d738aeca96bf97eb46c4",
+    "stage4/run_nonlinear.py": "ea76c8d4e9a25c6c424ad49695c6a3253f198b2bff634443c70d5ed7dbe2ba6b",
+    "validate_models.py": "cf0f12082caa147bf5e496e5186297c22a0cc4751cfc214f5eecaaf7015b7c30"
+  },
+  "prepared_inputs": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/experiments/macrostate_stage12/prepared",
+  "no_parameter_search": true,
+  "statistical_gate": false
+}

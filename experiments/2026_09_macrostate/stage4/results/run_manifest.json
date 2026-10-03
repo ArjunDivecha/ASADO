@@ -1,0 +1,10 @@
+{
+  "experiment_id": "M_20260906_002",
+  "same_sample_as_stage3": true,
+  "forecast_months": 97,
+  "rows": 3154,
+  "fits": 36,
+  "protocol_sha256": "7410764681dc101dadfd5d1dbec919ea2b9f28cfc1f71d9d02dc7378c7fd2276",
+  "statistical_gate": false,
+  "warnings_count": 18
+}

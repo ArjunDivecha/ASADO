@@ -1,0 +1,87 @@
+{
+  "status": "EVALUATOR_BASELINE_DEMONSTRATION_NOT_MACROSTATE_RESULT",
+  "start": "2006-03-01",
+  "end": "2026-07-01",
+  "execution": "monthly index-return proxy, not executable fills",
+  "rules": "fixed half value rank / half momentum rank; no model fitted or parameters searched",
+  "statistical_significance_gate": false,
+  "portfolios": {
+    "1": {
+      "matched_universe": {
+        "months": 245,
+        "cumulative_return": 3.7694375044733377,
+        "benchmark_cumulative_return": 3.315132388865633,
+        "annualized_return": 0.07952087466497715,
+        "benchmark_annualized_return": 0.07424107219472775,
+        "max_drawdown": -0.5928147199275446,
+        "benchmark_max_drawdown": -0.5762519904070149,
+        "monthly_outperformance_rate": 0.5510204081632653,
+        "cumulative_wealth_difference": 0.4543051156077045,
+        "annualized_return_difference": 0.005279802470249395,
+        "rolling_12m_outperformance_rate": 0.5085470085470085
+      },
+      "broad_universe": {
+        "months": 245,
+        "cumulative_return": 3.7694375044733377,
+        "benchmark_cumulative_return": 3.3124281979036603,
+        "annualized_return": 0.07952087466497715,
+        "benchmark_annualized_return": 0.07420808923712685,
+        "max_drawdown": -0.5928147199275446,
+        "benchmark_max_drawdown": -0.576679168561816,
+        "monthly_outperformance_rate": 0.5551020408163265,
+        "cumulative_wealth_difference": 0.4570093065696774,
+        "annualized_return_difference": 0.005312785427850297,
+        "rolling_12m_outperformance_rate": 0.5213675213675214
+      },
+      "minimum_scored_markets": 19,
+      "maximum_scored_markets": 34,
+      "positive_contributing_markets": 12,
+      "active_contribution_reconciles": true
+    },
+    "12": {
+      "matched_universe": {
+        "months": 245,
+        "cumulative_return": 2.0491293108245783,
+        "benchmark_cumulative_return": 2.9455149676175005,
+        "annualized_return": 0.05612357018351122,
+        "benchmark_annualized_return": 0.06953971477939436,
+        "max_drawdown": -0.5887451253038896,
+        "benchmark_max_drawdown": -0.5786915566167075,
+        "monthly_outperformance_rate": 0.49387755102040815,
+        "cumulative_wealth_difference": -0.8963856567929223,
+        "annualized_return_difference": -0.01341614459588314,
+        "rolling_12m_outperformance_rate": 0.39316239316239315
+      },
+      "broad_universe": {
+        "months": 245,
+        "cumulative_return": 2.0491293108245783,
+        "benchmark_cumulative_return": 2.973851801766812,
+        "annualized_return": 0.05612357018351122,
+        "benchmark_annualized_return": 0.0699146713027976,
+        "max_drawdown": -0.5887451253038896,
+        "benchmark_max_drawdown": -0.5781778646453002,
+        "monthly_outperformance_rate": 0.4816326530612245,
+        "cumulative_wealth_difference": -0.9247224909422336,
+        "annualized_return_difference": -0.013791101119286386,
+        "rolling_12m_outperformance_rate": 0.3803418803418803
+      },
+      "minimum_scored_markets": 19,
+      "maximum_scored_markets": 34,
+      "positive_contributing_markets": 10,
+      "active_contribution_reconciles": true,
+      "fully_invested_period": {
+        "months": 234,
+        "cumulative_return": 1.6287199706254833,
+        "benchmark_cumulative_return": 2.4119598328206044,
+        "annualized_return": 0.05081278951856971,
+        "benchmark_annualized_return": 0.06496058336376209,
+        "max_drawdown": -0.5887451253038896,
+        "benchmark_max_drawdown": -0.5786915566167073,
+        "monthly_outperformance_rate": 0.48717948717948717,
+        "cumulative_wealth_difference": -0.7832398621951211,
+        "annualized_return_difference": -0.01414779384519238,
+        "rolling_12m_outperformance_rate": 0.3632286995515695
+      }
+    }
+  }
+}

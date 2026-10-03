@@ -1,0 +1,37 @@
+fit_date,arm,training_first,training_last,latest_label_available,training_origins,training_rows,iterations,loss,warnings
+2018-07-01,trees_primitives,2012-08-01,2017-07-01,2018-07-01,60,1694,200,,
+2018-07-01,trees_states,2012-08-01,2017-07-01,2018-07-01,60,1694,200,,
+2018-07-01,neural_primitives,2012-08-01,2017-07-01,2018-07-01,60,1694,300,0.2642744119483045,Stochastic Optimizer: Maximum iterations (300) reached and the optimization hasn't converged yet.
+2018-07-01,neural_states,2012-08-01,2017-07-01,2018-07-01,60,1694,300,0.3312860277914849,Stochastic Optimizer: Maximum iterations (300) reached and the optimization hasn't converged yet.
+2019-07-01,trees_primitives,2012-08-01,2018-07-01,2019-07-01,72,2064,200,,
+2019-07-01,trees_states,2012-08-01,2018-07-01,2019-07-01,72,2064,200,,
+2019-07-01,neural_primitives,2012-08-01,2018-07-01,2019-07-01,72,2064,300,0.28963194722206664,Stochastic Optimizer: Maximum iterations (300) reached and the optimization hasn't converged yet.
+2019-07-01,neural_states,2012-08-01,2018-07-01,2019-07-01,72,2064,300,0.35149525224517364,Stochastic Optimizer: Maximum iterations (300) reached and the optimization hasn't converged yet.
+2020-07-01,trees_primitives,2012-08-01,2019-07-01,2020-07-01,84,2448,200,,
+2020-07-01,trees_states,2012-08-01,2019-07-01,2020-07-01,84,2448,200,,
+2020-07-01,neural_primitives,2012-08-01,2019-07-01,2020-07-01,84,2448,300,0.2961031705125441,Stochastic Optimizer: Maximum iterations (300) reached and the optimization hasn't converged yet.
+2020-07-01,neural_states,2012-08-01,2019-07-01,2020-07-01,84,2448,300,0.3616758549860324,Stochastic Optimizer: Maximum iterations (300) reached and the optimization hasn't converged yet.
+2021-07-01,trees_primitives,2012-08-01,2020-07-01,2021-07-01,96,2832,200,,
+2021-07-01,trees_states,2012-08-01,2020-07-01,2021-07-01,96,2832,200,,
+2021-07-01,neural_primitives,2012-08-01,2020-07-01,2021-07-01,96,2832,300,0.31330432777394773,Stochastic Optimizer: Maximum iterations (300) reached and the optimization hasn't converged yet.
+2021-07-01,neural_states,2012-08-01,2020-07-01,2021-07-01,96,2832,300,0.3876658515798665,Stochastic Optimizer: Maximum iterations (300) reached and the optimization hasn't converged yet.
+2022-07-01,trees_primitives,2012-08-01,2021-07-01,2022-07-01,108,3216,200,,
+2022-07-01,trees_states,2012-08-01,2021-07-01,2022-07-01,108,3216,200,,
+2022-07-01,neural_primitives,2012-08-01,2021-07-01,2022-07-01,108,3216,300,0.3359853727515542,Stochastic Optimizer: Maximum iterations (300) reached and the optimization hasn't converged yet.
+2022-07-01,neural_states,2012-08-01,2021-07-01,2022-07-01,108,3216,300,0.38231948177627834,Stochastic Optimizer: Maximum iterations (300) reached and the optimization hasn't converged yet.
+2023-07-01,trees_primitives,2012-08-01,2022-07-01,2023-07-01,120,3602,200,,
+2023-07-01,trees_states,2012-08-01,2022-07-01,2023-07-01,120,3602,200,,
+2023-07-01,neural_primitives,2012-08-01,2022-07-01,2023-07-01,120,3602,300,0.3497766062154716,Stochastic Optimizer: Maximum iterations (300) reached and the optimization hasn't converged yet.
+2023-07-01,neural_states,2012-08-01,2022-07-01,2023-07-01,120,3602,300,0.4002492194188894,Stochastic Optimizer: Maximum iterations (300) reached and the optimization hasn't converged yet.
+2024-07-01,trees_primitives,2012-08-01,2023-07-01,2024-07-01,132,3998,200,,
+2024-07-01,trees_states,2012-08-01,2023-07-01,2024-07-01,132,3998,200,,
+2024-07-01,neural_primitives,2012-08-01,2023-07-01,2024-07-01,132,3998,300,0.349753555091187,Stochastic Optimizer: Maximum iterations (300) reached and the optimization hasn't converged yet.
+2024-07-01,neural_states,2012-08-01,2023-07-01,2024-07-01,132,3998,300,0.40412529774074474,Stochastic Optimizer: Maximum iterations (300) reached and the optimization hasn't converged yet.
+2025-07-01,trees_primitives,2012-08-01,2024-07-01,2025-07-01,144,4394,200,,
+2025-07-01,trees_states,2012-08-01,2024-07-01,2025-07-01,144,4394,200,,
+2025-07-01,neural_primitives,2012-08-01,2024-07-01,2025-07-01,144,4394,300,0.3712315733786814,Stochastic Optimizer: Maximum iterations (300) reached and the optimization hasn't converged yet.
+2025-07-01,neural_states,2012-08-01,2024-07-01,2025-07-01,144,4394,300,0.41378305549791655,Stochastic Optimizer: Maximum iterations (300) reached and the optimization hasn't converged yet.
+2026-07-01,trees_primitives,2012-08-01,2025-07-01,2026-07-01,156,4790,200,,
+2026-07-01,trees_states,2012-08-01,2025-07-01,2026-07-01,156,4790,200,,
+2026-07-01,neural_primitives,2012-08-01,2025-07-01,2026-07-01,156,4790,300,0.4048717331740957,Stochastic Optimizer: Maximum iterations (300) reached and the optimization hasn't converged yet.
+2026-07-01,neural_states,2012-08-01,2025-07-01,2026-07-01,156,4790,300,0.443491519361878,Stochastic Optimizer: Maximum iterations (300) reached and the optimization hasn't converged yet.

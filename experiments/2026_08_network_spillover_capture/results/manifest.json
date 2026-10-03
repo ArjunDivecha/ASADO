@@ -1,0 +1,8 @@
+{
+  "rank_input": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/experiments/flip_autopsy/snapshot_2026_07_13/family_ranks_daily.parquet",
+  "rank_input_sha256": "a685e8b336149a149bef1a1a30fc28175e6fce3190aa9326f452bab8a827e22e",
+  "local_input": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/experiments/flip_autopsy/snapshot_2026_07_13/t2_1dret_daily.parquet",
+  "futures_input": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/Global Data Mart/sources/futures/data/futures_curves.parquet",
+  "etf_ohlc_cache": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/experiments/network_spillover_capture/etf_ohlc.parquet",
+  "etf_ohlc_sha256": "836b6a51ea398c11f4b93076b04ccdcd8fd1eaaef0d5065936ee97b11842ffb7"
+}

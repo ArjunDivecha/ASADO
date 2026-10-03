@@ -257,14 +257,14 @@
   concept: technical
 
 - base_variable: P2P
-  provider: T2/Bloomberg
-  definition: Bounded price-position measure related to the index's standing versus its trailing peak/range (construction not confirmed from data; observed range -0.76 to +0.99).
+  provider: ASADO monthly / Yahoo Finance adjusted ETF closes
+  definition: Monthly v2 score is (latest completed close / last-12-close peak) times R-squared and slope sign over 13 completed monthly closes, labeled first day of M+1.
   units: ratio (bounded approx -1 to 1)
   cross_country_comparable: true
-  economic_mechanism: Likely a drawdown/range-position signal; exact window and formula unverified.
+  economic_mechanism: Price-to-peak strength and trend fit; predictive efficacy remains unvalidated.
   concept: technical
   review: needs_review
-  notes: Best data hypothesis (12m range position, corr 0.64) is not conclusive. Confirm construction with the T2 source before using in new signals.
+  notes: Monthly timing and explicit ETF-country mapping repaired 2026-10-03. Prior monthly P2P performance superseded; daily external producer not covered. See docs/P2P_TIMING_MIGRATION_2026_10_03.md.
 
 - base_variable: 20 Day Vol
   provider: T2/Bloomberg

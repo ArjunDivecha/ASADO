@@ -12367,74 +12367,81 @@
 - variable: P2P
   base_variable: P2P
   normalization: raw
-  definition: Bounded price-position measure related to the index's standing versus its trailing peak/range
-    (construction not confirmed from data; observed range -0.76 to +0.99).
-  source_provider: T2/Bloomberg
+  definition: 'ASADO monthly P2P v2: latest completed adjusted ETF close / trailing 12-close peak, multiplied
+    by R-squared and slope sign over 13 completed monthly closes; available on first day of the following
+    month.'
+  source_provider: 'ASADO monthly: Yahoo Finance via yfinance (auto_adjust=True)'
   source_series_id: ''
   units: ratio (bounded approx -1 to 1)
   cross_country_comparable: true
   native_frequency: M
-  publication_lag: ''
-  revision_prone: null
-  vintage_available: ''
+  publication_lag: Observation month M available at M+1 month start; no unfinished month
+  revision_prone: true
+  vintage_available: Versioned downloaded adjusted-price snapshots; not historical as-published vintages
   sign: unknown
-  economic_mechanism: Likely a drawdown/range-position signal; exact window and formula unverified.
+  economic_mechanism: Price-to-peak strength and trend fit; this defines construction, not validated predictive
+    efficacy.
   mechanism_reference: ''
   concept: technical
   is_broadcast: false
-  quality_flag: ''
+  quality_flag: monthly_p2p_v2_20261003
   valid_range: ''
   review_status: needs_review
-  notes: Best data hypothesis (12m range position, corr 0.64) is not conclusive. Confirm construction
-    with the T2 source before using in new signals.
+  notes: Monthly timing and explicit ETF-country mapping corrected 2026-10-03. Prior monthly P2P performance
+    is superseded, not strategy-revalidated. Daily external P2P remains a separate unaudited producer.
+    See docs/P2P_TIMING_MIGRATION_2026_10_03.md.
 - variable: P2P_CS
   base_variable: P2P
   normalization: _CS
-  definition: 'Cross-sectional z-score (across the 34-country panel) of: Bounded price-position measure
-    related to the index''s standing versus its trailing peak/range (construction not confirmed from data;
-    observed range -0.76 to +0.99).'
-  source_provider: T2/Bloomberg
+  definition: 'Cross-sectional z-score of ASADO monthly P2P v2: latest completed adjusted ETF close /
+    trailing 12-close peak, multiplied by R-squared and slope sign over 13 completed monthly closes; available
+    on first day of the following month.'
+  source_provider: 'ASADO monthly: Yahoo Finance via yfinance (auto_adjust=True)'
   source_series_id: ''
   units: z-score (cross-sectional)
   cross_country_comparable: true
   native_frequency: M
-  publication_lag: ''
-  revision_prone: null
-  vintage_available: ''
+  publication_lag: Observation month M available at M+1 month start; no unfinished month
+  revision_prone: true
+  vintage_available: Versioned downloaded adjusted-price snapshots; not historical as-published vintages
   sign: higher_is_better
-  economic_mechanism: Likely a drawdown/range-position signal; exact window and formula unverified.
+  economic_mechanism: Price-to-peak strength and trend fit; this defines construction, not validated predictive
+    efficacy.
   mechanism_reference: ''
   concept: technical
   is_broadcast: false
-  quality_flag: ''
+  quality_flag: monthly_p2p_v2_20261003
   valid_range: ''
   review_status: needs_review
-  notes: Best data hypothesis (12m range position, corr 0.64) is not conclusive. Confirm construction
-    with the T2 source before using in new signals.
+  notes: Monthly timing and explicit ETF-country mapping corrected 2026-10-03. Prior monthly P2P performance
+    is superseded, not strategy-revalidated. Daily external P2P remains a separate unaudited producer.
+    See docs/P2P_TIMING_MIGRATION_2026_10_03.md.
 - variable: P2P_TS
   base_variable: P2P
   normalization: _TS
-  definition: 'Time-series z-score (vs own trailing history) of: Bounded price-position measure related
-    to the index''s standing versus its trailing peak/range (construction not confirmed from data; observed
-    range -0.76 to +0.99).'
-  source_provider: T2/Bloomberg
+  definition: 'Expanding time-series z-score of ASADO monthly P2P v2: latest completed adjusted ETF close
+    / trailing 12-close peak, multiplied by R-squared and slope sign over 13 completed monthly closes;
+    available on first day of the following month.'
+  source_provider: 'ASADO monthly: Yahoo Finance via yfinance (auto_adjust=True)'
   source_series_id: ''
   units: z-score (time-series)
   cross_country_comparable: true
   native_frequency: M
-  publication_lag: ''
-  revision_prone: null
-  vintage_available: ''
+  publication_lag: Observation month M available at M+1 month start; no unfinished month
+  revision_prone: true
+  vintage_available: Versioned downloaded adjusted-price snapshots; not historical as-published vintages
   sign: higher_is_better
-  economic_mechanism: Likely a drawdown/range-position signal; exact window and formula unverified.
+  economic_mechanism: Price-to-peak strength and trend fit; this defines construction, not validated predictive
+    efficacy.
   mechanism_reference: ''
   concept: technical
   is_broadcast: false
-  quality_flag: ''
+  quality_flag: monthly_p2p_v2_20261003
   valid_range: ''
   review_status: needs_review
-  notes: Best data hypothesis (12m range position, corr 0.64) is not conclusive. Confirm construction
-    with the T2 source before using in new signals.
+  notes: Monthly timing and explicit ETF-country mapping corrected 2026-10-03. Prior monthly P2P performance
+    is superseded, not strategy-revalidated. Daily external P2P remains a separate unaudited producer.
+    See docs/P2P_TIMING_MIGRATION_2026_10_03.md.
 - variable: PX_LAST
   base_variable: PX_LAST
   normalization: raw

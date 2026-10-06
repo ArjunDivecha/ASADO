@@ -57,3 +57,38 @@ insignificant (t 0.8).
 - Prior art: short-term reversal in country ETFs is HOLDS_BOTH in our Quantpedia
   screen (#0013, #0382) at weekly or monthly horizons. QP #1070 (FXI overnight
   comovement) has decayed out of sample.
+
+---
+
+# One-day country-ETF reversal on its own (2026-10-05, `etf_reversal_1d.py`, run `runs/reversal_20261005_201709`)
+
+**Setup.** The 34-ETF house universe. Each day, rank the ETFs by that day's return.
+Buy the losers quintile and short the winners quintile, held one day, gross,
+against the equal-weight benchmark. The pre-registered primary spec enters at the
+next open (E3).
+
+**Result.** The effect is real, but nearly all of it happens overnight: from day
+T's close to the next morning's open (long-short Sharpe 2.3 on that leg alone). It
+comes from the Asia-Pacific and Europe/Africa/ME ETFs. The Americas contribute
+nothing overnight. The likely mechanism is that ETFs priced in US hours, while
+their home market is shut, overshoot, and the next open, after the home market has
+traded, corrects part of the move. Consequences:
+- **Enter next open (primary E3):** Sharpe 0.95 full period, 0.61 over the last 5y
+  (t 1.4). Long-only losers vs equal-weight: +7.7%/yr over the last 5y (IR 0.97).
+  The edge is weak once the overnight leg is gone.
+- **Enter at the close of the signal day (E1):** Sharpe 2.2 full, 1.2 over the last
+  5y. The implementable form is a 15:30 ET signal executed at the close (MOC). Over
+  2023-11 to 2026-10 that version kept a Sharpe of 1.63 (t 3.0) against 1.96 for
+  the idealized version. Long-only losers vs equal-weight: Sharpe 1.99 (t 3.7).
+- **A dead decade:** even the close-entry version earned about zero from 2010 to
+  2019. Returns concentrate in high-volatility, high-dispersion periods (2000-09,
+  2020-26). Part of that is mechanical, because high-dispersion days produce
+  bigger spreads.
+- **Robustness (close entry, last 5y):** the surface peaks at a one-day lookback and
+  declines smoothly with longer lookbacks; a 1-2 day hold is best. Residualizing
+  against the market hurts. Leave-one-ETF-out keeps the 5y Sharpe between 1.0 and
+  1.4.
+- **Turnover (information only, not a gate):** the long-short book trades about
+  3.2x capital a day. Gross edge is about 2bp per dollar traded. Closing-auction
+  spreads on the thin ETFs are the implementation question that decides whether
+  this can be harvested.

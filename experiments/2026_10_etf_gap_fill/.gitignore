@@ -1,0 +1,3 @@
+# Data caches and run outputs are not committed (code only)
+data/
+runs/

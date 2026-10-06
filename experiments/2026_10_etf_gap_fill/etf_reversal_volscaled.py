@@ -95,7 +95,7 @@ class Tee(sw.Tee):
 
 def book(ds, kind, n):
     ret, fwd, sd = ds['sig'], ds['fwd'], ds['sd']
-    ok = ret.notna() & fwd.notna() & sd.notna()
+    ok = ret.notna() & sd.notna()   # eligibility known at T (no future-availability filter)
     ret, fwd, sd = ret.where(ok), fwd.where(ok), sd.where(ok)
     valid = ok.sum(axis=1) >= 10
     rank_m, size_m = sw.measure(ret, sd, 'raw' if kind == 'RAW' else 'z_rel')

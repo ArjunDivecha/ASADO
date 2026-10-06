@@ -171,7 +171,7 @@ def select(rank_m, size_m, k, cap, side):
 
 def run_cell(ds, kind, k, cap):
     ret, fwd, sd = ds['sig'], ds['fwd'], ds['sd']
-    ok = ret.notna() & fwd.notna() & sd.notna()
+    ok = ret.notna() & sd.notna()   # eligibility known at T (no future-availability filter)
     ret, fwd, sd = ret.where(ok), fwd.where(ok), sd.where(ok)
     nday = ok.sum(axis=1)
     valid = nday >= 10

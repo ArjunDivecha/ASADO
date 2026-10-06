@@ -176,3 +176,45 @@ never tested. Both were tested, ad hoc in session, and are now persisted in
 `reversal_robustness_checks.py` (run `runs/robustness_20261005_233049`). The overnight leg comes
 from Asia +16.0%/yr and Europe/Africa/ME +13.5%/yr, Americas −0.8%/yr. Leave-one-out 5y Sharpe is
 1.00-1.38 for close entry and 0.43-0.70 for next-open entry.
+
+---
+
+# Closing-auction costs and last-15-minutes execution (2026-10-06)
+
+Data: Bloomberg daily spreads and turnover for 2023-10 to 2026-10, plus 1-minute TRADE/BID/ASK bars
+for 15:25-16:05 ET from 2026-04-06 to 2026-10-02 (`collect_auction_costs_bbg.py`). QQQ, SPY and IWM
+quote bars were skipped as too slow to pull; their spread is about 0.3bp, so their trade prices are
+used as the mid.
+
+**Leakage check** (`intraday_execution.py`, run `runs/execution_20261006_003413`, 126 days). With
+the signal rebuilt from a clean 15:29 Bloomberg midpoint, Sharpes stay close to the Yahoo
+15:30-bar signal. 7-name long-only: 2.20 vs 2.42. 1-name raw: 2.02 vs 2.30. 1-name vol-scaled:
+2.61 vs 2.14. Yahoo flattered the raw books by about 0.2 Sharpe. There is no material leakage.
+
+**Last 15 minutes instead of MOC.** Trading at the 15:45-15:59 midpoint (TWAP) or at the
+15:45-15:58 trade VWAP gives almost the same result as MOC: slippage vs the close is 0-2bp
+(1-name raw 66-69%/yr vs 72%). Crossing the spread every minute costs 4-6bp per side. That takes
+the 7-name long-only from 21%/yr to 0.5%, and the 1-name from 72% to 46%. The 15:45-15:58 window
+holds a median 1.6x the final minute's dollar volume (VNM 6.9x, but THD, EZA and EWM less than 1x).
+Spreads blow out at 15:59 (EPHE 54bp, TUR 56bp, ECH 86bp, against 11-15bp a few minutes
+earlier), so never cross at the bell.
+
+**Cost model** (`auction_cost_analysis.py` v1.1, run `runs/costs_20261006_003528`; spread plus
+$0.0035/share commission, no impact term). Breakeven cost per dollar traded is 3.5bp for the
+7-name long-only, 2.6bp for the long-short and about 11bp for the 1-name books. Measured
+half-spread plus commission comes to about 4bp per dollar for every book, because the picks are
+the volatile, thin funds.
+- 7-name long-only: −2%/yr net (gross +14%). Commission alone takes 4%.
+- 7-name long-short: −10%/yr net.
+- 1-name raw: +31%/yr net (Sharpe 1.27). Paying the full spread leaves +15%.
+- 1-name vol-scaled: +34%/yr net (Sharpe 1.67). Paying the full spread leaves +20%.
+
+**Capacity is the binding constraint.** At $1M the 1-name book's typical order is about 75% of
+the pick's entire 15:45-16:00 dollar volume. The 7-name long-only order is a median 6%, but 46%
+of its orders exceed 10% of the window. Realistic size for the 1-name rule is a few hundred
+thousand dollars. The impact of our own orders is unmeasured; only a live paper or small-size
+trial can measure it.
+
+The impact term in cost-model v1.0 (square-root on ETF ADV) was dropped. It contradicted the
+measured slippage and ignored ETF creation/redemption liquidity. Its output (−53%/yr at $1M) is
+not a result.

@@ -2,7 +2,7 @@
 """
 ==============================================================================
 SCRIPT NAME: auction_cost_analysis.py
-VERSION:     1.0  (2026-10-05)
+VERSION:     1.1  (2026-10-06)
 ==============================================================================
 
 DESCRIPTION
@@ -19,18 +19,20 @@ backtest.  The incremental cost of actually trading is
       becomes the auction imbalance, roughly the half-spread market makers
       demand to absorb it; for larger orders, more (square-root impact);
   (b) commissions/fees.
-Cost model per trade, per side, in bp of traded notional:
-    cost = k_spread * half_spread_preclose(i, t)
-         + Y * sigma_daily(i, t) * sqrt(order $ / ADV $(i))
-         + commission $/share / price
+Cost model per trade, per side, in bp of traded notional (v1.1, spread only):
+    cost = k_spread * half_spread_preclose(i, t) + commission $/share / price
+  (v1.0 also had a square-root impact term on ETF ADV; it was dropped because
+  it contradicted the measured closing-window slippage - see the comment in
+  main().  Size is reported instead as participation in the actual
+  15:45-16:00 dollar volume.)
   half_spread_preclose(i,t) = 0.5 * TWAS(i,t) * ratio_i, where TWAS is
   Bloomberg's daily time-weighted average quoted spread and ratio_i is the
   ETF's median (pre-close quoted spread / TWAS) measured from 1-minute BID/ASK
   bars 15:50-15:58 ET over 2026-07..2026-10.  Daily TWAS lets spreads widen
   on volatile days (which is exactly when this trade picks a name).
-  Defaults: k_spread = 1.0, Y = 1.0, commission = $0.0035/share.
-  Sensitivities: k_spread in {0.5, 1, 1.5} (and 15:59 'at the bell' spread),
-  Y in {0.5, 1}.
+  Scenarios: no cost; commission only; half pre-close spread (base); full
+  pre-close spread; half the 15:59 'at the bell' spread.  Commission
+  $0.0035/share.
 
 Books (E5 timing; same construction as etf_reversal_sweep.py):
   7-name long-only losers vs EW, 7-name long-short, 1-name raw,
@@ -213,63 +215,90 @@ def main():
 
     # how wide are spreads on the days a name is picked vs typical?
     pick1 = books['1-name raw']['w'] > 0
-    rel = (half_sp.where(pick1).stack() / half_sp.median().reindex(half_sp.where(pick1).stack().index.get_level_values(1)).values)
+    hp = half_sp.where(pick1).stack().dropna()
+    rel = hp / half_sp.median().reindex(hp.index.get_level_values(1)).values
     print(f"\nOn days a name is the 1-name pick, its half-spread is {rel.median():.2f}x its own median (median across picks)")
 
-    def net_series(b, aum, k_spread=1.0, Y=1.0, bell=False):
+    # Spread-only cost model (v1.1).  v1.0's square-root impact term on ETF ADV was
+    # dropped: ETF liquidity is not bounded by printed volume (creation/redemption,
+    # market makers), and that term priced a 0.7%-of-ADV order at ~12bp, contradicting
+    # the measured 15:45-15:59 slippage (intraday_execution.py).  Size is handled
+    # separately as participation in the actual closing-window volume.
+    bell_hs = pd.DataFrame(np.tile((0.5 * liq['bell_spread_bp'].reindex(TICK)).values, (len(days), 1)),
+                           index=days, columns=TICK)
+    bell_hs = bell_hs.fillna(half_sp)                                  # QQQ/SPY/IWM: no quote bars
+    comm_bp = (COMM / px) * 1e4
+
+    def net_series(b, k_spread=1.0, which='preclose'):
         w = b['w']
         dw = w.diff().abs().fillna(w.abs())                            # traded weight per name
-        hs = half_sp if not bell else (0.5 * liq['bell_spread_bp']).reindex(TICK).to_frame().T.reindex(days).ffill().bfill()
-        order_usd = dw * aum
-        impact_bp = Y * sigma * np.sqrt(order_usd / adv) * 1e4
-        comm_bp = (COMM / px) * 1e4
-        cost_bp = k_spread * hs + impact_bp.fillna(0) + comm_bp
+        hs = half_sp if which == 'preclose' else bell_hs
+        cost_bp = (k_spread * hs).fillna(half_sp.median().median()) + comm_bp.fillna(1.0)
         cost = (dw * cost_bp / 1e4).sum(axis=1)
         return b['gross'] - cost, cost, dw.sum(axis=1)
 
     def st(x):
         return x.mean() * 252, x.mean() / x.std() * np.sqrt(252)
 
+    SCEN = [('backtest: fill at the close, no cost', 0.0, 'preclose', False),
+            ('commission only', 0.0, 'preclose', True),
+            ('half the pre-close spread + commission (base)', 1.0, 'preclose', True),
+            ('full pre-close spread + commission', 2.0, 'preclose', True),
+            ('half the 15:59 spread + commission', 1.0, 'bell', True)]
     rows = []
     for name, b in books.items():
         ga, gs = st(b['gross'])
-        for aum in AUMS:
-            for k_spread, Y, bell, lab in [(1.0, 1.0, False, 'base'), (0.5, 1.0, False, 'half the spread'),
-                                           (1.5, 1.0, False, '1.5x spread'), (1.0, 0.5, False, 'impact Y=0.5'),
-                                           (1.0, 1.0, True, 'at-the-bell spread')]:
-                n, c, to = net_series(b, aum, k_spread, Y, bell)
-                na, ns = st(n)
-                rows.append({'book': name, 'aum': aum, 'scenario': lab, 'gross_ann_active': ga, 'gross_sharpe': gs,
-                             'cost_ann': c.mean() * 252, 'net_ann_active': na, 'net_sharpe': ns,
-                             'turnover_per_day': to.mean(),
-                             'avg_cost_bp_per_dollar_traded': c.sum() / to.sum() * 1e4,
-                             'breakeven_cost_bp_per_dollar': b['gross'].sum() / to.sum() * 1e4})
+        for lab, k, which, comm in SCEN:
+            if comm or k > 0:
+                n, c, to = net_series(b, k, which)
+                if not comm:
+                    pass
+            else:
+                n, c, to = b['gross'], b['gross'] * 0, net_series(b)[2]
+            if lab == 'commission only':
+                w = b['w']
+                dw = w.diff().abs().fillna(w.abs())
+                c = (dw * comm_bp.fillna(1.0) / 1e4).sum(axis=1)
+                n = b['gross'] - c
+            na, ns = st(n)
+            rows.append({'book': name, 'scenario': lab, 'gross_ann_active': ga, 'gross_sharpe': gs,
+                         'cost_ann': c.mean() * 252, 'net_ann_active': na, 'net_sharpe': ns,
+                         'turnover_per_day': to.mean(),
+                         'avg_cost_bp_per_dollar_traded': c.sum() / to.sum() * 1e4,
+                         'breakeven_cost_bp_per_dollar': b['gross'].sum() / to.sum() * 1e4})
     res = pd.DataFrame(rows)
-    base = res[res.scenario == 'base']
-    print("\n=== GROSS vs NET (base cost model), E5 15:30 signal MOC, 2023-11 -> 2026-10 ===")
-    print(base[['book', 'aum', 'gross_ann_active', 'gross_sharpe', 'cost_ann', 'net_ann_active', 'net_sharpe',
-                'turnover_per_day', 'avg_cost_bp_per_dollar_traded', 'breakeven_cost_bp_per_dollar']]
-          .round(3).to_string(index=False))
-    print("\n=== SENSITIVITY at $5M ===")
-    print(res[res.aum == 5e6][['book', 'scenario', 'net_ann_active', 'net_sharpe', 'avg_cost_bp_per_dollar_traded']]
-          .round(3).to_string(index=False))
+    base = res[res.scenario == 'half the pre-close spread + commission (base)']
+    print("\n=== GROSS vs NET, spread-only cost model, E5 15:30 signal MOC, 2023-11 -> 2026-10 ===")
+    print(res[['book', 'scenario', 'net_ann_active', 'net_sharpe', 'avg_cost_bp_per_dollar_traded',
+               'breakeven_cost_bp_per_dollar']].round(3).to_string(index=False))
 
-    # capacity: order size vs final-minute $ and ADV for the 1-name book at each AUM
+    # capacity: order size vs the actual closing-window $ volume (15:45-15:58 + final minute)
+    win_usd = {}
+    for t in TICK:
+        p = BB / 'intraday' / f'{t}_TRADE.parquet'
+        if p.exists():
+            tr = pd.read_parquet(p)
+            hm = tr['time'].dt.strftime('%H:%M')
+            v = tr[(hm >= '19:45') & (hm <= '19:59')].groupby(tr['time'].dt.normalize())['value'].sum()
+            win_usd[t] = v.median()
+    win_usd = pd.Series(win_usd)
+    liq['window_1545_1600_usd_median'] = win_usd
     cap = []
     for aum in AUMS:
-        for name in ['1-name raw', '1-name vol-scaled', '7-name long-only']:
+        for name in ['7-name long-only', '7-name long-short', '1-name raw', '1-name vol-scaled']:
             w = books[name]['w']
             dw = w.diff().abs().fillna(w.abs())
-            orders = (dw * aum).where(dw > 0).stack()
+            orders = (dw * aum).where(dw > 0).stack().dropna()
             tick = orders.index.get_level_values(1)
-            fm = liq['final_minute_usd_median'].reindex(tick).values
+            part = orders.values / win_usd.reindex(tick).values
             ad = adv.stack().reindex(orders.index).values
-            cap.append({'book': name, 'aum': aum, 'median_order_usd': orders.median(),
-                        'median_order_vs_final_minute_usd': np.nanmedian(orders.values / fm),
-                        'median_order_pct_of_ADV': np.nanmedian(orders.values / ad) * 100,
-                        'p90_order_pct_of_ADV': np.nanpercentile(orders.values / ad, 90) * 100})
+            cap.append({'book': name, 'aum': aum, 'median_order_usd': np.median(orders.values),
+                        'median_pct_of_last15min_volume': np.nanmedian(part) * 100,
+                        'p90_pct_of_last15min_volume': np.nanpercentile(part, 90) * 100,
+                        'share_of_orders_over_10pct_of_window': np.nanmean(part > 0.10),
+                        'median_pct_of_ADV': np.nanmedian(orders.values / ad) * 100})
     cap = pd.DataFrame(cap)
-    print("\n=== CAPACITY: order size vs final-minute $ volume and ADV ===")
+    print("\n=== CAPACITY: order size vs actual 15:45-16:00 $ volume (incl. closing cross) ===")
     print(cap.round(2).to_string(index=False))
 
     # charts
@@ -290,16 +319,16 @@ def main():
         pdf.savefig(fig)
         plt.close(fig)
 
-        fig, axes = plt.subplots(1, 4, figsize=(14, 4.2), sharey=True)
+        fig, axes = plt.subplots(1, 4, figsize=(15, 4.6), sharey=True)
+        labs = ['no cost', 'commission', 'half spread', 'full spread', 'half 15:59 spr']
         for ax, name in zip(axes, books):
-            sub = base[base.book == name]
-            ax.bar(['gross'] + [f'${a/1e6:g}M' for a in AUMS], [sub.gross_ann_active.iloc[0]] + list(sub.net_ann_active),
-                   color=['#9a9a9a'] + ['#1f5fa8'] * len(AUMS))
+            sub = res[res.book == name]
+            ax.bar(labs, sub.net_ann_active.values, color=['#9a9a9a', '#6baed6', '#1f5fa8', '#c0504d', '#e69f00'])
             ax.axhline(0, color='black', lw=0.5)
             ax.set_title(name, loc='left')
             ax.tick_params(axis='x', rotation=45)
         axes[0].set_ylabel('annual active return vs equal-weight')
-        fig.suptitle('Gross vs net of modelled closing-auction costs, by account size (E5, 2023-11 to 2026-10)', x=0.01, ha='left')
+        fig.suptitle('Net of measured spreads + $0.0035/share commission (E5, 2023-11 to 2026-10; small size)', x=0.01, ha='left')
         fig.tight_layout()
         pdf.savefig(fig)
         plt.close(fig)
@@ -307,11 +336,11 @@ def main():
         fig, ax = plt.subplots(figsize=(10, 4.5))
         for name, col in zip(books, ['#9a9a9a', '#c0504d', '#6baed6', '#1f5fa8']):
             b = books[name]
-            n, _, _ = net_series(b, 5e6)
-            ax.plot(n.index, n.cumsum(), color=col, label=f'{name} net @ $5M')
+            n, _, _ = net_series(b, 1.0, 'preclose')
+            ax.plot(n.index, n.cumsum(), color=col, label=f'{name}, net of half spread + commission')
             ax.plot(b['gross'].index, b['gross'].cumsum(), color=col, lw=0.7, ls=':')
         ax.axhline(0, color='black', lw=0.5)
-        ax.set_title('Cumulative active return: gross (dotted) vs net at $5M (solid)', loc='left')
+        ax.set_title('Cumulative active return: gross (dotted) vs net (solid)', loc='left')
         ax.legend(frameon=False, fontsize=8)
         fig.tight_layout()
         pdf.savefig(fig)
@@ -322,9 +351,9 @@ def main():
         liq.drop(columns=[c for c in liq.columns if c.startswith('_')], errors='ignore').to_excel(w, sheet_name='etf_liquidity')
         res.to_excel(w, sheet_name='gross_vs_net', index=False)
         cap.to_excel(w, sheet_name='capacity', index=False)
-    json.dump({'run_dir': str(run), 'base': base.round(4).to_dict(orient='records'),
+    json.dump({'run_dir': str(run), 'scenarios': res.round(4).to_dict(orient='records'),
                'capacity': cap.round(4).to_dict(orient='records'),
-               'model': {'k_spread': 1.0, 'Y': 1.0, 'commission_per_share': COMM,
+               'model': {'cost': 'k x half quoted spread + commission; no impact term (v1.1)', 'commission_per_share': COMM,
                          'median_preclose_to_twas_ratio': float(med_ratio)}},
               open(run / 'summary.json', 'w'), indent=2, default=str)
     print(f"\nDone. {run}")

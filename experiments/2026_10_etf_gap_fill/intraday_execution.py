@@ -236,14 +236,14 @@ def main():
         for meth, P in [('TWAP_mid', m['twap_mid']), ('VWAP_1558', m['vwap1558']), ('TWAP_cross', None)]:
             Pb = m['twap_ask'] if meth == 'TWAP_cross' else P
             Ps = m['twap_bid'] if meth == 'TWAP_cross' else P
-            buy_slip = ((Pb.reindex(days) - close) / close * 1e4).where(entries.reindex(days, fill_value=False)).stack()
-            sell_slip = ((close - Ps.reindex(days)) / close * 1e4).where(exits.reindex(days, fill_value=False)).stack()
+            buy_slip = ((Pb.reindex(days) - close) / close * 1e4).where(entries.reindex(days, fill_value=False)).stack().dropna()
+            sell_slip = ((close - Ps.reindex(days)) / close * 1e4).where(exits.reindex(days, fill_value=False)).stack().dropna()
             slip.append({'book': bname, 'execution': meth, 'buy_vs_close_bp_mean': buy_slip.mean(),
                          'buy_vs_close_bp_median': buy_slip.median(), 'n_buys': len(buy_slip),
                          'sell_vs_close_bp_mean': sell_slip.mean(), 'sell_vs_close_bp_median': sell_slip.median(),
                          'n_sells': len(sell_slip)})
         # drift 15:29 mid -> close for picked losers
-        dr = ((close - m['mid1529'].reindex(days)) / m['mid1529'].reindex(days) * 1e4).where(wl.reindex(days, fill_value=0) > 0).stack()
+        dr = ((close - m['mid1529'].reindex(days)) / m['mid1529'].reindex(days) * 1e4).where(wl.reindex(days, fill_value=0) > 0).stack().dropna()
         slip.append({'book': bname, 'execution': 'drift 15:29 mid -> close (picked losers)',
                      'buy_vs_close_bp_mean': dr.mean(), 'buy_vs_close_bp_median': dr.median(), 'n_buys': len(dr)})
     slip = pd.DataFrame(slip)

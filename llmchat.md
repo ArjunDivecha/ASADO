@@ -1610,3 +1610,68 @@ Files:
 ---
 SESSION END: 2026-10-02 12:02 PDT | Agent: Claude Code (auto, sessionend, session bb7ab60d)
 ---
+
+---
+SESSION START: 2026-10-05 21:02 PDT | Agent: Claude Code (auto, idle, session 8fce7707)
+---
+
+### Session Summary
+Audited another session's "ETF lag" test, found it invalid, and replaced it with corrected tests. All outputs are under `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/experiments/2026_10_etf_gap_fill/`. Commits: `eeefd5b` (gap-fill), `222f2c3` (one-day reversal), `b9b657f` (vol-scaled picks). Nothing live changes.
+
+- **Original claim.** The other session reported IC +0.058 on local returns and −0.279 on ETF returns (`Data/analysis/etf_lag/README.md`). Disregard both numbers.
+- **Why it failed.** T2 `1DRet` is a *forward* return, so the "local" return was tomorrow's. Next-day returns were computed after filtering to big-move days. "74% of gaps close" counted a move in either direction. The ticker map had errors: EPP stood in for Spain, FXI for ChinaA, and the UK was missing.
+- **Corrected gap-fill test.** The US ETF leads the local market, not the reverse. The gap still predicts the next day's ETF return across 2000–2026, with the same sign in all 31 countries, and the effect lasts exactly one day. The local-return coefficient decayed from 0.31 (2000–04) to 0.03 (since 2023).
+- **Prior art.** The graveyard has nothing on this. Quantpedia #1070 (FXI overnight comovement) has decayed out of sample. Country-ETF short-term reversal is HOLDS_BOTH, but only at weekly and monthly horizons.
+
+### Decisions Made
+- **Keep the 7-name rule as default, with no size thresholds.**
+- **Don't apply vol-scaling to the 7-name book.** It cuts the 15:30 Sharpe from 1.99 to 1.14, a significant drop.
+- **Report vol-scaled ranking as a tweak for concentrated books only.**
+
+### Architecture / Design
+**Tested rule (E5, 15:30 ET signal, MOC):**
+- **Universe:** the 34 house ETFs.
+- **Signal:** return so far today versus yesterday's close, with ex-dividend add-back. Skip any ETF with no price, and skip the day if fewer than 10 ETFs have prices.
+- **Positions:** buy the 7 worst at 1/7 each; short the 6 best at 1/6 each (a quirk of the 20% cutoff on 34 names). Execute MOC and hold to the next close.
+
+**Results:**
+- **15:30 test (2023-11 to 2026-10):** gross long-short Sharpe 1.6 (t 3.0). The long-only version has Sharpe 2.0 against the equal-weight benchmark.
+- **Next-open entry is weak:** Sharpe 0.6 over five years (t 1.4). The overnight leg alone is 2.3.
+- **Where it works:** the edge is in Asian and European ETFs, and the Americas contribute nothing. It is roughly zero in 2010–19 and works in high-volatility, high-dispersion regimes (2000–09, 2020+).
+- **Cost and robustness:** best lookback is 1 day, and 1–2 day holds work best. Beta-adjusting hurts. The jackknife five-year Sharpe is 1.0–1.4. Turnover is about 3x capital per day, leaving roughly 2bp gross edge per dollar traded.
+
+**Sweep** (`etf_reversal_sweep.py`, run `runs/sweep_20261005_202512`): 147 cells per dataset.
+- Thresholds hurt over the full history and are flat in the last two years.
+- The best cell is a single name ranked by vol-scaled relative move. Its 15:30 Sharpe is 2.6 against 2.0 for the 7-name rule, at about 3x the volatility. Leverage-matched over five years it earns 44% a year against 35%.
+- It lost in 2000–09. Cell rankings across the full history and the last five years correlate at only 0.06, and no rule fixes 2010–14.
+
+**Vol-scaled versus raw** (`etf_reversal_volscaled.py`, run `runs/volscaled_20261005_203112`):
+- At one name the full-history Sharpe rises from 1.19 to 1.53 (p 0.006). Over five years it rises from 1.29 to 1.92, and in the 15:30 test from 2.15 to 2.63 (not significant).
+- The gain is lower volatility (26% to 23%), not better picks. The extra return is about 3.6% a year and not significant.
+- Raw ranking did better over the last 12 months. At three names, vol-scaling loses in the 15:30 test.
+- Raw picks run at 29% volatility, against 23% for the universe, and skew to EWZ, TUR, EZA and VNM. Vol-scaled picks tilt to KSA, INDA, EWM and EPHE.
+
+### What To Build Next
+- Measure closing-auction spreads on EPHE, TUR, KSA, VNM and EIDO.
+- Run a forward paper book with MOC execution.
+- Test a 2-day hold, which halves turnover.
+- Extend the intraday history beyond two years.
+
+### Constraints & Gotchas
+- **Short history.** The 15:30 test covers only about two years of hourly Yahoo data, all from the recent good regime. IBKR price history was queried, but no longer history was obtained.
+- **Drawdown metric.** The house net-drawdown metric runs into the hundreds at 30–40% annual returns. Ignore that column for these books.
+- **Git hygiene.** Data and run outputs are not gitignored in this repo, so only the scripts and README were committed, explicitly. The other session's files were left untouched.
+
+### Open Questions
+- Do closing-auction costs on the thin ETFs erase the edge?
+- Will the 2010–19 flat regime recur?
+
+### Context for Next Session
+- README: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/experiments/2026_10_etf_gap_fill/README.md`
+- Reversal run (E5 results on sheet `E5_1530` of `reversal_results.xlsx`): `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/experiments/2026_10_etf_gap_fill/runs/reversal_20261005_201709/reversal_report.pdf`
+- Sweep run: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/experiments/2026_10_etf_gap_fill/runs/sweep_20261005_202512/sweep_results.xlsx`
+- Vol-scaled run: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/experiments/2026_10_etf_gap_fill/runs/volscaled_20261005_203112/volscaled_report.pdf`
+
+---
+SESSION END: 2026-10-05 21:02 PDT | Agent: Claude Code (auto, idle, session 8fce7707)
+---

@@ -1675,3 +1675,65 @@ Audited another session's "ETF lag" test, found it invalid, and replaced it with
 ---
 SESSION END: 2026-10-05 21:02 PDT | Agent: Claude Code (auto, idle, session 8fce7707)
 ---
+
+---
+SESSION START: 2026-10-06 00:29 PDT | Agent: Claude Code (auto, idle, session 8fce7707)
+---
+
+### Session Summary
+Pushed the ETF reversal experiment to the public GitHub repo ArjunDivecha/ASADO, then ran a GPT-5.6 Sol (high effort) adversarial review of it. Started a Bloomberg pull of closing-auction cost data. Fixed three bugs GPT found and committed them as `273cc1e` (not pushed). The collector was still running at the end, so the execution and cost analyses have not been run.
+
+**Push incident (a failure):**
+- The auto-checkpoint hook had committed about 35 MB of data and run outputs. These were stripped from the unpushed commits before the first push.
+- A chained check-and-push then sent 7.3 MB of another session's CSVs (`Data/analysis/`, daily combiner scores and T2 returns) to the public repo.
+- With the user's approval, the 12 commits were rewritten and force-pushed with `--force-with-lease`. Remote `main` now has no CSVs. Anyone who cloned during the window, or the old hashes cached by GitHub, may still hold them.
+- Backups: branches `backup/pre-strip-2026-10-05` and `backup/pre-csv-purge-2026-10-05`, which still contain the stripped files and must never be pushed. File copies are in `/Users/arjundivecha/Dropbox/AAA Backup/Temp/asado_etf_gap_fill_backup_20261005/`.
+- New ignore rules are in `experiments/2026_10_etf_gap_fill/.gitignore` and the repo-level `.gitignore`.
+
+**GPT verdict:** keep the reversal as a credible research observation. Reject the regional story and the confidence in the optimized rule. Do not deploy.
+- Yahoo's "15:30" price is the first trade in the 15:30–16:00 hour. It differs from the close by a median 8.8bp and matches it exactly on 5% of days, and it is unreliable for thin names.
+- The full-history test uses surviving funds only, with 17–22 names before 2016 and stale early prices.
+- Look-ahead bug: eligibility was filtered on the existence of a next-day return. Fixed with `ok = ret.notna() & sd.notna()`. It changed under 1% of days.
+- Dividend bug in the 15:30-entry variant: Sharpe falls from 1.86 to about 1.69. MOC results are unaffected.
+- My explanation of vol-scaling was wrong. After dividing by own volatility, subtracting the cross-sectional mean changes the ranking.
+- p = 0.006 is not honest confirmation, because the rule was picked from the 147-cell sweep. "Pre-registered" overstated a code comment.
+- The long-short version, at about 2bp of edge per dollar traded, is almost certainly not harvestable.
+
+### Decisions Made
+- A market-on-close order fills at the single auction price and pays no spread. The real costs are market impact, fees and fallback to continuous trading.
+- The user proposed trading the last 15 minutes instead of the auction. This is being tested as 15:45–15:59 TWAP at the midpoint, TWAP crossing the spread, and VWAP.
+- Two rules to freeze for forward paper-trading: the raw 7-name rule and the 1-name relative-vol rule.
+- The checkpoint hook was not changed. I recommended restricting it to code only; the user has not decided.
+
+### Architecture / Design
+Code and data in `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/experiments/2026_10_etf_gap_fill/`:
+- `collect_auction_costs_bbg.py` pulls daily spreads and volumes plus minute bid, ask and trade bars for 15:25–16:05 ET, 2026-04-06 to 2026-10-02. Output goes to `data/bbg_auction/` (`collect_log.txt`, `progress.json`, `intraday/*.parquet`).
+- `auction_cost_analysis.py` is the cost model: net returns at $1M–$100M account sizes, breakeven costs and capacity.
+- `intraday_execution.py` runs the execution and leakage test: the clean 15:29 signal against Yahoo's, and MOC against the 15:45–15:59 window. Funds with no quotes use trade price as the midpoint, so it was changed to `ask >= bid`.
+- `reversal_robustness_checks.py` runs the ad-hoc checks. Run: `runs/robustness_20261005_233049/robustness_results.xlsx`.
+- GPT outputs are saved as `GPT_REVIEW_2026-10-05.md` and `GPT_REVIEW_2026-10-05_briefing.md`.
+
+### What To Build Next
+- Run `intraday_execution.py` and `auction_cost_analysis.py` once the pull finishes.
+- Rebuild the 15:30 test from minute data.
+- Build a point-in-time universe that includes liquidated funds.
+- Paper-trade the two frozen rules.
+
+### Constraints & Gotchas
+- The Bloomberg reset is midnight Pacific. The 34 ETFs were already counted in this month's quota, so the pull costs nothing extra.
+- The collector was killed and restarted several times because of timeouts and window changes. The earlier July data, which used a 15:45 window, was backed up to `data/bbg_auction/intraday_backup_jul_window1545_*`.
+- EPHE's final minute, auction included, was only about $62k on the sampled day.
+- The test window is 2.9 years (722 trading days), not two. Yahoo's 730-day limit counts trading days.
+- The overnight regional split (Asia +16%/yr, Europe +13.5%, Americas −1%) was an ad-hoc check, now in a script. The 1.0–1.4 jackknife is for close entry. The 0.43–0.70 GPT cites is for next-open entry.
+
+### Open Questions
+- Does the reversal survive the clean 15:29 signal?
+- Does trading 15 minutes early give up some of the reversal?
+
+### Context for Next Session
+- Latest commit is `273cc1e`. It is unpushed, and the user must approve any push.
+- The collector had about 20 minutes left when the log ended.
+
+---
+SESSION END: 2026-10-06 00:29 PDT | Agent: Claude Code (auto, idle, session 8fce7707)
+---

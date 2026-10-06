@@ -92,3 +92,31 @@ traded, corrects part of the move. Consequences:
   3.2x capital a day. Gross edge is about 2bp per dollar traded. Closing-auction
   spreads on the thin ETFs are the implementation question that decides whether
   this can be harvested.
+
+---
+
+# Sweep: fewer names, and size thresholds (2026-10-05, `etf_reversal_sweep.py`, run `runs/sweep_20261005_202512`)
+
+147 cells: three measures (raw move; move in own trailing-60d sigma; move relative
+to the group in own sigma), seven size thresholds (k = 0 to 3 sigma), and seven
+name caps (1, 2, 3, 5, 7, 10, all). Each cell was run on E1 (idealized close
+signal, 2000-2026) and E5 (15:30 signal executed MOC, 2 years). The bootstrap
+reality checks are in the xlsx. The sub-period table is in `subperiod_check.txt`.
+
+- **Size thresholds don't help.** Over the full history, Sharpe falls steadily as
+  k rises. Recently it is flat. The trade works on ordinary days, not just on big
+  moves.
+- **Fewer names means more return, with proportionally more risk.** Recently, one
+  name chosen by relative move in own sigma has the best Sharpe: 2.63 on E5 vs
+  1.99 for the baseline, and 2.29 vs 1.89 on E1 2023-26. It earns about 44%/yr
+  active over the last 5y vs 35% for the baseline levered to the same vol. Over
+  2000-09, concentration was clearly worse (1.60-3.77 vs 2.93-5.54). The surface
+  is unstable: the rank correlation of cell Sharpes between the full history and
+  the last 5y is 0.06.
+- **If concentrated, rank by vol-scaled relative move, not raw move.** That beats
+  raw ranking at one name in 5 of 6 sub-periods and in E5.
+- **No variant fixes 2010-2019.** Every rule is negative in 2010-14.
+- **Reality check:** the best recent cell is real against zero (p 0.004). Its edge
+  over the baseline in mean return (p 0.011) mostly reflects concentration buying
+  return with risk. E5 and E1-5y overlap in time, so they are not independent
+  confirmation.

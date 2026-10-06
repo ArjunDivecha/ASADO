@@ -76,3 +76,6 @@ Data/.pipeline.lock
 Data/.*.lock
 Data/runs/
 experiments/**/results/*.parquet
+
+# Ad-hoc analysis outputs (data, not code)
+Data/analysis/**/*.csv

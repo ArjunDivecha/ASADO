@@ -120,3 +120,27 @@ reality checks are in the xlsx. The sub-period table is in `subperiod_check.txt`
   over the baseline in mean return (p 0.011) mostly reflects concentration buying
   return with risk. E5 and E1-5y overlap in time, so they are not independent
   confirmation.
+
+---
+
+# Raw vs vol-scaled loser selection (2026-10-05, `etf_reversal_volscaled.py`, run `runs/volscaled_20261005_203112`)
+
+The only difference between the two methods is dividing each ETF's move by its
+own trailing-60d volatility.
+- **One name:** vol-scaled improves full-period Sharpe from 1.19 to 1.53
+  (bootstrap CI of the difference 0.07 to 0.61, p 0.006). Over the last 5y it goes
+  from 1.29 to 1.92 (CI 0.02 to 1.30). On E5 it goes from 2.15 to 2.63, but that
+  is not significant (CI −0.46 to 1.38). The gain comes mostly from lower vol
+  (23% vs 26%). Return improves only 3.6%/yr (t 1.0). There is no difference in
+  2010-19, and raw was better over the most recent 12 months.
+- **Two or three names:** a smaller version of the same gain over the full period
+  (+0.26 Sharpe, p about 0.02). At three names it loses on E5.
+- **Seven names:** no gain, and recently worse. E5 falls from 1.99 to 1.14, with
+  the CI entirely below zero. Vol-scaling is only a refinement for concentrated
+  books.
+- **Mechanism confirmed:** raw single picks average 29% own vol vs 23% for the
+  universe, led by EWZ, TUR, EZA and VNM (TUR and VNM top over the last 5y).
+  Vol-scaled picks average universe vol but tilt toward normally calm funds (KSA,
+  INDA, EWM, EPHE), where a modest drop counts as big.
+- The house net-drawdown metric explodes (into the hundreds) at these return
+  levels because the cumulative-gap measure compounds. Ignore it for these books.

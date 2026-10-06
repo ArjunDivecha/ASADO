@@ -133,45 +133,61 @@ def main():
         else:
             log("daily.parquet exists, skipping")
 
-        # 2. reference
+        # 2. reference (skip if already pulled this session)
         rpath = OUT / 'ref.parquet'
-        backup_if_exists(rpath)
-        ref = bbg.ref_batch(secs, REF_FIELDS)
-        rdf = pd.DataFrame(ref).T.reset_index().rename(columns={'index': 'security'})
-        rdf['ticker'] = rdf['security'].str.split().str[0]
-        atomic_parquet(rdf.astype(str), rpath)
-        log(f"ref: {len(rdf)} rows")
+        if not rpath.exists():
+            ref = bbg.ref_batch(secs, REF_FIELDS)
+            rdf = pd.DataFrame(ref).T.reset_index().rename(columns={'index': 'security'})
+            rdf['ticker'] = rdf['security'].str.split().str[0]
+            atomic_parquet(rdf.astype(str), rpath)
+            log(f"ref: {len(rdf)} rows")
+        else:
+            log("ref.parquet exists, skipping")
 
-        # 3. intraday
-        done = 0
-        for t in TICKERS:
-            for ev in ['TRADE', 'BID', 'ASK']:
-                p = INTRA / f'{t}_{ev}.parquet'
-                if p.exists():
-                    done += 1
-                    continue
-                t0 = time.time()
-                # monthly chunks: a single 6-month 1-minute request on a heavily quoted
-                # ETF (EWJ BID) exceeded the 90s response timeout on 2026-10-05
-                bars = []
+    # 3. intraday - one session per security/event so a timeout cannot poison the rest
+    daily = pd.read_parquet(OUT / 'daily.parquet')
+    done = 0
+    for t in TICKERS:
+        tdays = sorted(pd.to_datetime(daily[(daily.ticker == t) & (daily.field == 'PX_LAST')]['date']).unique())
+        tdays = [d for d in tdays if pd.Timestamp(INTRA_START[:10]) <= d <= pd.Timestamp(INTRA_END[:10])]
+        for ev in ['TRADE', 'BID', 'ASK']:
+            p = INTRA / f'{t}_{ev}.parquet'
+            if p.exists():
+                done += 1
+                continue
+            t0 = time.time()
+            mode = 'monthly'
+            bars = []
+            try:
+                # monthly chunks: a single 6-month request on EWJ BID exceeded the 90s timeout
                 edges = list(pd.date_range(INTRA_START[:10], INTRA_END[:10], freq='MS')) + [pd.Timestamp(INTRA_END[:10]) + pd.Timedelta(days=1)]
                 edges = [pd.Timestamp(INTRA_START[:10])] + [e for e in edges if e > pd.Timestamp(INTRA_START[:10])]
-                for a, b in zip(edges[:-1], edges[1:]):
-                    bars += bbg.bdib(f'{t} US Equity', f'{a:%Y-%m-%d} 13:30:00',
-                                     f'{b - pd.Timedelta(days=1):%Y-%m-%d} 20:10:00', ev, 1)
-                df = pd.DataFrame(bars)
-                if not df.empty:
-                    df['time'] = pd.to_datetime(df['time'])
-                    hm = df['time'].dt.strftime('%H:%M')
-                    df = df[(hm >= WIN[0]) & (hm <= WIN[1])].copy()
-                    for c in ['open', 'high', 'low', 'close', 'volume', 'numEvents', 'value']:
-                        if c in df:
-                            df[c] = pd.to_numeric(df[c], errors='coerce')
-                df['ticker'], df['event'] = t, ev
-                atomic_parquet(df, p)
-                done += 1
-                log(f"intraday {t} {ev}: {len(bars)} bars downloaded, {len(df)} kept in window ({time.time()-t0:.1f}s)")
-                progress(intraday_done=done, intraday_total=len(TICKERS) * 3, last=f'{t}_{ev}')
+                with BBG() as bbg:
+                    for a, b in zip(edges[:-1], edges[1:]):
+                        bars += bbg.bdib(f'{t} US Equity', f'{a:%Y-%m-%d} 13:30:00',
+                                         f'{b - pd.Timedelta(days=1):%Y-%m-%d} 20:10:00', ev, 1)
+            except TimeoutError:
+                # very heavily quoted names (QQQ BID even monthly): fetch only the
+                # 19:25-20:05 UTC window, one trading day per request, fresh session
+                mode = 'per-day window'
+                log(f"intraday {t} {ev}: monthly request timed out; falling back to per-day windows ({len(tdays)} days)")
+                bars = []
+                with BBG() as bbg:
+                    for d in tdays:
+                        bars += bbg.bdib(f'{t} US Equity', f'{d:%Y-%m-%d} {WIN[0]}:00', f'{d:%Y-%m-%d} {WIN[1]}:00', ev, 1)
+            df = pd.DataFrame(bars)
+            if not df.empty:
+                df['time'] = pd.to_datetime(df['time'])
+                hm = df['time'].dt.strftime('%H:%M')
+                df = df[(hm >= WIN[0]) & (hm <= WIN[1])].copy()
+                for c in ['open', 'high', 'low', 'close', 'volume', 'numEvents', 'value']:
+                    if c in df:
+                        df[c] = pd.to_numeric(df[c], errors='coerce')
+            df['ticker'], df['event'] = t, ev
+            atomic_parquet(df, p)
+            done += 1
+            log(f"intraday {t} {ev}: {len(bars)} bars downloaded ({mode}), {len(df)} kept in window ({time.time()-t0:.1f}s)")
+            progress(intraday_done=done, intraday_total=len(TICKERS) * 3, last=f'{t}_{ev}')
     log("COLLECTION COMPLETE")
 
 

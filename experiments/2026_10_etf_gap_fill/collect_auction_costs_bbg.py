@@ -78,6 +78,9 @@ DAILY_FIELDS = ['PX_LAST', 'PX_VOLUME', 'TURNOVER', 'PX_BID', 'PX_ASK', 'TIME_WA
 REF_FIELDS = ['ETF_MEDN_BID_ASK_SPREAD', 'BID_ASK_SPREAD_RATIO', 'PRIMARY_EXCHANGE_NAME', 'FUND_TOTAL_ASSETS']
 INTRA_START, INTRA_END = '2026-04-06 13:30:00', '2026-10-02 20:10:00'
 WIN = ('19:25', '20:05')   # UTC, = 15:25-16:05 EDT
+# Ultra-liquid US ETFs: BID/ASK 1-minute bars are prohibitively slow (QQQ BID took 20 min
+# via per-day windows) and their spread is ~0.3bp, so the analysis uses TRADE prices as mid.
+SKIP_QUOTES = {'QQQ', 'SPY', 'IWM'}
 
 
 def log(msg):
@@ -152,7 +155,7 @@ def main():
         tdays = [d for d in tdays if pd.Timestamp(INTRA_START[:10]) <= d <= pd.Timestamp(INTRA_END[:10])]
         for ev in ['TRADE', 'BID', 'ASK']:
             p = INTRA / f'{t}_{ev}.parquet'
-            if p.exists():
+            if p.exists() or (t in SKIP_QUOTES and ev != 'TRADE'):
                 done += 1
                 continue
             t0 = time.time()

@@ -95,11 +95,18 @@ def minute_tables():
     for t in TICK:
         try:
             tr = pd.read_parquet(BB / 'intraday' / f'{t}_TRADE.parquet')
+        except FileNotFoundError:
+            print(f"  missing intraday TRADE for {t}")
+            continue
+        try:
             bd = pd.read_parquet(BB / 'intraday' / f'{t}_BID.parquet')
             ak = pd.read_parquet(BB / 'intraday' / f'{t}_ASK.parquet')
         except FileNotFoundError:
-            print(f"  missing intraday for {t}")
-            continue
+            # QQQ/SPY/IWM: quote bars not collected (spread ~0.3bp); use the minute's last
+            # trade as both bid and ask, i.e. mid = last trade, zero quoted spread
+            print(f"  {t}: no quote bars, using trade prices as mid")
+            bd = tr[['time', 'close']].copy()
+            ak = tr[['time', 'close']].copy()
         for df in (tr, bd, ak):
             df['date'] = df['time'].dt.normalize()
             df['hm'] = df['time'].dt.strftime('%H:%M')
@@ -109,7 +116,7 @@ def minute_tables():
         q['hm'] = q['time'].dt.strftime('%H:%M')
         # carry last quote forward within a day (a bar exists only if the quote changed)
         q[['bid', 'ask']] = q.groupby('date')[['bid', 'ask']].ffill()
-        q = q[(q.ask > q.bid) & (q.bid > 0)]
+        q = q[(q.ask >= q.bid) & (q.bid > 0)]   # >= keeps trade-as-mid rows (QQQ/SPY/IWM)
         q['mid'] = (q.bid + q.ask) / 2
         # 15:29 quote = last quote at or before the 19:29 bar
         pre = q[q.hm <= '19:29'].groupby('date').last()

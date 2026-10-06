@@ -151,7 +151,14 @@ def main():
                     done += 1
                     continue
                 t0 = time.time()
-                bars = bbg.bdib(f'{t} US Equity', INTRA_START, INTRA_END, ev, 1)
+                # monthly chunks: a single 6-month 1-minute request on a heavily quoted
+                # ETF (EWJ BID) exceeded the 90s response timeout on 2026-10-05
+                bars = []
+                edges = list(pd.date_range(INTRA_START[:10], INTRA_END[:10], freq='MS')) + [pd.Timestamp(INTRA_END[:10]) + pd.Timedelta(days=1)]
+                edges = [pd.Timestamp(INTRA_START[:10])] + [e for e in edges if e > pd.Timestamp(INTRA_START[:10])]
+                for a, b in zip(edges[:-1], edges[1:]):
+                    bars += bbg.bdib(f'{t} US Equity', f'{a:%Y-%m-%d} 13:30:00',
+                                     f'{b - pd.Timedelta(days=1):%Y-%m-%d} 20:10:00', ev, 1)
                 df = pd.DataFrame(bars)
                 if not df.empty:
                     df['time'] = pd.to_datetime(df['time'])

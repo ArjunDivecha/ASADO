@@ -144,3 +144,35 @@ own trailing-60d volatility.
   INDA, EWM, EPHE), where a modest drop counts as big.
 - The house net-drawdown metric explodes (into the hundreds) at these return
   levels because the cumulative-gap measure compounds. Ignore it for these books.
+
+---
+
+# External review: GPT-5.6 Sol, high effort (2026-10-05) — `GPT_REVIEW_2026-10-05.md`
+
+GPT's verdict: "keep the reversal as a credible research observation; reject the regional story and
+the optimized-rule confidence; do not deploy it." It independently reproduced the `1DRet` fix, the
+decay of the local leg, and the overnight concentration.
+
+**Accepted and fixed:**
+- **Look-ahead in eligibility.** The day-T universe was filtered on `fwd.notna()` in the sweep,
+  vol-scaled and cost scripts. Removed. GPT measured an effect on fewer than 1% of days.
+- **Dividend credited after the ex-date** in the "enter at 15:30" variants
+  (`etf_gap_fill_intraday.py`, `etf_reversal_1d.py`). Fixed. GPT puts that variant at Sharpe about
+  1.69, down from 1.86. The MOC result is unaffected.
+- **Wrong claim** that vol-scaling differs from raw only by dividing by vol. Mean subtraction does
+  change the ranking once each name is divided by its own vol. Docstring corrected.
+- **"Pre-registered" overstated.** The spec was a comment in the script, not a frozen ledger entry.
+- **The p = 0.006 for one-name vol-scaling is post-selection.** The rule was chosen from the
+  147-cell sweep first, so it is not independent confirmation.
+- **The Yahoo "15:30" price is the first trade anywhere in 15:30-16:00**, which for thin ETFs can
+  be near the close. It is being rebuilt from Bloomberg 1-minute NBBO (15:29 midpoint):
+  `intraday_execution.py`.
+- **The full-history test uses today's surviving funds**, with 17-22 names before 2016 and no
+  liquidated ETFs. Early Sharpes mix stale pricing, changing breadth and survivorship. Not yet
+  fixed: it needs a point-in-time ETF list.
+
+**Disputed:** GPT said the regional overnight split and the leave-one-out figure (1.0-1.4) were
+never tested. Both were tested, ad hoc in session, and are now persisted in
+`reversal_robustness_checks.py` (run `runs/robustness_20261005_233049`). The overnight leg comes
+from Asia +16.0%/yr and Europe/Africa/ME +13.5%/yr, Americas −0.8%/yr. Leave-one-out 5y Sharpe is
+1.00-1.38 for close entry and 0.43-0.70 for next-open entry.

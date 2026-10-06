@@ -169,7 +169,7 @@ def main():
         nxt_close = cl.shift(-1).reindex(dates)
         nxt_div = div[t].shift(-1).reindex(dates).fillna(0.0)
         d['fwd_close'] = (nxt_close + nxt_div) / cl.reindex(dates) - 1
-        d['fwd_from_1530'] = (nxt_close + nxt_div + dv) / p1530[t].reindex(dates) - 1
+        d['fwd_from_1530'] = (nxt_close + nxt_div) / p1530[t].reindex(dates) - 1  # no same-day dividend after ex-date (fixed 2026-10-05)
         rows.append(d.reset_index(names='date'))
     p = pd.concat(rows, ignore_index=True)
     p = p[(p['local'].abs() > 1e-12)].dropna(subset=['etf_close_ret', 'etf_1530_ret', 'fwd_close', 'fwd_from_1530'])

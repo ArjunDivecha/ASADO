@@ -15,8 +15,10 @@ reversal trade (see etf_reversal_1d.py / etf_reversal_sweep.py):
            std; buy the N names that underperformed the group by the most
            in units of their own normal volatility
 
-The ONLY difference between the two is dividing by each ETF's own volatility
-(subtracting the cross-sectional mean does not change a ranking).  Books are
+Note (corrected 2026-10-05 after GPT-5.6 review): this is NOT just raw return
+divided by own volatility.  Subtracting the cross-sectional mean before
+dividing by each ETF's own (different) volatility DOES change the ranking, so
+VOLSCALED is a relative-move-in-own-vol signal.  Books are
 long-only, equal weight among the N picks, held to the next close, judged
 against the equal-weight benchmark of the 34 house ETFs.  N = 1, 2, 3 (the
 concentrated books where the choice matters) plus 7 (baseline breadth).

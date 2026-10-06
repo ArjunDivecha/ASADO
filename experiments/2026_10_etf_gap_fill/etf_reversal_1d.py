@@ -420,7 +420,7 @@ def main():
         r1530 = (p_ + dv_) / prev - 1
         rclose = (cu_ + dv_) / prev - 1
         nxt = (cu.shift(-1).reindex(days) + dv.shift(-1).reindex(days)) / cu_ - 1
-        nxt1530 = (cu.shift(-1).reindex(days) + dv.shift(-1).reindex(days) + dv_) / p_ - 1
+        nxt1530 = (cu.shift(-1).reindex(days) + dv.shift(-1).reindex(days)) / p_ - 1  # entry after ex-date: no same-day dividend (fixed 2026-10-05, GPT review)
         for m in [r1530, rclose, nxt, nxt1530]:
             m[m.abs() > 0.3] = np.nan
         e5 = []

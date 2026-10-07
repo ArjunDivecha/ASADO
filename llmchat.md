@@ -1880,6 +1880,12 @@ series (4.0 with them). The broad ridge model's walk-forward edge fell from 4.6 
 - Trainers pin BLAS/OpenMP threads to 1 per worker (load average 269 before the fix).
 - `playwright-cli` blocks file: URLs; serve `results/` on 127.0.0.1:18771 to screenshot (8765 is taken).
 
+**Addendum (13:55 PDT):** hysteresis is now the project's default basket rule — hold a name while the
+model still ranks it in the top 16 (`hysteresis.DEFAULT_BUFFER`, `walk_forward.py --buffer`). On the
+clean v3 walk-forward (`walk_20261007_140136`) the net makes +4.5 %/yr OOS, t 3.4, IR 0.72, 1.8 names
+changed/month (268 % one-way/yr) vs +4.1 / 3.8 names on plain top-8; ridge +2.25; net − ridge +2.25
+(t 1.8). Branch `exp/NN` pushed to origin at `bbbe348`.
+
 ### What To Build Next
 - Design holdout: choose architecture/seeds on the first half of history, walk forward on the second.
 - Vintage-archived slow inputs (extend the audit's ALFRED method); T2 macro publication lags.

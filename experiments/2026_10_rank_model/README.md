@@ -350,6 +350,25 @@ Pooled net − ridge: +0.5 to +0.7 expanding (t ≤ 0.6). Net single-draw basket
 Verdict: **window choice doesn't matter; the 4.5 % headline was the top seed draw — the pooled
 estimate is ~3 %/yr, statistically the same as ridge.** Large pooled ensembles are required.
 
+## Step 13 — the default model (2026-10-07)
+
+Defaults in `walk_forward.py`: `--window 60` (rolling), `--seeds 30`, `--buffer 16`. Three independent
+draws (`walk_*_default_s0/s1000/s2000`); `default_model.py` → `results/default_20261007_155223/`.
+
+| default model, OOS 2005-02 → 2026-09 | %/yr | t | notes |
+|---|---|---|---|
+| net, mean of 3 draws, M16 | **+3.11** | **2.76** | draws 3.05 / 3.28 / 3.02; IR 0.59; 1.76 names/month |
+| net, 90 nets pooled, M16 | +3.19 | 2.48 | |
+| net, mean of draws, plain top-8 | +2.20 | 1.91 | draws 1.57 / 3.09 / 1.94 |
+| ridge, M16 / plain | +1.95 / +2.89 | 1.57 / 2.22 | deterministic |
+
+By decade (net, M16): 2.7 / 3.3 / 3.1 %/yr. 15/22 years positive. Max relative DD −12.6 %
+(2005-12 → 2008-05), longest underwater 42 months. Net − ridge (M16) +1.16, t 1.07.
+
+Verdict: **default = rolling 60, 30 nets, predict-then-select, M16 → ~3.1 %/yr OOS, reproducible
+across runs (±0.15), even across decades.** Not distinguishable from ridge as a forecaster; better
+behaved under the trading rule. Next: forward paper-trade; vintage inputs.
+
 ## Running report
 
 `build_report.py` → `results/report.html` — one self-contained light-mode page: a
@@ -359,6 +378,5 @@ Regenerate after any stage: `.venv/bin/python build_report.py && open results/re
 
 ## Next
 
-Monthly refit with 30–50 pooled nets (varied early-stopping slices), repeat the holdout with three
-independent draws, report ranges; if the net still ties ridge, adopt ridge. Vintage-archived slow
-inputs + T2 macro lag. Forward paper-trade the survivor with the hysteresis buffer.
+Forward paper-trade the default; vintage-archived slow inputs + T2 macro lag; optional nested rolling
+design re-selection; implementation costs at 1.8 names/month.

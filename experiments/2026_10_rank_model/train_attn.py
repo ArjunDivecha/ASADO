@@ -70,7 +70,7 @@ for _v in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "VECLIB_MAXIMUM_THREADS", "OPEN
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
-EXP_DIR = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model")
+EXP_DIR = Path(__file__).resolve().parent  # this script's own folder: works from the exp/NN worktree or the main checkout
 sys.path.insert(0, str(EXP_DIR))
 from train_floor import PANEL, FACTOR_SET, RESULTS_ROOT, SOFT_TAUS, aggregate, month_metrics  # noqa: E402
 from train_nn import _DATA, _init_worker, make_soft_topk, month_zscore  # noqa: E402

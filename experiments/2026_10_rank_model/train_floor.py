@@ -98,7 +98,7 @@ from scipy import stats as sstats
 from sklearn.linear_model import Ridge
 from sklearn.model_selection import GroupKFold
 
-EXP_DIR = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model")
+EXP_DIR = Path(__file__).resolve().parent  # this script's own folder: works from the exp/NN worktree or the main checkout
 PANEL = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/experiments/2026_10_rank_model/panel_v1/feature_panel_v1.parquet")
 FACTOR_SET = EXP_DIR / "factor_set_v1.json"
 RESULTS_ROOT = EXP_DIR / "results"

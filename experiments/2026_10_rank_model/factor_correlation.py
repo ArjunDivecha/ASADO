@@ -93,7 +93,7 @@ import pandas as pd
 
 BASE_DIR = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO")
 # Code and results live in the exp/NN worktree; data (snapshot, catalog) stays in the main checkout.
-EXP_DIR = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model")
+EXP_DIR = Path(__file__).resolve().parent  # this script's own folder: works from the exp/NN worktree or the main checkout
 SNAPSHOT = (
     BASE_DIR / "Data" / "work" / "experiments" / "2026_10_rank_model"
     / "snapshot_2026_10_07" / "feature_panel_observed.parquet"

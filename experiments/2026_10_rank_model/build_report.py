@@ -415,8 +415,11 @@ def stage4(c: dict) -> tuple[str, str]:
             ax.scatter([i + 0.42], [agg_bl.loc[m, "mean"]], marker="D", s=46, color="#D62728", zorder=5)
     ax.axhline(0, color="#444", lw=0.8)
     ax.axhspan(-2 * se, 2 * se, color="#D62728", alpha=0.06, lw=0)
+    short = {"reference_REER_CS": "Reference\n(REER alone)", "ridge": "Ridge", "lgbm_regression": "LightGBM\nregression",
+             "lgbm_top8_classifier": "LightGBM\ntop-8 classifier", "lgbm_lambdarank": "LightGBM\nlambdarank@8",
+             "ridge_shuffled": "Ridge\nshuffled (control)", "lgbm_regression_shuffled": "LightGBM reg.\nshuffled (control)"}
     ax.set_xticks(range(len(order)))
-    ax.set_xticklabels([MODEL_LABEL[m].replace(" — ", "\n").replace(" (control)", "\n(control)") for m in order], fontsize=8.5)
+    ax.set_xticklabels([short.get(m, m) for m in order], fontsize=8.5)
     ax.set_ylabel("top-8 basket excess over the average, % per year")
     ax.set_title(f"Evaluation months only: each dot is one of {n_rand} random splits; black bar = mean; "
                  "red diamond = mean over the 5 contiguous blocks; pink band = ±2 standard errors of a single split", fontsize=10)
@@ -432,7 +435,7 @@ def stage4(c: dict) -> tuple[str, str]:
     ax.bar(x + 0.18, [agg.loc[m, "mean"] for m in real], width=0.36, color="#1F77B4", label="evaluation months")
     ax.axhline(0, color="#444", lw=0.8)
     ax.set_xticks(x)
-    ax.set_xticklabels([MODEL_LABEL[m].replace(" — ", "\n") for m in real], fontsize=9)
+    ax.set_xticklabels([short.get(m, m) for m in real], fontsize=9)
     ax.set_ylabel("top-8 excess, % per year")
     ax.legend(frameon=False, fontsize=9)
     ax.set_title("How much each model memorises: training-month fit versus evaluation-month result", fontsize=10.5)

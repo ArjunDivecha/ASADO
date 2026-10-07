@@ -331,6 +331,25 @@ Verdict: design is robust to where it is chosen; **the net's edge over ridge doe
 holdout**; run-to-run noise (refit calendar, seeds) is as large as the edge; hysteresis halves turnover
 at no cost in both halves. Next: monthly refit + large ensemble, repeat the holdout.
 
+## Step 12 — rolling five-year window and seed-draw replication (2026-10-07)
+
+`walk_forward.py --window 60` (train only on the trailing 60 months) with `--seed 0/1000/2000`
+(`walk_*_roll60_s*`), plus two more expanding draws (`walk_*_exp_s1000`, `walk_*_exp_s2000`);
+`pool_draws.py` → `results/pooled_20261007_143632/` (30-net pooled ensembles per fold).
+
+| OOS 2005–2026, %/yr (t) | expanding | rolling 60 |
+|---|---|---|
+| net, single draws, buffer M16 | 4.5 / 1.5 / 2.6 | 2.7 / 2.0 / 1.9 |
+| net, 30 pooled, buffer M16 | **2.95 (2.3)** | 3.7 (2.9) |
+| net, 30 pooled, plain top-8 | 2.6 (2.0) | 2.7 (2.1) |
+| ridge, buffer M16 / plain | 2.25 / 2.1 | 1.95 / 2.9 |
+
+Rolling − expanding (paired, pooled): net +0.1 / +0.75 (t ≤ 0.6); ridge +0.75 / −0.3 (t ≤ 0.6).
+Pooled net − ridge: +0.5 to +0.7 expanding (t ≤ 0.6). Net single-draw baskets correlate ~0.6.
+
+Verdict: **window choice doesn't matter; the 4.5 % headline was the top seed draw — the pooled
+estimate is ~3 %/yr, statistically the same as ridge.** Large pooled ensembles are required.
+
 ## Running report
 
 `build_report.py` → `results/report.html` — one self-contained light-mode page: a
@@ -340,6 +359,6 @@ Regenerate after any stage: `.venv/bin/python build_report.py && open results/re
 
 ## Next
 
-Monthly-refit walk-forward with 30–50 seeds for net and ridge, repeat the first-half/second-half
-holdout, report run-to-run ranges; vintage-archived slow inputs + T2 macro lag; forward paper-trade
-whichever model survives, with the hysteresis buffer.
+Monthly refit with 30–50 pooled nets (varied early-stopping slices), repeat the holdout with three
+independent draws, report ranges; if the net still ties ridge, adopt ridge. Vintage-archived slow
+inputs + T2 macro lag. Forward paper-trade the survivor with the hysteresis buffer.

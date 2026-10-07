@@ -1357,6 +1357,29 @@ def stage10(c: dict) -> tuple[str, str]:
         ax.spines[sp].set_visible(False)
     chart = img(fig_to_b64(fig), "Solid = net, dashed = ridge; blue = trained on the trailing five years only, purple = trained on all history to date.")
     files = " · ".join(flink(p / "summary.json", f"{w}, seed {sd}") for (w, sd), p in sorted(reps.items()))
+    # pooled 30-net ensembles (pool_draws.py)
+    pooled_html = ""
+    pooled_runs = sorted(p for p in RESULTS.glob("pooled_*") if p.is_dir() and (p / "pooled_summary.parquet").exists())
+    if pooled_runs:
+        pr_ = pooled_runs[-1]
+        ps_ = pd.read_parquet(pr_ / "pooled_summary.parquet")
+        ps_ = ps_[ps_.model.isin(["nn_mse", "ridge"]) & (ps_.member.str.startswith("pooled") | (ps_.model == "ridge"))].copy()
+        ps_["model"] = ps_["model"].map(MODEL_LABEL)
+        ps_["rule"] = ps_["rule"].map(lambda r: "plain top-8" if r == "plain_top8" else f"hold while ≤ {r[8:]}")
+        ps_["member"] = ps_["member"].map(lambda m: "30 nets pooled" if m.startswith("pooled") else "deterministic")
+        show = ps_[["window", "model", "member", "rule", "excess_ann_pct", "t", "info_ratio", "names_changed_per_month", "first_half_ann_pct",
+                    "second_half_ann_pct", "second_half_t", "max_rel_drawdown_pct"]].rename(columns={
+            "excess_ann_pct": "OOS excess %/yr", "info_ratio": "IR", "names_changed_per_month": "names changed / month",
+            "first_half_ann_pct": "2005–13 %/yr", "second_half_ann_pct": "2013–26 %/yr", "second_half_t": "t (2013–26)", "max_rel_drawdown_pct": "max rel. DD %"})
+        js = json.load(open(pr_ / "summary.json"))
+        pj = "".join(f"<li>{html.escape(k_)}: {v['ann_pct']:+.2f}% a year, t {v['t']:.2f}</li>" for k_, v in js["paired"].items())
+        pooled_html = f"""<h4>Pooling the three draws: one 30-net ensemble per fold</h4>
+<p>Averaging the three draws' saved out-of-sample scores gives a 30-net ensemble per fold (three different early-stopping slices as well as thirty seeds).
+Nothing is retrained, so it stays out of sample.</p>
+{table(show, {"OOS excess %/yr": "{:+.2f}", "t": "{:.2f}", "IR": "{:.2f}", "names changed / month": "{:.2f}", "2005–13 %/yr": "{:+.1f}", "2013–26 %/yr": "{:+.1f}",
+              "t (2013–26)": "{:.2f}", "max rel. DD %": "{:.1f}"})}
+<p>Paired, month by month:</p><ul>{pj}</ul>
+<div class="files">{flink(pr_ / "pooled_summary.xlsx", "pooled results (xlsx)")} · {flink(pr_ / "summary.json")} · {flink(EXP_DIR / "pool_draws.py", "script")}</div>"""
     body = f"""
 <p class="lead">Every walk-forward so far trained each year on <em>all</em> history to date. This stage asks whether recent history forecasts better: each
 year the model is trained only on the trailing five years (60 months), everything else held fixed — the same 22 folds from February 2005, the same network,
@@ -1368,6 +1391,7 @@ and the comparison is paired draw by draw. Ridge has no seeds, so its three runs
 {ptbl}
 <ul>{corr_txt}</ul>
 {chart}
+{pooled_html}
 {commentary_block(c, "stage10")}
 <div class="files"><div class="files-title">Files</div>{files} · {flink(EXP_DIR / "walk_forward.py", "script (--window)")}</div>"""
     return "done", body

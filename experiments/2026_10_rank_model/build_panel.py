@@ -95,6 +95,8 @@ def main() -> int:
                     help="comma-separated base_variable names to drop (both _CS and _TS)")
     ap.add_argument("--drop-sources", default="",
                     help="comma-separated source names to drop entirely (e.g. gdelt), for ablations")
+    ap.add_argument("--drop-vars", default="",
+                    help="comma-separated exact variable names to drop (e.g. a _CS form only); '|' also accepted as separator")
     ap.add_argument("--global-vars", default="",
                     help="comma-separated GLOBAL series (identical across countries, e.g. FRED_VIX_TS) to append as "
                          "context inputs; they are not in the screen, get the harness lag of their source, and are "
@@ -116,12 +118,17 @@ def main() -> int:
     screen = pd.read_parquet(args.screen)
     drop_bases = [b.strip() for b in args.drop_bases.split(",") if b.strip()]
     drop_sources = [b.strip() for b in args.drop_sources.split(",") if b.strip()]
+    drop_vars = [b.strip() for b in args.drop_vars.replace("|", ",").split(",") if b.strip()]
     scored = screen[screen["fm_t"].notna()]
-    drop_mask = scored["base_variable"].isin(drop_bases) | scored["source"].isin(drop_sources)
+    drop_mask = (scored["base_variable"].isin(drop_bases) | scored["source"].isin(drop_sources)
+                 | scored["variable"].isin(drop_vars))
     dropped = scored[drop_mask]
     selected = scored[~drop_mask].copy()
-    log.info("screen rows=%d scored=%d dropped(by base %s, by source %s)=%d selected=%d",
-             len(screen), len(scored), drop_bases, drop_sources, len(dropped), len(selected))
+    missing = [v for v in drop_vars if v not in scored["variable"].values]
+    if missing:
+        log.warning("--drop-vars names not in the scored set (ignored): %s", missing)
+    log.info("screen rows=%d scored=%d dropped(by base %s, by source %s, by var %d)=%d selected=%d",
+             len(screen), len(scored), drop_bases, drop_sources, len(drop_vars), len(dropped), len(selected))
     log.info("dropped: %s", dropped["variable"].tolist())
     cl80 = next((c for c in selected.columns if c.startswith("cluster_abs_rho_ge_0.80")), None)
     keep_cols = ["rank_by_abs_t", "variable", "base_variable", "normalization", "source", "lag_months",
@@ -156,7 +163,8 @@ def main() -> int:
         "rules": [
             "keep every factor with a screen t-stat (>= 24 usable months of >= 20 countries)",
             f"drop base variables {drop_bases} in both _CS and _TS",
-        ] + ([f"drop sources {drop_sources} entirely"] if drop_sources else []),
+        ] + ([f"drop sources {drop_sources} entirely"] if drop_sources else [])
+          + ([f"drop variables {drop_vars}"] if drop_vars else []),
         "n_factors": int(len(selected)),
         "n_global": int(selected["global"].sum()),
         "global_vars": global_vars,

@@ -744,8 +744,12 @@ ABLATION_TITLE = {
     "attn": "Cross-country attention (64-dim, 2 layers, 4 heads; five seeds) — vs the new base",
 }
 ABLATION_ORDER = ["noreer", "base256", "nogdelt", "nopresence", "global", "attn"]
-# which run the NETS of each ablation are compared against: None = the untagged stage-5 run
-ABLATION_BASE = {"noreer": None, "base256": None, "nogdelt": "base256", "nopresence": "base256", "global": "base256", "attn": "base256"}
+# which run the NETS of each ablation are compared against: a tag (floor_/nn_ *_<tag>) or an explicit
+# nn_<ts> directory name. The v1 ablations are pinned to the v1 stage-5 run because the untagged
+# headline runs moved to the cleaned v3 panel after the REER audit.
+ABLATION_BASE = {"noreer": "nn_20261007_112400", "base256": "nn_20261007_112400", "nogdelt": "base256",
+                 "nopresence": "base256", "global": "base256", "attn": "base256"}
+ABLATION_FLOOR_BASE = "floor_20261007_110654"   # ridge/trees in the v1 ablations are compared against the v1 floor
 # a tagged run whose models have different names than the base's: {ablation model: base model}
 ABLATION_MODEL_MAP = {"attn": {"attn_mse": "nn_mse", "attn_soft_top8": "nn_soft_top8"}}
 
@@ -769,7 +773,8 @@ def _era_table(mo_base: pd.DataFrame, mo_abl: pd.DataFrame, ridge_mo: pd.DataFra
 def stage6(c: dict) -> tuple[str, str]:
     fl_tags, nn_tags = tagged_runs("floor"), tagged_runs("nn")
     tags = [t for t in ABLATION_ORDER if t in fl_tags or t in nn_tags] + sorted(set(fl_tags) | set(nn_tags) - set(ABLATION_ORDER))
-    base_floor, base_nn = latest("floor"), latest("nn")
+    base_floor = RESULTS / ABLATION_FLOOR_BASE if (RESULTS / ABLATION_FLOOR_BASE).exists() else latest("floor")
+    base_nn = latest("nn")
     if not tags or base_floor is None:
         return "pending", '<div class="note pending">No ablation runs yet. An ablation is a rerun of the floor and the net on a changed panel, tagged so it sits here instead of replacing the headline.</div>'
     fb = pd.read_parquet(base_floor / "per_split.parquet")
@@ -790,10 +795,14 @@ def stage6(c: dict) -> tuple[str, str]:
         abl = pd.concat(pieces, ignore_index=True)
         # comparison base: nets vs the configured base run; ridge/trees vs the untagged floor
         nb_tag = ABLATION_BASE.get(tag)
-        nn_base_run = nn_tags.get(nb_tag) if nb_tag else base_nn
+        if nb_tag and (RESULTS / nb_tag).is_dir():
+            nn_base_run, base_label = RESULTS / nb_tag, f"{nb_tag} (v1 stage-5 net, 64/32, five seeds)"
+        elif nb_tag:
+            nn_base_run, base_label = nn_tags.get(nb_tag), ABLATION_TITLE.get(nb_tag, nb_tag).split(":")[0]
+        else:
+            nn_base_run, base_label = base_nn, "the current headline net"
         nb = nn_rows(nn_base_run) if nn_base_run is not None else pd.DataFrame()
         base = pd.concat([floor_base, nb], ignore_index=True)
-        base_label = (ABLATION_TITLE.get(nb_tag, nb_tag).split(":")[0] if nb_tag else "stage 5 (64/32, five seeds)")
         mmap = ABLATION_MODEL_MAP.get(tag, {})
         rows, chart_rows = [], []
         for m in models + list(mmap):

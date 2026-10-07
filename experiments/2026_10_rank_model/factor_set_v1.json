@@ -1,7 +1,7 @@
 {
   "version": "v1",
-  "created": "2026-10-07T10:45:34",
-  "screen_run": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/experiments/2026_10_rank_model/results/screen_20261007_100004/factor_screen.parquet",
+  "created": "2026-10-07T10:53:29",
+  "screen_run": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model/results/screen_20261007_105320/factor_screen.parquet",
   "snapshot": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/experiments/2026_10_rank_model/snapshot_2026_10_07/feature_panel_observed.parquet",
   "rules": [
     "keep every factor with a screen t-stat (>= 24 usable months of >= 20 countries)",

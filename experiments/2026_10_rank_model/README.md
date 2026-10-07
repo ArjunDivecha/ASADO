@@ -1,5 +1,15 @@
 # 2026_10_rank_model — country top-8 ranking model
 
+**Where this lives (2026-10-07).** Branch `exp/NN`, worktree
+`/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/` — the main ASADO
+checkout is production and carries none of this (moved off `main` in `d2942dc`).
+Code, config and `results/` are here; the frozen data (snapshot, modelling panel)
+stays under the main checkout's gitignored
+`/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/experiments/2026_10_rank_model/`.
+Run everything with the experiment's own venv, `.venv/bin/python` (uv, Python 3.12,
+LightGBM) — never the ASADO `venv/`. Each script defaults to the newest upstream
+run (`results/corr_*` → `factor_screen.py`, `results/screen_*` → `build_panel.py`).
+
 **Question.** Can a model trained on the monthly cross-sectional factor z-scores pick
 the top 8 of 34 countries (equal-weighted, against the equal-weight average) better
 than chance? First step: Arjun hand-picks a de-duplicated factor set, so this
@@ -59,7 +69,7 @@ Outputs (gitignored, regenerable in 4 s):
 
 ## Step 2 — univariate screen vs next-month return (2026-10-07)
 
-`factor_screen.py` → `results/screen_<timestamp>/` (first run: `screen_20261007_100004`)
+`factor_screen.py` → `results/screen_<timestamp>/` (latest run wins)
 
 - Target: `1MRet` (source `t2`) — verified to be the forward one-month total return
   labeled at the window start (equals TotReturnIndex(D+1)/TotReturnIndex(D) − 1,

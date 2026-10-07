@@ -5,15 +5,15 @@ SCRIPT NAME: experiments/2026_10_rank_model/build_panel.py
 =============================================================================
 
 INPUT FILES:
-- /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/experiments/2026_10_rank_model/results/screen_20261007_100004/factor_screen.parquet
-    The univariate screen (factor_screen.py): one row per factor with its
-    t-stat, publication lag and duplicate-group ids. Defines the candidate list.
-    Override with --screen.
+- /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model/results/screen_<latest>/factor_screen.parquet
+    The univariate screen (factor_screen.py; newest screen_* directory by name):
+    one row per factor with its t-stat, publication lag and duplicate-group ids.
+    Defines the candidate list. Override with --screen.
 - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/experiments/2026_10_rank_model/snapshot_2026_10_07/feature_panel_observed.parquet
     Frozen `feature_panel_observed`: factor z-scores and the target `1MRet`.
 
 OUTPUT FILES:
-- /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/experiments/2026_10_rank_model/factor_set_<version>.json
+- /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model/factor_set_<version>.json
     The selected factor list with the rules that produced it (committed config).
 - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/experiments/2026_10_rank_model/panel_<version>/feature_panel_<version>.parquet
     Model-ready panel, one row per (date, country): every selected factor as a
@@ -46,12 +46,12 @@ and the model script never has to think about lags again.
 Nothing is imputed, clipped or scaled here; the panel keeps NaN where the
 source has no value so each model can treat missingness its own way.
 
-DEPENDENCIES: pandas, numpy, pyarrow, xlsxwriter (ASADO venv is enough)
+DEPENDENCIES: pandas, numpy, pyarrow, xlsxwriter (experiment .venv)
 
 USAGE:
-  cd "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO"
-  ./venv/bin/python experiments/2026_10_rank_model/build_panel.py
-  ./venv/bin/python experiments/2026_10_rank_model/build_panel.py --version v2 --drop-bases "PX_LAST,MCAP"
+  cd "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model"
+  .venv/bin/python build_panel.py
+  .venv/bin/python build_panel.py --version v2 --drop-bases "PX_LAST,MCAP"
 =============================================================================
 """
 
@@ -68,10 +68,19 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-EXP_DIR = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/experiments/2026_10_rank_model")
+# Code and config live in the exp/NN worktree; data stays under the main checkout's Data/work.
+EXP_DIR = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model")
 WORK_DIR = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/experiments/2026_10_rank_model")
 SNAPSHOT = WORK_DIR / "snapshot_2026_10_07" / "feature_panel_observed.parquet"
-DEFAULT_SCREEN = EXP_DIR / "results" / "screen_20261007_100004" / "factor_screen.parquet"
+
+
+def latest_screen() -> Path:
+    """Newest results/screen_<timestamp>/factor_screen.parquet (timestamps sort lexically)."""
+    runs = sorted((EXP_DIR / "results").glob("screen_*"))
+    if not runs:
+        raise FileNotFoundError(f"no screen_* run under {EXP_DIR / 'results'}")
+    return runs[-1] / "factor_screen.parquet"
+
 RETURN_VARIABLE, RETURN_SOURCE = "1MRet", "t2"
 
 log = logging.getLogger("build_panel")
@@ -79,12 +88,14 @@ log = logging.getLogger("build_panel")
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--screen", type=Path, default=DEFAULT_SCREEN)
+    ap.add_argument("--screen", type=Path, default=None, help="default: newest results/screen_*/factor_screen.parquet")
     ap.add_argument("--snapshot", type=Path, default=SNAPSHOT)
     ap.add_argument("--version", default="v1")
     ap.add_argument("--drop-bases", default="PX_LAST,MCAP,MCAP Adj",
                     help="comma-separated base_variable names to drop (both _CS and _TS)")
     args = ap.parse_args()
+    if args.screen is None:
+        args.screen = latest_screen()
 
     t0 = time.time()
     out_dir = WORK_DIR / f"panel_{args.version}"

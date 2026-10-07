@@ -14,15 +14,15 @@ INPUT FILES:
     correlation 1.000 over 320 months).
 - /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/cache/query_assistant/variable_catalog.json
     Variable metadata (source, frequency, base variable).
-- /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/experiments/2026_10_rank_model/results/corr_20261007_095235/factor_correlation_matrix.xlsx
-    Sheet `Variables` of the latest factor_correlation.py run: duplicate-group
-    ids at |rho| >= 0.9 and 0.8, joined so each factor can be ranked within
-    its group. Override with --corr-run.
+- /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model/results/corr_<latest>/factor_correlation_matrix.xlsx
+    Sheet `Variables` of the latest factor_correlation.py run (newest corr_*
+    directory by name): duplicate-group ids at |rho| >= 0.9 and 0.8, joined so
+    each factor can be ranked within its group. Override with --corr-run.
 - experiments/2026_10_rank_model/factor_correlation.py (imported for the
     shared variable-selection logic: load_variables).
 
 OUTPUT FILES (inside
-  /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/experiments/2026_10_rank_model/results/screen_<YYYYMMDD_HHMMSS>/ ):
+  /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model/results/screen_<YYYYMMDD_HHMMSS>/ ):
 - factor_screen.xlsx            sheets: Screen (one row per factor), Clusters_Ranked
                                 (members of each duplicate group ranked by |t|), Notes
 - factor_screen.parquet         the Screen table (canonical)
@@ -64,12 +64,12 @@ Benjamini-Hochberg q-value across all factors.
 This is an in-sample, full-history screen — Arjun's spec for this stage is
 "forget out-of-sample"; it ranks factors, it does not validate them.
 
-DEPENDENCIES: pandas, numpy, scipy, matplotlib, xlsxwriter, openpyxl, pyarrow (ASADO venv)
+DEPENDENCIES: pandas, numpy, scipy, matplotlib, xlsxwriter, openpyxl, pyarrow (experiment .venv)
 
 USAGE:
-  cd "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO"
-  ./venv/bin/python experiments/2026_10_rank_model/factor_screen.py
-  ./venv/bin/python experiments/2026_10_rank_model/factor_screen.py --min-countries 20 --top-k 8
+  cd "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model"
+  .venv/bin/python factor_screen.py
+  .venv/bin/python factor_screen.py --min-countries 20 --top-k 8
 
 NOTES:
 - Reads parquet/xlsx only; never opens asado.duckdb.
@@ -92,12 +92,19 @@ import numpy as np
 import pandas as pd
 from scipy import stats as sstats
 
-EXP_DIR = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/experiments/2026_10_rank_model")
+EXP_DIR = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model")
 sys.path.insert(0, str(EXP_DIR))
 from factor_correlation import CATALOG, SNAPSHOT, load_variables  # noqa: E402
 
 RESULTS_ROOT = EXP_DIR / "results"
-DEFAULT_CORR_RUN = RESULTS_ROOT / "corr_20261007_095235" / "factor_correlation_matrix.xlsx"
+
+
+def latest_run(prefix: str) -> Path:
+    """Newest results/<prefix>_<timestamp>/ directory (timestamps sort lexically)."""
+    runs = sorted(RESULTS_ROOT.glob(f"{prefix}_*"))
+    if not runs:
+        raise FileNotFoundError(f"no {prefix}_* run under {RESULTS_ROOT}")
+    return runs[-1]
 
 RETURN_VARIABLE = "1MRet"       # forward 1-month return, labeled at window start
 RETURN_SOURCE = "t2"
@@ -258,8 +265,9 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--snapshot", type=Path, default=SNAPSHOT)
     ap.add_argument("--catalog", type=Path, default=CATALOG)
-    ap.add_argument("--corr-run", type=Path, default=DEFAULT_CORR_RUN,
-                    help="factor_correlation_matrix.xlsx whose Variables sheet supplies cluster ids")
+    ap.add_argument("--corr-run", type=Path, default=None,
+                    help="factor_correlation_matrix.xlsx whose Variables sheet supplies cluster ids "
+                         "(default: newest results/corr_*/)")
     ap.add_argument("--top-k", type=int, default=8)
     ap.add_argument("--min-countries", type=int, default=20,
                     help="countries needed in a month for that month to count (default 20)")
@@ -267,6 +275,8 @@ def main() -> int:
                     help="months needed for a factor's statistics to be reported (default 24)")
     ap.add_argument("--chart-top-n", type=int, default=40)
     args = ap.parse_args()
+    if args.corr_run is None:
+        args.corr_run = latest_run("corr") / "factor_correlation_matrix.xlsx"
 
     t0 = time.time()
     run_dir = RESULTS_ROOT / f"screen_{datetime.now().strftime('%Y%m%d_%H%M%S')}"

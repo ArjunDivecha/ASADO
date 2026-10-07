@@ -14,7 +14,7 @@ INPUT FILES:
     registry; used to label variables and to keep only monthly ones.
 
 OUTPUT FILES (all inside a timestamped run directory
-  /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/experiments/2026_10_rank_model/results/corr_<YYYYMMDD_HHMMSS>/ ):
+  /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model/results/corr_<YYYYMMDD_HHMMSS>/ ):
 - factor_correlation_matrix.parquet   wide matrix, rows/cols = variable (clustered order)
 - factor_overlap_n.parquet            pairwise count of (date, country) observations
 - factor_correlation_matrix.xlsx      sheets: Correlation, Overlap_N, Variables,
@@ -65,12 +65,12 @@ those higher = more attractive. Other sources' scores are not flipped. The
 sign therefore matters for reading a correlation but not for spotting a
 duplicate; the Top_Pairs and Clusters sheets use |rho|.
 
-DEPENDENCIES: pandas, numpy, scipy, matplotlib, xlsxwriter, pyarrow (ASADO venv)
+DEPENDENCIES: pandas, numpy, scipy, matplotlib, xlsxwriter, pyarrow (experiment .venv)
 
 USAGE:
-  cd "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO"
-  ./venv/bin/python experiments/2026_10_rank_model/factor_correlation.py
-  ./venv/bin/python experiments/2026_10_rank_model/factor_correlation.py --min-overlap 300
+  cd "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model"
+  .venv/bin/python factor_correlation.py
+  .venv/bin/python factor_correlation.py --min-overlap 300
 
 NOTES:
 - Reads parquet only; never opens asado.duckdb.
@@ -92,7 +92,8 @@ import numpy as np
 import pandas as pd
 
 BASE_DIR = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO")
-EXP_DIR = BASE_DIR / "experiments" / "2026_10_rank_model"
+# Code and results live in the exp/NN worktree; data (snapshot, catalog) stays in the main checkout.
+EXP_DIR = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model")
 SNAPSHOT = (
     BASE_DIR / "Data" / "work" / "experiments" / "2026_10_rank_model"
     / "snapshot_2026_10_07" / "feature_panel_observed.parquet"

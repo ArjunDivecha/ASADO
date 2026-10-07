@@ -309,6 +309,28 @@ plain top-8 (path-dependent rules have no meaning on scattered months). Rerun:
 
 Net − ridge, default rule: +2.25 %/yr, t 1.8.
 
+## Step 11 — design holdout (2026-10-07)
+
+Design chosen on months 1–160 only (2000-02 → 2013-05): `hillclimb_nn.py --max-month 160 --tag holdout`
+(`hill_*_holdout`) → **same network** (256/128, do 0.15, wd 0.01, lr 1e-3; seed curve saturates 8–10).
+Buffer chosen on a first-half walk (`walk_*_holdout_firsthalf` + `hysteresis.py`) → **M = 10**.
+Blind second-half walk (`walk_*_holdout`, `--first-train-months 160`) and the full-history design on the
+same months (`walk_*_holdout_fullhist`): 160 OOS months, 2013-06 → 2026-09.
+
+| second half, OOS %/yr (t) | net | ridge | net − ridge |
+|---|---|---|---|
+| plain top-8 | +2.0 (1.3) | +3.2 (2.1) | −1.2 (t −0.7) |
+| M = 10 (first-half choice) | +1.4 (0.9) | +3.2 (2.1) | −1.8 (t −1.1) |
+| M = 16 (project default) | +2.1 (1.5) | +2.0 (1.4) | +0.1 (t 0.0) |
+| stage-8 walk, same months, plain / M16 | +2.7 / +3.9 | +2.1 / +2.5 | +0.6 / +1.5 |
+
+Net-basket monthly excess, holdout walk vs stage-8 walk on the same months: **corr 0.21** (ridge 0.63–0.71).
+Stage-8 walk split at 2013-06: net 6.4 → 2.7 %/yr, ridge 2.3 → 2.1.
+
+Verdict: design is robust to where it is chosen; **the net's edge over ridge does not survive the
+holdout**; run-to-run noise (refit calendar, seeds) is as large as the edge; hysteresis halves turnover
+at no cost in both halves. Next: monthly refit + large ensemble, repeat the holdout.
+
 ## Running report
 
 `build_report.py` → `results/report.html` — one self-contained light-mode page: a
@@ -318,6 +340,6 @@ Regenerate after any stage: `.venv/bin/python build_report.py && open results/re
 
 ## Next
 
-Design holdout (choose architecture/seeds on the first half, walk forward on the second);
-vintage-archived slow inputs (extend the audit's ALFRED method; T2 macro lag per
-`docs/USER_FIX_LIST.md`); forward paper-trading of the frozen net.
+Monthly-refit walk-forward with 30–50 seeds for net and ridge, repeat the first-half/second-half
+holdout, report run-to-run ranges; vintage-archived slow inputs + T2 macro lag; forward paper-trade
+whichever model survives, with the hysteresis buffer.

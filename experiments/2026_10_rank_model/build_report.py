@@ -1201,8 +1201,18 @@ def stage9(c: dict) -> tuple[str, str]:
             ax.spines[sp].set_visible(False)
         curve_img = img(fig_to_b64(fig), "Where this flattens is the ensemble size chosen for the second-half test.")
         parts.append(f"""<h4>Step 1 — choose the design on the first half only (February 2000 to May 2013)</h4>
-<p>The same sweep as stage 7, run on random splits drawn only from the first {hs["n_splits"]} splits' worth of the first-half months, on the cleaned panel: {hs["n_runs"]} nets.
+<p>The same sweep as stage 7 — {hs["n_splits"]} splits ({hs["n_splits"] - 5} random, 5 blocks), all drawn from the first-half months only, on the cleaned panel: {hs["n_runs"]} nets.
 The design is the top row.</p>{tbl}{curve_img}""")
+    w_first = walks.get("holdout_firsthalf")
+    if w_first is not None and (w_first / "hysteresis_sweep.parquet").exists():
+        fh = pd.read_parquet(w_first / "hysteresis_sweep.parquet")
+        fh = fh[fh.model == "nn_mse"][["buffer_M", "names_changed_per_month", "turnover_oneway_pct_yr", "excess_ann_pct", "excess_t", "info_ratio"]].rename(columns={
+            "buffer_M": "hold while ranked ≤ M", "names_changed_per_month": "names changed / month", "turnover_oneway_pct_yr": "turnover %/yr",
+            "excess_ann_pct": "first-half OOS excess %/yr", "excess_t": "t", "info_ratio": "IR"})
+        parts.append(f"""<h4>Step 1b — choose the basket buffer on the first half only</h4>
+<p>The chosen network walked forward through the first half only (five years of history, then expanding; 100 out-of-sample months, February 2005 to May 2013),
+and the buffer sweep run on those scores. The buffer with the highest first-half excess is carried into the second half.</p>
+{table(fh, {"names changed / month": "{:.2f}", "turnover %/yr": "{:.0f}", "first-half OOS excess %/yr": "{:+.2f}", "t": "{:.2f}", "IR": "{:.2f}"})}""")
     # second-half walk-forwards
     rows, charts = [], ""
     def wf_block(run, label):

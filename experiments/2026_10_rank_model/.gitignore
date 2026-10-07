@@ -1,0 +1,2 @@
+# Run outputs are data, not code (xlsx/parquet/pdf/json/log); regenerable from the snapshot
+results/

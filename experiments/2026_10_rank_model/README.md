@@ -278,6 +278,21 @@ series; the broad linear model's apparent edge was mostly look-ahead from rebase
 2.1). Caveats: design chosen on random splits of the same history (design holdout is the next
 test); remaining inputs are current-vintage; annual swings of ±10–18 %.
 
+## Step 9 — hysteresis (2026-10-07)
+
+`hysteresis.py` applied to the v3 walk-forward scores (`walk_20261007_130906/hysteresis_sweep.*`):
+hold a name while ranked ≤ M, replace only names that fall below M.
+
+| net (predict-then-select) | M=8 (plain) | M=12 | M=14 | M=16 | M=20 |
+|---|---|---|---|---|---|
+| names changed / month | 3.8 | 2.6 | 2.2 | 1.8 | 1.2 |
+| one-way turnover %/yr | 570 | 387 | 322 | 268 | 179 |
+| OOS excess %/yr (t) | 4.1 (3.0) | 3.8 (2.8) | 4.4 (3.3) | **4.5 (3.4)** | 3.3 (2.4) |
+| longest underwater (m) | 49 | 44 | 35 | 38 | 49 |
+
+Ridge: 519 → 191 %/yr at M=16, excess flat ~2.2. Verdict: **M = 16 halves turnover at no cost**;
+fix it a priori ("hold while in the top half").
+
 ## Running report
 
 `build_report.py` → `results/report.html` — one self-contained light-mode page: a

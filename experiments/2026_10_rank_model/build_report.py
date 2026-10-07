@@ -1066,6 +1066,43 @@ benchmark on their own. Gross of costs throughout: turnover is reported as infor
 {dtbl}{under_img}"""
     except Exception as e:  # diagnostics are additive; never break the page
         diag_html = f'<div class="note pending">Trading diagnostics unavailable: {html.escape(str(e))}</div>'
+    # ── hysteresis sweep (hysteresis.py writes into the walk run dir) ─────────
+    if (run / "hysteresis_sweep.parquet").exists():
+        hs = pd.read_parquet(run / "hysteresis_sweep.parquet")
+        show_h = hs[hs.model.isin([best, "ridge"])].copy()
+        show_h["model"] = show_h["model"].map(MODEL_LABEL)
+        show_h = show_h.rename(columns={"buffer_M": "hold while ranked ≤ M", "names_changed_per_month": "names changed / month",
+                                        "turnover_oneway_pct_yr": "one-way turnover %/yr", "excess_ann_pct": "OOS excess %/yr", "excess_t": "t",
+                                        "info_ratio": "IR", "hit_rate": "hit", "max_rel_drawdown_pct": "max rel. DD %",
+                                        "longest_underwater_months": "longest underwater (m)", "excess_ann_pct_2005_09": "2005–09 %/yr",
+                                        "excess_ann_pct_2010_19": "2010–19 %/yr", "excess_ann_pct_2020_26": "2020–26 %/yr"})
+        show_h = show_h[["model", "hold while ranked ≤ M", "names changed / month", "one-way turnover %/yr", "OOS excess %/yr", "t", "IR", "hit",
+                         "max rel. DD %", "longest underwater (m)", "2005–09 %/yr", "2010–19 %/yr", "2020–26 %/yr"]]
+        htbl = table(show_h, {"names changed / month": "{:.2f}", "one-way turnover %/yr": "{:.0f}", "OOS excess %/yr": "{:+.2f}", "t": "{:.2f}", "IR": "{:.2f}",
+                              "hit": "{:.2f}", "max rel. DD %": "{:.1f}", "2005–09 %/yr": "{:+.1f}", "2010–19 %/yr": "{:+.1f}", "2020–26 %/yr": "{:+.1f}"})
+        hb = hs[hs.model == best].sort_values("buffer_M")
+        fig, ax = plt.subplots(figsize=(9, 3.6), facecolor="white")
+        x = np.arange(len(hb))
+        ax.bar(x, hb["excess_ann_pct"], width=0.55, color="#1F77B4", label="OOS excess, % per year (left)")
+        ax.set_xticks(x); ax.set_xticklabels([f"M = {int(v)}" + (" (plain top-8)" if v == 8 else "") for v in hb["buffer_M"]], fontsize=9)
+        ax.set_ylabel("OOS excess, % per year")
+        for xi, (e, t) in enumerate(zip(hb["excess_ann_pct"], hb["excess_t"])):
+            ax.text(xi, e + 0.08, f"t {t:.1f}", ha="center", fontsize=8, color="#333")
+        ax2 = ax.twinx()
+        ax2.plot(x, hb["turnover_oneway_pct_yr"], color="#D62728", marker="o", lw=1.6, label="one-way turnover, % per year (right)")
+        ax2.set_ylabel("turnover, % per year", color="#D62728"); ax2.tick_params(axis="y", colors="#D62728")
+        for a_ in (ax, ax2):
+            for sp in ("top",):
+                a_.spines[sp].set_visible(False)
+        h1, l1 = ax.get_legend_handles_labels(); h2, l2 = ax2.get_legend_handles_labels()
+        ax.legend(h1 + h2, l1 + l2, frameon=False, fontsize=8.5, loc="lower left")
+        ax.set_title(f"{MODEL_LABEL[best]}: a rank buffer cuts turnover without costing excess", fontsize=10.5)
+        hchart = img(fig_to_b64(fig), "Bars: out-of-sample excess over the equal-weight average for each buffer width (t-stat above each bar). Line: how often the basket turns over. "
+                                      "The two axes carry different quantities and are labelled; this is a one-off exception to the one-axis rule because the trade-off is the point.")
+        diag_html += f"""<h4>Hysteresis: hold a name until it drops out of the top M</h4>
+<p>The model's scores are untouched. At each monthly rebalance a held name stays while the model still ranks it in the top M; only names that fall below M are
+sold, each replaced by the best-ranked name not already held. M = 8 is the plain rule used everywhere else on this page. Applied to the genuinely out-of-sample
+scores of the walk-forward.</p>{htbl}{hchart}"""
     pfs = pf.pivot(index="oos_start", columns="model", values="top8_excess_ann_pct")[[m for m in models if m in pf.model.values]]
     pfs.columns = [SHORT.get(m, m).replace("\n", " ") for m in pfs.columns]
     pfs = pfs.reset_index().rename(columns={"oos_start": "fold starts"})

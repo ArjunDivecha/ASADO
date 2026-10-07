@@ -1011,6 +1011,61 @@ def stage8(c: dict) -> tuple[str, str]:
                      "L−S %/yr": a["ls_spread_ann_pct"]})
     tbl = table(pd.DataFrame(rows), {"OOS top-8 excess %/yr": "{:+.1f}", "t": "{:.2f}", "hit rate": "{:.2f}", "caught of true top 8": "{:.2f}",
                                      "rank IC": "{:.3f}", "soft-k %/yr (sharp)": "{:+.1f}", "vs ridge %/yr": "{:+.2f}", "t (vs ridge)": "{:.2f}", "L−S %/yr": "{:+.1f}"})
+    # ── trading diagnostics: turnover, information ratio, drawdowns (from the OOS picks) ──
+    diag_html = ""
+    try:
+        pr = pd.read_parquet(run / "predictions_oos.parquet")
+        panel_path = Path(s["panel"])
+        pnl = pd.read_parquet(panel_path, columns=["date", "country", "fwd_ret", "bench_ret"])
+        pr = pr.merge(pnl, on=["date", "country"])
+        K = int(cfg.get("k", 8))
+        drows, under_series = [], {}
+        for m in models:
+            d = pr[pr.model == m].sort_values(["date", "score"], ascending=[True, False])
+            top = d.groupby("date").head(K)
+            hold = top.groupby("date")["country"].apply(set)
+            dts = hold.index
+            changed = np.mean([len(hold[dts[i]] - hold[dts[i - 1]]) for i in range(1, len(dts))]) if len(dts) > 1 else np.nan
+            bask = top.groupby("date")["fwd_ret"].mean(); bench = top.groupby("date")["bench_ret"].first(); exc = bask - bench
+            wb, wbm = (1 + bask).cumprod(), (1 + bench).cumprod(); rel = wb / wbm
+            def dd(wealth):
+                peak = wealth.cummax(); dmin = (wealth / peak - 1)
+                trough = dmin.idxmin(); pk = wealth.loc[:trough].idxmax()
+                after = wealth.loc[trough:]; rec = after[after >= peak.loc[trough]].index.min()
+                return float(dmin.min()), pk, trough, rec
+            rd, rp, rt, rr = dd(rel); ad, ap, at, _ = dd(wb); bd, bp, bt, _ = dd(wbm)
+            peak = rel.cummax(); under = (rel < peak); longest = 0; c = 0
+            for u in under:
+                c = c + 1 if u else 0; longest = max(longest, c)
+            under_series[m] = (rel / peak - 1) * 100
+            yrs = len(wb) / 12
+            drows.append({"model": MODEL_LABEL[m], "names changed / month (of 8)": changed, "one-way turnover %/yr": changed / K * 1200,
+                          "excess vol %/yr": exc.std() * np.sqrt(12) * 100, "information ratio": exc.mean() / exc.std() * np.sqrt(12),
+                          "worst month %": exc.min() * 100, "max relative drawdown %": rd * 100,
+                          "drawdown peak → trough": f"{rp:%Y-%m} → {rt:%Y-%m}" + ("" if pd.notna(rr) else " (not yet recovered)"),
+                          "longest underwater (months)": longest, "basket CAGR %": (wb.iloc[-1] ** (1 / yrs) - 1) * 100,
+                          "EW CAGR %": (wbm.iloc[-1] ** (1 / yrs) - 1) * 100, "basket max DD %": ad * 100, "EW max DD %": bd * 100})
+        dtbl = table(pd.DataFrame(drows), {"names changed / month (of 8)": "{:.2f}", "one-way turnover %/yr": "{:.0f}", "excess vol %/yr": "{:.1f}",
+                                           "information ratio": "{:.2f}", "worst month %": "{:+.1f}", "max relative drawdown %": "{:.1f}",
+                                           "basket CAGR %": "{:.1f}", "EW CAGR %": "{:.1f}", "basket max DD %": "{:.1f}", "EW max DD %": "{:.1f}"})
+        fig, ax = plt.subplots(figsize=(12, 3.6), facecolor="white")
+        for m in [best, "ridge"]:
+            if m in under_series:
+                ax.fill_between(under_series[m].index, under_series[m].values, 0, color=colr.get(m, "#444"), alpha=0.25 if m == best else 0.15, lw=0)
+                ax.plot(under_series[m].index, under_series[m].values, color=colr.get(m, "#444"), lw=1.2 if m == best else 0.9, label=MODEL_LABEL[m])
+        ax.set_ylabel("below previous peak, % (basket ÷ EW)")
+        ax.legend(frameon=False, fontsize=8.5, loc="lower left")
+        ax.set_title("Underwater chart: how far the basket's wealth relative to the equal-weight average sits below its previous high", fontsize=10)
+        for sp in ("top", "right"):
+            ax.spines[sp].set_visible(False)
+        under_img = img(fig_to_b64(fig), "Depth is the size of the relative drawdown; width is how long it took to get back. Absolute drawdowns (in the table) are dominated by 2008 for every long-only country basket.")
+        diag_html = f"""<h4>Trading diagnostics</h4>
+<p><em>Turnover</em> is how many of the eight names change at each monthly rebalance; <em>relative drawdown</em> is the fall in the basket's wealth divided by the
+equal-weight average's wealth from its previous high — the drawdown of the <em>excess</em>, which is what the strategy is; the absolute columns show the basket and the
+benchmark on their own. Gross of costs throughout: turnover is reported as information, not applied as a penalty.</p>
+{dtbl}{under_img}"""
+    except Exception as e:  # diagnostics are additive; never break the page
+        diag_html = f'<div class="note pending">Trading diagnostics unavailable: {html.escape(str(e))}</div>'
     pfs = pf.pivot(index="oos_start", columns="model", values="top8_excess_ann_pct")[[m for m in models if m in pf.model.values]]
     pfs.columns = [SHORT.get(m, m).replace("\n", " ") for m in pfs.columns]
     pfs = pfs.reset_index().rename(columns={"oos_start": "fold starts"})
@@ -1027,6 +1082,7 @@ averaged, early-stopped inside the training window) on both objectives, and the 
 {chartA}
 {tbl}
 {chartB}
+{diag_html}
 <h4>Each fold's twelve months</h4>
 {tbl2}
 {commentary_block(c, "stage8")}

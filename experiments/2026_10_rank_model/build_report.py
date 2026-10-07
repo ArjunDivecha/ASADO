@@ -1168,6 +1168,101 @@ averaged, early-stopped inside the training window) on both objectives, and the 
     return "done", body
 
 
+# ── stage 9: design holdout ──────────────────────────────────────────────────
+def stage9(c: dict) -> tuple[str, str]:
+    hill = tagged_runs("hill").get("holdout")
+    walks = tagged_runs("walk")
+    w_hold, w_full = walks.get("holdout"), walks.get("holdout_fullhist")
+    if hill is None and w_full is None:
+        return "pending", '<div class="note pending">Not run yet.</div>'
+    parts = []
+    chosen = {}
+    if hill is not None:
+        hs = json.load(open(hill / "summary.json"))
+        cfg = pd.read_parquet(hill / "configs.parquet")
+        curve = pd.read_parquet(hill / "seed_curve.parquet")
+        cr = curve[curve.split_type == "random"].groupby("n_seeds")["top8_excess_ann_pct"].agg(["mean", "std", "count"]).reset_index()
+        cr = cr[cr.n_seeds > 0]
+        best = cfg.iloc[0]
+        chosen = {"config": best["config"], "hidden": best["hidden"], "dropout": float(best["dropout"]), "weight_decay": float(best["weight_decay"]),
+                  "lr": float(best["lr"]), "eval": float(best["eval_top8_ann_pct"])}
+        show = cfg[["config", "hidden", "dropout", "weight_decay", "lr", "eval_top8_ann_pct", "eval_sd_splits", "vs_base_pct", "vs_base_t", "wins_vs_base",
+                    "blocked_top8_ann_pct", "train_top8_ann_pct"]].rename(columns={
+            "weight_decay": "wd", "eval_top8_ann_pct": "first-half eval %/yr", "eval_sd_splits": "± splits", "vs_base_pct": "vs 64/32 base", "vs_base_t": "t",
+            "wins_vs_base": "wins/30", "blocked_top8_ann_pct": "blocks %/yr", "train_top8_ann_pct": "train %/yr"})
+        tbl = table(show, {"dropout": "{:.2f}", "wd": "{:.2f}", "lr": "{:.4f}", "first-half eval %/yr": "{:+.1f}", "± splits": "{:.1f}", "vs 64/32 base": "{:+.2f}",
+                           "t": "{:.1f}", "blocks %/yr": "{:+.1f}", "train %/yr": "{:+.0f}"})
+        fig, ax = plt.subplots(figsize=(8.5, 3.4), facecolor="white")
+        ax.errorbar(cr["n_seeds"], cr["mean"], yerr=2 * cr["std"] / np.sqrt(cr["count"]), marker="o", color="#1F77B4", capsize=3)
+        ax.set_xscale("log"); ax.set_xticks(cr["n_seeds"]); ax.set_xticklabels(cr["n_seeds"].astype(int))
+        ax.set_xlabel("nets averaged (seeds)"); ax.set_ylabel("first-half eval top-8 excess, % per year")
+        ax.set_title("Seed curve on the first half only", fontsize=10.5)
+        for sp in ("top", "right"):
+            ax.spines[sp].set_visible(False)
+        curve_img = img(fig_to_b64(fig), "Where this flattens is the ensemble size chosen for the second-half test.")
+        parts.append(f"""<h4>Step 1 — choose the design on the first half only (February 2000 to May 2013)</h4>
+<p>The same sweep as stage 7, run on random splits drawn only from the first {hs["n_splits"]} splits' worth of the first-half months, on the cleaned panel: {hs["n_runs"]} nets.
+The design is the top row.</p>{tbl}{curve_img}""")
+    # second-half walk-forwards
+    rows, charts = [], ""
+    def wf_block(run, label):
+        s = json.load(open(run / "summary.json")); dr = s["default_rule"]; ov = s["overall"][dr]; pr = s["paired_vs_ridge"][dr]
+        out = []
+        for m in ["nn_mse", "nn_soft_top8", "ridge"]:
+            if m in ov:
+                a = ov[m]
+                out.append({"design": label, "model": MODEL_LABEL[m], "second-half OOS excess %/yr": a["top8_excess_ann_pct"], "t": a["top8_t"],
+                            "hit rate": a["top8_hit_rate"], "IR": a.get("info_ratio", np.nan), "names changed / month": a.get("names_changed_per_month", np.nan),
+                            "max rel. DD %": a.get("max_rel_drawdown_pct", np.nan), "vs ridge %/yr": pr.get(m, {}).get("minus_ridge_ann_pct", np.nan),
+                            "t (vs ridge)": pr.get(m, {}).get("t", np.nan), "months": s["oos_months"], "rule": dr})
+        return out, s
+    series = {}
+    if w_hold is not None:
+        r_, s_h = wf_block(w_hold, "chosen on the first half"); rows += r_
+        mo = pd.read_parquet(w_hold / "monthly_oos.parquet"); mo = mo[mo.rule == s_h["default_rule"]]
+        series["holdout"] = (mo, s_h)
+    if w_full is not None:
+        r_, s_f = wf_block(w_full, "chosen on the full history (stage 7)"); rows += r_
+        mo = pd.read_parquet(w_full / "monthly_oos.parquet"); mo = mo[mo.rule == s_f["default_rule"]]
+        series["fullhist"] = (mo, s_f)
+    if rows:
+        rt = pd.DataFrame(rows)
+        tbl2 = table(rt, {"second-half OOS excess %/yr": "{:+.1f}", "t": "{:.2f}", "hit rate": "{:.2f}", "IR": "{:.2f}", "names changed / month": "{:.2f}",
+                          "max rel. DD %": "{:.1f}", "vs ridge %/yr": "{:+.2f}", "t (vs ridge)": "{:.2f}"})
+        fig, ax = plt.subplots(figsize=(12, 4.4), facecolor="white")
+        for key, colr, lab in (("holdout", "#1F77B4", "net, design chosen on the first half"), ("fullhist", "#9467BD", "net, design chosen on the full history")):
+            if key in series:
+                mo, _ = series[key]; ser = mo[mo.model == "nn_mse"].set_index("date")["top8_excess"].sort_index()
+                ax.plot(ser.index, ser.cumsum() * 100, color=colr, lw=2.0, label=lab)
+        key0 = "holdout" if "holdout" in series else "fullhist"
+        mo, _ = series[key0]; ser = mo[mo.model == "ridge"].set_index("date")["top8_excess"].sort_index()
+        ax.plot(ser.index, ser.cumsum() * 100, color="#2CA02C", lw=1.5, label="ridge")
+        ax.axhline(0, color="#444", lw=0.8); ax.set_ylabel("cumulative OOS excess, % (simple sum)")
+        ax.legend(frameon=False, fontsize=8.5, loc="upper left")
+        ax.set_title("Second half of the history, out of sample for both the weights and (blue) the design", fontsize=10.5)
+        for sp in ("top", "right"):
+            ax.spines[sp].set_visible(False)
+        charts = img(fig_to_b64(fig), "If the blue and purple lines track each other, choosing the design on the whole history did not flatter the result.")
+        parts.append(f"""<h4>Step 2 — walk forward through the second half (June 2013 to September 2026)</h4>
+<p>Expanding window from the first-half cut-off, twelve-month folds, the project's default basket rule chosen on first-half data. The purple comparison is the
+stage-7 design, which was chosen with the second half in view.</p>{tbl2}{charts}""")
+    chosen_txt = (f'<div class="note"><div class="note-title">Chosen on the first half</div><p>Network <strong>{chosen["hidden"]}</strong> hidden, dropout {chosen["dropout"]:.2f}, '
+                  f'weight decay {chosen["weight_decay"]:.2f}, learning rate {chosen["lr"]:.4f} (config <code>{chosen["config"]}</code>), first-half random-split excess '
+                  f'{chosen["eval"]:+.1f}% a year.</p></div>' if chosen else "")
+    files = " · ".join(flink(p / "summary.json", f"{k} summary") for k, p in (("hill-climb", hill), ("holdout walk", w_hold), ("full-history-design walk", w_full)) if p is not None)
+    body = f"""
+<p class="lead">The walk-forward in stage 8 is out of sample for the weights the net learns each year, but its design — width, regularisation, learning rate,
+ensemble size, basket rule — was chosen on random splits of the whole history, including the months later scored. This stage closes that gap: every design
+choice is made on the first half of the history only, and the net then walks forward through the second half with nothing chosen on it. The full-history
+design is walked over the same months for comparison.</p>
+{chosen_txt}
+{''.join(parts)}
+{commentary_block(c, "stage9")}
+<div class="files"><div class="files-title">Files</div>{files}</div>"""
+    status = "done" if (w_hold is not None) else "running"
+    return status, body
+
+
 # ── page ─────────────────────────────────────────────────────────────────────
 CSS = """
 :root{--bg:#ffffff;--fg:#1a1a1a;--muted:#5f6368;--line:#e4e7eb;--card:#f7f8fa;--accent:#1F77B4;--warn:#fff4e5;--warnb:#f0b35c;--ok:#2CA02C;--pend:#9E9E9E}
@@ -1221,6 +1316,7 @@ def main() -> int:
         ("stage6", "6 · Ablations", stage6),
         ("stage7", "7 · Hill-climb", stage7),
         ("stage8", "8 · Walk-forward", stage8),
+        ("stage9", "9 · Design holdout", stage9),
     ]
     rendered = []
     for key, title, fn in stages:
@@ -1252,6 +1348,7 @@ and links the files.</p>
 <div class="step"><b>6 · Ablations</b>Rerun floor and net with inputs removed; what does the edge depend on?</div>
 <div class="step"><b>7 · Hill-climb</b>Regularisation, width, learning rate, ensemble size — one at a time, paired.</div>
 <div class="step"><b>8 · Walk-forward</b>Train on the past, score the next year, roll. The only genuine forecast test.</div>
+<div class="step"><b>9 · Design holdout</b>Choose the design on the first half only; walk the second half blind.</div>
 </div>
 {('<div class="note"><div class="note-title">Where things stand</div>' + overview_c + '</div>') if overview_c else ''}
 {sections}

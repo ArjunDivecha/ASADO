@@ -18,31 +18,39 @@ OUTPUT FILES (all inside a timestamped run directory
 - factor_correlation_matrix.parquet   wide matrix, rows/cols = variable (clustered order)
 - factor_overlap_n.parquet            pairwise count of (date, country) observations
 - factor_correlation_matrix.xlsx      sheets: Correlation, Overlap_N, Variables,
-                                      Top_Pairs, Clusters
+                                      Top_Pairs, Clusters, CS_vs_TS
 - factor_correlation_heatmap.pdf      clustered heatmap (light mode, matplotlib)
 - summary.json                        counts, parameters, run metadata
 - run.log                             the log of this run
 
-VERSION: 1.0
+VERSION: 1.1
 LAST UPDATED: 2026-10-07
 AUTHOR: Claude (Fable 5.1) for Arjun Divecha
 
 DESCRIPTION:
-Builds the pairwise Pearson correlation matrix of the cross-sectional z-scores
-(`_CS` variables) of every monthly factor in the ASADO warehouse, so Arjun can
-hand-pick a de-duplicated factor set for the country-ranking model.
+Builds the pairwise Pearson correlation matrix of the z-scores of every monthly
+factor in the ASADO warehouse — both the `_CS` (within-month, across-country)
+and the `_TS` (within-country, across-time) variants, in one matrix — so Arjun
+can hand-pick a de-duplicated factor set for the country-ranking model.
 
-Why `_CS` and why Pearson on the pooled panel: `_CS` is the within-month,
-across-country z-score, so it has zero mean each month by construction. The
-pooled correlation over all (date, country) rows is therefore essentially the
-average within-month cross-sectional correlation, which is the quantity that
-matters for a cross-sectional ranking model: "do these two factors order the
-34 countries the same way?"
+Why one pooled Pearson matrix: `_CS` has zero mean each month by construction,
+so its pooled correlation over (date, country) rows is essentially the average
+within-month cross-sectional correlation — "do these two factors order the 34
+countries the same way?". `_TS` scores keep a common time component (every
+country's rate z-score fell together in 2020), so a `_TS`/`_TS` pooled
+correlation also reflects shared global swings. That is what a model scoring
+each country-month independently sees as feature redundancy, so it is the
+right measure for de-duplication; a within-month-demeaned version would be the
+measure for pure cross-sectional ordering (not built here).
+
+v1.1 (2026-10-07): added the `_TS` variants (v1.0 was `_CS` only) and the
+`CS_vs_TS` sheet, which gives each base factor's correlation between its two
+variants so near-identical pairs can be collapsed.
 
 Steps:
-  1. Load the snapshot, keep variables ending in `_CS` whose catalog frequency
-     is not quarterly/annual (monthly, daily and event-driven stay), and drop
-     anything whose base variable is a forward return (hard-blacklisted).
+  1. Load the snapshot, keep variables ending in `_CS` or `_TS` whose catalog
+     frequency is not quarterly/annual (monthly, daily and event-driven stay),
+     and drop anything whose base variable is a forward return (blacklisted).
   2. Pivot to a (date, country) x variable wide panel.
   3. Pairwise-complete Pearson correlation with a minimum overlap; pairs below
      the overlap floor are left undefined and rendered as an em dash.
@@ -51,9 +59,9 @@ Steps:
      |rho| thresholds to list duplicate groups.
   5. Write parquet (canonical), xlsx (for eyeballing), PDF heatmap, summary.
 
-Sign convention note: the T2 `_CS` scores are sign-flipped upstream for the
-"lower-is-better" factors (PE, PBK, Debt to GDP, RSI14, ...), so for those
-higher = more attractive. Other sources' `_CS` scores are not flipped. The
+Sign convention note: the T2 `_CS` and `_TS` scores are sign-flipped upstream
+for the "lower-is-better" factors (PE, PBK, Debt to GDP, RSI14, ...), so for
+those higher = more attractive. Other sources' scores are not flipped. The
 sign therefore matters for reading a correlation but not for spotting a
 duplicate; the Top_Pairs and Clusters sheets use |rho|.
 
@@ -125,14 +133,18 @@ def setup_logging(run_dir: Path) -> None:
 
 
 def load_variables(snapshot: Path, catalog: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Return (long panel of included _CS rows, variable table for ALL _CS vars)."""
+    """Return (long panel of included _CS/_TS rows, variable table for ALL _CS/_TS vars)."""
     df = pd.read_parquet(snapshot)
     df["date"] = pd.to_datetime(df["date"])
     log.info("snapshot rows=%d countries=%d variables=%d",
              len(df), df["country"].nunique(), df["variable"].nunique())
 
-    cs = df[df["variable"].str.endswith("_CS")].copy()
+    cs = df[df["variable"].str.endswith(("_CS", "_TS"))].copy()
     meta = json.load(open(catalog))["variable_metadata"]
+    missing_meta = sorted(v for v in cs["variable"].unique() if v not in meta)
+    if missing_meta:
+        log.warning("%d variables not in the catalog (frequency unknown, kept): %s",
+                    len(missing_meta), missing_meta[:10])
 
     rows = []
     for v, g in cs.groupby("variable"):
@@ -149,6 +161,7 @@ def load_variables(snapshot: Path, catalog: Path) -> tuple[pd.DataFrame, pd.Data
         rows.append({
             "variable": v,
             "base_variable": base,
+            "normalization": v[-2:],
             "source": src,
             "frequency": freq,
             "status": status,
@@ -162,10 +175,12 @@ def load_variables(snapshot: Path, catalog: Path) -> tuple[pd.DataFrame, pd.Data
 
     included = set(var_table.loc[var_table["status"] == "included", "variable"])
     kept = cs[cs["variable"].isin(included)].copy()
-    log.info("_CS variables: total=%d included=%d excluded=%d",
+    log.info("_CS/_TS variables: total=%d included=%d excluded=%d",
              len(var_table), len(included), len(var_table) - len(included))
     for status, n in var_table["status"].value_counts().items():
         log.info("  %-28s %d", status, n)
+    inc = var_table[var_table["status"] == "included"]
+    log.info("included by normalization: %s", inc["normalization"].value_counts().to_dict())
     return kept, var_table
 
 
@@ -218,7 +233,8 @@ def cluster_order(corr: pd.DataFrame, thresholds: list[float]) -> tuple[list[str
 
 
 def top_pairs(corr: pd.DataFrame, n: pd.DataFrame, var_table: pd.DataFrame, floor: float) -> pd.DataFrame:
-    src = var_table.set_index("variable")["source"]
+    vt = var_table.set_index("variable")
+    src, base, norm = vt["source"], vt["base_variable"], vt["normalization"]
     vals = corr.values
     iu = np.triu_indices_from(vals, k=1)
     rec = pd.DataFrame({
@@ -230,13 +246,40 @@ def top_pairs(corr: pd.DataFrame, n: pd.DataFrame, var_table: pd.DataFrame, floo
     rec["abs_rho"] = rec["rho"].abs()
     rec["source_a"] = rec["variable_a"].map(src)
     rec["source_b"] = rec["variable_b"].map(src)
+    rec["norm_a"] = rec["variable_a"].map(norm)
+    rec["norm_b"] = rec["variable_b"].map(norm)
+    rec["same_base_factor"] = rec["variable_a"].map(base).values == rec["variable_b"].map(base).values
     rec = rec[rec["abs_rho"] >= floor].sort_values("abs_rho", ascending=False).reset_index(drop=True)
-    log.info("pairs with |rho| >= %.2f: %d", floor, len(rec))
-    return rec[["variable_a", "source_a", "variable_b", "source_b", "rho", "abs_rho", "overlap_n"]]
+    log.info("pairs with |rho| >= %.2f: %d (of which CS-vs-TS of the same factor: %d)",
+             floor, len(rec), int(rec["same_base_factor"].sum()))
+    return rec[["variable_a", "source_a", "norm_a", "variable_b", "source_b", "norm_b",
+                "same_base_factor", "rho", "abs_rho", "overlap_n"]]
+
+
+def cs_vs_ts(corr: pd.DataFrame, n: pd.DataFrame, var_table: pd.DataFrame) -> pd.DataFrame:
+    """One row per base factor that has both a _CS and a _TS variant in the matrix."""
+    inc = var_table[var_table["status"] == "included"]
+    rows = []
+    for b, g in inc.groupby("base_variable"):
+        cs = g.loc[g["normalization"] == "CS", "variable"]
+        ts = g.loc[g["normalization"] == "TS", "variable"]
+        if len(cs) != 1 or len(ts) != 1:
+            continue
+        c, t = cs.iloc[0], ts.iloc[0]
+        rows.append({"base_variable": b, "source": g["source"].iloc[0],
+                     "cs_variable": c, "ts_variable": t,
+                     "rho_cs_ts": float(corr.loc[c, t]), "overlap_n": int(n.loc[c, t])})
+    out = pd.DataFrame(rows)
+    out["abs_rho"] = out["rho_cs_ts"].abs()
+    out = out.sort_values("abs_rho", ascending=False).reset_index(drop=True)
+    log.info("base factors with both CS and TS: %d; |rho| >= 0.8 between them: %d",
+             len(out), int((out["abs_rho"] >= 0.8).sum()))
+    return out
 
 
 def write_xlsx(path: Path, corr: pd.DataFrame, n: pd.DataFrame, var_table: pd.DataFrame,
-               pairs: pd.DataFrame, clusters: dict[float, pd.Series], min_overlap: int) -> None:
+               pairs: pd.DataFrame, clusters: dict[float, pd.Series], min_overlap: int,
+               csts: pd.DataFrame) -> None:
     with pd.ExcelWriter(path, engine="xlsxwriter") as xw:
         wb = xw.book
         num = wb.add_format({"num_format": "0.00", "font_size": 8})
@@ -270,7 +313,7 @@ def write_xlsx(path: Path, corr: pd.DataFrame, n: pd.DataFrame, var_table: pd.Da
         ws.set_column(1, k, 4.2)
         ws.set_row(0, 150)
         ws.freeze_panes(1, 1)
-        ws.write(k + 2, 0, f"Pearson correlation of _CS z-scores over pooled (date, country) rows; "
+        ws.write(k + 2, 0, f"Pearson correlation of _CS and _TS z-scores over pooled (date, country) rows; "
                            f"pairwise-complete; — = fewer than {min_overlap} overlapping observations. "
                            f"Rows/columns ordered by hierarchical clustering on 1-|rho|.")
 
@@ -290,7 +333,7 @@ def write_xlsx(path: Path, corr: pd.DataFrame, n: pd.DataFrame, var_table: pd.Da
         vt["clustered_position"] = vt["variable"].map(order_pos)
         vt = vt.sort_values(["status", "clustered_position", "source", "variable"],
                             na_position="last").reset_index(drop=True)
-        vt.to_excel(xw, sheet_name="Variables", index=False)
+        vt.to_excel(xw, sheet_name="Variables", index=False, na_rep="—")
         ws3 = xw.sheets["Variables"]
         ws3.set_column(0, 1, 34)
         ws3.set_column(2, 20, 16)
@@ -300,10 +343,23 @@ def write_xlsx(path: Path, corr: pd.DataFrame, n: pd.DataFrame, var_table: pd.Da
         # --- Top pairs ---------------------------------------------------------
         pairs.to_excel(xw, sheet_name="Top_Pairs", index=False)
         ws4 = xw.sheets["Top_Pairs"]
-        ws4.set_column(0, 3, 34)
-        ws4.set_column(4, 6, 12)
+        ws4.set_column(0, 0, 34)
+        ws4.set_column(1, 2, 12)
+        ws4.set_column(3, 3, 34)
+        ws4.set_column(4, 9, 12)
         ws4.freeze_panes(1, 0)
         ws4.autofilter(0, 0, len(pairs), len(pairs.columns) - 1)
+
+        # --- CS vs TS of the same base factor ------------------------------
+        # na_rep: a pair under the overlap floor is undefined, rendered as an em dash
+        csts.to_excel(xw, sheet_name="CS_vs_TS", index=False, na_rep="—")
+        ws6 = xw.sheets["CS_vs_TS"]
+        ws6.set_column(0, 0, 34)
+        ws6.set_column(1, 1, 14)
+        ws6.set_column(2, 3, 34)
+        ws6.set_column(4, 6, 12)
+        ws6.freeze_panes(1, 0)
+        ws6.autofilter(0, 0, len(csts), len(csts.columns) - 1)
 
         # --- Clusters (one row per group, members listed) ----------------------
         rows = []
@@ -348,7 +404,8 @@ def write_heatmap(path: Path, corr: pd.DataFrame, var_table: pd.DataFrame, min_o
                "#E377C2", "#17BECF", "#BCBD22", "#7F7F7F"]
     src_color = {s: palette[i % len(palette)] for i, s in enumerate(sources)}
 
-    cell = 0.13
+    cell = 0.13 if k <= 200 else 0.11
+    label_pt = 4.5 if k <= 200 else 3.6
     side = max(12.0, k * cell + 3.5)
     fig, ax = plt.subplots(figsize=(side, side), facecolor="white")
     a = corr.values
@@ -361,8 +418,8 @@ def write_heatmap(path: Path, corr: pd.DataFrame, var_table: pd.DataFrame, min_o
                   interpolation="nearest", aspect="equal")
     ax.set_xticks(range(k))
     ax.set_yticks(range(k))
-    ax.set_xticklabels(corr.columns, rotation=90, fontsize=4.5)
-    ax.set_yticklabels(corr.index, fontsize=4.5)
+    ax.set_xticklabels(corr.columns, rotation=90, fontsize=label_pt)
+    ax.set_yticklabels(corr.index, fontsize=label_pt)
     for lab in ax.get_xticklabels():
         lab.set_color(src_color[src[lab.get_text()]])
     for lab in ax.get_yticklabels():
@@ -379,8 +436,10 @@ def write_heatmap(path: Path, corr: pd.DataFrame, var_table: pd.DataFrame, min_o
               fontsize=7, frameon=False, title="source (label colour)", title_fontsize=8)
     d0 = var_table.loc[var_table["status"] == "included", "first_date"].min()
     d1 = var_table.loc[var_table["status"] == "included", "last_date"].max()
-    ax.set_title(f"Monthly factor _CS z-scores — pairwise correlation, {k} variables, "
-                 f"34 countries, {d0} → {d1}\n"
+    n_cs = int((var_table["status"].eq("included") & var_table["normalization"].eq("CS")).sum())
+    n_ts = int((var_table["status"].eq("included") & var_table["normalization"].eq("TS")).sum())
+    ax.set_title(f"Monthly factor z-scores — pairwise correlation, {k} variables "
+                 f"({n_cs} _CS + {n_ts} _TS), 34 countries, {d0} → {d1}\n"
                  f"clustered order (average linkage on 1−|ρ|); grey = under {min_overlap} overlapping obs",
                  fontsize=11, pad=14)
     fig.tight_layout()
@@ -416,6 +475,7 @@ def main() -> int:
     corr = corr.loc[order, order]
     n = n.loc[order, order]
     pairs = top_pairs(corr, n, var_table, args.pair_floor)
+    csts = cs_vs_ts(corr, n, var_table)
 
     # completeness by variable (countries covered), so gaps are visible
     cov = (wide.notna().groupby(level="country").any().sum(axis=0))
@@ -431,7 +491,7 @@ def main() -> int:
 
     corr.to_parquet(p_corr)
     n.to_parquet(p_n)
-    write_xlsx(p_xlsx, corr, n, var_table, pairs, clusters, args.min_overlap)
+    write_xlsx(p_xlsx, corr, n, var_table, pairs, clusters, args.min_overlap, csts)
     write_heatmap(p_pdf, corr, var_table, args.min_overlap)
 
     off = corr.values[np.triu_indices_from(corr.values, k=1)]
@@ -441,8 +501,11 @@ def main() -> int:
         "snapshot": str(args.snapshot),
         "catalog": str(args.catalog),
         "n_variables_included": int(len(corr)),
-        "n_variables_cs_total": int(len(var_table)),
+        "n_variables_included_by_normalization": var_table.loc[var_table["status"] == "included", "normalization"].value_counts().to_dict(),
+        "n_variables_cs_ts_total": int(len(var_table)),
         "status_counts": var_table["status"].value_counts().to_dict(),
+        "n_base_factors_with_both_cs_ts": int(len(csts)),
+        "n_base_factors_cs_ts_abs_rho_ge_0.8": int((csts["abs_rho"] >= 0.8).sum()),
         "source_counts_included": var_table.loc[var_table["status"] == "included", "source"].value_counts().to_dict(),
         "wide_rows": int(wide.shape[0]),
         "date_min": str(wide.index.get_level_values(0).min().date()),

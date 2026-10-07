@@ -95,6 +95,10 @@ def main() -> int:
                     help="comma-separated base_variable names to drop (both _CS and _TS)")
     ap.add_argument("--drop-sources", default="",
                     help="comma-separated source names to drop entirely (e.g. gdelt), for ablations")
+    ap.add_argument("--global-vars", default="",
+                    help="comma-separated GLOBAL series (identical across countries, e.g. FRED_VIX_TS) to append as "
+                         "context inputs; they are not in the screen, get the harness lag of their source, and are "
+                         "flagged global=true in the factor set")
     args = ap.parse_args()
     if args.screen is None:
         args.screen = latest_screen()
@@ -125,6 +129,24 @@ def main() -> int:
     if cl80:
         keep_cols.append(cl80)
     selected = selected[keep_cols].sort_values("rank_by_abs_t").reset_index(drop=True)
+    selected["global"] = False
+
+    # global context series: same value for every country in a month; lag = harness rule by source
+    global_vars = [v for v in args.global_vars.split(",") if v.strip()]
+    if global_vars:
+        meta = json.load(open(Path("/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/cache/query_assistant/variable_catalog.json")))["variable_metadata"]
+        zero_lag = {"t2", "gdelt"}
+        grows = []
+        for v in global_vars:
+            m = meta.get(v, {})
+            src = m.get("source", "global")
+            grows.append({"rank_by_abs_t": np.nan, "variable": v, "base_variable": m.get("base_variable", v),
+                          "normalization": v[-2:] if v.endswith(("_CS", "_TS")) else "raw", "source": src,
+                          "lag_months": 0 if src in zero_lag else 1, "n_months": np.nan, "mean_n_countries": np.nan,
+                          "fm_t": np.nan, "rank_ic_t": np.nan, "top8_excess_ann_pct": np.nan, "top8_hit_rate": np.nan,
+                          "global": True})
+        selected = pd.concat([selected, pd.DataFrame(grows)], ignore_index=True)
+        log.info("global context series appended: %d (%s)", len(global_vars), global_vars)
 
     factor_set = {
         "version": args.version,
@@ -136,6 +158,8 @@ def main() -> int:
             f"drop base variables {drop_bases} in both _CS and _TS",
         ] + ([f"drop sources {drop_sources} entirely"] if drop_sources else []),
         "n_factors": int(len(selected)),
+        "n_global": int(selected["global"].sum()),
+        "global_vars": global_vars,
         "by_source": selected["source"].value_counts().to_dict(),
         "by_normalization": selected["normalization"].value_counts().to_dict(),
         "by_lag_months": {str(k): int(v) for k, v in selected["lag_months"].value_counts().items()},

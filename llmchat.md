@@ -1836,3 +1836,61 @@ Started the "train a model to rank countries" project in a new experiment direct
 ---
 SESSION END: 2026-10-07 10:33 PDT | Agent: Claude Code (auto, idle, session dc8244a3)
 ---
+
+---
+SESSION START: 2026-10-07 09:30 PDT | Agent: Claude Code (Fable 5.1, session 01GK47eTY1mr6bTcEvABxsac)
+---
+
+### Session Summary
+Built the country top-8 ranking-model experiment end to end on branch `exp/NN`, worktree
+`/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model/`
+(main carries none of it; moved off in `d2942dc`). Eight stages, each written up in a
+self-contained light-mode page: `results/report.html` (regenerate with
+`.venv/bin/python build_report.py`). Data stays in the main checkout's gitignored
+`Data/work/experiments/2026_10_rank_model/` (snapshot of `feature_panel_observed`, panels v1,
+v1_noreer, v1_nogdelt, v2_global, v3_clean).
+
+**Result:** on the cleaned 238-factor panel (v3), a shared MLP (256/128, dropout 0.15, wd 0.01,
+10 seeds averaged, predict-then-select) trained each year only on the past beats the
+equal-weight average by **4.1 %/yr in its top-8 basket, t 3.0, hit 0.56, 15/22 years positive,
+2005-02 → 2026-09** (`results/walk_20261007_130906`). Unchanged by removing the contaminated
+series (4.0 with them). The broad ridge model's walk-forward edge fell from 4.6 to 2.1 %/yr
+(t 1.7) when they were removed — look-ahead from rebased levels that a walk-forward cannot strip.
+
+### Decisions Made
+- Objective = equal-weight top-8 vs equal-weight average; soft top-k reported alongside.
+- Evaluation = 30 random 80/20 month splits + 5 contiguous blocks + shuffled-label controls,
+  all models paired on identical splits; then walk-forward (60-month start, expanding, 12-month folds).
+- Factor set v1 = every screened factor minus PX/MCAP (256); v3 = v1 minus REER ×4, OECD
+  composites ×6, MS_Index_Weight ×2, CS forms of index levels ×6 (238) after Arjun's REER audit.
+- REER is retired as a reference; the broad model is the bar. Ablation bases pinned to v1 runs.
+- No RL: the top-8 objective is linear in the selection; soft-top-k has an exact implicit gradient.
+
+### Constraints & Gotchas
+- REER audit (`A Complete/T2 Factor Timing Fuzzy/Archive/REER_Audit_20261007/REPORT.md`): BIS rebases
+  to a future base year; T2 REER == BIS REER shifted one month; T2's shift is a date convention,
+  not a publication lag (harness ZERO_LAG for t2 macro columns is a month short); Vietnam's T2
+  REER is India's. Appended to `docs/USER_FIX_LIST.md` on main (`5d3167b`). Not fixed.
+- All inputs are current-vintage; random-month and walk-forward tests remove model look-ahead only.
+- Hill-climb (v1): regularising the net HURTS (dropout 0.3/0.5, heavy combos, lr 3e-4 lose 1–2 pts,
+  t −3 to −5); wd irrelevant; wider weakly better; ensembling saturates ~10 seeds.
+- Global context (+8 global TS series) and cross-country attention: no gain. Attention+MSE fails
+  to train (scale); attention+soft ties the MLP at 7× compute.
+- LightGBM overfits (train 22–26 %/yr, eval below ridge); lambdarank worst.
+- Trainers pin BLAS/OpenMP threads to 1 per worker (load average 269 before the fix).
+- `playwright-cli` blocks file: URLs; serve `results/` on 127.0.0.1:18771 to screenshot (8765 is taken).
+
+### What To Build Next
+- Design holdout: choose architecture/seeds on the first half of history, walk forward on the second.
+- Vintage-archived slow inputs (extend the audit's ALFRED method); T2 macro publication lags.
+- Forward paper-trade the frozen net.
+
+### Context for Next Session
+- Branch `exp/NN` head after this session's last commit; nothing pushed. Scripts: factor_correlation,
+  factor_screen, build_panel, train_floor, train_nn, hillclimb_nn, train_attn, walk_forward,
+  build_report (+ report_commentary.md, README.md). Experiment venv: `.venv` (uv, py3.12, torch,
+  lightgbm). Old duplicate run dirs from 2026-10-07 morning remain in `results/` (harmless).
+
+---
+SESSION END: 2026-10-07 13:25 PDT | Agent: Claude Code (Fable 5.1)
+---

@@ -169,6 +169,26 @@ spread (12.9 vs 11.5). Ensembling adds ~1–1.7 points over a single seed (withi
 sd ≈ 2). Nets fit training months at 30–43 %/yr (ridge 16) — regularisation is the next
 lever. Controls at zero.
 
+## Step 6 — ablation: no REER (2026-10-07)
+
+`build_panel.py --version v1_noreer --drop-bases "PX_LAST,MCAP,MCAP Adj,REER,BIS_REER"` → 252
+factors; `train_floor.py --tag noreer` (`floor_20261007_113357_noreer`) and
+`train_nn.py --tag noreer` (`nn_20261007_113651_noreer`), identical splits/seeds, paired vs
+the full-panel runs:
+
+| model | full %/yr | no REER %/yr | diff | paired t |
+|---|---|---|---|---|
+| ridge | +5.3 | +5.2 | −0.04 | −0.1 |
+| LightGBM regression | +3.8 | +1.9 | −1.85 | −3.6 |
+| net, MSE | +6.3 | +5.8 | −0.6 | −1.5 |
+| net, soft top-8 | +6.4 | +5.9 | −0.5 | −1.3 |
+| net, MSE → soft | +6.5 | +6.1 | −0.4 | −1.3 |
+
+Verdict: **REER is not load-bearing for the broad model** (unchanged); the trees depended
+on it; the nets lose ~0.5 pt (n.s.), keep the 2000–09 edge (10.1 vs 10.6 %/yr), and their
+margin over ridge narrows to +0.5–0.85 (t 1.0–1.5). Tagged runs sit in the report's
+Ablations section and never replace the headline runs.
+
 ## Running report
 
 `build_report.py` → `results/report.html` — one self-contained light-mode page: a

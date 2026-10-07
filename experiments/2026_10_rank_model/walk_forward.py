@@ -29,9 +29,11 @@ Train on everything before a cut-off, score the next twelve months out of
 sample, roll the cut-off forward a year, repeat. Nothing after the cut-off
 touches training, early stopping or model selection.
 
-Folds: the first cut-off is --first-train-months (default 120, i.e. ten years
-of history, scoring 2010 onwards); each fold scores 12 months; the training
-window expands. Models per fold:
+Folds: the first cut-off is --first-train-months (default 60: five years of
+history, so the out-of-sample record runs from 2005; Arjun's choice,
+2026-10-07); each fold scores 12 months; the training window expands from
+there. The first folds train on very little (about 2,000 rows), which the
+per-fold table shows honestly. Models per fold:
   ridge        alpha by 5-fold month-grouped CV inside the training window
   nn_mse       the post-hill-climb MLP (256/128, dropout 0.15, wd 0.01), N seeds
                averaged, early-stopped on a 12% slice of the training months
@@ -81,7 +83,8 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--panel", type=Path, default=PANEL)
     ap.add_argument("--factor-set", type=Path, default=FACTOR_SET)
-    ap.add_argument("--first-train-months", type=int, default=120)
+    ap.add_argument("--first-train-months", type=int, default=60,
+                    help="training months before the first out-of-sample fold (Arjun 2026-10-07: five years, then expanding)")
     ap.add_argument("--step-months", type=int, default=12)
     ap.add_argument("--seeds", type=int, default=10)
     ap.add_argument("--objectives", default="mse,soft_top8")

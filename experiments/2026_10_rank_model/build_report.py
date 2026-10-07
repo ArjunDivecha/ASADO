@@ -1018,7 +1018,7 @@ def stage8(c: dict) -> tuple[str, str]:
         panel_path = Path(s["panel"])
         pnl = pd.read_parquet(panel_path, columns=["date", "country", "fwd_ret", "bench_ret"])
         pr = pr.merge(pnl, on=["date", "country"])
-        K = int(cfg.get("k", 8))
+        K = int(s["config"].get("k", 8))
         drows, under_series = [], {}
         for m in models:
             d = pr[pr.model == m].sort_values(["date", "score"], ascending=[True, False])

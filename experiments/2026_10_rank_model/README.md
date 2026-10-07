@@ -103,10 +103,54 @@ Findings worth keeping:
   (breakevens, 30Y, OIS, PMIs — under 20 countries), 12 FRED, the 3 global GPR
   series (identical across countries), and a handful of IMF/OFAC series.
 
+## Step 3 — factor set v1 and the modelling panel (2026-10-07)
+
+`build_panel.py` → `factor_set_v1.json` (committed) and
+`/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/experiments/2026_10_rank_model/panel_v1/feature_panel_v1.parquet`
+
+Arjun's rule: every screened factor (262) minus `PX_LAST`, `MCAP`, `MCAP Adj` in both
+normalizations → **256 factors** (130 CS / 126 TS; 98 T2, 92 GDELT, 31 Bloomberg, 35
+other; 190 lag 0, 64 lag 1, 2 lag 12). Panel: 10,623 country-month rows, 2000-02 →
+2026-09, lags applied so row D holds what was available at D; target `fwd_excess` =
+`1MRet` − equal-weight mean. Rows before 2015 carry ~125 of the 256 factors, after
+2016 ~232 (GDELT starts 2015). Lag application verified exactly.
+
+## Step 4 — the floor: ridge + LightGBM (2026-10-07)
+
+`train_floor.py` → `results/floor_<timestamp>/` (first full run `floor_20261007_110654`,
+3.2 min). 30 random 80/20 month splits + 5 contiguous blocks; shuffled-label controls on
+10 splits; reference = REER_CS alone. Objective: equal-weight top-8 by score vs the
+equal-weight average, annualized; soft top-k at τ = 0.25 / 1.0 alongside.
+
+Eval, random splits (mean over 30; single-split SE ≈ ±2.9 %/yr):
+
+| model | top-8 excess %/yr | hit | rank IC | L−S %/yr |
+|---|---|---|---|---|
+| ridge (256 factors) | +5.3 | 0.60 | 0.09 | 10.9 |
+| reference REER_CS | +5.2 | 0.62 | 0.05 | 6.7 |
+| LightGBM regression | +3.8 | 0.58 | 0.05 | 7.6 |
+| LightGBM top-8 classifier | +2.8 | 0.55 | 0.03 | 4.4 |
+| LightGBM lambdarank@8 | +1.9 | 0.52 | 0.01 | 3.3 |
+| shuffled controls | +0.4 / +0.5 | 0.49 | 0.00 | — |
+
+Verdict: **the floor is the single best factor.** Ridge ties REER on the top-8
+objective (paired diff +0.1, t = 0.2) and beats it only on the full ordering. Trees
+lose to one factor on eval while making 22–26 %/yr on their training months (overfit;
+early stopping at ~100 rounds, sometimes 1). Contiguous blocks: ridge 3.2, reference
+5.0, LightGBM regression 0.3 — about two points of the random-split score is temporal
+proximity. Controls at zero. Ridge is steadier across eras than REER (every 5-year era
+3.4–8.6 %/yr; REER −2.9 since 2025).
+
+## Running report
+
+`build_report.py` → `results/report.html` — one self-contained light-mode page: a
+section per stage with number tiles, charts, sortable tables, commentary
+(`report_commentary.md`, written after the numbers) and links to every file.
+Regenerate after any stage: `.venv/bin/python build_report.py && open results/report.html`.
+
 ## Next
 
-Arjun picks the factor set from `Clusters_Ranked` (screen) and `Clusters` /
-`CS_vs_TS` (correlation). Then: ridge floor → LightGBM (lambdarank@8 / top-8
-classification / regression) → MLP with a soft-top-8 expected-excess-return loss,
-all on month-level random splits, with harness publication lags applied to the
-non-T2/GDELT inputs.
+Neural net (shared MLP, soft-top-8 expected-excess loss) on the same 30 splits + 5
+blocks; bar to clear ≈ 5 %/yr random / 3 %/yr blocked. Cheap hill-climb steps first:
+LightGBM heavily regularized on the top-60 screen factors, and ridge on the same reduced
+set. Then global-context block (v2 panel) and cross-country attention.

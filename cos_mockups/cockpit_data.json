@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_ts": "2026-10-07T11:30:08",
+    "generated_ts": "2026-10-07T11:50:37",
     "generator": "cos_mockups/build_cockpit_data.py 1.0",
     "epistemic_contract": "FACT cited · INFERENCE labelled · UNKNOWN/STALE aloud · nothing is a trade until the harness clears it"
   },
@@ -101241,7 +101241,7 @@
     "counts": {
       "D1": 1,
       "D4": 5,
-      "D7": 8,
+      "D7": 9,
       "D8": 20,
       "D9": 2,
       "D10": 2
@@ -101332,13 +101332,13 @@
         "is_country": false
       },
       {
-        "id": "499cd410845f",
+        "id": "18d52104256b",
         "detector": "D7",
         "archetype": "A7",
-        "entity": "5DTR_CS",
+        "entity": "Currency Vol_CS",
         "direction": "flag",
-        "severity": -2.22,
-        "abs_severity": 2.22,
+        "severity": -2.85,
+        "abs_severity": 2.85,
         "days_active": 1,
         "first_seen": "2026-10-06",
         "status": "new",
@@ -101346,13 +101346,27 @@
         "is_country": false
       },
       {
-        "id": "a8261a8d7b3b",
+        "id": "499cd410845f",
         "detector": "D7",
         "archetype": "A7",
-        "entity": "Oil_CS",
+        "entity": "5DTR_CS",
         "direction": "flag",
-        "severity": -2.2,
-        "abs_severity": 2.2,
+        "severity": -2.35,
+        "abs_severity": 2.35,
+        "days_active": 1,
+        "first_seen": "2026-10-06",
+        "status": "new",
+        "reading": "cross-sectional dispersion compressed - factor crowded, de-weight candidate",
+        "is_country": false
+      },
+      {
+        "id": "4c7920d93830",
+        "detector": "D7",
+        "archetype": "A7",
+        "entity": "Inflation_CS",
+        "direction": "flag",
+        "severity": -2.22,
+        "abs_severity": 2.22,
         "days_active": 1,
         "first_seen": "2026-10-06",
         "status": "new",
@@ -101379,8 +101393,8 @@
         "archetype": "A7",
         "entity": "Best Div Yield_CS",
         "direction": "flag",
-        "severity": -2.07,
-        "abs_severity": 2.07,
+        "severity": -2.15,
+        "abs_severity": 2.15,
         "days_active": 1,
         "first_seen": "2026-10-06",
         "status": "new",
@@ -101402,13 +101416,13 @@
         "is_country": false
       },
       {
-        "id": "7a1a36bac5f8",
+        "id": "cd6b754c3bd5",
         "detector": "D7",
         "archetype": "A7",
-        "entity": "Advance Decline_CS",
+        "entity": "Currency_CS",
         "direction": "flag",
-        "severity": -1.68,
-        "abs_severity": 1.68,
+        "severity": -1.7,
+        "abs_severity": 1.7,
         "days_active": 1,
         "first_seen": "2026-10-06",
         "status": "new",
@@ -101824,7 +101838,7 @@
         "is_country": true
       }
     ],
-    "total": 38
+    "total": 39
   },
   "gap_engine": {
     "status": "fresh",
@@ -105995,7 +106009,7 @@
       }
     },
     "holdout": {
-      "rows": 2887,
+      "rows": 2888,
       "promoted": 221,
       "eligible_unpromoted": 114,
       "as_of": "2026-10-06",
@@ -106193,6 +106207,21 @@
     ],
     "matrix": {
       "Australia": {
+        "combiner": {
+          "rank": 24,
+          "n": 29,
+          "score": -0.0004
+        },
+        "leadlag": {
+          "rank": 12,
+          "n": 15,
+          "score": 0.0064
+        },
+        "tot_impulse": {
+          "rank": 31,
+          "n": 34,
+          "score": -1.8002
+        },
         "graph_twohop": {
           "rank": 9,
           "n": 30,
@@ -106209,7 +106238,7 @@
           "score": 0.0402
         },
         "cpi_rev": {
-          "rank": 29,
+          "rank": 28,
           "n": 33,
           "score": -0.0583
         },
@@ -106217,24 +106246,19 @@
           "rank": 6,
           "n": 33,
           "score": -0.7889
-        },
-        "tot_impulse": {
-          "rank": 31,
-          "n": 34,
-          "score": -1.8002
-        },
-        "combiner": {
-          "rank": 24,
-          "n": 29,
-          "score": -0.0004
-        },
-        "leadlag": {
-          "rank": 12,
-          "n": 15,
-          "score": 0.0064
         }
       },
       "Brazil": {
+        "combiner": {
+          "rank": 27,
+          "n": 29,
+          "score": -0.0015
+        },
+        "tot_impulse": {
+          "rank": 26,
+          "n": 34,
+          "score": -0.5673
+        },
         "graph_twohop": {
           "rank": 30,
           "n": 30,
@@ -106259,19 +106283,19 @@
           "rank": 29,
           "n": 33,
           "score": 2.3046
-        },
-        "tot_impulse": {
-          "rank": 26,
-          "n": 34,
-          "score": -0.5673
-        },
-        "combiner": {
-          "rank": 27,
-          "n": 29,
-          "score": -0.0015
         }
       },
       "Canada": {
+        "combiner": {
+          "rank": 25,
+          "n": 29,
+          "score": -0.0005
+        },
+        "tot_impulse": {
+          "rank": 30,
+          "n": 34,
+          "score": -1.7982
+        },
         "graph_twohop": {
           "rank": 16,
           "n": 30,
@@ -106296,19 +106320,19 @@
           "rank": 25,
           "n": 33,
           "score": 1.0753
-        },
-        "tot_impulse": {
-          "rank": 30,
-          "n": 34,
-          "score": -1.7982
-        },
-        "combiner": {
-          "rank": 25,
-          "n": 29,
-          "score": -0.0005
         }
       },
       "Chile": {
+        "combiner": {
+          "rank": 13,
+          "n": 29,
+          "score": 0.0004
+        },
+        "tot_impulse": {
+          "rank": 25,
+          "n": 34,
+          "score": 0.1294
+        },
         "graph_twohop": {
           "rank": 5,
           "n": 30,
@@ -106333,19 +106357,24 @@
           "rank": 14,
           "n": 33,
           "score": -0.149
-        },
-        "tot_impulse": {
-          "rank": 25,
-          "n": 34,
-          "score": 0.1294
-        },
-        "combiner": {
-          "rank": 13,
-          "n": 29,
-          "score": 0.0004
         }
       },
       "ChinaA": {
+        "combiner": {
+          "rank": 9,
+          "n": 29,
+          "score": 0.0007
+        },
+        "leadlag": {
+          "rank": 3,
+          "n": 15,
+          "score": 0.0303
+        },
+        "tot_impulse": {
+          "rank": 7,
+          "n": 34,
+          "score": 1.8033
+        },
         "graph_twohop": {
           "rank": 23,
           "n": 30,
@@ -106365,24 +106394,19 @@
           "rank": 15,
           "n": 33,
           "score": -0.0538
-        },
-        "tot_impulse": {
-          "rank": 7,
-          "n": 34,
-          "score": 1.8033
-        },
-        "combiner": {
-          "rank": 9,
-          "n": 29,
-          "score": 0.0007
-        },
-        "leadlag": {
-          "rank": 3,
-          "n": 15,
-          "score": 0.0303
         }
       },
       "Denmark": {
+        "combiner": {
+          "rank": 3,
+          "n": 29,
+          "score": 0.002
+        },
+        "tot_impulse": {
+          "rank": 4,
+          "n": 34,
+          "score": 2.0163
+        },
         "graph_twohop": {
           "rank": 1,
           "n": 30,
@@ -106399,7 +106423,7 @@
           "score": 0.085
         },
         "cpi_rev": {
-          "rank": 28,
+          "rank": 27,
           "n": 33,
           "score": -0.0417
         },
@@ -106407,19 +106431,19 @@
           "rank": 19,
           "n": 33,
           "score": 0.0807
-        },
-        "tot_impulse": {
-          "rank": 4,
-          "n": 34,
-          "score": 2.0163
-        },
-        "combiner": {
-          "rank": 3,
-          "n": 29,
-          "score": 0.002
         }
       },
       "France": {
+        "combiner": {
+          "rank": 2,
+          "n": 29,
+          "score": 0.0022
+        },
+        "tot_impulse": {
+          "rank": 21,
+          "n": 34,
+          "score": 1.2837
+        },
         "graph_twohop": {
           "rank": 4,
           "n": 30,
@@ -106444,19 +106468,19 @@
           "rank": 23,
           "n": 33,
           "score": 0.7034
-        },
-        "tot_impulse": {
-          "rank": 21,
-          "n": 34,
-          "score": 1.2837
-        },
-        "combiner": {
-          "rank": 2,
-          "n": 29,
-          "score": 0.0022
         }
       },
       "Germany": {
+        "combiner": {
+          "rank": 19,
+          "n": 29,
+          "score": -0.0001
+        },
+        "tot_impulse": {
+          "rank": 15,
+          "n": 34,
+          "score": 1.5972
+        },
         "graph_twohop": {
           "rank": 17,
           "n": 30,
@@ -106481,19 +106505,29 @@
           "rank": 4,
           "n": 33,
           "score": -1.1298
-        },
-        "tot_impulse": {
-          "rank": 15,
-          "n": 34,
-          "score": 1.5972
-        },
-        "combiner": {
-          "rank": 19,
-          "n": 29,
-          "score": -0.0001
         }
       },
       "Hong Kong": {
+        "combiner": {
+          "rank": 4,
+          "n": 29,
+          "score": 0.0019
+        },
+        "leadlag": {
+          "rank": 2,
+          "n": 15,
+          "score": 0.0396
+        },
+        "etf_contra": {
+          "rank": 17,
+          "n": 33,
+          "score": 0.0261
+        },
+        "tot_impulse": {
+          "rank": 1,
+          "n": 34,
+          "score": 2.6961
+        },
         "graph_twohop": {
           "rank": 7,
           "n": 30,
@@ -106513,38 +106547,18 @@
           "rank": 19,
           "n": 33,
           "score": 0.0
-        },
-        "etf_contra": {
-          "rank": 17,
-          "n": 33,
-          "score": 0.0261
-        },
-        "tot_impulse": {
-          "rank": 1,
-          "n": 34,
-          "score": 2.6961
-        },
-        "combiner": {
-          "rank": 4,
-          "n": 29,
-          "score": 0.0019
-        },
-        "leadlag": {
-          "rank": 2,
-          "n": 15,
-          "score": 0.0396
         }
       },
       "India": {
-        "graph_twohop": {
-          "rank": 8,
-          "n": 30,
-          "score": 0.0343
+        "combiner": {
+          "rank": 14,
+          "n": 29,
+          "score": 0.0004
         },
-        "twins": {
-          "rank": 5,
-          "n": 34,
-          "score": 0.068
+        "leadlag": {
+          "rank": 10,
+          "n": 15,
+          "score": 0.0136
         },
         "etf_contra": {
           "rank": 7,
@@ -106556,18 +106570,38 @@
           "n": 34,
           "score": 2.13
         },
-        "combiner": {
-          "rank": 14,
-          "n": 29,
-          "score": 0.0004
+        "graph_twohop": {
+          "rank": 8,
+          "n": 30,
+          "score": 0.0343
         },
-        "leadlag": {
-          "rank": 10,
-          "n": 15,
-          "score": 0.0136
+        "twins": {
+          "rank": 5,
+          "n": 34,
+          "score": 0.068
         }
       },
       "Indonesia": {
+        "combiner": {
+          "rank": 22,
+          "n": 29,
+          "score": -0.0004
+        },
+        "leadlag": {
+          "rank": 11,
+          "n": 15,
+          "score": 0.0076
+        },
+        "etf_contra": {
+          "rank": 2,
+          "n": 33,
+          "score": -1.761
+        },
+        "tot_impulse": {
+          "rank": 28,
+          "n": 34,
+          "score": -1.0544
+        },
         "graph_twohop": {
           "rank": 3,
           "n": 30,
@@ -106582,29 +106616,24 @@
           "rank": 15,
           "n": 33,
           "score": 0.0567
-        },
-        "etf_contra": {
-          "rank": 2,
-          "n": 33,
-          "score": -1.761
-        },
-        "tot_impulse": {
-          "rank": 28,
-          "n": 34,
-          "score": -1.0544
-        },
-        "combiner": {
-          "rank": 22,
-          "n": 29,
-          "score": -0.0004
-        },
-        "leadlag": {
-          "rank": 11,
-          "n": 15,
-          "score": 0.0076
         }
       },
       "Italy": {
+        "combiner": {
+          "rank": 5,
+          "n": 29,
+          "score": 0.0019
+        },
+        "etf_contra": {
+          "rank": 26,
+          "n": 33,
+          "score": 1.1621
+        },
+        "tot_impulse": {
+          "rank": 18,
+          "n": 34,
+          "score": 1.431
+        },
         "graph_twohop": {
           "rank": 11,
           "n": 30,
@@ -106624,24 +106653,29 @@
           "rank": 3,
           "n": 33,
           "score": 0.2833
-        },
-        "etf_contra": {
-          "rank": 26,
-          "n": 33,
-          "score": 1.1621
-        },
-        "tot_impulse": {
-          "rank": 18,
-          "n": 34,
-          "score": 1.431
-        },
-        "combiner": {
-          "rank": 5,
-          "n": 29,
-          "score": 0.0019
         }
       },
       "Japan": {
+        "combiner": {
+          "rank": 29,
+          "n": 29,
+          "score": -0.0044
+        },
+        "leadlag": {
+          "rank": 14,
+          "n": 15,
+          "score": -0.026
+        },
+        "etf_contra": {
+          "rank": 16,
+          "n": 33,
+          "score": -0.0176
+        },
+        "tot_impulse": {
+          "rank": 19,
+          "n": 34,
+          "score": 1.3995
+        },
         "graph_twohop": {
           "rank": 26,
           "n": 30,
@@ -106658,32 +106692,32 @@
           "score": -0.0678
         },
         "cpi_rev": {
-          "rank": 24,
-          "n": 33,
-          "score": -0.0333
-        },
-        "etf_contra": {
-          "rank": 16,
-          "n": 33,
-          "score": -0.0176
-        },
-        "tot_impulse": {
-          "rank": 19,
-          "n": 34,
-          "score": 1.3995
-        },
-        "combiner": {
           "rank": 29,
-          "n": 29,
-          "score": -0.0044
-        },
-        "leadlag": {
-          "rank": 14,
-          "n": 15,
-          "score": -0.026
+          "n": 33,
+          "score": -0.075
         }
       },
       "Korea": {
+        "combiner": {
+          "rank": 28,
+          "n": 29,
+          "score": -0.0019
+        },
+        "leadlag": {
+          "rank": 13,
+          "n": 15,
+          "score": -0.0041
+        },
+        "etf_contra": {
+          "rank": 3,
+          "n": 33,
+          "score": -1.3942
+        },
+        "tot_impulse": {
+          "rank": 13,
+          "n": 34,
+          "score": 1.6407
+        },
         "graph_twohop": {
           "rank": 27,
           "n": 30,
@@ -106703,29 +106737,29 @@
           "rank": 20,
           "n": 33,
           "score": 0.0
-        },
-        "etf_contra": {
-          "rank": 3,
-          "n": 33,
-          "score": -1.3942
-        },
-        "tot_impulse": {
-          "rank": 13,
-          "n": 34,
-          "score": 1.6407
-        },
-        "combiner": {
-          "rank": 28,
-          "n": 29,
-          "score": -0.0019
-        },
-        "leadlag": {
-          "rank": 13,
-          "n": 15,
-          "score": -0.0041
         }
       },
       "Malaysia": {
+        "combiner": {
+          "rank": 17,
+          "n": 29,
+          "score": 0.0002
+        },
+        "leadlag": {
+          "rank": 5,
+          "n": 15,
+          "score": 0.0252
+        },
+        "etf_contra": {
+          "rank": 1,
+          "n": 33,
+          "score": -2.4448
+        },
+        "tot_impulse": {
+          "rank": 16,
+          "n": 34,
+          "score": 1.5728
+        },
         "graph_twohop": {
           "rank": 21,
           "n": 30,
@@ -106740,29 +106774,24 @@
           "rank": 21,
           "n": 33,
           "score": 0.0
-        },
-        "etf_contra": {
-          "rank": 1,
-          "n": 33,
-          "score": -2.4448
-        },
-        "tot_impulse": {
-          "rank": 16,
-          "n": 34,
-          "score": 1.5728
-        },
-        "combiner": {
-          "rank": 17,
-          "n": 29,
-          "score": 0.0002
-        },
-        "leadlag": {
-          "rank": 5,
-          "n": 15,
-          "score": 0.0252
         }
       },
       "Mexico": {
+        "combiner": {
+          "rank": 18,
+          "n": 29,
+          "score": 0.0001
+        },
+        "etf_contra": {
+          "rank": 5,
+          "n": 33,
+          "score": -1.0463
+        },
+        "tot_impulse": {
+          "rank": 23,
+          "n": 34,
+          "score": 1.0705
+        },
         "graph_twohop": {
           "rank": 19,
           "n": 30,
@@ -106782,24 +106811,24 @@
           "rank": 30,
           "n": 33,
           "score": -0.075
-        },
-        "etf_contra": {
-          "rank": 5,
-          "n": 33,
-          "score": -1.0463
-        },
-        "tot_impulse": {
-          "rank": 23,
-          "n": 34,
-          "score": 1.0705
-        },
-        "combiner": {
-          "rank": 18,
-          "n": 29,
-          "score": 0.0001
         }
       },
       "Netherlands": {
+        "combiner": {
+          "rank": 10,
+          "n": 29,
+          "score": 0.0006
+        },
+        "etf_contra": {
+          "rank": 24,
+          "n": 33,
+          "score": 0.7408
+        },
+        "tot_impulse": {
+          "rank": 14,
+          "n": 34,
+          "score": 1.6043
+        },
         "graph_twohop": {
           "rank": 29,
           "n": 30,
@@ -106816,27 +106845,32 @@
           "score": 0.0039
         },
         "cpi_rev": {
-          "rank": 11,
+          "rank": 14,
           "n": 33,
           "score": 0.0917
-        },
-        "etf_contra": {
-          "rank": 24,
-          "n": 33,
-          "score": 0.7408
-        },
-        "tot_impulse": {
-          "rank": 14,
-          "n": 34,
-          "score": 1.6043
-        },
-        "combiner": {
-          "rank": 10,
-          "n": 29,
-          "score": 0.0006
         }
       },
       "Philippines": {
+        "combiner": {
+          "rank": 16,
+          "n": 29,
+          "score": 0.0002
+        },
+        "leadlag": {
+          "rank": 7,
+          "n": 15,
+          "score": 0.0235
+        },
+        "etf_contra": {
+          "rank": 13,
+          "n": 33,
+          "score": -0.2409
+        },
+        "tot_impulse": {
+          "rank": 22,
+          "n": 34,
+          "score": 1.2004
+        },
         "graph_twohop": {
           "rank": 6,
           "n": 30,
@@ -106856,43 +106890,13 @@
           "rank": 16,
           "n": 33,
           "score": 0.025
-        },
-        "etf_contra": {
-          "rank": 13,
-          "n": 33,
-          "score": -0.2409
-        },
-        "tot_impulse": {
-          "rank": 22,
-          "n": 34,
-          "score": 1.2004
-        },
-        "combiner": {
-          "rank": 16,
-          "n": 29,
-          "score": 0.0002
-        },
-        "leadlag": {
-          "rank": 7,
-          "n": 15,
-          "score": 0.0235
         }
       },
       "Poland": {
-        "graph_twohop": {
-          "rank": 25,
-          "n": 30,
-          "score": -0.0155
-        },
-        "twins": {
-          "rank": 28,
-          "n": 34,
-          "score": -0.0168
-        },
-        "cpi_rev": {
-          "rank": 5,
-          "n": 33,
-          "score": 0.2283
+        "combiner": {
+          "rank": 23,
+          "n": 29,
+          "score": -0.0004
         },
         "etf_contra": {
           "rank": 12,
@@ -106904,35 +106908,43 @@
           "n": 34,
           "score": 1.6623
         },
-        "combiner": {
-          "rank": 23,
-          "n": 29,
-          "score": -0.0004
-        }
-      },
-      "Saudi Arabia": {
         "graph_twohop": {
-          "rank": 18,
+          "rank": 25,
           "n": 30,
-          "score": 0.0198
+          "score": -0.0155
         },
         "twins": {
-          "rank": 24,
+          "rank": 28,
           "n": 34,
-          "score": -0.0105
+          "score": -0.0168
         },
         "cpi_rev": {
-          "rank": 27,
+          "rank": 4,
           "n": 33,
-          "score": -0.0417
-        },
-        "tot_impulse": {
-          "rank": 29,
-          "n": 34,
-          "score": -1.5151
+          "score": 0.2783
         }
       },
       "Singapore": {
+        "combiner": {
+          "rank": 12,
+          "n": 29,
+          "score": 0.0005
+        },
+        "leadlag": {
+          "rank": 6,
+          "n": 15,
+          "score": 0.0242
+        },
+        "etf_contra": {
+          "rank": 32,
+          "n": 33,
+          "score": 3.3496
+        },
+        "tot_impulse": {
+          "rank": 6,
+          "n": 34,
+          "score": 1.8196
+        },
         "graph_twohop": {
           "rank": 24,
           "n": 30,
@@ -106947,29 +106959,24 @@
           "rank": 23,
           "n": 33,
           "score": -0.025
-        },
-        "etf_contra": {
-          "rank": 32,
-          "n": 33,
-          "score": 3.3496
-        },
-        "tot_impulse": {
-          "rank": 6,
-          "n": 34,
-          "score": 1.8196
-        },
-        "combiner": {
-          "rank": 12,
-          "n": 29,
-          "score": 0.0005
-        },
-        "leadlag": {
-          "rank": 6,
-          "n": 15,
-          "score": 0.0242
         }
       },
       "South Africa": {
+        "combiner": {
+          "rank": 7,
+          "n": 29,
+          "score": 0.0012
+        },
+        "etf_contra": {
+          "rank": 8,
+          "n": 33,
+          "score": -0.6691
+        },
+        "tot_impulse": {
+          "rank": 27,
+          "n": 34,
+          "score": -0.7438
+        },
         "graph_twohop": {
           "rank": 2,
           "n": 30,
@@ -106986,27 +106993,27 @@
           "score": 0.1174
         },
         "cpi_rev": {
-          "rank": 25,
+          "rank": 24,
           "n": 33,
           "score": -0.0333
-        },
-        "etf_contra": {
-          "rank": 8,
-          "n": 33,
-          "score": -0.6691
-        },
-        "tot_impulse": {
-          "rank": 27,
-          "n": 34,
-          "score": -0.7438
-        },
-        "combiner": {
-          "rank": 7,
-          "n": 29,
-          "score": 0.0012
         }
       },
       "Spain": {
+        "combiner": {
+          "rank": 8,
+          "n": 29,
+          "score": 0.001
+        },
+        "etf_contra": {
+          "rank": 28,
+          "n": 33,
+          "score": 1.6035
+        },
+        "tot_impulse": {
+          "rank": 17,
+          "n": 34,
+          "score": 1.5191
+        },
         "graph_twohop": {
           "rank": 13,
           "n": 30,
@@ -107026,24 +107033,24 @@
           "rank": 6,
           "n": 33,
           "score": 0.225
-        },
-        "etf_contra": {
-          "rank": 28,
-          "n": 33,
-          "score": 1.6035
-        },
-        "tot_impulse": {
-          "rank": 17,
-          "n": 34,
-          "score": 1.5191
-        },
-        "combiner": {
-          "rank": 8,
-          "n": 29,
-          "score": 0.001
         }
       },
       "Sweden": {
+        "combiner": {
+          "rank": 20,
+          "n": 29,
+          "score": -0.0002
+        },
+        "etf_contra": {
+          "rank": 33,
+          "n": 33,
+          "score": 4.8609
+        },
+        "tot_impulse": {
+          "rank": 24,
+          "n": 34,
+          "score": 0.8086
+        },
         "graph_twohop": {
           "rank": 20,
           "n": 30,
@@ -107063,24 +107070,29 @@
           "rank": 2,
           "n": 33,
           "score": 0.465
-        },
-        "etf_contra": {
-          "rank": 33,
-          "n": 33,
-          "score": 4.8609
-        },
-        "tot_impulse": {
-          "rank": 24,
-          "n": 34,
-          "score": 0.8086
-        },
-        "combiner": {
-          "rank": 20,
-          "n": 29,
-          "score": -0.0002
         }
       },
       "Switzerland": {
+        "combiner": {
+          "rank": 15,
+          "n": 29,
+          "score": 0.0003
+        },
+        "leadlag": {
+          "rank": 8,
+          "n": 15,
+          "score": 0.0194
+        },
+        "etf_contra": {
+          "rank": 31,
+          "n": 33,
+          "score": 3.1354
+        },
+        "tot_impulse": {
+          "rank": 2,
+          "n": 34,
+          "score": 2.6332
+        },
         "graph_twohop": {
           "rank": 14,
           "n": 30,
@@ -107100,29 +107112,29 @@
           "rank": 22,
           "n": 33,
           "score": 0.0
-        },
-        "etf_contra": {
-          "rank": 31,
-          "n": 33,
-          "score": 3.1354
-        },
-        "tot_impulse": {
-          "rank": 2,
-          "n": 34,
-          "score": 2.6332
-        },
-        "combiner": {
-          "rank": 15,
-          "n": 29,
-          "score": 0.0003
-        },
-        "leadlag": {
-          "rank": 8,
-          "n": 15,
-          "score": 0.0194
         }
       },
       "Thailand": {
+        "combiner": {
+          "rank": 1,
+          "n": 29,
+          "score": 0.0025
+        },
+        "leadlag": {
+          "rank": 1,
+          "n": 15,
+          "score": 0.047
+        },
+        "etf_contra": {
+          "rank": 30,
+          "n": 33,
+          "score": 2.3124
+        },
+        "tot_impulse": {
+          "rank": 9,
+          "n": 34,
+          "score": 1.7189
+        },
         "graph_twohop": {
           "rank": 10,
           "n": 30,
@@ -107137,29 +107149,24 @@
           "rank": 31,
           "n": 33,
           "score": -0.08
-        },
-        "etf_contra": {
-          "rank": 30,
-          "n": 33,
-          "score": 2.3124
-        },
-        "tot_impulse": {
-          "rank": 9,
-          "n": 34,
-          "score": 1.7189
-        },
-        "combiner": {
-          "rank": 1,
-          "n": 29,
-          "score": 0.0025
-        },
-        "leadlag": {
-          "rank": 1,
-          "n": 15,
-          "score": 0.047
         }
       },
       "Turkey": {
+        "combiner": {
+          "rank": 6,
+          "n": 29,
+          "score": 0.0014
+        },
+        "etf_contra": {
+          "rank": 9,
+          "n": 33,
+          "score": -0.6576
+        },
+        "tot_impulse": {
+          "rank": 5,
+          "n": 34,
+          "score": 1.9428
+        },
         "graph_twohop": {
           "rank": 12,
           "n": 30,
@@ -107174,24 +107181,29 @@
           "rank": 1,
           "n": 33,
           "score": 1.2167
-        },
-        "etf_contra": {
-          "rank": 9,
-          "n": 33,
-          "score": -0.6576
-        },
-        "tot_impulse": {
-          "rank": 5,
-          "n": 34,
-          "score": 1.9428
-        },
-        "combiner": {
-          "rank": 6,
-          "n": 29,
-          "score": 0.0014
         }
       },
       "U.K.": {
+        "combiner": {
+          "rank": 21,
+          "n": 29,
+          "score": -0.0003
+        },
+        "leadlag": {
+          "rank": 9,
+          "n": 15,
+          "score": 0.0171
+        },
+        "etf_contra": {
+          "rank": 21,
+          "n": 33,
+          "score": 0.1435
+        },
+        "tot_impulse": {
+          "rank": 20,
+          "n": 34,
+          "score": 1.3645
+        },
         "graph_twohop": {
           "rank": 22,
           "n": 30,
@@ -107208,32 +107220,27 @@
           "score": -0.016
         },
         "cpi_rev": {
-          "rank": 4,
+          "rank": 5,
           "n": 33,
           "score": 0.2583
-        },
-        "etf_contra": {
-          "rank": 21,
-          "n": 33,
-          "score": 0.1435
-        },
-        "tot_impulse": {
-          "rank": 20,
-          "n": 34,
-          "score": 1.3645
-        },
-        "combiner": {
-          "rank": 21,
-          "n": 29,
-          "score": -0.0003
-        },
-        "leadlag": {
-          "rank": 9,
-          "n": 15,
-          "score": 0.0171
         }
       },
       "U.S.": {
+        "combiner": {
+          "rank": 11,
+          "n": 29,
+          "score": 0.0005
+        },
+        "etf_contra": {
+          "rank": 18,
+          "n": 33,
+          "score": 0.0775
+        },
+        "tot_impulse": {
+          "rank": 33,
+          "n": 34,
+          "score": -1.9206
+        },
         "graph_twohop": {
           "rank": 28,
           "n": 30,
@@ -107250,41 +107257,16 @@
           "score": -0.0019
         },
         "cpi_rev": {
-          "rank": 13,
+          "rank": 12,
           "n": 33,
-          "score": 0.08
-        },
-        "etf_contra": {
-          "rank": 18,
-          "n": 33,
-          "score": 0.0775
-        },
-        "tot_impulse": {
-          "rank": 33,
-          "n": 34,
-          "score": -1.9206
-        },
-        "combiner": {
-          "rank": 11,
-          "n": 29,
-          "score": 0.0005
+          "score": 0.0967
         }
       },
       "Vietnam": {
-        "graph_twohop": {
-          "rank": 15,
-          "n": 30,
-          "score": 0.0228
-        },
-        "twins": {
-          "rank": 22,
-          "n": 34,
-          "score": -0.0047
-        },
-        "cpi_rev": {
+        "combiner": {
           "rank": 26,
-          "n": 33,
-          "score": -0.0333
+          "n": 29,
+          "score": -0.0012
         },
         "etf_contra": {
           "rank": 10,
@@ -107296,45 +107278,33 @@
           "n": 34,
           "score": 1.6564
         },
-        "combiner": {
-          "rank": 26,
-          "n": 29,
-          "score": -0.0012
-        }
-      },
-      "Taiwan": {
-        "graph_bank": {
-          "rank": 20,
-          "n": 21,
-          "score": -0.1125
+        "graph_twohop": {
+          "rank": 15,
+          "n": 30,
+          "score": 0.0228
         },
         "twins": {
-          "rank": 33,
+          "rank": 22,
           "n": 34,
-          "score": -0.1012
+          "score": -0.0047
         },
         "cpi_rev": {
-          "rank": 18,
+          "rank": 25,
           "n": 33,
-          "score": 0.01
-        },
-        "etf_contra": {
-          "rank": 20,
-          "n": 33,
-          "score": 0.1222
-        },
-        "tot_impulse": {
-          "rank": 10,
-          "n": 34,
-          "score": 1.6734
-        },
-        "leadlag": {
-          "rank": 15,
-          "n": 15,
-          "score": -0.0379
+          "score": -0.0333
         }
       },
       "ChinaH": {
+        "leadlag": {
+          "rank": 4,
+          "n": 15,
+          "score": 0.026
+        },
+        "tot_impulse": {
+          "rank": 8,
+          "n": 34,
+          "score": 1.8033
+        },
         "twins": {
           "rank": 26,
           "n": 34,
@@ -107349,29 +107319,41 @@
           "rank": 22,
           "n": 33,
           "score": 0.2067
+        }
+      },
+      "Taiwan": {
+        "leadlag": {
+          "rank": 15,
+          "n": 15,
+          "score": -0.0379
+        },
+        "etf_contra": {
+          "rank": 20,
+          "n": 33,
+          "score": 0.1222
         },
         "tot_impulse": {
-          "rank": 8,
+          "rank": 10,
           "n": 34,
-          "score": 1.8033
+          "score": 1.6734
         },
-        "leadlag": {
-          "rank": 4,
-          "n": 15,
-          "score": 0.026
+        "graph_bank": {
+          "rank": 20,
+          "n": 21,
+          "score": -0.1125
+        },
+        "twins": {
+          "rank": 33,
+          "n": 34,
+          "score": -0.1012
+        },
+        "cpi_rev": {
+          "rank": 18,
+          "n": 33,
+          "score": 0.01
         }
       },
       "NASDAQ": {
-        "twins": {
-          "rank": 31,
-          "n": 34,
-          "score": -0.0356
-        },
-        "cpi_rev": {
-          "rank": 12,
-          "n": 33,
-          "score": 0.08
-        },
         "etf_contra": {
           "rank": 11,
           "n": 33,
@@ -107381,19 +107363,19 @@
           "rank": 32,
           "n": 34,
           "score": -1.9206
+        },
+        "twins": {
+          "rank": 31,
+          "n": 34,
+          "score": -0.0356
+        },
+        "cpi_rev": {
+          "rank": 11,
+          "n": 33,
+          "score": 0.0967
         }
       },
       "US SmallCap": {
-        "twins": {
-          "rank": 7,
-          "n": 34,
-          "score": 0.0522
-        },
-        "cpi_rev": {
-          "rank": 14,
-          "n": 33,
-          "score": 0.08
-        },
         "etf_contra": {
           "rank": 27,
           "n": 33,
@@ -107403,6 +107385,38 @@
           "rank": 34,
           "n": 34,
           "score": -1.9206
+        },
+        "twins": {
+          "rank": 7,
+          "n": 34,
+          "score": 0.0522
+        },
+        "cpi_rev": {
+          "rank": 13,
+          "n": 33,
+          "score": 0.0967
+        }
+      },
+      "Saudi Arabia": {
+        "tot_impulse": {
+          "rank": 29,
+          "n": 34,
+          "score": -1.5151
+        },
+        "graph_twohop": {
+          "rank": 18,
+          "n": 30,
+          "score": 0.0198
+        },
+        "twins": {
+          "rank": 24,
+          "n": 34,
+          "score": -0.0105
+        },
+        "cpi_rev": {
+          "rank": 26,
+          "n": 33,
+          "score": -0.0417
         }
       }
     },
@@ -107561,15 +107575,16 @@
       },
       "Japan": {
         "long": 0,
-        "short": 1,
+        "short": 2,
         "eligible": 3,
         "long_families": [],
         "short_families": [
+          "cpi_revision",
           "diffusion"
         ],
-        "edge": -0.333,
+        "edge": -0.667,
         "conflict": false,
-        "has_nonprice_confirmation": false
+        "has_nonprice_confirmation": true
       },
       "Korea": {
         "long": 1,
@@ -107650,18 +107665,6 @@
         ],
         "edge": 0.0,
         "conflict": true,
-        "has_nonprice_confirmation": true
-      },
-      "Saudi Arabia": {
-        "long": 0,
-        "short": 1,
-        "eligible": 2,
-        "long_families": [],
-        "short_families": [
-          "cpi_revision"
-        ],
-        "edge": -0.5,
-        "conflict": false,
         "has_nonprice_confirmation": true
       },
       "Singapore": {
@@ -107790,18 +107793,6 @@
         "conflict": false,
         "has_nonprice_confirmation": false
       },
-      "Taiwan": {
-        "long": 0,
-        "short": 1,
-        "eligible": 3,
-        "long_families": [],
-        "short_families": [
-          "diffusion"
-        ],
-        "edge": -0.333,
-        "conflict": false,
-        "has_nonprice_confirmation": false
-      },
       "ChinaH": {
         "long": 0,
         "short": 1,
@@ -107813,6 +107804,18 @@
         "edge": -0.333,
         "conflict": false,
         "has_nonprice_confirmation": true
+      },
+      "Taiwan": {
+        "long": 0,
+        "short": 1,
+        "eligible": 3,
+        "long_families": [],
+        "short_families": [
+          "diffusion"
+        ],
+        "edge": -0.333,
+        "conflict": false,
+        "has_nonprice_confirmation": false
       },
       "NASDAQ": {
         "long": 0,
@@ -107839,6 +107842,16 @@
         "edge": 0.0,
         "conflict": true,
         "has_nonprice_confirmation": true
+      },
+      "Saudi Arabia": {
+        "long": 0,
+        "short": 0,
+        "eligible": 2,
+        "long_families": [],
+        "short_families": [],
+        "edge": 0.0,
+        "conflict": false,
+        "has_nonprice_confirmation": false
       }
     },
     "conflicts": [
@@ -107974,14 +107987,14 @@
       ],
       "short": [
         {
-          "country": "Brazil",
+          "country": "Japan",
           "edge": -0.667,
           "votes": 2
         },
         {
-          "country": "Saudi Arabia",
-          "edge": -0.5,
-          "votes": 1
+          "country": "Brazil",
+          "edge": -0.667,
+          "votes": 2
         },
         {
           "country": "NASDAQ",
@@ -107989,12 +108002,12 @@
           "votes": 1
         },
         {
-          "country": "ChinaH",
+          "country": "Taiwan",
           "edge": -0.333,
           "votes": 1
         },
         {
-          "country": "Taiwan",
+          "country": "ChinaH",
           "edge": -0.333,
           "votes": 1
         }
@@ -108005,39 +108018,39 @@
   "fable": {
     "status": "fresh",
     "as_of": "2026-10-06",
-    "generated_ts": "2026-10-07T08:01:19",
+    "generated_ts": "2026-10-07T11:50:36",
     "model": "claude-fable-5-1",
     "connections": [
       {
-        "title": "Malaysia: extreme MYR tail-hedging + ETF outflows sit on a 51-day unabsorbed ToT gap",
+        "title": "Malaysia: contrarian #1 + 51-day unabsorbed ToT gap + outflows + FX butterfly spike",
         "entities": [
           "Malaysia"
         ],
         "surfaces": [
           "gaps",
-          "fx_vol",
-          "flows",
           "families",
+          "flows",
+          "fx_vol",
           "commodities"
         ],
         "direction_hint": "long",
-        "mechanism": "The open G2 long gap on Malaysia (tension 0.381, the highest in the book, unabsorbed after 51 days) says the terms-of-trade impulse has not been priced. Tonight two other surfaces show the crowd positioned the opposite way: FX_BF25_Z252 = +3.42 (MYR butterfly at a 1-year extreme = tail-hedge demand), ETF_FLOW_21D_Z = -2.44 (outflows), and the etf_contra family puts Malaysia at 1/33 (strongest contrarian long). Nat gas +9.8% 3m is a positive LNG-export impulse while fertilizer -28.5% lowers palm-oil input costs. Price is only -3.41% 1m, so the market is being hedged and sold, not re-rated down. If the gap closes, it closes from a position-light base.",
-        "why_non_obvious": "Each surface alone looks like a 'Malaysia is being sold' signal. Joined, the butterfly extreme + outflows are the reason the ToT gap has stayed unabsorbed: there is no marginal buyer yet. The contrarian family and the gap detector agree on direction but for independent reasons (positioning vs fundamentals), which is the compound setup.",
+        "mechanism": "Malaysia carries the only unabsorbed G2 long gap (tension 0.381, 51 days active) and is etf_contra rank 1/33, i.e. the most oversold on the contrarian family, with ETF_FLOW_21D_Z at -2.44 (foreign outflows) and 1m return -3.41%. Meanwhile FX_BF25_Z252 = 3.26 — the MYR butterfly is the most stressed in the universe, meaning the options market is paying for tails in both directions, not a directional MYR bet. Commodity surface: natgas +9.8% 3m while the overall energy index is -25.9% — Malaysia is an LNG exporter and a net fertilizer/food importer (fertilizers -28.5%), so its terms of trade are improving precisely when its overall energy-exporter peers (Saudi, G2 short gap repriced_against) are deteriorating. The outflow is a positioning event colliding with an improving ToT picture; a butterfly spike this large with no directional risk-reversal extreme historically resolves as a vol crush once the flow stops.",
+        "why_non_obvious": "A single screen sees Malaysia as an EM outflow casualty with FX stress. Joining the gap ledger (unabsorbed 51 days), the contrarian family (rank 1), the flow z (-2.44) and the commodity split (natgas up vs energy down) shows the FX stress is two-sided tail hedging on top of an improving fundamental impulse, not a capitulation.",
         "confidence": "medium",
-        "falsifiable_check": "Event study: all dates where a country had an unabsorbed G2 long gap with tension > 0.3 for >= 30 days AND ETF_FLOW_21D_Z < -2. Test forward 21d ETF return net of cost vs. unconditional; separately condition on FX_BF25_Z252 > 2.5 to see whether tail-hedge extremes add to or subtract from the hit rate.",
+        "falsifiable_check": "Event study: all country-months where etf_contra rank <= 3, ETF_FLOW_21D_Z < -2 and FX_BF25_Z252 > 2.5 with no RR25 extreme; measure 21d forward ETF return net of cost vs. the unconditional country distribution. Also check whether G2 gaps unabsorbed > 40 days resolve toward the gap direction.",
         "horizon": "weeks",
         "claim": {
           "entity": "Malaysia",
           "direction": "long",
           "horizon_days": 21,
           "expression_ticker": "EWM",
-          "invalidation": "FX_BF25_Z252 stays above +3 while EWM breaks below its 1m low; or the G2 gap flips to 'repriced_against'."
+          "invalidation": "EWM closes below its 21d low while ETF_FLOW_21D_Z falls further below -3, or FX_RR25_Z252 for MYR exceeds +2 (directional MYR-put panic replaces two-sided tail hedging)."
         },
         "id": "FC_20261006_01",
         "epistemic_tag": "CONJECTURE"
       },
       {
-        "title": "Sweden: record ETF inflow (+4.86z) into a -5.8% month with SEK carry collapsing",
+        "title": "Defensive-inflow trio: Sweden/Switzerland/Singapore record inflows, prices still falling",
         "entities": [
           "Sweden",
           "Switzerland",
@@ -108045,122 +108058,148 @@
         ],
         "surfaces": [
           "flows",
-          "fx_vol",
           "families",
-          "triptych",
+          "fx_vol",
           "returns",
+          "triptych",
           "dislocations"
         ],
         "direction_hint": "short",
-        "mechanism": "The three largest 21d ETF inflows (Sweden +4.86z, Singapore +3.35z, Switzerland +3.14z) are exactly the three weakest etf_contra ranks (33/33, 32/33, 31/33). Sweden is the extreme: inflows at a 1-year record while the market fell -5.81% 1m and FX_CARRY_Z252 = -3.03 (Switzerland -3.08) — i.e. money is rotating into low-rate 'funding-currency' equity markets as a defensive trade. D7 flags Best Div Yield_CS, 5DTR_CS and 120-5DTR_TS dispersion as crowded (17 days persisting), and the Triptych MCAP decile-9 prior for Sweden implies 12m relative short with hist hit rate 0.04. Inflows chasing a falling, crowded-defensive market with no carry support is the classic contrarian short configuration.",
-        "why_non_obvious": "A single-screen reader sees 'strong inflows = support'. The join shows the inflows are coincident with price decline and carry collapse, so they are late defensive rotation into a crowded dividend/low-vol factor, not conviction buying. Switzerland shares the exact same fingerprint (flow +3.14z, carry -3.08z, etf_contra 31/33), which argues it is a factor flow, not a Sweden-specific view.",
+        "mechanism": "The three largest ETF inflow z-scores in the universe are Sweden 4.86, Singapore 3.35, Switzerland 3.14 — and these are exactly the three most crowded names on the contrarian family (etf_contra 33/33, 32/33, 31/33). Despite the inflows, 1m returns are -5.81%, -2.70%, -5.89%: flow is being absorbed by selling, the classic sign of late crowding. The FX surface explains the flow: FX_CARRY_Z252 is -3.04 (Sweden) and -3.06 (Switzerland), i.e. carry has collapsed in low-yielders while RISK_DXY_Z252 = 2.51 — these are 'safe-haven' allocations into currencies that no longer pay. D7 simultaneously flags Currency Vol_CS (-2.85) and Currency_CS (-1.70) as compressed/crowded factors, and the Triptych prior for Sweden (MCAP decile 9, relative, 12m) implies short with historical hit rate 0.04. Sweden also sits on an open short G3 gap. The cpi_rev family (Sweden 2/33) is the lone long lean, which is monthly and slower than the flow dynamic.",
+        "why_non_obvious": "Each flow extreme reads as bullish support on its own. Only when joined with the contrarian ranks (the three inflow leaders are the three most crowded), the returns surface (prices down into inflows), the carry collapse and the D7 currency-factor crowding flag does it become a crowded defensive trade that price is already rejecting.",
         "confidence": "medium",
-        "falsifiable_check": "Event study: ETF_FLOW_21D_Z > 3 AND country 1m return < -4% AND FX_CARRY_Z252 < -2. Forward 21d and 63d ETF return vs. unconditional, net of cost. Also test whether D7 Best-Div-Yield crowding flags precede underperformance of the top-3 inflow markets.",
+        "falsifiable_check": "Condition on ETF_FLOW_21D_Z > 3 AND trailing 21d return < -4% AND etf_contra rank in bottom 3; measure 21d/63d forward ETF return vs. universe and vs. cases where inflows coincided with positive returns. Separately test whether FX_CARRY_Z252 < -3 for a low-yielder predicts ETF underperformance over 21d.",
         "horizon": "weeks",
         "claim": {
           "entity": "Sweden",
           "direction": "short",
           "horizon_days": 21,
           "expression_ticker": "EWD",
-          "invalidation": "EWD closes above its 1m high, or ETF_FLOW_21D_Z falls below +1 while price stabilises (flow was absorbed, not chased)."
+          "invalidation": "EWD closes above its 21d high, or ETF_FLOW_21D_Z stays above +3 while 5d return turns positive (flow finally overwhelms supply)."
         },
         "id": "FC_20261006_02",
         "epistemic_tag": "CONJECTURE"
       },
       {
-        "title": "Netherlands D9 dislocation + short gap feeds Taiwan via the ASML→TSMC lead-lag edge",
+        "title": "Semis island: Taiwan/Netherlands/NASDAQ green while leaders' macro turns and lead-lag says short",
         "entities": [
-          "Netherlands",
           "Taiwan",
+          "Netherlands",
           "NASDAQ",
           "U.S."
         ],
         "surfaces": [
-          "dislocations",
-          "gaps",
+          "returns",
           "graph",
           "families",
-          "surprises",
-          "returns"
+          "dislocations",
+          "gaps",
+          "surprises"
         ],
         "direction_hint": "short",
-        "mechanism": "Netherlands carries a persisting D9 flag (+2.07, 3 days) and a G3 short gap (tension 0.216, partially absorbed) with graph_twohop 29/30 and graph_bank 19/21. Netherlands is a fundamental twin of Taiwan (cosine 0.697) and a lag-1 leader of Taiwan (0.457), alongside NASDAQ→Taiwan (0.539) and U.S.→Taiwan (0.497). Taiwan itself is the weakest long lean on leadlag (15/15), twins (33/34) and graph_bank (20/21), yet is up +3.98% 1m — the best in the universe while 28 of 34 markets fell. U.S. PMI surprise -1.97z and the U.S. short gap (repriced_against) weaken the demand leg. D7 flags 5DTR_CS and 120-5DTR_TS dispersion compressed for 17 days: the semis momentum cluster is the crowded factor.",
-        "why_non_obvious": "Taiwan's own detectors show nothing alarming — it is the strongest performer. The short case only appears by tracing the Netherlands dislocation along the lead-lag and twin edges, and by noticing that all three Taiwan leaders (NASDAQ, U.S., Netherlands) are either gapped short or carry negative macro surprises.",
+        "mechanism": "In a month where 28 of 34 markets fell (median roughly -4.5%), the semis cluster is the green island: Taiwan +3.98%, Netherlands +2.81%, NASDAQ +1.93%, Korea +2.20%. The graph ties them tightly: NASDAQ->Taiwan lag1 0.539, U.S.->Taiwan 0.497, Netherlands->Taiwan 0.457, and Netherlands is Taiwan's fundamental twin (0.697) and NASDAQ's (0.672). Yet the leaders are deteriorating: U.S./NASDAQ ECO_PMI_SURPRISE_Z = -1.97, U.S. has an open short G3 gap (0.207), and tot_impulse ranks the U.S. complex 32-34/34. The lead-lag family ranks Taiwan 15/15 (worst), graph_bank 20/21, twins 33/34 — three independent families agree the follower has run ahead of what its leaders justify. Netherlands has a persisting D9 flag (2.07, 3 days) plus a short G3 gap (0.216, partially absorbed) and graph_twohop 29/30. The cluster's resilience is a single-factor (AI capex) bet with its macro leaders rolling over.",
+        "why_non_obvious": "Each name looks like relative strength to a momentum screen. Joining the lead-lag edges with the leaders' PMI surprise and the three family ranks for Taiwan shows the strength is a follower outrunning weakening leaders; the Netherlands D9/gap flags are the same cluster flagged from a different angle.",
         "confidence": "medium",
-        "falsifiable_check": "Event study: dates where a lag-1 leader of Taiwan (corr > 0.4) has an active D9 flag AND an open G3 short gap. Forward 5d/21d EWT return vs. unconditional. Secondary: is Taiwan's 21d forward return negatively related to the Netherlands gap tension when Taiwan's leadlag rank is in the bottom 3?",
+        "falsifiable_check": "Event study: Taiwan 21d forward return when leadlag rank is 15/15 AND its top leader (NASDAQ) has ECO_PMI_SURPRISE_Z < -1.5 AND Taiwan 1m return is in the top quintile of the universe. Compare to unconditional. Also test Netherlands D9 severity > 2 persisting >= 3 days as a 21d short signal in EWN.",
         "horizon": "weeks",
         "claim": {
           "entity": "Taiwan",
           "direction": "short",
           "horizon_days": 21,
           "expression_ticker": "EWT",
-          "invalidation": "Netherlands D9 flag clears with Netherlands gap absorbed upward, or EWT makes a new 3m high relative to QQQ."
+          "invalidation": "EWT closes above its 21d high, or NASDAQ 5d return exceeds +4% (leader re-accelerates and the lead-lag resolves upward)."
         },
         "id": "FC_20261006_03",
         "epistemic_tag": "CONJECTURE"
       },
       {
-        "title": "Poland downgrade not yet in the SA–Poland–Chile twin triangle; the gap may close from Poland",
-        "entities": [
-          "Poland",
-          "South Africa",
-          "Chile"
-        ],
-        "surfaces": [
-          "sovereign",
-          "graph",
-          "families",
-          "fx_vol",
-          "returns",
-          "commodities"
-        ],
-        "direction_hint": "relative",
-        "mechanism": "South Africa is rank 1 on every graph family (graph_bank 1/21, graph_twohop 2/30, twins 1/34) because its twins have outperformed it: Poland +1.13% 1m vs South Africa -9.0% and Chile -7.33%. But Poland was downgraded by Moody's on 2026-10-01 (-1 notch, the only rating action in 90d) and FX_CARRY_Z252 = -2.04 (PLN carry collapsing). Poland's twin edges (SA 0.717, Chile 0.668) imply the spread should close — the question is which leg moves. SA's tot_impulse 27/34 and precious metals -15.5% 3m say SA's underperformance has a fundamental leg; Poland's resilience has a sovereign shock not yet reflected in its relative price.",
-        "why_non_obvious": "The graph families scream 'long South Africa'. The join with the sovereign surface flips the inference: the twin spread is wide because Poland is stale, not because SA is cheap. A downgrade plus carry collapse on the strong twin is the catalyst for convergence from the Poland side.",
-        "confidence": "medium",
-        "falsifiable_check": "Event study: Moody's/S&P/Fitch downgrades in the 34-universe where the downgraded country outperformed its top twin by > 8pp over the prior month. Test 21d forward return of the downgraded country vs. its twin, and whether the twin-spread converged via the downgraded leg.",
-        "horizon": "weeks",
-        "claim": {
-          "entity": "Poland",
-          "direction": "short",
-          "horizon_days": 21,
-          "expression_ticker": "EPOL",
-          "invalidation": "EPOL closes above its 1m high while South Africa / Chile keep falling (spread widens via SA, downgrade absorbed)."
-        },
-        "id": "FC_20261006_04",
-        "epistemic_tag": "CONJECTURE"
-      },
-      {
-        "title": "Brazil: carry collapse (-3.43z) + inflows + lone positive month while every graph family is bottom-ranked",
+        "title": "Brazil: carry collapse (-3.41z) under inflow-driven rally that all graph families reject",
         "entities": [
           "Brazil"
         ],
         "surfaces": [
           "fx_vol",
           "flows",
+          "returns",
           "families",
           "triptych",
-          "returns",
           "commodities"
         ],
         "direction_hint": "short",
-        "mechanism": "Brazil is the most extreme FX reading in the packet: FX_CARRY_Z252 = -3.43, while RISK_DXY_Z252 = +2.56 signals dollar stress. Yet Brazil equity is +3.18% 1m (one of 6 positive markets) with ETF inflows +2.3z. Every graph family has Brazil last: graph_bank 21/21, graph_twohop 30/30, twins 34/34; etf_contra 29/33; Triptych Mcap-Weights decile 10 implies relative short with hist hit rate 0.0. The one supportive leg is commodities: beverages (coffee) +25% 3m and fertilizers -28.5% (input cost relief), but tot_impulse is still only 26/34, so the ToT family does not see it as decisive. Equity is being bought on domestic rate-cut hopes while the carry that anchored foreign flows is vanishing in a strong-dollar regime.",
-        "why_non_obvious": "Price and flows say Brazil is working. The join with FX vol shows the rally is happening precisely as the carry cushion disappears, and the graph families show no neighbour or twin confirms it. Carry collapse + DXY stress historically precedes EM outflow reversals; the ETF inflow is the late leg.",
+        "mechanism": "Brazil is the EM outlier: +3.18% 1m while Chile -7.33%, Mexico -6.78%, South Africa -9.0%, with ETF_FLOW_21D_Z +2.30. But the thing that historically underwrites Brazil inflows — carry — has collapsed: FX_CARRY_Z252 = -3.41, the most extreme reading in the universe, with RISK_DXY_Z252 at 2.51 (strong dollar). All three structural graph families place Brazil dead last: graph_bank 21/21, graph_twohop 30/30, twins 34/34, and the Triptych prior (Mcap Weights history_z decile 10, relative 24m) implies short with a 0.00 historical hit rate for long. The only support is on the commodity surface: beverages +25.0% 3m (coffee) and fertilizers -28.5% (import cost relief) — but tot_impulse still ranks Brazil only 26/34, so the ToT engine judges the coffee boost small against the broader -18.4% overall commodity decline (iron ore -7.4%). This is a rally running on equity-rotation flow with its carry anchor gone.",
+        "why_non_obvious": "A momentum/flow screen shows Brazil as the EM leader with fresh inflows. Joining the FX carry collapse (the mechanism that normally feeds those flows) with unanimous bottom ranks from the graph families and the ToT engine's refusal to credit the coffee spike exposes the rally as unsupported by its usual drivers.",
         "confidence": "medium",
-        "falsifiable_check": "Event study: FX_CARRY_Z252 < -3 AND RISK_DXY_Z252 > 2 AND country 1m return > 0 AND ETF_FLOW_21D_Z > 2. Forward 21d/63d ETF return vs. unconditional. Also test whether a bottom-3 rank on all three graph families has any standalone forward signal.",
+        "falsifiable_check": "Condition on FX_CARRY_Z252 < -3 AND ETF_FLOW_21D_Z > 2 AND 1m return > universe median + 5%; measure 21d and 63d forward EWZ return net of cost. Also test whether graph_bank + graph_twohop + twins all in the bottom 3 is predictive of 21d relative underperformance.",
         "horizon": "weeks",
         "claim": {
           "entity": "Brazil",
           "direction": "short",
           "horizon_days": 21,
           "expression_ticker": "EWZ",
-          "invalidation": "FX_CARRY_Z252 recovers above -2 while EWZ holds its 1m high; or RISK_DXY_Z252 drops below +1."
+          "invalidation": "EWZ closes above its 21d high, or FX_CARRY_Z252 recovers above -1.5 (carry anchor restored)."
+        },
+        "id": "FC_20261006_04",
+        "epistemic_tag": "CONJECTURE"
+      },
+      {
+        "title": "Euro inflation shock -> CDS curve steepening -> cpi_rev long leans concentrate in France",
+        "entities": [
+          "France",
+          "Italy",
+          "Spain",
+          "Germany"
+        ],
+        "surfaces": [
+          "surprises",
+          "sovereign",
+          "fx_vol",
+          "families",
+          "gaps",
+          "dislocations",
+          "returns"
+        ],
+        "direction_hint": "long",
+        "mechanism": "A euro-wide upside inflation surprise (France ECO_CPI_SURPRISE_Z 3.30, Germany 2.58, Spain 1.79) has pushed sovereign CDS slopes to extreme steepness: Italy 3.5z, Spain 3.5z, France 3.0z — front-end default risk compressed relative to the long end, consistent with a term-premium / ECB-repricing story rather than a near-term solvency scare. Euro FX RR25 is uniformly +2.04z across all five euro members. The monthly cpi_rev family reads the revision as a LONG lean: Italy 3/33, Spain 6/33, France 7/33, Germany 8/33. Equities have already sold off (France -6.51%, Germany -6.12%, Italy -5.16%, Spain -4.35%), and D4 fires on France (-1.3) and Italy (-1.13). France uniquely stacks graph_bank 5/21, graph_twohop 4/30, twins 10/34 and an open long G3 gap (0.235, partially absorbed, 41 days: neighbors repriced faster than France). France's twins Italy (0.811) and Germany (0.74) have the same inflation signature, so the gap is not idiosyncratic noise. The combination — inflation surprise already priced into the sovereign curve, equities already down, graph families leaning long — is a mean-reversion setup rather than a stagflation one.",
+        "why_non_obvious": "Inflation surprise + CDS extreme reads as 'short Europe' on one screen. Joining the sign of the CDS slope (steepening = front-end relief), the cpi_rev family's long registration, the graph long leans on France, and the prior 6% drawdown flips the reading: the sovereign market has absorbed the shock while equities have overshot.",
+        "confidence": "low",
+        "falsifiable_check": "Event study: country-months with ECO_CPI_SURPRISE_Z > 2.5 AND SOV_CDS_SLOPE_Z252 > 2.5 AND trailing 21d return < -5%; measure 21d forward ETF return vs. the unconditional and vs. cases where CDS slope was flat/inverted. Validate that cpi_rev's registered direction has positive net-of-cost capture at the 21d horizon in ETF space.",
+        "horizon": "weeks",
+        "claim": {
+          "entity": "France",
+          "direction": "long",
+          "horizon_days": 21,
+          "expression_ticker": "EWQ",
+          "invalidation": "EWQ closes below its 21d low, or France SOV_CDS_SLOPE_Z252 collapses below +1 while 5y CDS level widens (shock migrates to the front end — a solvency story, not a term-premium one)."
         },
         "id": "FC_20261006_05",
         "epistemic_tag": "CONJECTURE"
       },
       {
-        "title": "India into RBI: flattest curve in a year while energy -26% and fertilizer -28% hand RBI room",
+        "title": "Poland downgrade vs. South Africa/Chile twins: which side of the twin gap closes?",
+        "entities": [
+          "South Africa",
+          "Poland",
+          "Chile"
+        ],
+        "surfaces": [
+          "sovereign",
+          "graph",
+          "families",
+          "returns",
+          "commodities",
+          "fx_vol"
+        ],
+        "direction_hint": "relative",
+        "mechanism": "South Africa is the strongest long lean on every graph family (graph_bank 1/21, graph_twohop 2/30, twins 1/34) after a -9.0% month, and Chile is close behind (3/21, 5/30, 6/34, -7.33%). The reason is the twin set: Poland (twin cosine 0.717 with SA, 0.668 with Chile) is +1.13% on the month, so the twin engine sees SA/Chile as lagging their neighbor and leans long the laggards. But the sovereign surface shows Moody's cut Poland one notch on 2026-10-01, Poland FX_CARRY_Z252 is -2.04, and Poland's resilience is five days old relative to the downgrade. The commodity surface says SA's weakness is at least partly fundamental (precious metals -15.5% 3m, iron ore -7.4%), and tot_impulse ranks SA 27/34 and Chile 25/34 — the ToT engine does not support the twins' long lean. The twin gap can close either by SA/Chile rallying (the graph families' bet) or by Poland catching down to its downgrade (the sovereign surface's bet). The two surfaces disagree on which leg moves.",
+        "why_non_obvious": "The twins/graph ranks look like a clean 'long SA' signal. Only by tracing why SA ranks first — because its twin Poland hasn't fallen — and then checking Poland's own sovereign event and carry collapse does it become clear the signal's anchor is itself fragile.",
+        "confidence": "low",
+        "falsifiable_check": "Event study on sovereign downgrades: for the downgraded country's fundamental twins (cosine > 0.65), measure the 21d relative return of the downgraded country vs. its twins following the rating action, and separately whether twins-rank-1 leans driven by a single twin's divergence have lower capture than leans driven by broad neighbor repricing.",
+        "horizon": "weeks",
+        "id": "FC_20261006_06",
+        "epistemic_tag": "CONJECTURE"
+      },
+      {
+        "title": "RBI into a -2.1z flattened curve: energy collapse gives room the curve isn't pricing",
         "entities": [
           "India"
         ],
@@ -108173,44 +108212,11 @@
           "returns"
         ],
         "direction_hint": "long",
-        "mechanism": "RBI MPC decides 2026-10-07, the only event on the 14d calendar. India's SOV_2S10S_Z252 = -2.1 (1-year flattening extreme) — the front end is pricing a hawkish hold, likely because RISK_DXY_Z252 +2.56 constrains INR defense. But the commodity surface shows India's two biggest import bills collapsing: energy -25.9% 3m, fertilizers -28.5%, giving tot_impulse rank 3/34 and twins 5/34. India is -7.07% 1m with etf_contra 7/33 (contrarian long). A flat curve plus a disinflationary import shock is the setup for the RBI to be less hawkish than the front end implies; the ToT windfall is not in the equity price.",
-        "why_non_obvious": "Curve flattening in isolation reads as a bearish rates signal. Joined to the commodity impulse and the calendar it is the opposite: the front end is stale relative to the import-cost collapse, and the event is the trigger that can re-steepen it. The DXY stress is the reason it has not happened yet, which makes the event the pivot.",
-        "confidence": "medium",
-        "falsifiable_check": "Event study: RBI decisions where SOV_2S10S_Z252 < -1.5 on T-1 AND energy 3m return < -15%. Forward 5d/21d INDA return and 2s10s change vs. all RBI decisions. Also test the tot_impulse top-5 rank as a conditioning variable for post-event drift.",
-        "horizon": "weeks",
-        "claim": {
-          "entity": "India",
-          "direction": "long",
-          "horizon_days": 21,
-          "expression_ticker": "INDA",
-          "invalidation": "RBI hikes or guides to hikes and 2s10s flattens further (z < -2.5); or INDA closes below its post-decision low within 5 days."
-        },
-        "id": "FC_20261006_06",
-        "epistemic_tag": "CONJECTURE"
-      },
-      {
-        "title": "Euro inflation surprise cluster vs periphery CDS-slope extremes and a long/short France gap conflict",
-        "entities": [
-          "France",
-          "Italy",
-          "Spain",
-          "Germany"
-        ],
-        "surfaces": [
-          "surprises",
-          "sovereign",
-          "fx_vol",
-          "gaps",
-          "families",
-          "triptych",
-          "dislocations"
-        ],
-        "direction_hint": "relative",
-        "mechanism": "Inflation surprises are the hottest macro readings in the packet: France +3.3z, Germany +2.58z, Spain +1.79z. Simultaneously the three largest sovereign extremes are periphery CDS-slope z-scores: Spain +3.5, Italy +3.0, France +2.5, and all euro members show FX_RR25_Z252 +2.05 (EUR skew). The cpi_rev family nonetheless ranks Italy 3/33, Spain 6/33, France 7/33, Germany 8/33 as LONG leans, while Triptych's Italy Mcap-Weights decile-2 prior implies a 36m relative short (hit rate 0.04). France holds both a long G3 gap (0.235, partially absorbed) and a short G3 gap (0.202, repriced_against), and D4 is newly flagged on France (-1.3) and Italy (-1.13). A hot inflation print forces ECB repricing; periphery with steep CDS slopes (Italy twin of France 0.811) is more rate-sensitive than Germany, where etf_contra is 4/33.",
-        "why_non_obvious": "The cpi_rev family and the sovereign/surprise surfaces point in opposite directions for the same countries, and France's gap book is internally contradictory. Which one is right depends on whether a CDS slope at +3.5z means 'near-term calm' (bullish periphery) or 'term-premium build' (bearish). The surprise surface says the ECB is the mechanism that resolves it — Germany vs Italy/Spain is the clean relative expression, not an outright.",
+        "mechanism": "India's RBI MPC decision on 2026-10-07 is the only item on the 14-day calendar. The sovereign surface shows SOV_2S10S_Z252 = -2.1 — the curve has flattened sharply, consistent with the front end pricing rupee defense against a strong dollar (RISK_DXY_Z252 2.51; Philippines USD Broad Index decile 10 shows the same regional pressure). Yet the commodity surface shows energy -25.9% and fertilizers -28.5% over 3m — India's two largest import bills — which is why tot_impulse ranks India 3/34, the third-best terms-of-trade improvement in the universe. Equities are -7.07% on the month with twins 5/34 and etf_contra 7/33 leaning long. The curve is pricing a hawkish hold; the import-price collapse argues the RBI has far more room than that. The event is the resolution point: a dovish-leaning statement into a -7% drawdown with an improving ToT and a flat curve is a steepener/equity-relief combination.",
+        "why_non_obvious": "The curve flattening and the equity drawdown look like one coherent risk-off story. Joining the commodity impulse (India's import bill down ~25-30%) and the ToT family rank (3/34) shows the macro input the curve should be reacting to is moving the opposite way from what the curve is pricing, and the calendar supplies a dated catalyst.",
         "confidence": "low",
-        "falsifiable_check": "Event study: ECO_CPI_SURPRISE_Z > 2.5 in France or Germany AND SOV_CDS_SLOPE_Z252 > 2.5 in Italy or Spain. Forward 21d Germany-minus-Italy and Germany-minus-Spain ETF spread vs. unconditional. Separately, decompose the CDS slope extreme into 1y vs 5y legs to classify the regime before trusting the direction.",
-        "horizon": "weeks",
+        "falsifiable_check": "Event study on RBI decisions where SOV_2S10S_Z252 < -1.5 and trailing 3m energy index return < -15%: measure 5d and 21d forward INDA return and 2s10s change vs. all other RBI meetings. Check also whether tot_impulse top-5 rank has positive 21d ETF capture for net importers.",
+        "horizon": "days",
         "id": "FC_20261006_07",
         "epistemic_tag": "CONJECTURE"
       }
@@ -108748,328 +108754,328 @@
       }
     ],
     "by_country": {
-      "Brazil": [
+      "Japan": [
         {
-          "factor": "REER",
-          "factor_table": "t2_raw",
-          "country": "Brazil",
-          "normalization": "cross_var_pct",
+          "factor": "IMF_Money_Market_Rate",
+          "factor_table": "imf_factors",
+          "country": "Japan",
+          "normalization": "raw",
           "return_mode": "absolute",
           "horizon_months": 12,
-          "current_decile": 4,
+          "current_decile": 1,
           "implied_direction": "long",
-          "n_records": 274,
-          "cur_bucket_n": 24,
-          "cur_bucket_avg_fwd": 0.3593,
-          "cur_bucket_hit_rate": 0.9583,
-          "ic_t_stat": -2.966,
-          "r_squared": 0.5207,
-          "spread_top_minus_bottom": -0.2023,
-          "confidence_score": 0.9792,
+          "n_records": 172,
+          "cur_bucket_n": 29,
+          "cur_bucket_avg_fwd": 0.1984,
+          "cur_bucket_hit_rate": 0.931,
+          "ic_t_stat": -2.2839,
+          "r_squared": 0.821,
+          "spread_top_minus_bottom": -0.3634,
+          "confidence_score": 0.9439,
           "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=REER&tc=Brazil&tn=cross_var_pct&tm=absolute&th=12&tr=all&td=pit&tb=10",
+          "triptych_url": null,
           "epistemic_tag": "PRIOR"
         },
         {
-          "factor": "REER",
-          "factor_table": "t2_raw",
-          "country": "Brazil",
-          "normalization": "cross_var_pct",
-          "return_mode": "relative",
-          "horizon_months": 12,
-          "current_decile": 4,
-          "implied_direction": "long",
-          "n_records": 274,
-          "cur_bucket_n": 24,
-          "cur_bucket_avg_fwd": 0.1829,
-          "cur_bucket_hit_rate": 0.8333,
-          "ic_t_stat": -2.7022,
-          "r_squared": 0.2983,
-          "spread_top_minus_bottom": -0.0696,
-          "confidence_score": 0.9167,
-          "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=REER&tc=Brazil&tn=cross_var_pct&tm=relative&th=12&tr=all&td=pit&tb=10",
-          "epistemic_tag": "PRIOR"
-        },
-        {
-          "factor": "Trailing EPS",
-          "factor_table": "t2_raw",
-          "country": "Brazil",
+          "factor": "IMF_Money_Market_Rate",
+          "factor_table": "imf_factors",
+          "country": "Japan",
           "normalization": "raw",
+          "return_mode": "absolute",
+          "horizon_months": 6,
+          "current_decile": 1,
+          "implied_direction": "long",
+          "n_records": 172,
+          "cur_bucket_n": 29,
+          "cur_bucket_avg_fwd": 0.1024,
+          "cur_bucket_hit_rate": 0.931,
+          "ic_t_stat": -2.1074,
+          "r_squared": 0.6092,
+          "spread_top_minus_bottom": -0.1586,
+          "confidence_score": 0.9263,
+          "confidence_notes": "ok",
+          "triptych_url": null,
+          "epistemic_tag": "PRIOR"
+        },
+        {
+          "factor": "Agriculture",
+          "factor_table": "t2_raw",
+          "country": "Japan",
+          "normalization": "history_z",
           "return_mode": "relative",
           "horizon_months": 12,
           "current_decile": 7,
           "implied_direction": "short",
-          "n_records": 274,
-          "cur_bucket_n": 17,
-          "cur_bucket_avg_fwd": -0.1716,
-          "cur_bucket_hit_rate": 0.0,
-          "ic_t_stat": -2.0048,
-          "r_squared": 0.059,
+          "n_records": 238,
+          "cur_bucket_n": 22,
+          "cur_bucket_avg_fwd": -0.15,
+          "cur_bucket_hit_rate": 0.1364,
+          "ic_t_stat": -2.3229,
+          "r_squared": 0.8197,
           "spread_top_minus_bottom": null,
-          "confidence_score": 0.913,
+          "confidence_score": 0.9141,
           "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Trailing+EPS&tc=Brazil&tn=raw&tm=relative&th=12&tr=all&td=pit&tb=10",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Agriculture&tc=Japan&tn=history_z&tm=relative&th=12&tr=all&td=pit&tb=10",
           "epistemic_tag": "PRIOR"
         }
       ],
-      "Italy": [
+      "Mexico": [
         {
-          "factor": "Mcap Weights",
+          "factor": "BBG_CDS_5Y",
+          "factor_table": "bloomberg_factors",
+          "country": "Mexico",
+          "normalization": "history_z",
+          "return_mode": "absolute",
+          "horizon_months": 1,
+          "current_decile": 3,
+          "implied_direction": "long",
+          "n_records": 263,
+          "cur_bucket_n": 20,
+          "cur_bucket_avg_fwd": 0.0532,
+          "cur_bucket_hit_rate": 0.85,
+          "ic_t_stat": -3.9891,
+          "r_squared": 0.7861,
+          "spread_top_minus_bottom": null,
+          "confidence_score": 0.925,
+          "confidence_notes": "ok",
+          "triptych_url": null,
+          "epistemic_tag": "PRIOR"
+        },
+        {
+          "factor": "EPU",
+          "factor_table": "external_factors",
+          "country": "Mexico",
+          "normalization": "raw",
+          "return_mode": "absolute",
+          "horizon_months": 12,
+          "current_decile": 10,
+          "implied_direction": "long",
+          "n_records": 274,
+          "cur_bucket_n": 15,
+          "cur_bucket_avg_fwd": 0.4717,
+          "cur_bucket_hit_rate": 1.0,
+          "ic_t_stat": 2.1557,
+          "r_squared": 0.4773,
+          "spread_top_minus_bottom": 0.3539,
+          "confidence_score": 0.9031,
+          "confidence_notes": "ok",
+          "triptych_url": null,
+          "epistemic_tag": "PRIOR"
+        },
+        {
+          "factor": "Trailing PE",
           "factor_table": "t2_raw",
-          "country": "Italy",
+          "country": "Mexico",
+          "normalization": "raw",
+          "return_mode": "absolute",
+          "horizon_months": 6,
+          "current_decile": 4,
+          "implied_direction": "long",
+          "n_records": 280,
+          "cur_bucket_n": 28,
+          "cur_bucket_avg_fwd": 0.1343,
+          "cur_bucket_hit_rate": 0.8571,
+          "ic_t_stat": -2.2381,
+          "r_squared": 0.3855,
+          "spread_top_minus_bottom": -0.1595,
+          "confidence_score": 0.9024,
+          "confidence_notes": "ok",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Trailing+PE&tc=Mexico&tn=raw&tm=absolute&th=6&tr=all&td=pit&tb=10",
+          "epistemic_tag": "PRIOR"
+        }
+      ],
+      "Netherlands": [
+        {
+          "factor": "BIS_REER",
+          "factor_table": "external_factors",
+          "country": "Netherlands",
           "normalization": "raw",
           "return_mode": "relative",
           "horizon_months": 36,
-          "current_decile": 2,
+          "current_decile": 10,
           "implied_direction": "short",
-          "n_records": 206,
+          "n_records": 250,
+          "cur_bucket_n": 23,
+          "cur_bucket_avg_fwd": -0.5013,
+          "cur_bucket_hit_rate": 0.0,
+          "ic_t_stat": -2.4083,
+          "r_squared": 0.7563,
+          "spread_top_minus_bottom": -0.5494,
+          "confidence_score": 0.9908,
+          "confidence_notes": "ok",
+          "triptych_url": null,
+          "epistemic_tag": "PRIOR"
+        },
+        {
+          "factor": "REER",
+          "factor_table": "t2_raw",
+          "country": "Netherlands",
+          "normalization": "raw",
+          "return_mode": "relative",
+          "horizon_months": 36,
+          "current_decile": 10,
+          "implied_direction": "short",
+          "n_records": 250,
           "cur_bucket_n": 24,
-          "cur_bucket_avg_fwd": -0.1922,
-          "cur_bucket_hit_rate": 0.0417,
-          "ic_t_stat": -3.8747,
-          "r_squared": 0.8183,
-          "spread_top_minus_bottom": -0.4215,
-          "confidence_score": 0.9792,
-          "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Mcap+Weights&tc=Italy&tn=raw&tm=relative&th=36&tr=all&td=pit&tb=10",
-          "epistemic_tag": "PRIOR"
-        },
-        {
-          "factor": "Mcap Weights",
-          "factor_table": "t2_raw",
-          "country": "Italy",
-          "normalization": "raw",
-          "return_mode": "relative",
-          "horizon_months": 12,
-          "current_decile": 3,
-          "implied_direction": "short",
-          "n_records": 230,
-          "cur_bucket_n": 17,
-          "cur_bucket_avg_fwd": -0.0811,
-          "cur_bucket_hit_rate": 0.0588,
-          "ic_t_stat": -4.1423,
-          "r_squared": 0.8067,
-          "spread_top_minus_bottom": -0.167,
-          "confidence_score": 0.9331,
-          "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Mcap+Weights&tc=Italy&tn=raw&tm=relative&th=12&tr=all&td=pit&tb=10",
-          "epistemic_tag": "PRIOR"
-        },
-        {
-          "factor": "Mcap Weights",
-          "factor_table": "t2_raw",
-          "country": "Italy",
-          "normalization": "raw",
-          "return_mode": "relative",
-          "horizon_months": 24,
-          "current_decile": 3,
-          "implied_direction": "short",
-          "n_records": 218,
-          "cur_bucket_n": 9,
-          "cur_bucket_avg_fwd": -0.1781,
+          "cur_bucket_avg_fwd": -0.487,
           "cur_bucket_hit_rate": 0.0,
-          "ic_t_stat": -3.6511,
-          "r_squared": 0.5596,
-          "spread_top_minus_bottom": -0.1375,
-          "confidence_score": 0.8625,
-          "confidence_notes": "thin current bucket",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Mcap+Weights&tc=Italy&tn=raw&tm=relative&th=24&tr=all&td=pit&tb=10",
-          "epistemic_tag": "PRIOR"
-        }
-      ],
-      "Poland": [
-        {
-          "factor": "Best Cash Flow",
-          "factor_table": "t2_raw",
-          "country": "Poland",
-          "normalization": "history_z",
-          "return_mode": "absolute",
-          "horizon_months": 24,
-          "current_decile": 10,
-          "implied_direction": "short",
-          "n_records": 189,
-          "cur_bucket_n": 26,
-          "cur_bucket_avg_fwd": -0.2451,
-          "cur_bucket_hit_rate": 0.0,
-          "ic_t_stat": -2.5105,
-          "r_squared": 0.9563,
-          "spread_top_minus_bottom": -0.9559,
-          "confidence_score": 1.0,
+          "ic_t_stat": -2.375,
+          "r_squared": 0.7698,
+          "spread_top_minus_bottom": -0.5515,
+          "confidence_score": 0.9875,
           "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Best+Cash+Flow&tc=Poland&tn=history_z&tm=absolute&th=24&tr=all&td=pit&tb=10",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=REER&tc=Netherlands&tn=raw&tm=relative&th=36&tr=all&td=pit&tb=10",
           "epistemic_tag": "PRIOR"
         },
         {
-          "factor": "Best Cash Flow",
+          "factor": "REER",
           "factor_table": "t2_raw",
-          "country": "Poland",
-          "normalization": "history_z",
+          "country": "Netherlands",
+          "normalization": "raw",
           "return_mode": "relative",
           "horizon_months": 24,
           "current_decile": 10,
           "implied_direction": "short",
-          "n_records": 189,
+          "n_records": 262,
           "cur_bucket_n": 26,
-          "cur_bucket_avg_fwd": -0.2448,
-          "cur_bucket_hit_rate": 0.0,
-          "ic_t_stat": -2.4878,
-          "r_squared": 0.8761,
-          "spread_top_minus_bottom": -0.6421,
-          "confidence_score": 0.9988,
+          "cur_bucket_avg_fwd": -0.2613,
+          "cur_bucket_hit_rate": 0.0769,
+          "ic_t_stat": -2.6088,
+          "r_squared": 0.7809,
+          "spread_top_minus_bottom": -0.3371,
+          "confidence_score": 0.9615,
           "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Best+Cash+Flow&tc=Poland&tn=history_z&tm=relative&th=24&tr=all&td=pit&tb=10",
-          "epistemic_tag": "PRIOR"
-        },
-        {
-          "factor": "Best Cash Flow",
-          "factor_table": "t2_raw",
-          "country": "Poland",
-          "normalization": "raw",
-          "return_mode": "absolute",
-          "horizon_months": 24,
-          "current_decile": 9,
-          "implied_direction": "short",
-          "n_records": 189,
-          "cur_bucket_n": 13,
-          "cur_bucket_avg_fwd": -0.2745,
-          "cur_bucket_hit_rate": 0.0,
-          "ic_t_stat": -2.7572,
-          "r_squared": 0.858,
-          "spread_top_minus_bottom": -0.9853,
-          "confidence_score": 0.9125,
-          "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Best+Cash+Flow&tc=Poland&tn=raw&tm=absolute&th=24&tr=all&td=pit&tb=10",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=REER&tc=Netherlands&tn=raw&tm=relative&th=24&tr=all&td=pit&tb=10",
           "epistemic_tag": "PRIOR"
         }
       ],
-      "Denmark": [
+      "Spain": [
         {
-          "factor": "PX_LAST",
+          "factor": "10Yr Bond",
           "factor_table": "t2_raw",
-          "country": "Denmark",
-          "normalization": "raw",
-          "return_mode": "absolute",
+          "country": "Spain",
+          "normalization": "history_z",
+          "return_mode": "relative",
           "horizon_months": 6,
-          "current_decile": 9,
+          "current_decile": 10,
           "implied_direction": "long",
           "n_records": 280,
-          "cur_bucket_n": 43,
-          "cur_bucket_avg_fwd": 0.0753,
-          "cur_bucket_hit_rate": 0.7442,
-          "ic_t_stat": -2.5778,
-          "r_squared": 0.5677,
-          "spread_top_minus_bottom": -0.2125,
-          "confidence_score": 0.8721,
+          "cur_bucket_n": 51,
+          "cur_bucket_avg_fwd": 0.0611,
+          "cur_bucket_hit_rate": 0.8824,
+          "ic_t_stat": 2.4735,
+          "r_squared": 0.7259,
+          "spread_top_minus_bottom": 0.119,
+          "confidence_score": 0.9385,
           "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=PX_LAST&tc=Denmark&tn=raw&tm=absolute&th=6&tr=all&td=pit&tb=10",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=10Yr+Bond&tc=Spain&tn=history_z&tm=relative&th=6&tr=all&td=pit&tb=10",
           "epistemic_tag": "PRIOR"
         },
+        {
+          "factor": "Trailing EPS 36",
+          "factor_table": "t2_raw",
+          "country": "Spain",
+          "normalization": "cross_var_pct",
+          "return_mode": "absolute",
+          "horizon_months": 12,
+          "current_decile": 6,
+          "implied_direction": "long",
+          "n_records": 102,
+          "cur_bucket_n": 17,
+          "cur_bucket_avg_fwd": 0.2143,
+          "cur_bucket_hit_rate": 0.9412,
+          "ic_t_stat": 2.8486,
+          "r_squared": 0.8946,
+          "spread_top_minus_bottom": null,
+          "confidence_score": 0.9331,
+          "confidence_notes": "ok",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Trailing+EPS+36&tc=Spain&tn=cross_var_pct&tm=absolute&th=12&tr=all&td=pit&tb=10",
+          "epistemic_tag": "PRIOR"
+        },
+        {
+          "factor": "Trailing EPS 36",
+          "factor_table": "t2_raw",
+          "country": "Spain",
+          "normalization": "cross_var_pct",
+          "return_mode": "absolute",
+          "horizon_months": 6,
+          "current_decile": 6,
+          "implied_direction": "long",
+          "n_records": 108,
+          "cur_bucket_n": 17,
+          "cur_bucket_avg_fwd": 0.1262,
+          "cur_bucket_hit_rate": 0.8235,
+          "ic_t_stat": 3.7726,
+          "r_squared": 0.6843,
+          "spread_top_minus_bottom": null,
+          "confidence_score": 0.8743,
+          "confidence_notes": "ok",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Trailing+EPS+36&tc=Spain&tn=cross_var_pct&tm=absolute&th=6&tr=all&td=pit&tb=10",
+          "epistemic_tag": "PRIOR"
+        }
+      ],
+      "U.K.": [
         {
           "factor": "120MA",
           "factor_table": "t2_raw",
-          "country": "Denmark",
-          "normalization": "history_z",
+          "country": "U.K.",
+          "normalization": "raw",
           "return_mode": "absolute",
           "horizon_months": 6,
-          "current_decile": 8,
+          "current_decile": 9,
           "implied_direction": "long",
           "n_records": 280,
-          "cur_bucket_n": 29,
-          "cur_bucket_avg_fwd": 0.1338,
-          "cur_bucket_hit_rate": 0.7931,
-          "ic_t_stat": -2.1692,
-          "r_squared": 0.5873,
+          "cur_bucket_n": 28,
+          "cur_bucket_avg_fwd": 0.1674,
+          "cur_bucket_hit_rate": 0.9643,
+          "ic_t_stat": -2.309,
+          "r_squared": 0.06,
           "spread_top_minus_bottom": null,
-          "confidence_score": 0.8635,
+          "confidence_score": 0.963,
           "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=120MA&tc=Denmark&tn=history_z&tm=absolute&th=6&tr=all&td=pit&tb=10",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=120MA&tc=U.K.&tn=raw&tm=absolute&th=6&tr=all&td=pit&tb=10",
           "epistemic_tag": "PRIOR"
         },
         {
-          "factor": "120MA Signal",
-          "factor_table": "t2_raw",
-          "country": "Denmark",
+          "factor": "OECD_BCI",
+          "factor_table": "extended_factors",
+          "country": "U.K.",
+          "normalization": "raw",
+          "return_mode": "absolute",
+          "horizon_months": 12,
+          "current_decile": 1,
+          "implied_direction": "long",
+          "n_records": 274,
+          "cur_bucket_n": 23,
+          "cur_bucket_avg_fwd": 0.3444,
+          "cur_bucket_hit_rate": 0.913,
+          "ic_t_stat": -2.4182,
+          "r_squared": 0.6984,
+          "spread_top_minus_bottom": -0.2761,
+          "confidence_score": 0.9483,
+          "confidence_notes": "ok",
+          "triptych_url": null,
+          "epistemic_tag": "PRIOR"
+        },
+        {
+          "factor": "OECD_BCI",
+          "factor_table": "extended_factors",
+          "country": "U.K.",
           "normalization": "raw",
           "return_mode": "absolute",
           "horizon_months": 24,
           "current_decile": 1,
           "implied_direction": "long",
           "n_records": 262,
-          "cur_bucket_n": 9,
-          "cur_bucket_avg_fwd": 0.9152,
-          "cur_bucket_hit_rate": 1.0,
-          "ic_t_stat": -2.5121,
-          "r_squared": 0.8477,
-          "spread_top_minus_bottom": -1.0147,
-          "confidence_score": 0.8625,
-          "confidence_notes": "thin current bucket",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=120MA+Signal&tc=Denmark&tn=raw&tm=absolute&th=24&tr=all&td=pit&tb=10",
-          "epistemic_tag": "PRIOR"
-        }
-      ],
-      "Hong Kong": [
-        {
-          "factor": "Best PE",
-          "factor_table": "t2_raw",
-          "country": "Hong Kong",
-          "normalization": "raw",
-          "return_mode": "absolute",
-          "horizon_months": 24,
-          "current_decile": 2,
-          "implied_direction": "long",
-          "n_records": 248,
-          "cur_bucket_n": 22,
-          "cur_bucket_avg_fwd": 0.3302,
-          "cur_bucket_hit_rate": 0.9545,
-          "ic_t_stat": -2.4439,
-          "r_squared": 0.7933,
-          "spread_top_minus_bottom": -0.7968,
-          "confidence_score": 0.9717,
+          "cur_bucket_n": 21,
+          "cur_bucket_avg_fwd": 0.612,
+          "cur_bucket_hit_rate": 0.9524,
+          "ic_t_stat": -2.1216,
+          "r_squared": 0.8767,
+          "spread_top_minus_bottom": -0.5116,
+          "confidence_score": 0.9383,
           "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Best+PE&tc=Hong+Kong&tn=raw&tm=absolute&th=24&tr=all&td=pit&tb=10",
-          "epistemic_tag": "PRIOR"
-        },
-        {
-          "factor": "Best PE",
-          "factor_table": "t2_raw",
-          "country": "Hong Kong",
-          "normalization": "raw",
-          "return_mode": "absolute",
-          "horizon_months": 12,
-          "current_decile": 2,
-          "implied_direction": "long",
-          "n_records": 260,
-          "cur_bucket_n": 31,
-          "cur_bucket_avg_fwd": 0.1589,
-          "cur_bucket_hit_rate": 0.8387,
-          "ic_t_stat": -2.4811,
-          "r_squared": 0.7049,
-          "spread_top_minus_bottom": -0.4586,
-          "confidence_score": 0.9175,
-          "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Best+PE&tc=Hong+Kong&tn=raw&tm=absolute&th=12&tr=all&td=pit&tb=10",
-          "epistemic_tag": "PRIOR"
-        },
-        {
-          "factor": "Debt to EV",
-          "factor_table": "t2_raw",
-          "country": "Hong Kong",
-          "normalization": "raw",
-          "return_mode": "absolute",
-          "horizon_months": 1,
-          "current_decile": 8,
-          "implied_direction": "long",
-          "n_records": 285,
-          "cur_bucket_n": 23,
-          "cur_bucket_avg_fwd": 0.0378,
-          "cur_bucket_hit_rate": 0.7826,
-          "ic_t_stat": 2.6714,
-          "r_squared": 0.3508,
-          "spread_top_minus_bottom": 0.0268,
-          "confidence_score": 0.8913,
-          "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Debt+to+EV&tc=Hong+Kong&tn=raw&tm=absolute&th=1&tr=all&td=pit&tb=10",
+          "triptych_url": null,
           "epistemic_tag": "PRIOR"
         }
       ],
@@ -109398,6 +109404,71 @@
           "epistemic_tag": "PRIOR"
         }
       ],
+      "Switzerland": [
+        {
+          "factor": "Debt to EV",
+          "factor_table": "t2_raw",
+          "country": "Switzerland",
+          "normalization": "history_z",
+          "return_mode": "absolute",
+          "horizon_months": 12,
+          "current_decile": 3,
+          "implied_direction": "long",
+          "n_records": 274,
+          "cur_bucket_n": 55,
+          "cur_bucket_avg_fwd": 0.1111,
+          "cur_bucket_hit_rate": 0.9091,
+          "ic_t_stat": 2.4166,
+          "r_squared": 0.865,
+          "spread_top_minus_bottom": 0.3287,
+          "confidence_score": 0.9462,
+          "confidence_notes": "ok",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Debt+to+EV&tc=Switzerland&tn=history_z&tm=absolute&th=12&tr=all&td=pit&tb=10",
+          "epistemic_tag": "PRIOR"
+        },
+        {
+          "factor": "120MA Signal",
+          "factor_table": "t2_raw",
+          "country": "Switzerland",
+          "normalization": "history_z",
+          "return_mode": "absolute",
+          "horizon_months": 36,
+          "current_decile": 8,
+          "implied_direction": "long",
+          "n_records": 250,
+          "cur_bucket_n": 34,
+          "cur_bucket_avg_fwd": 0.3131,
+          "cur_bucket_hit_rate": 0.8824,
+          "ic_t_stat": -2.5703,
+          "r_squared": 0.8042,
+          "spread_top_minus_bottom": -0.645,
+          "confidence_score": 0.9412,
+          "confidence_notes": "ok",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=120MA+Signal&tc=Switzerland&tn=history_z&tm=absolute&th=36&tr=all&td=pit&tb=10",
+          "epistemic_tag": "PRIOR"
+        },
+        {
+          "factor": "120MA Signal",
+          "factor_table": "t2_raw",
+          "country": "Switzerland",
+          "normalization": "history_z",
+          "return_mode": "absolute",
+          "horizon_months": 6,
+          "current_decile": 8,
+          "implied_direction": "long",
+          "n_records": 280,
+          "cur_bucket_n": 43,
+          "cur_bucket_avg_fwd": 0.0564,
+          "cur_bucket_hit_rate": 0.7674,
+          "ic_t_stat": -2.4853,
+          "r_squared": 0.5076,
+          "spread_top_minus_bottom": -0.2402,
+          "confidence_score": 0.8823,
+          "confidence_notes": "ok",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=120MA+Signal&tc=Switzerland&tn=history_z&tm=absolute&th=6&tr=all&td=pit&tb=10",
+          "epistemic_tag": "PRIOR"
+        }
+      ],
       "Singapore": [
         {
           "factor": "Currency",
@@ -109658,458 +109729,133 @@
           "epistemic_tag": "PRIOR"
         }
       ],
-      "Australia": [
+      "ChinaH": [
         {
-          "factor": "REER",
-          "factor_table": "t2_raw",
-          "country": "Australia",
-          "normalization": "raw",
+          "factor": "IMF_Import_Price_Index",
+          "factor_table": "imf_factors",
+          "country": "ChinaH",
+          "normalization": "history_z",
           "return_mode": "absolute",
           "horizon_months": 6,
-          "current_decile": 9,
-          "implied_direction": "long",
-          "n_records": 280,
-          "cur_bucket_n": 22,
-          "cur_bucket_avg_fwd": 0.1856,
-          "cur_bucket_hit_rate": 1.0,
-          "ic_t_stat": -2.9237,
-          "r_squared": 0.09,
-          "spread_top_minus_bottom": null,
-          "confidence_score": 1.0,
-          "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=REER&tc=Australia&tn=raw&tm=absolute&th=6&tr=all&td=pit&tb=10",
-          "epistemic_tag": "PRIOR"
-        },
-        {
-          "factor": "REER",
-          "factor_table": "t2_raw",
-          "country": "Australia",
-          "normalization": "raw",
-          "return_mode": "absolute",
-          "horizon_months": 12,
-          "current_decile": 9,
-          "implied_direction": "long",
-          "n_records": 274,
-          "cur_bucket_n": 21,
-          "cur_bucket_avg_fwd": 0.3508,
-          "cur_bucket_hit_rate": 1.0,
-          "ic_t_stat": -2.707,
-          "r_squared": 0.158,
-          "spread_top_minus_bottom": null,
-          "confidence_score": 1.0,
-          "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=REER&tc=Australia&tn=raw&tm=absolute&th=12&tr=all&td=pit&tb=10",
-          "epistemic_tag": "PRIOR"
-        },
-        {
-          "factor": "BIS_REER",
-          "factor_table": "external_factors",
-          "country": "Australia",
-          "normalization": "raw",
-          "return_mode": "absolute",
-          "horizon_months": 12,
-          "current_decile": 9,
-          "implied_direction": "long",
-          "n_records": 274,
-          "cur_bucket_n": 19,
-          "cur_bucket_avg_fwd": 0.3336,
-          "cur_bucket_hit_rate": 1.0,
-          "ic_t_stat": -2.4296,
-          "r_squared": 0.098,
-          "spread_top_minus_bottom": null,
-          "confidence_score": 0.9805,
+          "current_decile": 10,
+          "implied_direction": "short",
+          "n_records": 217,
+          "cur_bucket_n": 20,
+          "cur_bucket_avg_fwd": -0.1883,
+          "cur_bucket_hit_rate": 0.1,
+          "ic_t_stat": -2.4973,
+          "r_squared": 0.5274,
+          "spread_top_minus_bottom": -0.2285,
+          "confidence_score": 0.9497,
           "confidence_notes": "ok",
           "triptych_url": null,
+          "epistemic_tag": "PRIOR"
+        },
+        {
+          "factor": "IMF_Import_Price_Index",
+          "factor_table": "imf_factors",
+          "country": "ChinaH",
+          "normalization": "history_z",
+          "return_mode": "absolute",
+          "horizon_months": 3,
+          "current_decile": 10,
+          "implied_direction": "short",
+          "n_records": 217,
+          "cur_bucket_n": 20,
+          "cur_bucket_avg_fwd": -0.0855,
+          "cur_bucket_hit_rate": 0.15,
+          "ic_t_stat": -2.4948,
+          "r_squared": 0.4147,
+          "spread_top_minus_bottom": -0.1008,
+          "confidence_score": 0.9245,
+          "confidence_notes": "ok",
+          "triptych_url": null,
+          "epistemic_tag": "PRIOR"
+        },
+        {
+          "factor": "PX_LAST",
+          "factor_table": "t2_raw",
+          "country": "ChinaH",
+          "normalization": "raw",
+          "return_mode": "absolute",
+          "horizon_months": 36,
+          "current_decile": 8,
+          "implied_direction": "long",
+          "n_records": 250,
+          "cur_bucket_n": 50,
+          "cur_bucket_avg_fwd": 0.6035,
+          "cur_bucket_hit_rate": 0.92,
+          "ic_t_stat": -2.5574,
+          "r_squared": 0.9137,
+          "spread_top_minus_bottom": -1.4164,
+          "confidence_score": 0.91,
+          "confidence_notes": "ok",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=PX_LAST&tc=ChinaH&tn=raw&tm=absolute&th=36&tr=all&td=pit&tb=10",
           "epistemic_tag": "PRIOR"
         }
       ],
-      "Vietnam": [
+      "South Africa": [
         {
-          "factor": "P2P",
+          "factor": "Debt to EV",
           "factor_table": "t2_raw",
-          "country": "Vietnam",
-          "normalization": "cross_var_pct",
-          "return_mode": "absolute",
-          "horizon_months": 12,
-          "current_decile": 4,
-          "implied_direction": "long",
-          "n_records": 147,
-          "cur_bucket_n": 14,
-          "cur_bucket_avg_fwd": 0.313,
-          "cur_bucket_hit_rate": 0.9286,
-          "ic_t_stat": -2.2876,
-          "r_squared": 0.6876,
-          "spread_top_minus_bottom": -0.3589,
-          "confidence_score": 0.868,
-          "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=P2P&tc=Vietnam&tn=cross_var_pct&tm=absolute&th=12&tr=all&td=pit&tb=10",
-          "epistemic_tag": "PRIOR"
-        },
-        {
-          "factor": "MS_Passive_AUM_to_MarketCap",
-          "factor_table": "bloomberg_factors",
-          "country": "Vietnam",
-          "normalization": "cross_var_pct",
-          "return_mode": "relative",
-          "horizon_months": 1,
-          "current_decile": 1,
-          "implied_direction": "short",
-          "n_records": 104,
-          "cur_bucket_n": 49,
-          "cur_bucket_avg_fwd": -0.0122,
-          "cur_bucket_hit_rate": 0.4082,
-          "ic_t_stat": 2.5126,
-          "r_squared": 0.318,
-          "spread_top_minus_bottom": null,
-          "confidence_score": 0.7959,
-          "confidence_notes": "ok",
-          "triptych_url": null,
-          "epistemic_tag": "PRIOR"
-        },
-        {
-          "factor": "FRED_VIX",
-          "factor_table": "extended_factors",
-          "country": "Vietnam",
+          "country": "South Africa",
           "normalization": "raw",
           "return_mode": "absolute",
-          "horizon_months": 1,
+          "horizon_months": 12,
           "current_decile": 5,
           "implied_direction": "long",
-          "n_records": 201,
-          "cur_bucket_n": 22,
-          "cur_bucket_avg_fwd": 0.0034,
-          "cur_bucket_hit_rate": 0.4091,
-          "ic_t_stat": -2.9794,
-          "r_squared": 0.5953,
-          "spread_top_minus_bottom": -0.0528,
-          "confidence_score": 0.7955,
-          "confidence_notes": "ok",
-          "triptych_url": null,
-          "epistemic_tag": "PRIOR"
-        }
-      ],
-      "Japan": [
-        {
-          "factor": "IMF_Money_Market_Rate",
-          "factor_table": "imf_factors",
-          "country": "Japan",
-          "normalization": "raw",
-          "return_mode": "absolute",
-          "horizon_months": 12,
-          "current_decile": 1,
-          "implied_direction": "long",
-          "n_records": 172,
-          "cur_bucket_n": 29,
-          "cur_bucket_avg_fwd": 0.1984,
-          "cur_bucket_hit_rate": 0.931,
-          "ic_t_stat": -2.2839,
-          "r_squared": 0.821,
-          "spread_top_minus_bottom": -0.3634,
-          "confidence_score": 0.9439,
-          "confidence_notes": "ok",
-          "triptych_url": null,
-          "epistemic_tag": "PRIOR"
-        },
-        {
-          "factor": "IMF_Money_Market_Rate",
-          "factor_table": "imf_factors",
-          "country": "Japan",
-          "normalization": "raw",
-          "return_mode": "absolute",
-          "horizon_months": 6,
-          "current_decile": 1,
-          "implied_direction": "long",
-          "n_records": 172,
-          "cur_bucket_n": 29,
-          "cur_bucket_avg_fwd": 0.1024,
-          "cur_bucket_hit_rate": 0.931,
-          "ic_t_stat": -2.1074,
-          "r_squared": 0.6092,
-          "spread_top_minus_bottom": -0.1586,
-          "confidence_score": 0.9263,
-          "confidence_notes": "ok",
-          "triptych_url": null,
-          "epistemic_tag": "PRIOR"
-        },
-        {
-          "factor": "Agriculture",
-          "factor_table": "t2_raw",
-          "country": "Japan",
-          "normalization": "history_z",
-          "return_mode": "relative",
-          "horizon_months": 12,
-          "current_decile": 7,
-          "implied_direction": "short",
-          "n_records": 238,
-          "cur_bucket_n": 22,
-          "cur_bucket_avg_fwd": -0.15,
-          "cur_bucket_hit_rate": 0.1364,
-          "ic_t_stat": -2.3229,
-          "r_squared": 0.8197,
-          "spread_top_minus_bottom": null,
-          "confidence_score": 0.9141,
-          "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Agriculture&tc=Japan&tn=history_z&tm=relative&th=12&tr=all&td=pit&tb=10",
-          "epistemic_tag": "PRIOR"
-        }
-      ],
-      "Mexico": [
-        {
-          "factor": "BBG_CDS_5Y",
-          "factor_table": "bloomberg_factors",
-          "country": "Mexico",
-          "normalization": "history_z",
-          "return_mode": "absolute",
-          "horizon_months": 1,
-          "current_decile": 3,
-          "implied_direction": "long",
-          "n_records": 263,
-          "cur_bucket_n": 20,
-          "cur_bucket_avg_fwd": 0.0532,
-          "cur_bucket_hit_rate": 0.85,
-          "ic_t_stat": -3.9891,
-          "r_squared": 0.7861,
-          "spread_top_minus_bottom": null,
-          "confidence_score": 0.925,
-          "confidence_notes": "ok",
-          "triptych_url": null,
-          "epistemic_tag": "PRIOR"
-        },
-        {
-          "factor": "EPU",
-          "factor_table": "external_factors",
-          "country": "Mexico",
-          "normalization": "raw",
-          "return_mode": "absolute",
-          "horizon_months": 12,
-          "current_decile": 10,
-          "implied_direction": "long",
           "n_records": 274,
-          "cur_bucket_n": 15,
-          "cur_bucket_avg_fwd": 0.4717,
-          "cur_bucket_hit_rate": 1.0,
-          "ic_t_stat": 2.1557,
-          "r_squared": 0.4773,
-          "spread_top_minus_bottom": 0.3539,
-          "confidence_score": 0.9031,
+          "cur_bucket_n": 31,
+          "cur_bucket_avg_fwd": 0.1919,
+          "cur_bucket_hit_rate": 0.871,
+          "ic_t_stat": 2.7614,
+          "r_squared": 0.5299,
+          "spread_top_minus_bottom": 0.3085,
+          "confidence_score": 0.9355,
           "confidence_notes": "ok",
-          "triptych_url": null,
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Debt+to+EV&tc=South+Africa&tn=raw&tm=absolute&th=12&tr=all&td=pit&tb=10",
           "epistemic_tag": "PRIOR"
         },
         {
-          "factor": "Trailing PE",
+          "factor": "Debt to EV",
           "factor_table": "t2_raw",
-          "country": "Mexico",
+          "country": "South Africa",
           "normalization": "raw",
           "return_mode": "absolute",
           "horizon_months": 6,
-          "current_decile": 4,
+          "current_decile": 5,
           "implied_direction": "long",
           "n_records": 280,
-          "cur_bucket_n": 28,
-          "cur_bucket_avg_fwd": 0.1343,
-          "cur_bucket_hit_rate": 0.8571,
-          "ic_t_stat": -2.2381,
-          "r_squared": 0.3855,
-          "spread_top_minus_bottom": -0.1595,
-          "confidence_score": 0.9024,
+          "cur_bucket_n": 34,
+          "cur_bucket_avg_fwd": 0.0892,
+          "cur_bucket_hit_rate": 0.8529,
+          "ic_t_stat": 2.6498,
+          "r_squared": 0.3867,
+          "spread_top_minus_bottom": 0.1336,
+          "confidence_score": 0.9265,
           "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Trailing+PE&tc=Mexico&tn=raw&tm=absolute&th=6&tr=all&td=pit&tb=10",
-          "epistemic_tag": "PRIOR"
-        }
-      ],
-      "Netherlands": [
-        {
-          "factor": "BIS_REER",
-          "factor_table": "external_factors",
-          "country": "Netherlands",
-          "normalization": "raw",
-          "return_mode": "relative",
-          "horizon_months": 36,
-          "current_decile": 10,
-          "implied_direction": "short",
-          "n_records": 250,
-          "cur_bucket_n": 23,
-          "cur_bucket_avg_fwd": -0.5013,
-          "cur_bucket_hit_rate": 0.0,
-          "ic_t_stat": -2.4083,
-          "r_squared": 0.7563,
-          "spread_top_minus_bottom": -0.5494,
-          "confidence_score": 0.9908,
-          "confidence_notes": "ok",
-          "triptych_url": null,
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Debt+to+EV&tc=South+Africa&tn=raw&tm=absolute&th=6&tr=all&td=pit&tb=10",
           "epistemic_tag": "PRIOR"
         },
         {
-          "factor": "REER",
+          "factor": "Debt to EV",
           "factor_table": "t2_raw",
-          "country": "Netherlands",
-          "normalization": "raw",
-          "return_mode": "relative",
-          "horizon_months": 36,
-          "current_decile": 10,
-          "implied_direction": "short",
-          "n_records": 250,
-          "cur_bucket_n": 24,
-          "cur_bucket_avg_fwd": -0.487,
-          "cur_bucket_hit_rate": 0.0,
-          "ic_t_stat": -2.375,
-          "r_squared": 0.7698,
-          "spread_top_minus_bottom": -0.5515,
-          "confidence_score": 0.9875,
-          "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=REER&tc=Netherlands&tn=raw&tm=relative&th=36&tr=all&td=pit&tb=10",
-          "epistemic_tag": "PRIOR"
-        },
-        {
-          "factor": "REER",
-          "factor_table": "t2_raw",
-          "country": "Netherlands",
-          "normalization": "raw",
-          "return_mode": "relative",
-          "horizon_months": 24,
-          "current_decile": 10,
-          "implied_direction": "short",
-          "n_records": 262,
-          "cur_bucket_n": 26,
-          "cur_bucket_avg_fwd": -0.2613,
-          "cur_bucket_hit_rate": 0.0769,
-          "ic_t_stat": -2.6088,
-          "r_squared": 0.7809,
-          "spread_top_minus_bottom": -0.3371,
-          "confidence_score": 0.9615,
-          "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=REER&tc=Netherlands&tn=raw&tm=relative&th=24&tr=all&td=pit&tb=10",
-          "epistemic_tag": "PRIOR"
-        }
-      ],
-      "Spain": [
-        {
-          "factor": "10Yr Bond",
-          "factor_table": "t2_raw",
-          "country": "Spain",
-          "normalization": "history_z",
-          "return_mode": "relative",
-          "horizon_months": 6,
-          "current_decile": 10,
-          "implied_direction": "long",
-          "n_records": 280,
-          "cur_bucket_n": 51,
-          "cur_bucket_avg_fwd": 0.0611,
-          "cur_bucket_hit_rate": 0.8824,
-          "ic_t_stat": 2.4735,
-          "r_squared": 0.7259,
-          "spread_top_minus_bottom": 0.119,
-          "confidence_score": 0.9385,
-          "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=10Yr+Bond&tc=Spain&tn=history_z&tm=relative&th=6&tr=all&td=pit&tb=10",
-          "epistemic_tag": "PRIOR"
-        },
-        {
-          "factor": "Trailing EPS 36",
-          "factor_table": "t2_raw",
-          "country": "Spain",
-          "normalization": "cross_var_pct",
-          "return_mode": "absolute",
-          "horizon_months": 12,
-          "current_decile": 6,
-          "implied_direction": "long",
-          "n_records": 102,
-          "cur_bucket_n": 17,
-          "cur_bucket_avg_fwd": 0.2143,
-          "cur_bucket_hit_rate": 0.9412,
-          "ic_t_stat": 2.8486,
-          "r_squared": 0.8946,
-          "spread_top_minus_bottom": null,
-          "confidence_score": 0.9331,
-          "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Trailing+EPS+36&tc=Spain&tn=cross_var_pct&tm=absolute&th=12&tr=all&td=pit&tb=10",
-          "epistemic_tag": "PRIOR"
-        },
-        {
-          "factor": "Trailing EPS 36",
-          "factor_table": "t2_raw",
-          "country": "Spain",
-          "normalization": "cross_var_pct",
-          "return_mode": "absolute",
-          "horizon_months": 6,
-          "current_decile": 6,
-          "implied_direction": "long",
-          "n_records": 108,
-          "cur_bucket_n": 17,
-          "cur_bucket_avg_fwd": 0.1262,
-          "cur_bucket_hit_rate": 0.8235,
-          "ic_t_stat": 3.7726,
-          "r_squared": 0.6843,
-          "spread_top_minus_bottom": null,
-          "confidence_score": 0.8743,
-          "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Trailing+EPS+36&tc=Spain&tn=cross_var_pct&tm=absolute&th=6&tr=all&td=pit&tb=10",
-          "epistemic_tag": "PRIOR"
-        }
-      ],
-      "U.K.": [
-        {
-          "factor": "120MA",
-          "factor_table": "t2_raw",
-          "country": "U.K.",
-          "normalization": "raw",
-          "return_mode": "absolute",
-          "horizon_months": 6,
-          "current_decile": 9,
-          "implied_direction": "long",
-          "n_records": 280,
-          "cur_bucket_n": 28,
-          "cur_bucket_avg_fwd": 0.1674,
-          "cur_bucket_hit_rate": 0.9643,
-          "ic_t_stat": -2.309,
-          "r_squared": 0.06,
-          "spread_top_minus_bottom": null,
-          "confidence_score": 0.963,
-          "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=120MA&tc=U.K.&tn=raw&tm=absolute&th=6&tr=all&td=pit&tb=10",
-          "epistemic_tag": "PRIOR"
-        },
-        {
-          "factor": "OECD_BCI",
-          "factor_table": "extended_factors",
-          "country": "U.K.",
-          "normalization": "raw",
-          "return_mode": "absolute",
-          "horizon_months": 12,
-          "current_decile": 1,
-          "implied_direction": "long",
-          "n_records": 274,
-          "cur_bucket_n": 23,
-          "cur_bucket_avg_fwd": 0.3444,
-          "cur_bucket_hit_rate": 0.913,
-          "ic_t_stat": -2.4182,
-          "r_squared": 0.6984,
-          "spread_top_minus_bottom": -0.2761,
-          "confidence_score": 0.9483,
-          "confidence_notes": "ok",
-          "triptych_url": null,
-          "epistemic_tag": "PRIOR"
-        },
-        {
-          "factor": "OECD_BCI",
-          "factor_table": "extended_factors",
-          "country": "U.K.",
+          "country": "South Africa",
           "normalization": "raw",
           "return_mode": "absolute",
           "horizon_months": 24,
-          "current_decile": 1,
+          "current_decile": 5,
           "implied_direction": "long",
           "n_records": 262,
-          "cur_bucket_n": 21,
-          "cur_bucket_avg_fwd": 0.612,
-          "cur_bucket_hit_rate": 0.9524,
-          "ic_t_stat": -2.1216,
-          "r_squared": 0.8767,
-          "spread_top_minus_bottom": -0.5116,
-          "confidence_score": 0.9383,
+          "cur_bucket_n": 30,
+          "cur_bucket_avg_fwd": 0.1871,
+          "cur_bucket_hit_rate": 0.8667,
+          "ic_t_stat": 2.1032,
+          "r_squared": 0.6326,
+          "spread_top_minus_bottom": 0.7842,
+          "confidence_score": 0.8937,
           "confidence_notes": "ok",
-          "triptych_url": null,
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Debt+to+EV&tc=South+Africa&tn=raw&tm=absolute&th=24&tr=all&td=pit&tb=10",
           "epistemic_tag": "PRIOR"
         }
       ],
@@ -110308,198 +110054,198 @@
           "epistemic_tag": "PRIOR"
         }
       ],
-      "Switzerland": [
+      "Chile": [
         {
-          "factor": "Debt to EV",
+          "factor": "120MA",
           "factor_table": "t2_raw",
-          "country": "Switzerland",
-          "normalization": "history_z",
-          "return_mode": "absolute",
-          "horizon_months": 12,
-          "current_decile": 3,
-          "implied_direction": "long",
-          "n_records": 274,
-          "cur_bucket_n": 55,
-          "cur_bucket_avg_fwd": 0.1111,
-          "cur_bucket_hit_rate": 0.9091,
-          "ic_t_stat": 2.4166,
-          "r_squared": 0.865,
-          "spread_top_minus_bottom": 0.3287,
-          "confidence_score": 0.9462,
-          "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Debt+to+EV&tc=Switzerland&tn=history_z&tm=absolute&th=12&tr=all&td=pit&tb=10",
-          "epistemic_tag": "PRIOR"
-        },
-        {
-          "factor": "120MA Signal",
-          "factor_table": "t2_raw",
-          "country": "Switzerland",
-          "normalization": "history_z",
-          "return_mode": "absolute",
-          "horizon_months": 36,
-          "current_decile": 8,
-          "implied_direction": "long",
-          "n_records": 250,
-          "cur_bucket_n": 34,
-          "cur_bucket_avg_fwd": 0.3131,
-          "cur_bucket_hit_rate": 0.8824,
-          "ic_t_stat": -2.5703,
-          "r_squared": 0.8042,
-          "spread_top_minus_bottom": -0.645,
-          "confidence_score": 0.9412,
-          "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=120MA+Signal&tc=Switzerland&tn=history_z&tm=absolute&th=36&tr=all&td=pit&tb=10",
-          "epistemic_tag": "PRIOR"
-        },
-        {
-          "factor": "120MA Signal",
-          "factor_table": "t2_raw",
-          "country": "Switzerland",
-          "normalization": "history_z",
-          "return_mode": "absolute",
-          "horizon_months": 6,
-          "current_decile": 8,
-          "implied_direction": "long",
-          "n_records": 280,
-          "cur_bucket_n": 43,
-          "cur_bucket_avg_fwd": 0.0564,
-          "cur_bucket_hit_rate": 0.7674,
-          "ic_t_stat": -2.4853,
-          "r_squared": 0.5076,
-          "spread_top_minus_bottom": -0.2402,
-          "confidence_score": 0.8823,
-          "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=120MA+Signal&tc=Switzerland&tn=history_z&tm=absolute&th=6&tr=all&td=pit&tb=10",
-          "epistemic_tag": "PRIOR"
-        }
-      ],
-      "ChinaH": [
-        {
-          "factor": "IMF_Import_Price_Index",
-          "factor_table": "imf_factors",
-          "country": "ChinaH",
-          "normalization": "history_z",
-          "return_mode": "absolute",
-          "horizon_months": 6,
-          "current_decile": 10,
-          "implied_direction": "short",
-          "n_records": 217,
-          "cur_bucket_n": 20,
-          "cur_bucket_avg_fwd": -0.1883,
-          "cur_bucket_hit_rate": 0.1,
-          "ic_t_stat": -2.4973,
-          "r_squared": 0.5274,
-          "spread_top_minus_bottom": -0.2285,
-          "confidence_score": 0.9497,
-          "confidence_notes": "ok",
-          "triptych_url": null,
-          "epistemic_tag": "PRIOR"
-        },
-        {
-          "factor": "IMF_Import_Price_Index",
-          "factor_table": "imf_factors",
-          "country": "ChinaH",
-          "normalization": "history_z",
-          "return_mode": "absolute",
-          "horizon_months": 3,
-          "current_decile": 10,
-          "implied_direction": "short",
-          "n_records": 217,
-          "cur_bucket_n": 20,
-          "cur_bucket_avg_fwd": -0.0855,
-          "cur_bucket_hit_rate": 0.15,
-          "ic_t_stat": -2.4948,
-          "r_squared": 0.4147,
-          "spread_top_minus_bottom": -0.1008,
-          "confidence_score": 0.9245,
-          "confidence_notes": "ok",
-          "triptych_url": null,
-          "epistemic_tag": "PRIOR"
-        },
-        {
-          "factor": "PX_LAST",
-          "factor_table": "t2_raw",
-          "country": "ChinaH",
-          "normalization": "raw",
-          "return_mode": "absolute",
-          "horizon_months": 36,
-          "current_decile": 8,
-          "implied_direction": "long",
-          "n_records": 250,
-          "cur_bucket_n": 50,
-          "cur_bucket_avg_fwd": 0.6035,
-          "cur_bucket_hit_rate": 0.92,
-          "ic_t_stat": -2.5574,
-          "r_squared": 0.9137,
-          "spread_top_minus_bottom": -1.4164,
-          "confidence_score": 0.91,
-          "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=PX_LAST&tc=ChinaH&tn=raw&tm=absolute&th=36&tr=all&td=pit&tb=10",
-          "epistemic_tag": "PRIOR"
-        }
-      ],
-      "South Africa": [
-        {
-          "factor": "Debt to EV",
-          "factor_table": "t2_raw",
-          "country": "South Africa",
+          "country": "Chile",
           "normalization": "raw",
           "return_mode": "absolute",
           "horizon_months": 12,
           "current_decile": 5,
           "implied_direction": "long",
           "n_records": 274,
-          "cur_bucket_n": 31,
-          "cur_bucket_avg_fwd": 0.1919,
-          "cur_bucket_hit_rate": 0.871,
-          "ic_t_stat": 2.7614,
-          "r_squared": 0.5299,
-          "spread_top_minus_bottom": 0.3085,
-          "confidence_score": 0.9355,
+          "cur_bucket_n": 29,
+          "cur_bucket_avg_fwd": 0.4146,
+          "cur_bucket_hit_rate": 0.931,
+          "ic_t_stat": -2.5969,
+          "r_squared": 0.1092,
+          "spread_top_minus_bottom": null,
+          "confidence_score": 0.9655,
           "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Debt+to+EV&tc=South+Africa&tn=raw&tm=absolute&th=12&tr=all&td=pit&tb=10",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=120MA&tc=Chile&tn=raw&tm=absolute&th=12&tr=all&td=pit&tb=10",
           "epistemic_tag": "PRIOR"
         },
         {
-          "factor": "Debt to EV",
+          "factor": "Currency",
           "factor_table": "t2_raw",
-          "country": "South Africa",
+          "country": "Chile",
+          "normalization": "cross_var_pct",
+          "return_mode": "absolute",
+          "horizon_months": 36,
+          "current_decile": 8,
+          "implied_direction": "long",
+          "n_records": 250,
+          "cur_bucket_n": 15,
+          "cur_bucket_avg_fwd": 0.3708,
+          "cur_bucket_hit_rate": 1.0,
+          "ic_t_stat": 3.0119,
+          "r_squared": 0.526,
+          "spread_top_minus_bottom": 1.9779,
+          "confidence_score": 0.9375,
+          "confidence_notes": "ok",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Currency&tc=Chile&tn=cross_var_pct&tm=absolute&th=36&tr=all&td=pit&tb=10",
+          "epistemic_tag": "PRIOR"
+        },
+        {
+          "factor": "REER",
+          "factor_table": "t2_raw",
+          "country": "Chile",
+          "normalization": "cross_var_pct",
+          "return_mode": "absolute",
+          "horizon_months": 12,
+          "current_decile": 2,
+          "implied_direction": "long",
+          "n_records": 274,
+          "cur_bucket_n": 19,
+          "cur_bucket_avg_fwd": 0.3038,
+          "cur_bucket_hit_rate": 0.8947,
+          "ic_t_stat": -2.8486,
+          "r_squared": 0.7029,
+          "spread_top_minus_bottom": -0.4015,
+          "confidence_score": 0.9349,
+          "confidence_notes": "ok",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=REER&tc=Chile&tn=cross_var_pct&tm=absolute&th=12&tr=all&td=pit&tb=10",
+          "epistemic_tag": "PRIOR"
+        }
+      ],
+      "NASDAQ": [
+        {
+          "factor": "IMF_Export_Price_Index",
+          "factor_table": "imf_factors",
+          "country": "NASDAQ",
+          "normalization": "history_z",
+          "return_mode": "absolute",
+          "horizon_months": 12,
+          "current_decile": 6,
+          "implied_direction": "long",
+          "n_records": 264,
+          "cur_bucket_n": 32,
+          "cur_bucket_avg_fwd": 0.195,
+          "cur_bucket_hit_rate": 0.9688,
+          "ic_t_stat": -2.4616,
+          "r_squared": 0.6795,
+          "spread_top_minus_bottom": -0.7076,
+          "confidence_score": 0.9805,
+          "confidence_notes": "ok",
+          "triptych_url": null,
+          "epistemic_tag": "PRIOR"
+        },
+        {
+          "factor": "OECD_BCI",
+          "factor_table": "extended_factors",
+          "country": "NASDAQ",
           "normalization": "raw",
+          "return_mode": "absolute",
+          "horizon_months": 12,
+          "current_decile": 6,
+          "implied_direction": "long",
+          "n_records": 274,
+          "cur_bucket_n": 24,
+          "cur_bucket_avg_fwd": 0.1578,
+          "cur_bucket_hit_rate": 0.9167,
+          "ic_t_stat": -2.0647,
+          "r_squared": 0.5583,
+          "spread_top_minus_bottom": -0.3316,
+          "confidence_score": 0.9148,
+          "confidence_notes": "ok",
+          "triptych_url": null,
+          "epistemic_tag": "PRIOR"
+        },
+        {
+          "factor": "EPU",
+          "factor_table": "external_factors",
+          "country": "NASDAQ",
+          "normalization": "raw",
+          "return_mode": "absolute",
+          "horizon_months": 12,
+          "current_decile": 9,
+          "implied_direction": "long",
+          "n_records": 274,
+          "cur_bucket_n": 38,
+          "cur_bucket_avg_fwd": 0.1925,
+          "cur_bucket_hit_rate": 0.8947,
+          "ic_t_stat": 2.153,
+          "r_squared": 0.5323,
+          "spread_top_minus_bottom": 0.1865,
+          "confidence_score": 0.9127,
+          "confidence_notes": "ok",
+          "triptych_url": null,
+          "epistemic_tag": "PRIOR"
+        }
+      ],
+      "Taiwan": [
+        {
+          "factor": "Oil 12",
+          "factor_table": "t2_raw",
+          "country": "Taiwan",
+          "normalization": "history_z",
           "return_mode": "absolute",
           "horizon_months": 6,
-          "current_decile": 5,
+          "current_decile": 6,
           "implied_direction": "long",
-          "n_records": 280,
-          "cur_bucket_n": 34,
-          "cur_bucket_avg_fwd": 0.0892,
-          "cur_bucket_hit_rate": 0.8529,
-          "ic_t_stat": 2.6498,
-          "r_squared": 0.3867,
-          "spread_top_minus_bottom": 0.1336,
-          "confidence_score": 0.9265,
+          "n_records": 244,
+          "cur_bucket_n": 20,
+          "cur_bucket_avg_fwd": 0.1679,
+          "cur_bucket_hit_rate": 1.0,
+          "ic_t_stat": -2.5767,
+          "r_squared": 0.6051,
+          "spread_top_minus_bottom": -0.2066,
+          "confidence_score": 1.0,
           "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Debt+to+EV&tc=South+Africa&tn=raw&tm=absolute&th=6&tr=all&td=pit&tb=10",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Oil+12&tc=Taiwan&tn=history_z&tm=absolute&th=6&tr=all&td=pit&tb=10",
           "epistemic_tag": "PRIOR"
         },
         {
-          "factor": "Debt to EV",
+          "factor": "Currency",
           "factor_table": "t2_raw",
-          "country": "South Africa",
-          "normalization": "raw",
+          "country": "Taiwan",
+          "normalization": "history_z",
           "return_mode": "absolute",
-          "horizon_months": 24,
-          "current_decile": 5,
+          "horizon_months": 12,
+          "current_decile": 8,
           "implied_direction": "long",
-          "n_records": 262,
-          "cur_bucket_n": 30,
-          "cur_bucket_avg_fwd": 0.1871,
-          "cur_bucket_hit_rate": 0.8667,
-          "ic_t_stat": 2.1032,
-          "r_squared": 0.6326,
-          "spread_top_minus_bottom": 0.7842,
-          "confidence_score": 0.8937,
+          "n_records": 274,
+          "cur_bucket_n": 18,
+          "cur_bucket_avg_fwd": 0.2842,
+          "cur_bucket_hit_rate": 1.0,
+          "ic_t_stat": 2.525,
+          "r_squared": 0.7718,
+          "spread_top_minus_bottom": 0.7807,
+          "confidence_score": 0.975,
           "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Debt+to+EV&tc=South+Africa&tn=raw&tm=absolute&th=24&tr=all&td=pit&tb=10",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Currency&tc=Taiwan&tn=history_z&tm=absolute&th=12&tr=all&td=pit&tb=10",
+          "epistemic_tag": "PRIOR"
+        },
+        {
+          "factor": "IMF_XRate_LCU_per_USD",
+          "factor_table": "imf_factors",
+          "country": "Taiwan",
+          "normalization": "cross_var_pct",
+          "return_mode": "absolute",
+          "horizon_months": 12,
+          "current_decile": 1,
+          "implied_direction": "long",
+          "n_records": 274,
+          "cur_bucket_n": 21,
+          "cur_bucket_avg_fwd": 0.3462,
+          "cur_bucket_hit_rate": 1.0,
+          "ic_t_stat": -2.0546,
+          "r_squared": 0.6551,
+          "spread_top_minus_bottom": -0.287,
+          "confidence_score": 0.9555,
+          "confidence_notes": "ok",
+          "triptych_url": null,
           "epistemic_tag": "PRIOR"
         }
       ],
@@ -110763,198 +110509,458 @@
           "epistemic_tag": "PRIOR"
         }
       ],
-      "Chile": [
+      "Brazil": [
         {
-          "factor": "120MA",
+          "factor": "REER",
           "factor_table": "t2_raw",
-          "country": "Chile",
-          "normalization": "raw",
-          "return_mode": "absolute",
-          "horizon_months": 12,
-          "current_decile": 5,
-          "implied_direction": "long",
-          "n_records": 274,
-          "cur_bucket_n": 29,
-          "cur_bucket_avg_fwd": 0.4146,
-          "cur_bucket_hit_rate": 0.931,
-          "ic_t_stat": -2.5969,
-          "r_squared": 0.1092,
-          "spread_top_minus_bottom": null,
-          "confidence_score": 0.9655,
-          "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=120MA&tc=Chile&tn=raw&tm=absolute&th=12&tr=all&td=pit&tb=10",
-          "epistemic_tag": "PRIOR"
-        },
-        {
-          "factor": "Currency",
-          "factor_table": "t2_raw",
-          "country": "Chile",
+          "country": "Brazil",
           "normalization": "cross_var_pct",
           "return_mode": "absolute",
-          "horizon_months": 36,
-          "current_decile": 8,
+          "horizon_months": 12,
+          "current_decile": 4,
           "implied_direction": "long",
-          "n_records": 250,
-          "cur_bucket_n": 15,
-          "cur_bucket_avg_fwd": 0.3708,
-          "cur_bucket_hit_rate": 1.0,
-          "ic_t_stat": 3.0119,
-          "r_squared": 0.526,
-          "spread_top_minus_bottom": 1.9779,
-          "confidence_score": 0.9375,
+          "n_records": 274,
+          "cur_bucket_n": 24,
+          "cur_bucket_avg_fwd": 0.3593,
+          "cur_bucket_hit_rate": 0.9583,
+          "ic_t_stat": -2.966,
+          "r_squared": 0.5207,
+          "spread_top_minus_bottom": -0.2023,
+          "confidence_score": 0.9792,
           "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Currency&tc=Chile&tn=cross_var_pct&tm=absolute&th=36&tr=all&td=pit&tb=10",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=REER&tc=Brazil&tn=cross_var_pct&tm=absolute&th=12&tr=all&td=pit&tb=10",
           "epistemic_tag": "PRIOR"
         },
         {
           "factor": "REER",
           "factor_table": "t2_raw",
-          "country": "Chile",
+          "country": "Brazil",
           "normalization": "cross_var_pct",
-          "return_mode": "absolute",
+          "return_mode": "relative",
           "horizon_months": 12,
-          "current_decile": 2,
-          "implied_direction": "long",
-          "n_records": 274,
-          "cur_bucket_n": 19,
-          "cur_bucket_avg_fwd": 0.3038,
-          "cur_bucket_hit_rate": 0.8947,
-          "ic_t_stat": -2.8486,
-          "r_squared": 0.7029,
-          "spread_top_minus_bottom": -0.4015,
-          "confidence_score": 0.9349,
-          "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=REER&tc=Chile&tn=cross_var_pct&tm=absolute&th=12&tr=all&td=pit&tb=10",
-          "epistemic_tag": "PRIOR"
-        }
-      ],
-      "NASDAQ": [
-        {
-          "factor": "IMF_Export_Price_Index",
-          "factor_table": "imf_factors",
-          "country": "NASDAQ",
-          "normalization": "history_z",
-          "return_mode": "absolute",
-          "horizon_months": 12,
-          "current_decile": 6,
-          "implied_direction": "long",
-          "n_records": 264,
-          "cur_bucket_n": 32,
-          "cur_bucket_avg_fwd": 0.195,
-          "cur_bucket_hit_rate": 0.9688,
-          "ic_t_stat": -2.4616,
-          "r_squared": 0.6795,
-          "spread_top_minus_bottom": -0.7076,
-          "confidence_score": 0.9805,
-          "confidence_notes": "ok",
-          "triptych_url": null,
-          "epistemic_tag": "PRIOR"
-        },
-        {
-          "factor": "OECD_BCI",
-          "factor_table": "extended_factors",
-          "country": "NASDAQ",
-          "normalization": "raw",
-          "return_mode": "absolute",
-          "horizon_months": 12,
-          "current_decile": 6,
+          "current_decile": 4,
           "implied_direction": "long",
           "n_records": 274,
           "cur_bucket_n": 24,
-          "cur_bucket_avg_fwd": 0.1578,
-          "cur_bucket_hit_rate": 0.9167,
-          "ic_t_stat": -2.0647,
-          "r_squared": 0.5583,
-          "spread_top_minus_bottom": -0.3316,
-          "confidence_score": 0.9148,
+          "cur_bucket_avg_fwd": 0.1829,
+          "cur_bucket_hit_rate": 0.8333,
+          "ic_t_stat": -2.7022,
+          "r_squared": 0.2983,
+          "spread_top_minus_bottom": -0.0696,
+          "confidence_score": 0.9167,
           "confidence_notes": "ok",
-          "triptych_url": null,
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=REER&tc=Brazil&tn=cross_var_pct&tm=relative&th=12&tr=all&td=pit&tb=10",
           "epistemic_tag": "PRIOR"
         },
         {
-          "factor": "EPU",
-          "factor_table": "external_factors",
-          "country": "NASDAQ",
+          "factor": "Trailing EPS",
+          "factor_table": "t2_raw",
+          "country": "Brazil",
+          "normalization": "raw",
+          "return_mode": "relative",
+          "horizon_months": 12,
+          "current_decile": 7,
+          "implied_direction": "short",
+          "n_records": 274,
+          "cur_bucket_n": 17,
+          "cur_bucket_avg_fwd": -0.1716,
+          "cur_bucket_hit_rate": 0.0,
+          "ic_t_stat": -2.0048,
+          "r_squared": 0.059,
+          "spread_top_minus_bottom": null,
+          "confidence_score": 0.913,
+          "confidence_notes": "ok",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Trailing+EPS&tc=Brazil&tn=raw&tm=relative&th=12&tr=all&td=pit&tb=10",
+          "epistemic_tag": "PRIOR"
+        }
+      ],
+      "Italy": [
+        {
+          "factor": "Mcap Weights",
+          "factor_table": "t2_raw",
+          "country": "Italy",
+          "normalization": "raw",
+          "return_mode": "relative",
+          "horizon_months": 36,
+          "current_decile": 2,
+          "implied_direction": "short",
+          "n_records": 206,
+          "cur_bucket_n": 24,
+          "cur_bucket_avg_fwd": -0.1922,
+          "cur_bucket_hit_rate": 0.0417,
+          "ic_t_stat": -3.8747,
+          "r_squared": 0.8183,
+          "spread_top_minus_bottom": -0.4215,
+          "confidence_score": 0.9792,
+          "confidence_notes": "ok",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Mcap+Weights&tc=Italy&tn=raw&tm=relative&th=36&tr=all&td=pit&tb=10",
+          "epistemic_tag": "PRIOR"
+        },
+        {
+          "factor": "Mcap Weights",
+          "factor_table": "t2_raw",
+          "country": "Italy",
+          "normalization": "raw",
+          "return_mode": "relative",
+          "horizon_months": 12,
+          "current_decile": 3,
+          "implied_direction": "short",
+          "n_records": 230,
+          "cur_bucket_n": 17,
+          "cur_bucket_avg_fwd": -0.0811,
+          "cur_bucket_hit_rate": 0.0588,
+          "ic_t_stat": -4.1423,
+          "r_squared": 0.8067,
+          "spread_top_minus_bottom": -0.167,
+          "confidence_score": 0.9331,
+          "confidence_notes": "ok",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Mcap+Weights&tc=Italy&tn=raw&tm=relative&th=12&tr=all&td=pit&tb=10",
+          "epistemic_tag": "PRIOR"
+        },
+        {
+          "factor": "Mcap Weights",
+          "factor_table": "t2_raw",
+          "country": "Italy",
+          "normalization": "raw",
+          "return_mode": "relative",
+          "horizon_months": 24,
+          "current_decile": 3,
+          "implied_direction": "short",
+          "n_records": 218,
+          "cur_bucket_n": 9,
+          "cur_bucket_avg_fwd": -0.1781,
+          "cur_bucket_hit_rate": 0.0,
+          "ic_t_stat": -3.6511,
+          "r_squared": 0.5596,
+          "spread_top_minus_bottom": -0.1375,
+          "confidence_score": 0.8625,
+          "confidence_notes": "thin current bucket",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Mcap+Weights&tc=Italy&tn=raw&tm=relative&th=24&tr=all&td=pit&tb=10",
+          "epistemic_tag": "PRIOR"
+        }
+      ],
+      "Poland": [
+        {
+          "factor": "Best Cash Flow",
+          "factor_table": "t2_raw",
+          "country": "Poland",
+          "normalization": "history_z",
+          "return_mode": "absolute",
+          "horizon_months": 24,
+          "current_decile": 10,
+          "implied_direction": "short",
+          "n_records": 189,
+          "cur_bucket_n": 26,
+          "cur_bucket_avg_fwd": -0.2451,
+          "cur_bucket_hit_rate": 0.0,
+          "ic_t_stat": -2.5105,
+          "r_squared": 0.9563,
+          "spread_top_minus_bottom": -0.9559,
+          "confidence_score": 1.0,
+          "confidence_notes": "ok",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Best+Cash+Flow&tc=Poland&tn=history_z&tm=absolute&th=24&tr=all&td=pit&tb=10",
+          "epistemic_tag": "PRIOR"
+        },
+        {
+          "factor": "Best Cash Flow",
+          "factor_table": "t2_raw",
+          "country": "Poland",
+          "normalization": "history_z",
+          "return_mode": "relative",
+          "horizon_months": 24,
+          "current_decile": 10,
+          "implied_direction": "short",
+          "n_records": 189,
+          "cur_bucket_n": 26,
+          "cur_bucket_avg_fwd": -0.2448,
+          "cur_bucket_hit_rate": 0.0,
+          "ic_t_stat": -2.4878,
+          "r_squared": 0.8761,
+          "spread_top_minus_bottom": -0.6421,
+          "confidence_score": 0.9988,
+          "confidence_notes": "ok",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Best+Cash+Flow&tc=Poland&tn=history_z&tm=relative&th=24&tr=all&td=pit&tb=10",
+          "epistemic_tag": "PRIOR"
+        },
+        {
+          "factor": "Best Cash Flow",
+          "factor_table": "t2_raw",
+          "country": "Poland",
+          "normalization": "raw",
+          "return_mode": "absolute",
+          "horizon_months": 24,
+          "current_decile": 9,
+          "implied_direction": "short",
+          "n_records": 189,
+          "cur_bucket_n": 13,
+          "cur_bucket_avg_fwd": -0.2745,
+          "cur_bucket_hit_rate": 0.0,
+          "ic_t_stat": -2.7572,
+          "r_squared": 0.858,
+          "spread_top_minus_bottom": -0.9853,
+          "confidence_score": 0.9125,
+          "confidence_notes": "ok",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Best+Cash+Flow&tc=Poland&tn=raw&tm=absolute&th=24&tr=all&td=pit&tb=10",
+          "epistemic_tag": "PRIOR"
+        }
+      ],
+      "Denmark": [
+        {
+          "factor": "PX_LAST",
+          "factor_table": "t2_raw",
+          "country": "Denmark",
+          "normalization": "raw",
+          "return_mode": "absolute",
+          "horizon_months": 6,
+          "current_decile": 9,
+          "implied_direction": "long",
+          "n_records": 280,
+          "cur_bucket_n": 43,
+          "cur_bucket_avg_fwd": 0.0753,
+          "cur_bucket_hit_rate": 0.7442,
+          "ic_t_stat": -2.5778,
+          "r_squared": 0.5677,
+          "spread_top_minus_bottom": -0.2125,
+          "confidence_score": 0.8721,
+          "confidence_notes": "ok",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=PX_LAST&tc=Denmark&tn=raw&tm=absolute&th=6&tr=all&td=pit&tb=10",
+          "epistemic_tag": "PRIOR"
+        },
+        {
+          "factor": "120MA",
+          "factor_table": "t2_raw",
+          "country": "Denmark",
+          "normalization": "history_z",
+          "return_mode": "absolute",
+          "horizon_months": 6,
+          "current_decile": 8,
+          "implied_direction": "long",
+          "n_records": 280,
+          "cur_bucket_n": 29,
+          "cur_bucket_avg_fwd": 0.1338,
+          "cur_bucket_hit_rate": 0.7931,
+          "ic_t_stat": -2.1692,
+          "r_squared": 0.5873,
+          "spread_top_minus_bottom": null,
+          "confidence_score": 0.8635,
+          "confidence_notes": "ok",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=120MA&tc=Denmark&tn=history_z&tm=absolute&th=6&tr=all&td=pit&tb=10",
+          "epistemic_tag": "PRIOR"
+        },
+        {
+          "factor": "120MA Signal",
+          "factor_table": "t2_raw",
+          "country": "Denmark",
+          "normalization": "raw",
+          "return_mode": "absolute",
+          "horizon_months": 24,
+          "current_decile": 1,
+          "implied_direction": "long",
+          "n_records": 262,
+          "cur_bucket_n": 9,
+          "cur_bucket_avg_fwd": 0.9152,
+          "cur_bucket_hit_rate": 1.0,
+          "ic_t_stat": -2.5121,
+          "r_squared": 0.8477,
+          "spread_top_minus_bottom": -1.0147,
+          "confidence_score": 0.8625,
+          "confidence_notes": "thin current bucket",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=120MA+Signal&tc=Denmark&tn=raw&tm=absolute&th=24&tr=all&td=pit&tb=10",
+          "epistemic_tag": "PRIOR"
+        }
+      ],
+      "Australia": [
+        {
+          "factor": "REER",
+          "factor_table": "t2_raw",
+          "country": "Australia",
+          "normalization": "raw",
+          "return_mode": "absolute",
+          "horizon_months": 6,
+          "current_decile": 9,
+          "implied_direction": "long",
+          "n_records": 280,
+          "cur_bucket_n": 22,
+          "cur_bucket_avg_fwd": 0.1856,
+          "cur_bucket_hit_rate": 1.0,
+          "ic_t_stat": -2.9237,
+          "r_squared": 0.09,
+          "spread_top_minus_bottom": null,
+          "confidence_score": 1.0,
+          "confidence_notes": "ok",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=REER&tc=Australia&tn=raw&tm=absolute&th=6&tr=all&td=pit&tb=10",
+          "epistemic_tag": "PRIOR"
+        },
+        {
+          "factor": "REER",
+          "factor_table": "t2_raw",
+          "country": "Australia",
           "normalization": "raw",
           "return_mode": "absolute",
           "horizon_months": 12,
           "current_decile": 9,
           "implied_direction": "long",
           "n_records": 274,
-          "cur_bucket_n": 38,
-          "cur_bucket_avg_fwd": 0.1925,
-          "cur_bucket_hit_rate": 0.8947,
-          "ic_t_stat": 2.153,
-          "r_squared": 0.5323,
-          "spread_top_minus_bottom": 0.1865,
-          "confidence_score": 0.9127,
+          "cur_bucket_n": 21,
+          "cur_bucket_avg_fwd": 0.3508,
+          "cur_bucket_hit_rate": 1.0,
+          "ic_t_stat": -2.707,
+          "r_squared": 0.158,
+          "spread_top_minus_bottom": null,
+          "confidence_score": 1.0,
+          "confidence_notes": "ok",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=REER&tc=Australia&tn=raw&tm=absolute&th=12&tr=all&td=pit&tb=10",
+          "epistemic_tag": "PRIOR"
+        },
+        {
+          "factor": "BIS_REER",
+          "factor_table": "external_factors",
+          "country": "Australia",
+          "normalization": "raw",
+          "return_mode": "absolute",
+          "horizon_months": 12,
+          "current_decile": 9,
+          "implied_direction": "long",
+          "n_records": 274,
+          "cur_bucket_n": 19,
+          "cur_bucket_avg_fwd": 0.3336,
+          "cur_bucket_hit_rate": 1.0,
+          "ic_t_stat": -2.4296,
+          "r_squared": 0.098,
+          "spread_top_minus_bottom": null,
+          "confidence_score": 0.9805,
           "confidence_notes": "ok",
           "triptych_url": null,
           "epistemic_tag": "PRIOR"
         }
       ],
-      "Taiwan": [
+      "Vietnam": [
         {
-          "factor": "Oil 12",
+          "factor": "P2P",
           "factor_table": "t2_raw",
-          "country": "Taiwan",
-          "normalization": "history_z",
-          "return_mode": "absolute",
-          "horizon_months": 6,
-          "current_decile": 6,
-          "implied_direction": "long",
-          "n_records": 244,
-          "cur_bucket_n": 20,
-          "cur_bucket_avg_fwd": 0.1679,
-          "cur_bucket_hit_rate": 1.0,
-          "ic_t_stat": -2.5767,
-          "r_squared": 0.6051,
-          "spread_top_minus_bottom": -0.2066,
-          "confidence_score": 1.0,
-          "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Oil+12&tc=Taiwan&tn=history_z&tm=absolute&th=6&tr=all&td=pit&tb=10",
-          "epistemic_tag": "PRIOR"
-        },
-        {
-          "factor": "Currency",
-          "factor_table": "t2_raw",
-          "country": "Taiwan",
-          "normalization": "history_z",
-          "return_mode": "absolute",
-          "horizon_months": 12,
-          "current_decile": 8,
-          "implied_direction": "long",
-          "n_records": 274,
-          "cur_bucket_n": 18,
-          "cur_bucket_avg_fwd": 0.2842,
-          "cur_bucket_hit_rate": 1.0,
-          "ic_t_stat": 2.525,
-          "r_squared": 0.7718,
-          "spread_top_minus_bottom": 0.7807,
-          "confidence_score": 0.975,
-          "confidence_notes": "ok",
-          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Currency&tc=Taiwan&tn=history_z&tm=absolute&th=12&tr=all&td=pit&tb=10",
-          "epistemic_tag": "PRIOR"
-        },
-        {
-          "factor": "IMF_XRate_LCU_per_USD",
-          "factor_table": "imf_factors",
-          "country": "Taiwan",
+          "country": "Vietnam",
           "normalization": "cross_var_pct",
           "return_mode": "absolute",
           "horizon_months": 12,
-          "current_decile": 1,
+          "current_decile": 4,
           "implied_direction": "long",
-          "n_records": 274,
-          "cur_bucket_n": 21,
-          "cur_bucket_avg_fwd": 0.3462,
-          "cur_bucket_hit_rate": 1.0,
-          "ic_t_stat": -2.0546,
-          "r_squared": 0.6551,
-          "spread_top_minus_bottom": -0.287,
-          "confidence_score": 0.9555,
+          "n_records": 147,
+          "cur_bucket_n": 14,
+          "cur_bucket_avg_fwd": 0.313,
+          "cur_bucket_hit_rate": 0.9286,
+          "ic_t_stat": -2.2876,
+          "r_squared": 0.6876,
+          "spread_top_minus_bottom": -0.3589,
+          "confidence_score": 0.868,
+          "confidence_notes": "ok",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=P2P&tc=Vietnam&tn=cross_var_pct&tm=absolute&th=12&tr=all&td=pit&tb=10",
+          "epistemic_tag": "PRIOR"
+        },
+        {
+          "factor": "MS_Passive_AUM_to_MarketCap",
+          "factor_table": "bloomberg_factors",
+          "country": "Vietnam",
+          "normalization": "cross_var_pct",
+          "return_mode": "relative",
+          "horizon_months": 1,
+          "current_decile": 1,
+          "implied_direction": "short",
+          "n_records": 104,
+          "cur_bucket_n": 49,
+          "cur_bucket_avg_fwd": -0.0122,
+          "cur_bucket_hit_rate": 0.4082,
+          "ic_t_stat": 2.5126,
+          "r_squared": 0.318,
+          "spread_top_minus_bottom": null,
+          "confidence_score": 0.7959,
           "confidence_notes": "ok",
           "triptych_url": null,
+          "epistemic_tag": "PRIOR"
+        },
+        {
+          "factor": "FRED_VIX",
+          "factor_table": "extended_factors",
+          "country": "Vietnam",
+          "normalization": "raw",
+          "return_mode": "absolute",
+          "horizon_months": 1,
+          "current_decile": 5,
+          "implied_direction": "long",
+          "n_records": 201,
+          "cur_bucket_n": 22,
+          "cur_bucket_avg_fwd": 0.0034,
+          "cur_bucket_hit_rate": 0.4091,
+          "ic_t_stat": -2.9794,
+          "r_squared": 0.5953,
+          "spread_top_minus_bottom": -0.0528,
+          "confidence_score": 0.7955,
+          "confidence_notes": "ok",
+          "triptych_url": null,
+          "epistemic_tag": "PRIOR"
+        }
+      ],
+      "Hong Kong": [
+        {
+          "factor": "Best PE",
+          "factor_table": "t2_raw",
+          "country": "Hong Kong",
+          "normalization": "raw",
+          "return_mode": "absolute",
+          "horizon_months": 24,
+          "current_decile": 2,
+          "implied_direction": "long",
+          "n_records": 248,
+          "cur_bucket_n": 22,
+          "cur_bucket_avg_fwd": 0.3302,
+          "cur_bucket_hit_rate": 0.9545,
+          "ic_t_stat": -2.4439,
+          "r_squared": 0.7933,
+          "spread_top_minus_bottom": -0.7968,
+          "confidence_score": 0.9717,
+          "confidence_notes": "ok",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Best+PE&tc=Hong+Kong&tn=raw&tm=absolute&th=24&tr=all&td=pit&tb=10",
+          "epistemic_tag": "PRIOR"
+        },
+        {
+          "factor": "Best PE",
+          "factor_table": "t2_raw",
+          "country": "Hong Kong",
+          "normalization": "raw",
+          "return_mode": "absolute",
+          "horizon_months": 12,
+          "current_decile": 2,
+          "implied_direction": "long",
+          "n_records": 260,
+          "cur_bucket_n": 31,
+          "cur_bucket_avg_fwd": 0.1589,
+          "cur_bucket_hit_rate": 0.8387,
+          "ic_t_stat": -2.4811,
+          "r_squared": 0.7049,
+          "spread_top_minus_bottom": -0.4586,
+          "confidence_score": 0.9175,
+          "confidence_notes": "ok",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Best+PE&tc=Hong+Kong&tn=raw&tm=absolute&th=12&tr=all&td=pit&tb=10",
+          "epistemic_tag": "PRIOR"
+        },
+        {
+          "factor": "Debt to EV",
+          "factor_table": "t2_raw",
+          "country": "Hong Kong",
+          "normalization": "raw",
+          "return_mode": "absolute",
+          "horizon_months": 1,
+          "current_decile": 8,
+          "implied_direction": "long",
+          "n_records": 285,
+          "cur_bucket_n": 23,
+          "cur_bucket_avg_fwd": 0.0378,
+          "cur_bucket_hit_rate": 0.7826,
+          "ic_t_stat": 2.6714,
+          "r_squared": 0.3508,
+          "spread_top_minus_bottom": 0.0268,
+          "confidence_score": 0.8913,
+          "confidence_notes": "ok",
+          "triptych_url": "https://triptych-one.vercel.app/triptych.html?tab=triptych&tf=Debt+to+EV&tc=Hong+Kong&tn=raw&tm=absolute&th=1&tr=all&td=pit&tb=10",
           "epistemic_tag": "PRIOR"
         }
       ]
@@ -111003,45 +111009,45 @@
   "theses": {},
   "countries": {
     "Canada": {
-      "y10": 3.971,
+      "y10": 3.943,
       "erp_pctile": 91.667,
       "cape_pctile": 99.167,
-      "s210": 0.71
+      "s210": 0.7
     },
     "U.S.": {
-      "y10": 5.309,
+      "y10": 5.279,
       "cape_pctile": 100.0,
       "erp_pctile": 99.167,
-      "s210": 0.53
+      "s210": 0.51
     },
     "NASDAQ": {
-      "y10": 5.309,
-      "erp_pctile": 94.167,
+      "y10": 5.279,
+      "erp_pctile": 93.333,
       "cape_pctile": 100.0,
-      "s210": 0.53
+      "s210": 0.51
     },
     "US SmallCap": {
-      "y10": 5.309,
+      "y10": 5.279,
       "erp_pctile": 100.0,
       "cape_pctile": 26.667,
-      "s210": 0.53
+      "s210": 0.51
     },
     "Mexico": {
-      "cds": 95.0,
-      "y10": 9.399,
+      "cds": 93.343,
+      "y10": 9.367,
       "erp_pctile": 91.667,
       "cape_pctile": 100.0,
-      "s210": 1.6
+      "s210": 1.59
     },
     "Brazil": {
       "y10": 12.868,
-      "cds": 112.0,
+      "cds": 111.627,
       "erp_pctile": 73.333,
-      "s210": 0.39
+      "s210": 0.38
     },
     "Chile": {
       "y10": 6.02,
-      "cds": 55.5,
+      "cds": 54.731,
       "erp_pctile": 51.327,
       "cape_pctile": 86.667
     },
@@ -111052,75 +111058,75 @@
       "s210": 0.59
     },
     "France": {
-      "cds": 81.0,
-      "y10": 4.895,
+      "y10": 4.87,
+      "cds": 79.0,
       "erp_pctile": 72.5,
       "cape_pctile": 55.833,
-      "s210": 1.27
+      "s210": 1.25
     },
     "Germany": {
-      "y10": 3.494,
+      "y10": 3.475,
       "cape_pctile": 65.833,
       "erp_pctile": 74.167,
-      "s210": 0.43
+      "s210": 0.41
     },
     "Netherlands": {
-      "y10": 3.616,
-      "erp_pctile": 96.667,
+      "y10": 3.597,
+      "erp_pctile": 95.833,
       "cape_pctile": 93.333,
-      "s210": 0.55
+      "s210": 0.53
     },
     "Switzerland": {
-      "y10": 0.529,
+      "y10": 0.528,
       "cape_pctile": 83.333,
       "erp_pctile": 45.0,
       "s210": -0.13
     },
     "Italy": {
-      "y10": 4.649,
-      "cds": 70.0,
-      "erp_pctile": 91.667,
+      "y10": 4.624,
+      "cds": 68.023,
+      "erp_pctile": 90.833,
       "cape_pctile": 81.667,
-      "s210": 1.22
+      "s210": 1.2
     },
     "Spain": {
-      "y10": 4.14,
+      "y10": 4.118,
       "cds": 31.0,
-      "erp_pctile": 89.167,
-      "s210": 0.92
+      "erp_pctile": 87.5,
+      "s210": 0.89
     },
     "Sweden": {
-      "y10": 3.221,
-      "s210": 0.53
+      "y10": 3.217,
+      "s210": 0.52
     },
     "Denmark": {
-      "y10": 3.313,
-      "erp_pctile": 31.667,
+      "y10": 3.308,
+      "erp_pctile": 30.833,
       "cape_pctile": 1.667,
-      "s210": 0.65
+      "s210": 0.64
     },
     "Poland": {
-      "y10": 6.284,
+      "y10": 6.285,
       "cds": 59.0,
       "erp_pctile": 80.0,
       "s210": 1.54
     },
     "South Africa": {
-      "y10": 9.08,
-      "cds": 137.5,
+      "y10": 9.082,
+      "cds": 137.394,
       "cape_pctile": 82.5,
       "erp_pctile": 11.712,
-      "s210": 1.57
+      "s210": 1.59
     },
     "Saudi Arabia": {
-      "y10": 6.119,
-      "cds": 65.5,
+      "y10": 6.118,
+      "cds": 66.243,
       "cape_pctile": 20.732,
       "erp_pctile": 48.214
     },
     "Turkey": {
       "y10": 32.7,
-      "cds": 250.0,
+      "cds": 249.822,
       "cape_pctile": 55.0,
       "erp_pctile": 98.291,
       "s210": -3.51
@@ -111141,14 +111147,14 @@
     },
     "Japan": {
       "y10": 3.104,
-      "cds": 29.214,
+      "cds": 28.723,
       "erp_pctile": 90.0,
       "cape_pctile": 100.0,
       "s210": 1.15
     },
     "Korea": {
       "y10": 4.375,
-      "cds": 23.5,
+      "cds": 23.716,
       "erp_pctile": 57.5,
       "cape_pctile": 98.333,
       "s210": 0.48
@@ -111172,7 +111178,7 @@
     },
     "Malaysia": {
       "y10": 3.986,
-      "cds": 35.0,
+      "cds": 34.288,
       "erp_pctile": 21.667
     },
     "Philippines": {
@@ -111188,7 +111194,7 @@
     },
     "Thailand": {
       "y10": 2.355,
-      "cds": 38.0,
+      "cds": 38.813,
       "erp_pctile": 11.667,
       "s210": 1.08
     },
@@ -111197,19 +111203,19 @@
     },
     "Australia": {
       "y10": 5.408,
-      "cds": 15.25,
+      "cds": 15.704,
       "cape_pctile": 93.333,
       "s210": 0.47
     }
   },
   "drawdowns": {
-    "India": -15.8,
-    "Chile": -18.5,
     "ChinaH": -20.1,
     "South Africa": -20.9,
-    "Philippines": -17.3,
+    "Chile": -18.5,
     "Indonesia": -36.8,
-    "Turkey": -19.6
+    "Turkey": -19.6,
+    "Philippines": -17.3,
+    "India": -15.8
   },
   "brief": {
     "file": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/dislocations/brief_2026_10_06.md",
@@ -111548,8 +111554,8 @@
           "gap_tension": 0.0,
           "gap_absorption": "repriced_against",
           "gap_ticker": "KSA",
-          "edge": -0.5,
-          "edge_votes": "0L/1S of 2",
+          "edge": 0.0,
+          "edge_votes": "0L/0S of 2",
           "edge_conflict": false
         },
         {
@@ -111638,8 +111644,8 @@
           "gap_tension": 0.032,
           "gap_absorption": "repriced_against",
           "gap_ticker": "EWJ",
-          "edge": -0.333,
-          "edge_votes": "0L/1S of 3",
+          "edge": -0.667,
+          "edge_votes": "0L/2S of 3",
           "edge_conflict": false
         },
         {

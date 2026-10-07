@@ -540,3 +540,43 @@ the summary block.
 Separately: `consensus_signals.parquet`, `market_implied_signals.parquet` and
 `eco_surprise_signals.parquet` are all dated **2026-07-14** — five weeks stale, unrelated to
 today's outage. Worth checking whether anything still rebuilds them.
+
+## 2026-10-07 — REER is contaminated by retrospective rebasing; T2 macro lag convention is a month short (needs Arjun's decision)
+
+Source: Arjun's forensic audit at
+`/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 Factor Timing Fuzzy/Archive/REER_Audit_20261007/REPORT.md`.
+Nothing in the pipeline was changed; this entry records what it implies for ASADO.
+
+1. **REER levels carry a future base year.** BIS rescales every country's REER so its average
+   in a common reference year (2010 until Jan 2023, 2020 since) equals 100. Historical levels
+   therefore embed each country's *future* real appreciation toward that year, and ranking
+   countries by level (`REER_CS`, `BIS_REER_CS`) partly sorts on it. With actual archived
+   vintages (151 decision dates, 2014–2026) the REER_CS excess falls from 7.5 to 0.8 %/yr.
+   `REER_TS` (expanding own-country z) cancels a constant base but not the 2023 methodology
+   revision; with real vintages it earns 1.6 %/yr, IR 0.24. **Recommendation: quarantine all
+   four REER columns as signals in the harness** (`REER_CS/_TS`, `BIS_REER_CS/_TS`) until a
+   base-invariant construction (changes, or vintage-archived levels) exists. The same
+   mechanism applies to any cross-sectional z-score of an index level whose scale is a
+   base-year or full-history normalization (OECD CLI/BCI/CCI, IMF CPI/price indices).
+
+2. **T2's one-month shift is not a publication lag.** `standardize_date()` moves the
+   observation month forward one month; the harness treats source `t2` as zero-lag. For BIS
+   REER the observation for month D−1 is published mid-month D, so at the start of D only
+   D−2 is available (audit: 5,066 of 5,134 country-months used a two-month-old reference).
+   Matching real availability alone cost 1.2 %/yr. The `ZERO_LAG_SOURCES` assumption in
+   `scripts/harness/evaluate_signal.py` is right for T2's market columns and wrong for its
+   slow macro columns (REER, CPI-type series, Budget Def, Current Account, Debt to GDP, GDP);
+   those need their own publication lag, as the non-T2 sources already get.
+
+3. **Vietnam's T2 REER is India's** (`BISBINR Index` in both columns). Vietnam is not in the
+   BIS broad panel. Moot once REER is quarantined; worth checking whether other Vietnam
+   columns in the T2 feed are undeclared proxies.
+
+4. **General caveat for every ASADO backtest on `feature_panel`:** the warehouse holds
+   current-vintage history for all macro sources. Random-month and walk-forward tests remove
+   *model-fitting* look-ahead but not *data-revision* look-ahead; the REER case shows that
+   difference can be the whole result for a rebased series.
+
+Ref: rank-model experiment on branch `exp/NN` (`../ASADO-exp-NN/experiments/2026_10_rank_model`)
+found REER_CS the strongest single factor in a 341-factor screen (t 3.4) — consistent with the
+artifact — and showed the broad 256-factor ridge model is unchanged without it (5.2 vs 5.3 %/yr).

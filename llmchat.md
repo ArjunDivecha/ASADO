@@ -1781,3 +1781,58 @@ The Bloomberg minute-data pull finished. `intraday_execution.py` and `auction_co
 ---
 SESSION END: 2026-10-06 01:06 PDT | Agent: Claude Code (auto, idle, session 8fce7707)
 ---
+
+---
+SESSION START: 2026-10-07 10:33 PDT | Agent: Claude Code (auto, idle, session dc8244a3)
+---
+
+### Session Summary
+Started the "train a model to rank countries" project in a new experiment directory, `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/experiments/2026_10_rank_model/`. The user wants to hand-pick factors before any modelling. Two analyses were built and committed: a factor correlation matrix (`69a4251`, then v1.1 `f822251`) and a univariate screen against next-month return (`a4f9ac6`). No model has been trained yet.
+
+**Verdict:** no single factor carries the ranking. Of 262 scoreable factors, 23 have |t| above 1.96 against about 13 expected by chance, and only one survives a false-discovery correction. Any edge has to come from combining factors.
+
+### Decisions Made
+- Target is top 8 of 34 countries, equal-weighted, minus the equal-weight average of all countries. This is the user's real trade.
+- Training loss is the expected excess return of a soft top-8 selection, optimized by plain gradient descent with no policy gradient. The tree variants are lambdarank with NDCG@8, binary top-8 classification, and regression.
+- Splits are random by month, repeated about 10 times.
+- Both `_CS` and `_TS` z-scores are used, 341 in total (161 CS and 180 TS). The user requested TS after the first CS-only matrix.
+
+### Architecture / Design
+- Snapshot: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/experiments/2026_10_rank_model/snapshot_2026_10_07/feature_panel_observed.parquet`
+- Scripts in the experiment directory: `factor_correlation.py` (v1.1) and `factor_screen.py`.
+- Latest correlation run: `results/corr_20261007_095235/` (`factor_correlation_matrix.xlsx` plus heatmap PDF, parquet and `summary.json`). Two earlier correlation runs are still in `results/`, and cleanup was offered but not confirmed.
+- Latest screen run: `results/screen_20261007_100004/` (`factor_screen.xlsx` with Screen, Clusters_Ranked and Notes sheets, and `factor_screen_chart.pdf`).
+- The screen uses Fama-MacBeth slopes, rank IC and top-8/bottom-8 baskets. Lags follow the harness: 0 for T2 and GDELT, 1 month for IMF, FRED, BIS and OECD.
+
+### Constraints & Gotchas
+- **Redundancy:** there are 97 pairs above 0.9. The four families are GDELT news (about 8 distinct series out of 46), the 12-rate block, the size block, and price levels (`PX_LAST`, `Tot Return Index`, `120MA`, `BEST EPS`, `Trailing EPS`). Price-level z-scores are just units and should be dropped.
+- **CS vs TS:** the median correlation between a factor's two versions is 0.37. Only the 19 GDELT factors exceed 0.8, so for those one version is enough.
+- **Drop list:** about 30 variables. They are 7 single-month snapshots (credit ratings, ETF fee and unit size, OFAC), 22 ECB FX series covering one country each, a one-country Bloomberg debt ratio, and 3 global GPR indices. The 79 factors with fewer than 20 countries or 24 months are unscored.
+- **T2 REER = BIS REER shifted one month.** The match is exact across 10,494 country-months. T2 bakes the publication lag into its series, so its other macro columns probably do too.
+- **Lag matters for slow sources.** Across 64 lagged-source factors, mean |t| is 0.9 at the harness lag and 1.9 at zero lag. The model must apply harness lags to IMF, FRED, BIS and OECD inputs.
+- **Possible collector bug (not touched):** the Bloomberg central-bank balance-sheet-to-GDP ratio correlates 0.99 with the exchange-rate level.
+- **Artifact to ignore:** `MS_Index_Weight_CS` shows t −3.1 on only 25 months at a 12-month lag.
+- **Sign convention:** T2 lower-is-better factors are already flipped. Other sources are not, so a negative t there means invert.
+- **Best top-8 baskets:** 4–5%/yr over the equal-weight average, hit rate about 0.6. The median factor makes under 1%/yr.
+  - T2 REER: t 3.4, 5.0%/yr.
+  - Advance-decline: t 3.2.
+  - `1MTR_TS`: t 3.1.
+  - Best ROE TS: t 2.7.
+  - GDELT tone dispersion: 5.4%/yr, but only 133 months and one of many near-identical series.
+- The screen is in-sample over the full history by design.
+
+### What To Build Next
+- The user picks the factor set from `Clusters_Ranked`.
+- Then build the ridge baseline and LightGBM (three objectives) on the top-8 metric, then the soft top-k net.
+- The 67 quarterly and annual z-scores are excluded for now and can be added on request.
+
+### Open Questions
+- Fix or ignore the suspect central-bank ratio collector.
+- Delete the two superseded correlation run directories?
+
+### Context for Next Session
+- Latest commit is `a4f9ac6`, unpushed. The user must approve any push.
+
+---
+SESSION END: 2026-10-07 10:33 PDT | Agent: Claude Code (auto, idle, session dc8244a3)
+---

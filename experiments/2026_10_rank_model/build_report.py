@@ -68,6 +68,7 @@ SNAPSHOT = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/wor
 COMMENTARY = EXP_DIR / "report_commentary.md"
 OUT = RESULTS / "report.html"
 
+SOFT_TAUS = [0.25, 1.0]   # soft top-k temperatures used by train_floor.py / train_nn.py (column suffixes in per_split)
 PALETTE = ["#1F77B4", "#D62728", "#2CA02C", "#9467BD", "#FF7F0E", "#8C564B", "#E377C2",
            "#17BECF", "#BCBD22", "#7F7F7F", "#AEC7E8", "#FFBB78", "#98DF8A", "#FF9896",
            "#C5B0D5", "#C49C94", "#F7B6D2", "#DBDB8D", "#9EDAE5"]

@@ -54,6 +54,7 @@ NOTES:
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 import re
 from typing import Any, Dict, Optional
 
@@ -165,6 +166,10 @@ def parse_stock_market(
     end_date = market.get("endDate") or (event or {}).get("endDate")
 
     return {
+        "closed": market.get("closed"),
+        "active": market.get("active"),
+        "accepting_orders": market.get("acceptingOrders"),
+        "enable_order_book": market.get("enableOrderBook"),
         "platform": "polymarket",
         "market_id": market.get("conditionId"),
         "slug": market.get("slug"),
@@ -191,3 +196,22 @@ def aligned_price(p_yes: Optional[float], yes_rises_with_stock: bool) -> Optiona
     if p_yes is None:
         return None
     return p_yes if yes_rises_with_stock else 1.0 - p_yes
+
+
+def polling_ineligibility(rec, now):
+    """Fail closed on lifecycle data; volume is eligibility, not live tradability."""
+    if not rec.get('is_active'):
+        return 'below_volume_threshold'
+    if rec.get('closed') is not False or rec.get('active') is not True:
+        return 'closed_or_unknown_market'
+    if rec.get('accepting_orders') is not True or rec.get('enable_order_book') is not True:
+        return 'book_not_open_or_unknown'
+    try:
+        end = datetime.fromisoformat(rec['resolve_date'].replace('Z', '+00:00'))
+        if end.tzinfo is None:
+            return 'unknown_resolution_timezone'
+    except (KeyError, TypeError, ValueError, AttributeError):
+        return 'invalid_resolution_date'
+    if end <= now.astimezone(timezone.utc):
+        return 'expired'
+    return None

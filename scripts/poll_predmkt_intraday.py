@@ -42,8 +42,10 @@ USAGE:
   python scripts/poll_predmkt_intraday.py --all-classes  [poll every active directional class]
 
 NOTES:
-- The universe YAML rotates weekly: the daily harvest job regenerates it, so
-  this poller always reads the current file.
+- The daily harvest refreshes YAML. Each poll rechecks market lifecycle/expiry;
+  an exhausted eligible set triggers bounded read-only discovery, never a YAML rewrite.
+- coverage_*.json records actual coverage/failures. No eligible contracts or usable
+  rows is an explicit nonzero outcome, never a fabricated healthy observation.
 - Books that are empty or one-sided are recorded with is_stale=true rather
   than dropped (log-don't-drop house style).
 - US market holidays are not filtered: a few harmless extra polls.
@@ -53,6 +55,8 @@ NOTES:
 from __future__ import annotations
 
 import argparse
+import json
+from collections import Counter
 import sys
 import time
 from datetime import datetime, time as dtime, timezone
@@ -65,6 +69,10 @@ import yaml
 BASE_DIR = Path(__file__).resolve().parent.parent
 UNIVERSE_PATH = BASE_DIR / "config" / "predmkt_equity_universe.yaml"
 OUT_DIR = BASE_DIR / "Data" / "work" / "predmkt_equity" / "intraday"
+
+sys.path.insert(0, str(BASE_DIR / 'scripts'))
+from predmkt_equity_common import polling_ineligibility
+from discover_predmkt_equity_universe import discover
 
 CLOB_BASE = "https://clob.polymarket.com"
 HEADERS = {"User-Agent": "ASADO-predmkt/1.0", "Accept": "application/json"}
@@ -86,7 +94,7 @@ def current_window(now_utc: datetime) -> str | None:
     return None
 
 
-def poll_market(session: requests.Session, rec: dict) -> dict | None:
+def poll_market(session: requests.Session, rec: dict, failures=None) -> dict | None:
     """Poll one market's CLOB book; returns a row dict or None on hard failure."""
     try:
         resp = session.get(
@@ -99,6 +107,9 @@ def poll_market(session: requests.Session, rec: dict) -> dict | None:
         book = resp.json()
     except (requests.RequestException, ValueError) as exc:
         print(f"  ❌ book fetch failed for {rec['ticker']} {rec['market_id'][:14]}...: {exc}")
+        if failures is not None:
+            failures.append({'market_id': rec['market_id'], 'reason': str(exc),
+                             'http_status': getattr(locals().get('resp'), 'status_code', None)})
         return None
     bids = book.get("bids") or []
     asks = book.get("asks") or []
@@ -128,6 +139,26 @@ def poll_market(session: requests.Session, rec: dict) -> dict | None:
     }
 
 
+def eligible_targets(universe, now, all_classes=False):
+    targets, excluded = [], Counter()
+    for rec in universe:
+        if not all_classes and rec.get('contract_class') not in DAILY_CLASSES:
+            continue
+        reason = polling_ineligibility(rec, now)
+        if reason:
+            excluded[reason] += 1
+        else:
+            targets.append(rec)
+    return targets, dict(excluded)
+
+
+def write_receipt(now, receipt):
+    path = OUT_DIR / f'coverage_{now:%Y%m%d_%H%M%S}.json'
+    temp = path.with_suffix('.tmp')
+    temp.write_text(json.dumps(receipt, indent=2) + '\n')
+    temp.replace(path)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--force", action="store_true", help="poll regardless of window/weekday")
@@ -146,21 +177,32 @@ def main() -> int:
         return 1
     with open(UNIVERSE_PATH) as fh:
         universe = yaml.safe_load(fh) or []
-    targets = [
-        r
-        for r in universe
-        if r.get("is_active")
-        and (args.all_classes or r.get("contract_class") in DAILY_CLASSES)
-    ]
+    session = requests.Session()
+    targets, excluded = eligible_targets(universe, now, args.all_classes)
+    refreshed = False
+    refresh_error = None
     if not targets:
-        print("❌ No active target markets in universe — is the YAML stale?")
+        # Read-only discovery: never run the harvest producer or rewrite its YAML.
+        try:
+            universe, _ = discover(session)
+            targets, excluded = eligible_targets(universe, now, args.all_classes)
+            refreshed = True
+        except (requests.RequestException, ValueError) as exc:
+            refresh_error = str(exc)
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    receipt = {'observed_at': now.isoformat(), 'window': window,
+               'eligible_markets': [r['market_id'] for r in targets],
+               'excluded': excluded, 'discovery_refreshed': refreshed,
+               'discovery_error': refresh_error, 'failed_markets': []}
+    if not targets:
+        receipt.update(status='no_coverage', usable_rows=0, rows=0)
+        write_receipt(now, receipt)
+        print('NO COVERAGE: no eligible unexpired daily contracts; no price rows fabricated')
         return 1
 
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    session = requests.Session()
     rows = []
     for rec in targets:
-        row = poll_market(session, rec)
+        row = poll_market(session, rec, receipt['failed_markets'])
         if row is not None:
             row["poll_ts"] = now
             row["poll_date"] = now.date()
@@ -169,17 +211,23 @@ def main() -> int:
         time.sleep(SLEEP_BETWEEN)
 
     if not rows:
+        receipt.update(status='no_coverage', usable_rows=0, rows=0)
+        write_receipt(now, receipt)
         print("❌ Poll cycle produced zero rows (all book fetches failed).")
         return 1
     out = pd.DataFrame(rows)
     out_path = OUT_DIR / f"poll_{now:%Y%m%d_%H%M%S}.parquet"
     out.to_parquet(out_path, index=False)
     n_stale = int(out["is_stale"].sum())
+    usable = len(out) - n_stale
+    receipt.update(status='usable' if usable else 'no_usable_rows',
+                   rows=len(out), usable_rows=usable, output=str(out_path))
+    write_receipt(now, receipt)
     print(
         f"[{now:%Y-%m-%d %H:%M} UTC] window={window}: wrote {len(out)} rows "
         f"({n_stale} stale) -> {out_path.name}"
     )
-    return 0
+    return 0 if usable else 1
 
 
 if __name__ == "__main__":

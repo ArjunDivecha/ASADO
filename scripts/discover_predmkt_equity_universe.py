@@ -53,7 +53,7 @@ import argparse
 import shutil
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import requests
@@ -62,7 +62,7 @@ import yaml
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR / "scripts"))
 
-from predmkt_equity_common import parse_stock_market  # noqa: E402
+from predmkt_equity_common import parse_stock_market, polling_ineligibility  # noqa: E402
 
 CONFIG_PATH = BASE_DIR / "config" / "predmkt_equity_universe.yaml"
 BACKUP_ROOT = BASE_DIR / "Data" / "backups"
@@ -123,6 +123,8 @@ def discover(session: requests.Session) -> tuple[list[dict], int]:
             seen.add(rec["market_id"])
             volume = rec.get("volume_usd") or 0.0
             rec["is_active"] = bool(volume >= MIN_VOLUME_USD)
+            # Preserve archived/expired rows for harvesting, but expose tradability separately.
+            rec['polling_ineligible_reason'] = polling_ineligibility(rec, datetime.now(timezone.utc))
             records.append(rec)
     records.sort(key=lambda r: (r["ticker"], r["contract_class"], r.get("target_price") or 0))
     return records, skipped

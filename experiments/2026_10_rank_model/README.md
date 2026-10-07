@@ -232,6 +232,21 @@ floor. Random-split eval, predict-then-select net, paired:
 New base vs ridge: +1.8 %/yr, t 3.2, 23/30. Verdict: width + ten seeds is a real gain; the
 2000–09 edge is in the factor values, not GDELT or the coverage structure.
 
+## Step 6c — global context and cross-country attention (2026-10-07, v1 panel)
+
+`build_panel.py --version v2_global --global-vars <8 global TS series>` → floor + net `--tag global`;
+`train_attn.py --seeds 5 --tag attn` (d 64, 2 layers, 4 heads, ff 128). Random-split eval, paired vs
+the new base (256/128 ×10):
+
+| run | net %/yr | vs base | note |
+|---|---|---|---|
+| + global context, MSE / soft / warm | +6.8 / +6.6 / +6.8 | −0.3 / −0.2 / 0.0 (n.s.) | ridge −0.06; no inflation of random-month scores |
+| attention, soft top-8 | +6.6 | −0.2 (t −0.6) | +1.3 vs ridge (t 2.2); 5 seeds vs 10 |
+| attention, MSE | +2.7 | −4.4 (t −6.9) | optimisation failure: train fit 8 % |
+
+Verdict: **neither is a lever.** Width + seeds remain the only gains; the headline is the shared
+MLP 256/128 ×10 on predict-then-select.
+
 ## Running report
 
 `build_report.py` → `results/report.html` — one self-contained light-mode page: a

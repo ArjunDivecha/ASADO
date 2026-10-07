@@ -1034,9 +1034,9 @@ def stage8(c: dict) -> tuple[str, str]:
                 after = wealth.loc[trough:]; rec = after[after >= peak.loc[trough]].index.min()
                 return float(dmin.min()), pk, trough, rec
             rd, rp, rt, rr = dd(rel); ad, ap, at, _ = dd(wb); bd, bp, bt, _ = dd(wbm)
-            peak = rel.cummax(); under = (rel < peak); longest = 0; c = 0
+            peak = rel.cummax(); under = (rel < peak); longest = 0; run_len = 0
             for u in under:
-                c = c + 1 if u else 0; longest = max(longest, c)
+                run_len = run_len + 1 if u else 0; longest = max(longest, run_len)
             under_series[m] = (rel / peak - 1) * 100
             yrs = len(wb) / 12
             drows.append({"model": MODEL_LABEL[m], "names changed / month (of 8)": changed, "one-way turnover %/yr": changed / K * 1200,

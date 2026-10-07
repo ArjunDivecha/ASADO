@@ -1737,3 +1737,47 @@ Code and data in `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/experim
 ---
 SESSION END: 2026-10-06 00:29 PDT | Agent: Claude Code (auto, idle, session 8fce7707)
 ---
+
+---
+SESSION START: 2026-10-06 01:06 PDT | Agent: Claude Code (auto, idle, session 8fce7707)
+---
+
+### Session Summary
+The Bloomberg minute-data pull finished. `intraday_execution.py` and `auction_cost_analysis.py` were both run on it. The first fix was `intraday_execution.py` entry counts, which were wrong. They are now correct. The cost model was then rewritten (net returns, capacity, charts). Outputs are in `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/experiments/2026_10_etf_gap_fill/runs/costs_20261006_003528/` (`cost_report.pdf`, `cost_report-2.png`, plus cost tables). A new section was appended to `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/experiments/2026_10_etf_gap_fill/README.md`. Commit `456e84b` is unpushed.
+
+**Verdict:** after measured costs the seven-name rule stops working. The one-name rule survives but has tiny capacity. Nothing live changes.
+
+### Decisions Made
+- Cost model is spread-only: half the quoted spread just before the close, plus $0.0035/share commission, about 4bp per dollar traded. Capacity is reported as participation in actual closing volume, not as modelled market impact.
+- The first cost model priced impact against each ETF's traded volume (−53%/yr at $1M). It was discarded because it contradicted measured slippage and ignored ETF share creation.
+- QQQ, SPY and IWM quote series are skipped and trade prices are used instead (spread about 0.3bp, immaterial). Heavy-quote funds are pulled in chunks to avoid timeouts.
+
+### Architecture / Design
+`auction_cost_analysis.py` now has a `net_series` function with spread-only, full-spread and size scenarios, a capacity table, and charts rendered to PDF and PNG via pdftoppm.
+
+### Constraints & Gotchas
+- **Seven-name rule:** breakeven is 3.5bp. It goes from +14%/yr gross to about −2% net, and commission alone costs 4 points. The long-short version nets −10%.
+- **One-name rules:** breakeven is about 11bp. The vol-scaled version nets about 34%/yr (Sharpe 1.7), or about 20% paying the full spread.
+- **Capacity:** at $1M, the typical one-name order is about 75% of the picked fund's dollar volume in 15:45–16:00, auction included. EDEN, EPHE, VNM, THD and TUR trade under $250k in that window. Realistic size is a few hundred thousand dollars, and our own impact is unmeasured.
+- **Last-15-minutes execution (126 days of minute data):**
+  - Passive fills at the midpoint or VWAP of 15:45–15:58 land within 0–2bp of the close. The one-name rule makes 66–69%/yr that way, against 72% at the close.
+  - Crossing the spread costs 4–6bp per side, which kills the seven-name rule and cuts the one-name rule by about a third.
+  - The 15-minute window holds a median 1.6× the final minute's volume (VNM 6.9×; THD, EZA and EWM below 1×).
+  - Never cross at 15:59: spreads reach EPHE 54bp, TUR 56bp and ECH 86bp, against 11–15bp a few minutes earlier.
+- **Leakage check passed.** With a clean 15:29 Bloomberg midpoint signal, the raw rules lose about 0.2 Sharpe versus the Yahoo signal. The vol-scaled rule improves (2.61 vs 2.14).
+
+### What To Build Next
+- Paper-trade the frozen one-name vol-scaled rule, or run a small live book of about $100–250k. Use passive orders 15:45–15:58 with a limit-on-close fallback. This would measure our own impact.
+- Rebuild a point-in-time universe that includes liquidated funds (still open).
+
+### Open Questions
+- Our real market impact at $100–250k is unmeasured.
+- The user has not decided whether to restrict the checkpoint hook to code only.
+
+### Context for Next Session
+- Latest commit is `456e84b`, unpushed. The user must approve any push.
+- The first-trade-in-hour Yahoo price flattered the earlier results slightly, but the edge does not depend on it.
+
+---
+SESSION END: 2026-10-06 01:06 PDT | Agent: Claude Code (auto, idle, session 8fce7707)
+---

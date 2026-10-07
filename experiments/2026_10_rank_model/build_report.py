@@ -83,13 +83,17 @@ MODEL_LABEL = {
     "nn_soft_top8": "Neural net — soft top-8 objective",
     "nn_mse_then_soft": "Neural net — MSE warm-start, then soft top-8",
     "nn_soft_top8_shuffled": "Neural net soft top-8, shuffled labels (control)",
+    "attn_mse": "Cross-country attention — predict excess return (MSE)",
+    "attn_soft_top8": "Cross-country attention — soft top-8 objective",
+    "attn_soft_top8_shuffled": "Attention soft top-8, shuffled labels (control)",
 }
 MODEL_ORDER = list(MODEL_LABEL)
 SHORT = {"reference_REER_CS": "Reference\n(REER alone)", "ridge": "Ridge\n(broad linear)", "lgbm_regression": "LightGBM\nregression",
          "lgbm_top8_classifier": "LightGBM\ntop-8 classifier", "lgbm_lambdarank": "LightGBM\nlambdarank@8",
          "ridge_shuffled": "Ridge\nshuffled (control)", "lgbm_regression_shuffled": "LightGBM reg.\nshuffled (control)",
          "nn_mse": "Net\nMSE", "nn_soft_top8": "Net\nsoft top-8", "nn_mse_then_soft": "Net\nMSE→soft top-8",
-         "nn_soft_top8_shuffled": "Net soft top-8\nshuffled (control)"}
+         "nn_soft_top8_shuffled": "Net soft top-8\nshuffled (control)",
+         "attn_mse": "Attention\nMSE", "attn_soft_top8": "Attention\nsoft top-8", "attn_soft_top8_shuffled": "Attention\nshuffled (control)"}
 
 
 def strip_chart(ev: pd.DataFrame, bl: pd.DataFrame, order: list[str], se: float, n_rand: int, title: str):
@@ -736,19 +740,23 @@ ABLATION_TITLE = {
     "base256": "New base after the hill-climb: 256/128 hidden, ten seeds (full panel)",
     "nogdelt": "Without the GDELT news block (92 factors removed) — on the new base",
     "nopresence": "Without the per-source presence columns — on the new base",
+    "global": "With global context (VIX, Treasury yields and curve, broad dollar, global GPR) — on the new base",
+    "attn": "Cross-country attention (64-dim, 2 layers, 4 heads; five seeds) — vs the new base",
 }
-ABLATION_ORDER = ["noreer", "base256", "nogdelt", "nopresence"]
+ABLATION_ORDER = ["noreer", "base256", "nogdelt", "nopresence", "global", "attn"]
 # which run the NETS of each ablation are compared against: None = the untagged stage-5 run
-ABLATION_BASE = {"noreer": None, "base256": None, "nogdelt": "base256", "nopresence": "base256"}
+ABLATION_BASE = {"noreer": None, "base256": None, "nogdelt": "base256", "nopresence": "base256", "global": "base256", "attn": "base256"}
+# a tagged run whose models have different names than the base's: {ablation model: base model}
+ABLATION_MODEL_MAP = {"attn": {"attn_mse": "nn_mse", "attn_soft_top8": "nn_soft_top8"}}
 
 
-def _era_table(mo_base: pd.DataFrame, mo_abl: pd.DataFrame, ridge_mo: pd.DataFrame, model: str) -> pd.DataFrame:
+def _era_table(mo_base: pd.DataFrame, mo_abl: pd.DataFrame, ridge_mo: pd.DataFrame, model: str, abl_model: str | None = None) -> pd.DataFrame:
     """Eval top-8 excess by decade, pooled over months, for the net in the base run, in the ablation, and ridge."""
     def bym(df, m):
         e = df[(df.model == m) & (df.set == "eval") & (df.split.str.startswith("random"))]
         return e.groupby("date")["top8_excess"].mean()
     rows = []
-    series = {"with everything": bym(mo_base, model), "ablation": bym(mo_abl, model), "ridge (full panel)": bym(ridge_mo, "ridge")}
+    series = {"base": bym(mo_base, model), "ablation": bym(mo_abl, abl_model or model), "ridge (full panel)": bym(ridge_mo, "ridge")}
     for lab, (a, b) in {"2000–2009": (2000, 2009), "2010–2019": (2010, 2019), "2020–2026": (2020, 2026)}.items():
         row = {"era": lab}
         for k, s in series.items():
@@ -786,17 +794,20 @@ def stage6(c: dict) -> tuple[str, str]:
         nb = nn_rows(nn_base_run) if nn_base_run is not None else pd.DataFrame()
         base = pd.concat([floor_base, nb], ignore_index=True)
         base_label = (ABLATION_TITLE.get(nb_tag, nb_tag).split(":")[0] if nb_tag else "stage 5 (64/32, five seeds)")
+        mmap = ABLATION_MODEL_MAP.get(tag, {})
         rows, chart_rows = [], []
-        for m in models:
-            if m not in abl.model.values or m not in base.model.values:
+        for m in models + list(mmap):
+            bm = mmap.get(m, m)                      # the base model this one is compared with
+            if m not in abl.model.values or bm not in base.model.values:
                 continue
-            b_ev = base[(base.model == m) & (base.set == "eval") & (base.split_type == "random")].set_index("split")["top8_excess_ann_pct"]
+            b_ev = base[(base.model == bm) & (base.set == "eval") & (base.split_type == "random")].set_index("split")["top8_excess_ann_pct"]
             a_ev = abl[(abl.model == m) & (abl.set == "eval") & (abl.split_type == "random")].set_index("split")["top8_excess_ann_pct"]
             common = b_ev.index.intersection(a_ev.index)
             d = (a_ev[common] - b_ev[common])
-            b_bl = base[(base.model == m) & (base.set == "eval") & (base.split_type == "blocked")]["top8_excess_ann_pct"].mean()
+            b_bl = base[(base.model == bm) & (base.set == "eval") & (base.split_type == "blocked")]["top8_excess_ann_pct"].mean()
             a_bl = abl[(abl.model == m) & (abl.set == "eval") & (abl.split_type == "blocked")]["top8_excess_ann_pct"].mean()
-            rows.append({"model": MODEL_LABEL[m], "base %/yr": b_ev[common].mean(), "ablation %/yr": a_ev[common].mean(),
+            rows.append({"model": MODEL_LABEL[m] + (f" (vs {SHORT[bm].replace(chr(10), ' ')})" if bm != m else ""),
+                         "base %/yr": b_ev[common].mean(), "ablation %/yr": a_ev[common].mean(),
                          "change %/yr": d.mean(), "paired t": d.mean() / (d.std() / np.sqrt(len(d))) if len(d) > 2 else float("nan"),
                          "splits where ablation is worse": int((d < 0).sum()), "splits": len(d),
                          "blocks: base": b_bl, "blocks: ablation": a_bl})
@@ -828,7 +839,8 @@ def stage6(c: dict) -> tuple[str, str]:
                            for kind, p in (("floor", fl_tags.get(tag)), ("net", nn_tags.get(tag))) if p is not None)
         era = ""
         if tag in nn_tags and nn_base_run is not None and (nn_tags[tag] / "monthly.parquet").exists():
-            em = _era_table(pd.read_parquet(nn_base_run / "monthly.parquet"), pd.read_parquet(nn_tags[tag] / "monthly.parquet"), ridge_mo, "nn_mse")
+            em = _era_table(pd.read_parquet(nn_base_run / "monthly.parquet"), pd.read_parquet(nn_tags[tag] / "monthly.parquet"), ridge_mo,
+                            "nn_mse", abl_model=next((k for k, v in mmap.items() if v == "nn_mse"), "nn_mse"))
             era = ("<h4>By era — predict-then-select net, evaluation months pooled</h4>"
                    + table(em, {k: "{:+.1f}" for k in em.columns if k != "era"}))
         parts.append(f"""<h3>{html.escape(ABLATION_TITLE.get(tag, tag))}</h3>
@@ -919,6 +931,94 @@ is paired against the base config and against ridge. Separately, the base config
     return "done", body
 
 
+# ── stage 8: walk-forward ────────────────────────────────────────────────────
+def stage8(c: dict) -> tuple[str, str]:
+    run = latest("walk")
+    if run is None or not (run / "summary.json").exists():
+        hb = json.load(open(run / "heartbeat.json")) if run is not None and (run / "heartbeat.json").exists() else None
+        msg = (f'Running now — {hb["runs_done"]} of {hb["runs_total"]} nets trained, {hb["elapsed_s"]//60} min elapsed'
+               if hb else "Not run yet.")
+        return ("running" if hb else "pending"), f'<div class="note pending">{msg}</div>'
+    s = json.load(open(run / "summary.json"))
+    mo = pd.read_parquet(run / "monthly_oos.parquet")
+    by = pd.read_parquet(run / "by_year.parquet")
+    pf = pd.read_parquet(run / "per_fold.parquet")
+    ov = s["overall"]; pr = s["paired_vs_ridge"]
+    models = [m for m in ["ridge", "reference_REER_CS", "nn_mse", "nn_soft_top8"] if m in ov]
+    nets = [m for m in models if m.startswith("nn_")]
+    best = max(nets, key=lambda m: ov[m]["top8_excess_ann_pct"]) if nets else "ridge"
+    n_oos = s["oos_months"]
+    sd_m = mo[mo.model == "ridge"]["top8_excess"].std()
+    se = float(sd_m / np.sqrt(n_oos) * 1200)
+    k = kpis([
+        (f'{ov[best]["top8_excess_ann_pct"]:+.1f}%', f"{MODEL_LABEL[best]}: out-of-sample top-8 excess per year", f'{s["oos_start"]} → {s["oos_end"]}, {n_oos} months never seen in training · t {ov[best]["top8_t"]:.1f} · hit {ov[best]["top8_hit_rate"]:.2f}'),
+        (f'{ov["ridge"]["top8_excess_ann_pct"]:+.1f}%', "ridge, same months, same protocol", f't {ov["ridge"]["top8_t"]:.1f} · hit {ov["ridge"]["top8_hit_rate"]:.2f}'),
+        (f'{pr[best]["minus_ridge_ann_pct"]:+.1f}%' if best in pr else "—", "net minus ridge, month by month", f't {pr[best]["t"]:.1f} · net ahead in {pr[best]["wins_frac"]*100:.0f}% of months' if best in pr else ""),
+        (f'±{se:.1f}%', "noise on the whole out-of-sample figure", f"one standard error over {n_oos} months"),
+    ])
+    # chart A: cumulative OOS
+    fig, ax = plt.subplots(figsize=(12, 4.6), facecolor="white")
+    colr = {"ridge": "#2CA02C", "reference_REER_CS": "#FF7F0E", "nn_mse": "#1F77B4", "nn_soft_top8": "#9467BD"}
+    for m in models:
+        ser = mo[mo.model == m].set_index("date")["top8_excess"].sort_index()
+        ax.plot(ser.index, ser.cumsum() * 100, color=colr.get(m, "#444"), lw=2.2 if m == best else 1.5, label=MODEL_LABEL[m])
+    ax.axhline(0, color="#444", lw=0.8)
+    ax.set_ylabel("cumulative out-of-sample excess, % (simple sum)")
+    ax.legend(frameon=False, fontsize=8.5, loc="upper left")
+    ax.set_title(f"Walk-forward: each year scored by a model that had seen only the years before it ({s['n_folds']} folds, expanding window)", fontsize=10.5)
+    for sp in ("top", "right"):
+        ax.spines[sp].set_visible(False)
+    chartA = img(fig_to_b64(fig), "This is the only chart on the page where every point is a genuine forecast: nothing after a month was used to train the model that scored it.")
+    # chart B: by year bars
+    years = sorted(by["year"].unique())
+    fig, ax = plt.subplots(figsize=(12, 4), facecolor="white")
+    w = 0.8 / max(1, len(models))
+    for j, m in enumerate(models):
+        d = by[by.model == m].set_index("year").reindex(years)
+        ax.bar(np.arange(len(years)) + (j - (len(models) - 1) / 2) * w, d["top8_excess_ann_pct"], width=w, color=colr.get(m, "#444"), label=SHORT.get(m, m).replace("\n", " "))
+    ax.axhline(0, color="#444", lw=0.8)
+    ax.set_xticks(range(len(years))); ax.set_xticklabels(years, fontsize=8.5)
+    ax.set_ylabel("OOS top-8 excess, % per year")
+    ax.legend(frameon=False, fontsize=8.5, ncol=len(models))
+    ax.set_title("By calendar year", fontsize=10.5)
+    for sp in ("top", "right"):
+        ax.spines[sp].set_visible(False)
+    chartB = img(fig_to_b64(fig), "Years above zero are years the basket beat the equal-weight average out of sample.")
+    rows = []
+    for m in models:
+        a = ov[m]
+        rows.append({"model": MODEL_LABEL[m], "OOS top-8 excess %/yr": a["top8_excess_ann_pct"], "t": a["top8_t"], "hit rate": a["top8_hit_rate"],
+                     "caught of true top 8": a["precision8"] * 8, "rank IC": a["rank_ic"], "soft-k %/yr (sharp)": a[f"soft_excess_ann_pct_tau{SOFT_TAUS[0]}"],
+                     "vs ridge %/yr": pr.get(m, {}).get("minus_ridge_ann_pct", np.nan), "t (vs ridge)": pr.get(m, {}).get("t", np.nan),
+                     "L−S %/yr": a["ls_spread_ann_pct"]})
+    tbl = table(pd.DataFrame(rows), {"OOS top-8 excess %/yr": "{:+.1f}", "t": "{:.2f}", "hit rate": "{:.2f}", "caught of true top 8": "{:.2f}",
+                                     "rank IC": "{:.3f}", "soft-k %/yr (sharp)": "{:+.1f}", "vs ridge %/yr": "{:+.2f}", "t (vs ridge)": "{:.2f}", "L−S %/yr": "{:+.1f}"})
+    pfs = pf.pivot(index="oos_start", columns="model", values="top8_excess_ann_pct")[[m for m in models if m in pf.model.values]]
+    pfs.columns = [SHORT.get(m, m).replace("\n", " ") for m in pfs.columns]
+    pfs = pfs.reset_index().rename(columns={"oos_start": "fold starts"})
+    tbl2 = table(pfs, {c: "{:+.1f}" for c in pfs.columns if c != "fold starts"})
+    cfg = s["config"]
+    body = f"""
+<p class="lead">Everything before this section re-partitioned the same history at random, which tests whether a fitted relationship transfers to
+other months of the <em>same</em> history. This section is the test that was deliberately left until the design settled: train on everything
+before a cut-off, score the next twelve months, move the cut-off forward a year, repeat. The first cut-off is after {cfg["first_train_months"]} months
+of history, so the out-of-sample record runs from {s["oos_start"]} to {s["oos_end"]} — {n_oos} months, {s["n_folds"]} folds, expanding window.
+Models: ridge (penalty chosen inside each training window), the post-hill-climb net ({cfg["hidden"][0]}/{cfg["hidden"][1]}, {cfg["seeds"]} seeds
+averaged, early-stopped inside the training window) on both objectives, and the single-factor reference.</p>
+{k}
+{chartA}
+{tbl}
+{chartB}
+<h4>Each fold's twelve months</h4>
+{tbl2}
+{commentary_block(c, "stage8")}
+<div class="files"><div class="files-title">Files</div>
+{flink(run / "per_fold.xlsx", "per-fold / by-year / overall (xlsx)")} · {flink(run / "monthly_oos.parquet", "monthly OOS series")} ·
+{flink(run / "by_year.parquet", "by year")} · {flink(run / "predictions_oos.parquet", "OOS scores per country")} · {flink(run / "summary.json")} ·
+{flink(run / "run.log")} · {flink(EXP_DIR / "walk_forward.py", "script")}</div>"""
+    return "done", body
+
+
 # ── page ─────────────────────────────────────────────────────────────────────
 CSS = """
 :root{--bg:#ffffff;--fg:#1a1a1a;--muted:#5f6368;--line:#e4e7eb;--card:#f7f8fa;--accent:#1F77B4;--warn:#fff4e5;--warnb:#f0b35c;--ok:#2CA02C;--pend:#9E9E9E}
@@ -971,6 +1071,7 @@ def main() -> int:
         ("stage5", "5 · The neural network", stage5),
         ("stage6", "6 · Ablations", stage6),
         ("stage7", "7 · Hill-climb", stage7),
+        ("stage8", "8 · Walk-forward", stage8),
     ]
     rendered = []
     for key, title, fn in stages:
@@ -1001,6 +1102,7 @@ and links the files.</p>
 <div class="step"><b>5 · Neural net</b>Shared net, three objectives, same splits as the floor.</div>
 <div class="step"><b>6 · Ablations</b>Rerun floor and net with inputs removed; what does the edge depend on?</div>
 <div class="step"><b>7 · Hill-climb</b>Regularisation, width, learning rate, ensemble size — one at a time, paired.</div>
+<div class="step"><b>8 · Walk-forward</b>Train on the past, score the next year, roll. The only genuine forecast test.</div>
 </div>
 {('<div class="note"><div class="note-title">Where things stand</div>' + overview_c + '</div>') if overview_c else ''}
 {sections}

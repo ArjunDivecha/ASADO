@@ -1,0 +1,247 @@
+#!/usr/bin/env python3
+"""
+=============================================================================
+SCRIPT NAME: experiments/2026_10_rank_model/walk_forward.py
+=============================================================================
+
+INPUT FILES:
+- /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/work/experiments/2026_10_rank_model/panel_v1/feature_panel_v1.parquet
+    (or any panel from build_panel.py via --panel / --factor-set)
+- /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model/factor_set_v1.json
+- experiments/2026_10_rank_model/train_nn.py    (imported: train_one, _init_worker — the MLP trainer)
+- experiments/2026_10_rank_model/train_floor.py (imported: fit_ridge, month_metrics, aggregate)
+
+OUTPUT FILES (inside
+  /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model/results/walk_<YYYYMMDD_HHMMSS>[_<tag>]/ ):
+- monthly_oos.parquet        per (model, month): out-of-sample top-8 excess, precision@8, rank IC, soft-k excess
+- per_fold.parquet / .xlsx   per (model, fold): the same, aggregated over that fold's 12 months
+- by_year.parquet            per (model, year): annualized OOS top-8 excess, hit rate
+- predictions_oos.parquet    per (model, date, country): score, realized excess
+- summary.json, heartbeat.json, run.log
+
+VERSION: 1.0
+LAST UPDATED: 2026-10-07
+AUTHOR: Claude (Fable 5.1) for Arjun Divecha
+
+DESCRIPTION:
+The test this project deliberately postponed: a walk-forward through time.
+Train on everything before a cut-off, score the next twelve months out of
+sample, roll the cut-off forward a year, repeat. Nothing after the cut-off
+touches training, early stopping or model selection.
+
+Folds: the first cut-off is --first-train-months (default 120, i.e. ten years
+of history, scoring 2010 onwards); each fold scores 12 months; the training
+window expands. Models per fold:
+  ridge        alpha by 5-fold month-grouped CV inside the training window
+  nn_mse       the post-hill-climb MLP (256/128, dropout 0.15, wd 0.01), N seeds
+               averaged, early-stopped on a 12% slice of the training months
+  nn_soft_top8 same net on the soft top-8 objective
+  reference    REER_CS alone (no fitting), when present in the panel
+
+Reported: mean monthly OOS excess of the top-8 basket (x12), its t-stat over
+OOS months, hit rate, precision@8, rank IC; by year; paired net-minus-ridge
+over OOS months; and the cumulative series for the chart.
+
+DEPENDENCIES: torch, pandas, numpy, scipy, scikit-learn, pyarrow, xlsxwriter (experiment .venv)
+
+USAGE:
+  cd "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model"
+  .venv/bin/python walk_forward.py --seeds 10 --workers 14
+  .venv/bin/python walk_forward.py --first-train-months 280 --seeds 1 --workers 2 --tag smoke
+=============================================================================
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import logging
+import os
+import sys
+import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from datetime import datetime
+from pathlib import Path
+
+for _v in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "VECLIB_MAXIMUM_THREADS", "OPENBLAS_NUM_THREADS"):
+    os.environ.setdefault(_v, "1")
+
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+
+EXP_DIR = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model")
+sys.path.insert(0, str(EXP_DIR))
+from train_floor import PANEL, FACTOR_SET, RESULTS_ROOT, REFERENCE_FACTOR, SOFT_TAUS, aggregate, fit_ridge, month_metrics, tstat  # noqa: E402
+from train_nn import _init_worker, train_one  # noqa: E402
+
+log = logging.getLogger("walk_forward")
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--panel", type=Path, default=PANEL)
+    ap.add_argument("--factor-set", type=Path, default=FACTOR_SET)
+    ap.add_argument("--first-train-months", type=int, default=120)
+    ap.add_argument("--step-months", type=int, default=12)
+    ap.add_argument("--seeds", type=int, default=10)
+    ap.add_argument("--objectives", default="mse,soft_top8")
+    ap.add_argument("--hidden", default="256,128")
+    ap.add_argument("--dropout", type=float, default=0.15)
+    ap.add_argument("--weight-decay", type=float, default=1e-2)
+    ap.add_argument("--lr", type=float, default=1e-3)
+    ap.add_argument("--k", type=int, default=8)
+    ap.add_argument("--tau", type=float, default=0.5)
+    ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 4) - 2))
+    ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--tag", default="")
+    ap.add_argument("--no-presence", action="store_true")
+    args = ap.parse_args()
+    hidden = [int(h) for h in args.hidden.split(",")]
+    objectives = [o for o in args.objectives.split(",") if o]
+
+    t0 = time.time()
+    run_dir = RESULTS_ROOT / (f"walk_{datetime.now().strftime('%Y%m%d_%H%M%S')}" + (f"_{args.tag}" if args.tag else ""))
+    run_dir.mkdir(parents=True, exist_ok=False)
+    fmt = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+    log.setLevel(logging.INFO)
+    for h in (logging.StreamHandler(sys.stdout), logging.FileHandler(run_dir / "run.log")):
+        h.setFormatter(fmt); log.addHandler(h)
+    log.info("run dir: %s", run_dir)
+
+    # ── data (mirrors train_nn.py / train_floor.py) ─────────────────────────
+    fs = json.load(open(args.factor_set))
+    feats = [f["variable"] for f in fs["factors"]]
+    src_of = {f["variable"]: f["source"] for f in fs["factors"]}
+    panel = pd.read_parquet(args.panel).sort_values(["date", "country"]).reset_index(drop=True)
+    months = pd.DatetimeIndex(np.sort(panel["date"].unique())); countries = sorted(panel["country"].unique())
+    mi = {m: i for i, m in enumerate(months)}; ci = {c: i for i, c in enumerate(countries)}
+    sources = [] if args.no_presence else sorted(set(src_of.values()))
+    present = np.stack([panel[[v for v in feats if src_of[v] == s]].notna().mean(axis=1).to_numpy() for s in sources], axis=1) \
+        if sources else np.zeros((len(panel), 0))
+    Xrows = np.hstack([np.nan_to_num(np.clip(panel[feats].to_numpy(float), -5, 5), nan=0.0), present]).astype(np.float32)
+    F = Xrows.shape[1]
+    X = np.zeros((len(months), len(countries), F), np.float32); Y = np.zeros((len(months), len(countries)), np.float32)
+    M = np.zeros((len(months), len(countries)), bool)
+    r_m = pd.DatetimeIndex(panel["date"]).map(mi).to_numpy(); r_c = panel["country"].map(ci).to_numpy()
+    X[r_m, r_c] = Xrows; Y[r_m, r_c] = panel["fwd_excess"].to_numpy(np.float32); M[r_m, r_c] = True
+    y_rows = panel["fwd_excess"].to_numpy(float)
+    X_ridge = Xrows.astype(float)
+    has_ref = REFERENCE_FACTOR in panel.columns
+    ref_rows = panel[REFERENCE_FACTOR].fillna(0.0).to_numpy(float) if has_ref else None
+
+    # ── folds ───────────────────────────────────────────────────────────────
+    folds = []
+    t = args.first_train_months
+    while t < len(months):
+        folds.append((len(folds), t, min(t + args.step_months, len(months))))
+        t += args.step_months
+    log.info("panel: %d months, %d inputs; %d folds from %s (train on %d months, score %d, expanding)",
+             len(months), F, len(folds), months[args.first_train_months].strftime("%Y-%m"), args.first_train_months, args.step_months)
+
+    def inner_split(train_months, seed):
+        rng = np.random.default_rng(seed + 1000)
+        val = rng.permutation(train_months)[: max(3, int(round(0.12 * len(train_months))))]
+        return np.setdiff1d(train_months, val), np.sort(val)
+
+    # ── ridge + reference per fold (fast, in-process) ───────────────────────
+    scores: dict[str, np.ndarray] = {}        # model -> scores for every row (only OOS rows are used)
+    scores["ridge"] = np.full(len(panel), np.nan)
+    if has_ref:
+        scores["reference_REER_CS"] = ref_rows.copy()
+    alphas = {}
+    for fi, t_start, t_end in folds:
+        tr = r_m < t_start; oos = (r_m >= t_start) & (r_m < t_end)
+        _, s_ev, info = fit_ridge(X_ridge[tr], y_rows[tr], r_m[tr], X_ridge[oos], args.k, args.seed + fi)
+        scores["ridge"][oos] = s_ev; alphas[fi] = info["alpha"]
+    log.info("ridge done for %d folds; alphas chosen: %s", len(folds), pd.Series(alphas).value_counts().to_dict())
+
+    # ── nets per fold (process pool) ────────────────────────────────────────
+    base = {"k": args.k, "tau": args.tau, "hidden": hidden, "dropout": args.dropout, "lr": args.lr,
+            "weight_decay": args.weight_decay, "batch_months": 32, "epochs": 300, "patience": 30}
+    jobs = []
+    for fi, t_start, t_end in folds:
+        fit_m, val_m = inner_split(np.arange(t_start), args.seed + fi)
+        for obj in objectives:
+            for s in range(args.seeds):
+                jobs.append(base | {"split": f"fold_{fi}", "objective": obj, "seed": (args.seed + fi) * 100 + s, "tag": "real",
+                                    "tr_months": fit_m, "va_months": val_m, "_fold": fi})
+    log.info("net jobs: %d (%d folds x %d objectives x %d seeds); workers=%d", len(jobs), len(folds), len(objectives), args.seeds, args.workers)
+    results, done = [], 0
+    def heartbeat(last):
+        el = time.time() - t0
+        (run_dir / "heartbeat.json").write_text(json.dumps({"last": last, "runs_done": done, "runs_total": len(jobs),
+            "elapsed_s": round(el), "eta_s": round(el / done * (len(jobs) - done)) if done else None,
+            "updated": datetime.now().isoformat(timespec="seconds")}, indent=2))
+    with ProcessPoolExecutor(max_workers=args.workers, initializer=_init_worker, initargs=(X, Y, M)) as pool:
+        futs = {pool.submit(train_one, j): j for j in jobs}
+        for fut in as_completed(futs):
+            r = fut.result(); j = futs[fut]; r["_fold"] = j["_fold"]; results.append(r); done += 1
+            if done % 25 == 0 or done == len(jobs):
+                heartbeat(f'{r["split"]}/{r["objective"]}/seed{r["seed"]}'); log.info("  %d/%d nets (%.0fs)", done, len(jobs), time.time() - t0)
+    for obj in objectives:
+        scores[f"nn_{obj}"] = np.full(len(panel), np.nan)
+    for fi, t_start, t_end in folds:
+        oos = (r_m >= t_start) & (r_m < t_end)
+        for obj in objectives:
+            rs = [r for r in results if r["_fold"] == fi and r["objective"] == obj]
+            ens = np.mean([r["scores"][r_m, r_c] for r in rs], axis=0)
+            scores[f"nn_{obj}"][oos] = ens[oos]
+
+    # ── OOS scoring ─────────────────────────────────────────────────────────
+    oos_all = r_m >= folds[0][1]
+    monthly, per_fold, preds = [], [], []
+    for model, sc in scores.items():
+        mm = month_metrics(sc[oos_all], y_rows[oos_all], r_m[oos_all], args.k)
+        mm.insert(0, "model", model); mm["date"] = months[mm["month_id"].to_numpy()]
+        mm["fold"] = [next(fi for fi, a, b in folds if a <= m < b) for m in mm["month_id"]]
+        monthly.append(mm)
+        for fi, g in mm.groupby("fold"):
+            a = aggregate(g.drop(columns=["model", "date", "fold"])); a.update({"model": model, "fold": fi,
+                "oos_start": months[folds[fi][1]].strftime("%Y-%m"), "train_months": folds[fi][1]}); per_fold.append(a)
+        preds.append(pd.DataFrame({"model": model, "date": panel["date"][oos_all].to_numpy(), "country": panel["country"][oos_all].to_numpy(),
+                                   "score": sc[oos_all], "fwd_excess": y_rows[oos_all]}))
+    mo = pd.concat(monthly, ignore_index=True)
+    pf = pd.DataFrame(per_fold)
+    by_year = (mo.assign(year=mo["date"].dt.year).groupby(["model", "year"])
+               .agg(top8_excess_ann_pct=("top8_excess", lambda x: x.mean() * 1200), hit_rate=("top8_excess", lambda x: (x > 0).mean()),
+                    months=("top8_excess", "size")).reset_index())
+    overall = {}
+    for model, g in mo.groupby("model"):
+        a = aggregate(g.drop(columns=["model", "date", "fold"]))
+        overall[model] = a
+    paired = {}
+    rid = mo[mo.model == "ridge"].set_index("date")["top8_excess"]
+    for model in scores:
+        if model == "ridge":
+            continue
+        d = mo[mo.model == model].set_index("date")["top8_excess"].reindex(rid.index) - rid
+        paired[model] = {"minus_ridge_ann_pct": float(d.mean() * 1200), "t": tstat(d), "months": int(d.notna().sum()),
+                         "wins_frac": float((d > 0).mean())}
+
+    mo.to_parquet(run_dir / "monthly_oos.parquet", index=False)
+    pf.to_parquet(run_dir / "per_fold.parquet", index=False)
+    by_year.to_parquet(run_dir / "by_year.parquet", index=False)
+    pd.concat(preds, ignore_index=True).to_parquet(run_dir / "predictions_oos.parquet", index=False)
+    with pd.ExcelWriter(run_dir / "per_fold.xlsx", engine="xlsxwriter") as xw:
+        pf.to_excel(xw, sheet_name="per_fold", index=False, na_rep="—")
+        by_year.to_excel(xw, sheet_name="by_year", index=False, na_rep="—")
+        pd.DataFrame(overall).T.to_excel(xw, sheet_name="overall", na_rep="—")
+    runs = pd.DataFrame([{k: v for k, v in r.items() if k != "scores"} for r in results])
+    summary = {"run_dir": str(run_dir), "panel": str(args.panel), "factor_set": str(args.factor_set), "tag": args.tag,
+               "config": {k: (str(v) if isinstance(v, Path) else v) for k, v in vars(args).items()} | {"hidden": hidden},
+               "n_folds": len(folds), "oos_start": months[folds[0][1]].strftime("%Y-%m"), "oos_end": months[-1].strftime("%Y-%m"),
+               "oos_months": int(mo[mo.model == "ridge"].shape[0]), "overall": overall, "paired_vs_ridge": paired,
+               "ridge_alphas": {str(k): v for k, v in alphas.items()},
+               "net_runs_stats": runs.groupby("objective")[["best_epoch", "seconds"]].mean().round(1).to_dict("index") if len(runs) else {},
+               "elapsed_s": round(time.time() - t0, 1)}
+    (run_dir / "summary.json").write_text(json.dumps(summary, indent=2, default=str))
+    heartbeat("done")
+    log.info("OUT-OF-SAMPLE (%s -> %s, %d months): %s", summary["oos_start"], summary["oos_end"], summary["oos_months"],
+             {m: f'{a["top8_excess_ann_pct"]:+.2f}%/yr t={a["top8_t"]:.2f} hit={a["top8_hit_rate"]:.2f}' for m, a in overall.items()})
+    log.info("paired vs ridge: %s", {m: f'{p["minus_ridge_ann_pct"]:+.2f} t={p["t"]:.2f}' for m, p in paired.items()})
+    log.info("done in %.1f min", (time.time() - t0) / 60)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

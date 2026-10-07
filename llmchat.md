@@ -1886,8 +1886,18 @@ clean v3 walk-forward (`walk_20261007_140136`) the net makes +4.5 %/yr OOS, t 3.
 changed/month (268 % one-way/yr) vs +4.1 / 3.8 names on plain top-8; ridge +2.25; net − ridge +2.25
 (t 1.8). Branch `exp/NN` pushed to origin at `bbbe348`.
 
+**Addendum 2 (14:40 PDT) — design holdout run; headline tempered.** Choosing the design on the first
+half (2000-02 → 2013-05) picks the same network (256/128, do .15, wd .01, lr 1e-3, ~10 seeds); buffer M=10.
+Blind second half (2013-06 → 2026-09, 160 months): net +2.0 %/yr (t 1.3), ridge +3.2 (t 2.1), net − ridge
+−1.2 (t −0.7); M16 makes it a tie (2.1 vs 2.0). The stage-8 walk over the same months gave net +2.7/+3.9;
+the two runs' net-basket monthly excess correlates only 0.21 (ridge ~0.7) — refit calendar + seeds move
+the net's result by as much as its edge. Verdict now: modest positive edge ~2–4 %/yr, larger pre-2013;
+net and ridge indistinguishable once the design is held out; hysteresis halves turnover at no cost.
+Runs: `hill_*_holdout`, `walk_*_holdout_firsthalf`, `walk_*_holdout`, `walk_*_holdout_fullhist`.
+
 ### What To Build Next
-- Design holdout: choose architecture/seeds on the first half of history, walk forward on the second.
+- Monthly-refit walk-forward with 30–50 seeds (net and ridge), repeat the holdout, report run-to-run ranges.
+- (done) Design holdout: choose architecture/seeds on the first half of history, walk forward on the second.
 - Vintage-archived slow inputs (extend the audit's ALFRED method); T2 macro publication lags.
 - Forward paper-trade the frozen net.
 

@@ -79,8 +79,41 @@ MODEL_LABEL = {
     "lgbm_lambdarank": "LightGBM — lambdarank@8",
     "ridge_shuffled": "Ridge, shuffled labels (control)",
     "lgbm_regression_shuffled": "LightGBM regression, shuffled labels (control)",
+    "nn_mse": "Neural net — predict excess return (MSE)",
+    "nn_soft_top8": "Neural net — soft top-8 objective",
+    "nn_mse_then_soft": "Neural net — MSE warm-start, then soft top-8",
+    "nn_soft_top8_shuffled": "Neural net soft top-8, shuffled labels (control)",
 }
 MODEL_ORDER = list(MODEL_LABEL)
+SHORT = {"reference_REER_CS": "Reference\n(REER alone)", "ridge": "Ridge\n(broad linear)", "lgbm_regression": "LightGBM\nregression",
+         "lgbm_top8_classifier": "LightGBM\ntop-8 classifier", "lgbm_lambdarank": "LightGBM\nlambdarank@8",
+         "ridge_shuffled": "Ridge\nshuffled (control)", "lgbm_regression_shuffled": "LightGBM reg.\nshuffled (control)",
+         "nn_mse": "Net\nMSE", "nn_soft_top8": "Net\nsoft top-8", "nn_mse_then_soft": "Net\nMSE→soft top-8",
+         "nn_soft_top8_shuffled": "Net soft top-8\nshuffled (control)"}
+
+
+def strip_chart(ev: pd.DataFrame, bl: pd.DataFrame, order: list[str], se: float, n_rand: int, title: str):
+    """Dots = per-split eval top-8 excess; bar = mean; diamond = blocked mean; band = ±2 SE of one split."""
+    fig, ax = plt.subplots(figsize=(12, 5.2), facecolor="white")
+    bl_mean = bl.groupby("model")["top8_excess_ann_pct"].mean() if len(bl) else pd.Series(dtype=float)
+    for i, m in enumerate(order):
+        v = ev[ev.model == m]["top8_excess_ann_pct"].to_numpy()
+        jit = (np.random.default_rng(i).random(len(v)) - 0.5) * 0.35
+        colr = "#9E9E9E" if "shuffled" in m else ("#FF7F0E" if m.startswith("reference") else ("#2CA02C" if m == "ridge" else "#1F77B4"))
+        ax.scatter(np.full(len(v), i) + jit, v, s=22, color=colr, alpha=0.6, edgecolor="white", lw=0.5)
+        if len(v):
+            ax.plot([i - 0.3, i + 0.3], [v.mean()] * 2, color="#000", lw=2.2)
+        if m in bl_mean.index:
+            ax.scatter([i + 0.42], [bl_mean[m]], marker="D", s=46, color="#D62728", zorder=5)
+    ax.axhline(0, color="#444", lw=0.8)
+    ax.axhspan(-2 * se, 2 * se, color="#D62728", alpha=0.06, lw=0)
+    ax.set_xticks(range(len(order)))
+    ax.set_xticklabels([SHORT.get(m, m) for m in order], fontsize=8.5)
+    ax.set_ylabel("top-8 basket excess over the average, % per year")
+    ax.set_title(title, fontsize=10)
+    for sp in ("top", "right"):
+        ax.spines[sp].set_visible(False)
+    return fig
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -549,6 +582,141 @@ statement about stability on this history, not about the future.</p></div>
     return "done", body
 
 
+# ── stage 5: neural network ──────────────────────────────────────────────────
+def stage5(c: dict) -> tuple[str, str]:
+    run = latest("nn")
+    if run is None or not (run / "summary.json").exists():
+        hb = json.load(open(run / "heartbeat.json")) if run is not None and (run / "heartbeat.json").exists() else None
+        msg = (f'Running now — {hb["runs_done"]} of {hb["runs_total"]} nets trained, {hb["elapsed_s"]//60} min elapsed'
+               if hb else "Not run yet.")
+        return ("running" if hb else "pending"), f'<div class="note pending">{msg}</div>'
+    s = json.load(open(run / "summary.json"))
+    ps = pd.read_parquet(run / "per_split.parquet")
+    mo = pd.read_parquet(run / "monthly.parquet")
+    runs = pd.read_parquet(run / "runs.parquet")
+    cap = s["capacity_check"]
+    floor_run = latest("floor")
+    fs = json.load(open(floor_run / "summary.json")) if floor_run else None
+    se = fs["noise_floor"]["se_ann_pct_random_split"] if fs else 2.9
+    n_rand = s["config"]["n_random"]
+    cfg = s["config"]
+
+    ens = ps[ps.member != "seed"]
+    ev = ens[(ens.set == "eval") & (ens.split_type == "random")]
+    bl = ens[(ens.set == "eval") & (ens.split_type == "blocked")]
+    tr = ens[(ens.set == "train") & (ens.split_type == "random")]
+    seeds = ps[(ps.member == "seed") & (ps.set == "eval") & (ps.split_type == "random")]
+    order = [m for m in ["ridge", "reference_REER_CS", "nn_mse", "nn_soft_top8", "nn_mse_then_soft", "nn_soft_top8_shuffled"] if m in ev.model.values]
+    nets = [m for m in order if m.startswith("nn_") and "shuffled" not in m]
+    agg = ev.groupby("model")["top8_excess_ann_pct"].agg(["mean", "std"])
+    best = agg.loc[nets, "mean"].idxmax()
+    piv = ev.pivot(index="split", columns="model", values="top8_excess_ann_pct")
+    diff = piv[best] - piv["ridge"] if "ridge" in piv else None
+    diff_t = float(diff.mean() / (diff.std() / np.sqrt(len(diff)))) if diff is not None else float("nan")
+    bl_agg = bl.groupby("model")["top8_excess_ann_pct"].mean()
+    k = kpis([
+        (f'{agg.loc[best, "mean"]:+.1f}%', "best net's top-8 excess, per year (eval months)", f'{MODEL_LABEL[best]} · seed-ensemble'),
+        (f'{agg.loc["ridge", "mean"]:+.1f}%' if "ridge" in agg.index else "—", "the broad linear model, same months", "the bar to clear"),
+        (f'{diff.mean():+.1f}%' if diff is not None else "—", "net minus ridge, split by split", f'paired t-stat {diff_t:.1f} over {n_rand} splits'),
+        (f'{bl_agg.get(best, float("nan")):+.1f}%', "best net on contiguous blocks", f'ridge {bl_agg.get("ridge", float("nan")):+.1f}% on the same blocks'),
+    ])
+    chartA = img(fig_to_b64(strip_chart(ev, bl, order, se, n_rand,
+                 f"Evaluation months only: each dot is one of {n_rand} random splits (nets = 5-seed ensembles); black bar = mean; "
+                 "red diamond = mean over the 5 contiguous blocks; pink band = ±2 SE of a single split")),
+                 "The nets next to the broad linear model and the single-factor reference on exactly the same splits. Grey = shuffled-label control.")
+    # paired differences vs ridge
+    fig, ax = plt.subplots(figsize=(11, 3.8), facecolor="white")
+    for j, m in enumerate(nets):
+        d = (piv[m] - piv["ridge"]).sort_values().to_numpy()
+        ax.plot(np.arange(len(d)) + j * 0.0, d, marker="o", ms=4, lw=1.2, label=SHORT[m].replace("\n", " "))
+    ax.axhline(0, color="#444", lw=0.8)
+    ax.set_xlabel(f"random splits, sorted by difference ({n_rand})")
+    ax.set_ylabel("net minus ridge, % per year")
+    ax.legend(frameon=False, fontsize=8.5)
+    ax.set_title("Split by split: does the net beat the broad linear model on the same months?", fontsize=10.5)
+    for sp in ("top", "right"):
+        ax.spines[sp].set_visible(False)
+    chartB = img(fig_to_b64(fig), "Each point is one split; above zero the net won that split. A line mostly above zero with a small spread is a real edge; "
+                                  "a line straddling zero is a tie.")
+    # cumulative
+    def monthly_avg(df_m, model):
+        d = df_m[(df_m.model == model) & (df_m.set == "eval") & (df_m.split.str.startswith("random"))]
+        return d.groupby("date")["top8_excess"].mean().sort_index()
+    fig, ax = plt.subplots(figsize=(12, 4.4), facecolor="white")
+    ax.plot(monthly_avg(mo, best).index, monthly_avg(mo, best).cumsum() * 100, color="#1F77B4", lw=2.2, label=MODEL_LABEL[best])
+    if floor_run and (floor_run / "monthly.parquet").exists():
+        fm = pd.read_parquet(floor_run / "monthly.parquet")
+        for m, colr in (("ridge", "#2CA02C"), ("reference_REER_CS", "#FF7F0E")):
+            ser = monthly_avg(fm, m)
+            ax.plot(ser.index, ser.cumsum() * 100, color=colr, lw=1.5, label=MODEL_LABEL[m])
+    if "nn_soft_top8_shuffled" in mo.model.values:
+        ser = monthly_avg(mo, "nn_soft_top8_shuffled")
+        ax.plot(ser.index, ser.cumsum() * 100, color="#9E9E9E", lw=1.2, ls="--", label=MODEL_LABEL["nn_soft_top8_shuffled"])
+    ax.axhline(0, color="#444", lw=0.8)
+    ax.set_ylabel("cumulative excess, % (simple sum)")
+    ax.legend(frameon=False, fontsize=8.5, loc="upper left")
+    ax.set_title("Where the excess came from over time (evaluation months, averaged over the splits in which each month was held out)", fontsize=10)
+    for sp in ("top", "right"):
+        ax.spines[sp].set_visible(False)
+    chartC = img(fig_to_b64(fig), "Compare the slopes rather than the end points: a model whose line keeps rising is earning its edge across the whole history.")
+
+    def tbl(df_src, label, extra_seed_sd=False):
+        rows = []
+        for m in order:
+            if m not in df_src.model.values:
+                continue
+            d = df_src[df_src.model == m]
+            row = {"model": MODEL_LABEL[m], "top-8 excess %/yr": d["top8_excess_ann_pct"].mean(),
+                   "± across splits": d["top8_excess_ann_pct"].std(), "hit rate": d["top8_hit_rate"].mean(),
+                   "caught of true top 8": d["precision8"].mean() * 8, "rank IC": d["rank_ic"].mean(),
+                   "soft-k excess %/yr (sharp)": d["soft_excess_ann_pct_tau0.25"].mean(),
+                   "soft-k excess %/yr (soft)": d["soft_excess_ann_pct_tau1.0"].mean(), "splits": len(d)}
+            if extra_seed_sd and m.startswith("nn_"):
+                sd_seed = seeds[seeds.model == m].groupby("split")["top8_excess_ann_pct"].std().mean()
+                row["± across seeds (within a split)"] = sd_seed
+            rows.append(row)
+        f = {"top-8 excess %/yr": "{:+.1f}", "± across splits": "{:.1f}", "hit rate": "{:.2f}", "caught of true top 8": "{:.2f}",
+             "rank IC": "{:.3f}", "soft-k excess %/yr (sharp)": "{:+.1f}", "soft-k excess %/yr (soft)": "{:+.1f}",
+             "± across seeds (within a split)": "{:.1f}"}
+        return f"<h4>{label}</h4>" + table(pd.DataFrame(rows), f)
+    tables = tbl(ev, f"Evaluation months, {n_rand} random splits (nets are 5-seed ensembles)", True) + \
+             tbl(bl, "Evaluation months, 5 contiguous blocks") + tbl(tr, "Training months (fit, not performance)")
+    rs = runs[runs.tag == "real"].groupby("objective")[["best_epoch", "seconds"]].mean().round(1)
+    body = f"""
+<p class="lead">The first neural network: one small network, shared across countries, scoring each country-month from the same
+{s["n_inputs"]} inputs the linear model used ({cfg["hidden"][0]} and {cfg["hidden"][1]} hidden units, dropout {cfg["dropout"]},
+weight decay {cfg["weight_decay"]}). It is judged on <strong>exactly the same {n_rand} random splits and 5 blocks</strong> as the floor,
+with the same metrics, so every comparison with ridge is paired. The bar is the broad linear model, not the single factor.</p>
+<div class="two-col"><div>
+<h4>Three ways of training the same network</h4>
+<ul>
+<li><strong>Predict excess return (MSE)</strong> — regress on next-month excess return, then pick the 8 highest predictions. The "predict, then select" baseline.</li>
+<li><strong>Soft top-8 objective</strong> — the objective itself. Within each month the network's 34 scores are z-scored (so it cannot sharpen the selection by scaling), turned into memberships that sum to 8 with no country above 12.5%, and the network is trained to maximise the membership-weighted next-month excess return — the expected return of the basket. The gradient through the selection is exact; no reinforcement learning is involved.</li>
+<li><strong>MSE warm-start, then soft top-8</strong> — train on MSE first, then fine-tune on the objective, to see whether the direct objective adds anything once the network already predicts returns.</li>
+</ul></div><div>
+<h4>Discipline</h4>
+<ul>
+<li>Five seeds per split and objective; the <strong>seed-average of scores is the model</strong> ("ensemble"). Single-seed results are kept to show how much the nets wobble.</li>
+<li>Early stopping on a 12% slice of <em>training</em> months, on the soft-top-8 expected excess; evaluation months never touch training, stopping or selection.</li>
+<li>Shuffled-label control on the first {cfg["n_shuffle"]} random splits.</li>
+<li>Fit-capacity check: an unregularised net on 24 months reached a top-8 excess of {cap["fitted_top8_excess_pct_month"]:.1f}% per month against
+{cap["perfect_foresight_top8_excess_pct_month"]:.1f}% with perfect foresight (precision {cap["fitted_precision8"]:.2f}, rank IC {cap["fitted_rank_ic"]:.2f}) — the machinery can fit when asked to.</li>
+<li>Typical run: {int(rs["best_epoch"].mean())} epochs to the best inner-validation score, {rs["seconds"].mean():.0f} s on one CPU core; {s["n_runs"]} nets in {s["elapsed_s"]/60:.0f} minutes.</li>
+</ul></div></div>
+{k}
+{chartA}
+{chartB}
+{tables}
+{chartC}
+{commentary_block(c, "stage5")}
+<div class="files"><div class="files-title">Files</div>
+{flink(run / "per_split.xlsx", "per-split results (xlsx, with a runs sheet)")} · {flink(run / "per_split.parquet", "per-split (parquet)")} ·
+{flink(run / "monthly.parquet", "monthly series per split/model")} · {flink(run / "predictions_eval.parquet", "evaluation-month scores per country")} ·
+{flink(run / "runs.parquet", "one row per trained net")} · {flink(run / "capacity_check.json")} · {flink(run / "summary.json")} ·
+{flink(run / "run.log")} · {flink(EXP_DIR / "train_nn.py", "script")}</div>"""
+    return "done", body
+
+
 # ── page ─────────────────────────────────────────────────────────────────────
 CSS = """
 :root{--bg:#ffffff;--fg:#1a1a1a;--muted:#5f6368;--line:#e4e7eb;--card:#f7f8fa;--accent:#1F77B4;--warn:#fff4e5;--warnb:#f0b35c;--ok:#2CA02C;--pend:#9E9E9E}
@@ -598,6 +766,7 @@ def main() -> int:
         ("stage2", "2 · Each factor on its own", stage2),
         ("stage3", "3 · Your factor set & the modelling panel", stage3),
         ("stage4", "4 · The floor: linear model & trees", stage4),
+        ("stage5", "5 · The neural network", stage5),
     ]
     rendered = []
     for key, title, fn in stages:
@@ -625,7 +794,7 @@ and links the files.</p>
 <div class="step"><b>2 · Which factors predict anything alone?</b>Regress each on next-month return; top-8 baskets.</div>
 <div class="step"><b>3 · Freeze the inputs</b>Your pick, lags applied, one modelling table.</div>
 <div class="step"><b>4 · The floor</b>Ridge and boosted trees on the top-8 objective, many random splits.</div>
-<div class="step"><b>5 · Neural net (next)</b>Shared net with a soft-top-8 loss; then cross-country attention.</div>
+<div class="step"><b>5 · Neural net</b>Shared net, three objectives, same splits as the floor; then cross-country attention.</div>
 </div>
 {('<div class="note"><div class="note-title">Where things stand</div>' + overview_c + '</div>') if overview_c else ''}
 {sections}

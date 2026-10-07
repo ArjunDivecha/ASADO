@@ -36,7 +36,13 @@ history, so the out-of-sample record runs from 2005; Arjun's choice,
 2026-10-07); each fold scores 12 months; the training window expands from
 there, or with --window N rolls (each fold trains only on the trailing N
 months before its cut-off; ridge's penalty CV and the net's early-stopping
-slice are drawn from that window too). The first folds train on very little (about 2,000 rows), which the
+slice are drawn from that window too).
+
+PROJECT DEFAULT (2026-10-07, Arjun): rolling 60-month window, 30 nets per
+fold, hysteresis basket (hold while ranked <= 16). Pass --window 0 for the
+expanding window and --seeds 10 to reproduce the earlier runs. Because single
+walk-forwards proved seed-sensitive, headline figures are reported across
+several independent --seed draws (see default_model.py). The first folds train on very little (about 2,000 rows), which the
 per-fold table shows honestly. Models per fold:
   ridge        alpha by 5-fold month-grouped CV inside the training window
   nn_mse       the post-hill-climb MLP (256/128, dropout 0.15, wd 0.01), N seeds
@@ -59,7 +65,8 @@ DEPENDENCIES: torch, pandas, numpy, scipy, scikit-learn, pyarrow, xlsxwriter (ex
 
 USAGE:
   cd "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model"
-  .venv/bin/python walk_forward.py --seeds 10 --workers 14
+  .venv/bin/python walk_forward.py --workers 14 --seed 0 --tag default_s0          # project default
+  .venv/bin/python walk_forward.py --window 0 --seeds 10 --workers 14              # earlier expanding runs
   .venv/bin/python walk_forward.py --first-train-months 280 --seeds 1 --workers 2 --tag smoke
 =============================================================================
 """
@@ -98,7 +105,8 @@ def main() -> int:
     ap.add_argument("--first-train-months", type=int, default=60,
                     help="training months before the first out-of-sample fold (Arjun 2026-10-07: five years, then expanding)")
     ap.add_argument("--step-months", type=int, default=12)
-    ap.add_argument("--seeds", type=int, default=10)
+    ap.add_argument("--seeds", type=int, default=30,
+                    help="nets averaged per fold (default 30 since 2026-10-07: ten-net ensembles proved seed-sensitive in walk-forward)")
     ap.add_argument("--objectives", default="mse,soft_top8")
     ap.add_argument("--hidden", default="256,128")
     ap.add_argument("--dropout", type=float, default=0.15)
@@ -114,8 +122,9 @@ def main() -> int:
                     help="hysteresis rank buffer M for the headline basket: hold a name while ranked <= M (default 16; 8 = plain top-8)")
     ap.add_argument("--max-month", type=int, default=0,
                     help="use only the first N months of the panel (design holdout: select on the first half); 0 = all")
-    ap.add_argument("--window", type=int, default=0,
-                    help="rolling training window in months (train only on the trailing N months before each cut-off); 0 = expanding")
+    ap.add_argument("--window", type=int, default=60,
+                    help="rolling training window in months: train only on the trailing N months before each cut-off "
+                         "(default 60 — Arjun 2026-10-07: 'the world changes'); 0 = expanding")
     args = ap.parse_args()
     hidden = [int(h) for h in args.hidden.split(",")]
     objectives = [o for o in args.objectives.split(",") if o]

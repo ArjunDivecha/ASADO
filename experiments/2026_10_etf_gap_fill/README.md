@@ -238,3 +238,20 @@ Variants were fixed before results. Signal z = (r − group mean) / own 60d vol.
   (Sharpe 2.19 vs 1.94, CI +0.05 to +0.46). It ties over the last 5y (1.60 vs 1.55) and is not
   significantly better in E5 (gross 2.44 vs 2.14; net +2.9%/yr vs −0.3%, CI spans zero). It is
   the only diversified book that is not negative net of the half spread, but only barely.
+
+---
+
+# Double weight on the most extreme days (2026-10-07, `etf_reversal_double_top.py`, run `runs/double_top_20261007_003049`)
+
+One-name relative-vol rule at 200% when the pick's |z| is in the top quintile (trailing-252d cutoff,
+known at T; an in-sample cutoff is shown as an upper bound), 100% otherwise. Gross.
+- Return rises and risk-adjusted return falls slightly in every long window. Full history: net
+  +54%/yr vs +40%, Sharpe 1.40 vs 1.51 (CI −0.23 to +0.03). Last 5y: +95% vs +57%, Sharpe 1.86 vs
+  1.92. E5: +135% vs +86%, Sharpe 2.70 vs 2.85. Only the last 12 months show a higher Sharpe.
+- Reason: extreme days pay about 2-3x more but are proportionally riskier, so doubling them
+  concentrates risk without improving return per unit of risk. Levering the plain rule to the same
+  vol (about 1.46x) earns more than doubling the extreme days (about 50%/yr vs 46% arithmetic
+  active, full history).
+- The 2010-2019 drawdown deepens: the max drawdown of cumulative active log return goes from 0.98
+  to 1.18 (relative wealth falls to about 31% of its peak vs about 38%). The worst day doubles to
+  −19% vs −10%.

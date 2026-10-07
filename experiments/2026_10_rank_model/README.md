@@ -141,6 +141,34 @@ early stopping at ~100 rounds, sometimes 1). Contiguous blocks: ridge 3.2, refer
 proximity. Controls at zero. Ridge is steadier across eras than REER (every 5-year era
 3.4–8.6 %/yr; REER −2.9 since 2025).
 
+## Step 5 — the neural network (2026-10-07)
+
+`train_nn.py` → `results/nn_<timestamp>/` (first full run `nn_20261007_112400`, 576 nets,
+3.6 min on 14 cores). Shared MLP 271 → 64 → 32 → 1 (GELU, dropout 0.15, weight decay
+0.01), three objectives: `mse` (predict excess, pick top 8), `soft_top8` (z-score the
+34 outputs, sigmoid-threshold memberships summing to 8, maximise membership-weighted
+excess; exact implicit-function gradient, finite-difference verified), `mse_then_soft`.
+Five seeds → score-average ensemble. Same 30 random splits + 5 blocks as the floor;
+early stopping on 12% of training months; shuffled-label control on 10 splits;
+capacity check (24 months, unregularised) fits perfectly.
+
+Eval, random splits (5-seed ensembles, mean over 30):
+
+| model | top-8 excess %/yr | vs ridge (paired) | wins/30 | blocks %/yr |
+|---|---|---|---|---|
+| net, MSE | +6.3 | +1.1, t 2.1 | 22 | 4.7 |
+| net, soft top-8 | +6.4 | +1.1, t 2.1 | 20 | 3.4 |
+| net, MSE → soft | +6.5 | +1.3, t 2.3 | 21 | 4.3 |
+| ridge (bar) | +5.3 | — | — | 3.2 |
+| net, shuffled control | +0.7 | | | |
+
+Verdict: **the net clears the bar by about a point a year — all of it from 2000–2009.**
+Paired by month, net − ridge ≈ +4 %/yr in 2000–09 (t 2.5–3.0) and ≈ 0 in 2010–19 and
+2020–26 (t ≈ 0). Objectives tie on the basket; the soft objective widens the long-short
+spread (12.9 vs 11.5). Ensembling adds ~1–1.7 points over a single seed (within-split seed
+sd ≈ 2). Nets fit training months at 30–43 %/yr (ridge 16) — regularisation is the next
+lever. Controls at zero.
+
 ## Running report
 
 `build_report.py` → `results/report.html` — one self-contained light-mode page: a
@@ -150,7 +178,7 @@ Regenerate after any stage: `.venv/bin/python build_report.py && open results/re
 
 ## Next
 
-Neural net (shared MLP, soft-top-8 expected-excess loss) on the same 30 splits + 5
-blocks; bar to clear ≈ 5 %/yr random / 3 %/yr blocked. Cheap hill-climb steps first:
-LightGBM heavily regularized on the top-60 screen factors, and ridge on the same reduced
-set. Then global-context block (v2 panel) and cross-country attention.
+Hill-climb on the net (each full run < 4 min): regularisation/width sweep; 10–20 seed
+ensembles; explain the 2000–09 edge (rerun without GDELT, without presence columns).
+Then global-context block (v2 panel) and cross-country attention. Walk-forward through
+time only once the design settles.

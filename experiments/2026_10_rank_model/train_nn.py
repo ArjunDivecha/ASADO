@@ -258,12 +258,13 @@ def main() -> int:
     ap.add_argument("--patience", type=int, default=30)
     ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 4) - 2))
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--tag", default="", help="ablation tag; run dir becomes nn_<ts>_<tag>; floor rows joined from floor_*_<tag>")
     args = ap.parse_args()
     hidden = [int(h) for h in args.hidden.split(",")]
     objectives = [o for o in args.objectives.split(",") if o]
 
     t0 = time.time()
-    run_dir = RESULTS_ROOT / f"nn_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    run_dir = RESULTS_ROOT / (f"nn_{datetime.now().strftime('%Y%m%d_%H%M%S')}" + (f"_{args.tag}" if args.tag else ""))
     run_dir.mkdir(parents=True, exist_ok=False)
     fmt = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
     log.setLevel(logging.INFO)
@@ -416,7 +417,9 @@ def main() -> int:
 
     ps = pd.DataFrame(per_split)
     # bring the floor's ridge / reference rows alongside (same split names)
-    floor = args.floor_run or (sorted(p for p in RESULTS_ROOT.glob("floor_*") if p.is_dir()) or [None])[-1]
+    import re as _re
+    pat = _re.compile(r"^floor_\d{8}_\d{6}" + (f"_{_re.escape(args.tag)}$" if args.tag else "$"))
+    floor = args.floor_run or (sorted(p for p in RESULTS_ROOT.glob("floor_*") if p.is_dir() and pat.match(p.name)) or [None])[-1]
     if floor and (Path(floor) / "per_split.parquet").exists():
         fl = pd.read_parquet(Path(floor) / "per_split.parquet")
         fl = fl[fl.model.isin(["ridge", "reference_REER_CS", "lgbm_regression"])].copy()
@@ -436,7 +439,8 @@ def main() -> int:
     ens_ev = ps[(ps.set == "eval") & (ps.member != "seed")]
     tbl = ens_ev.groupby(["split_type", "model"])["top8_excess_ann_pct"].agg(["mean", "std", "count"]).round(2)
     summary = {
-        "run_dir": str(run_dir), "panel": str(args.panel), "floor_run": str(floor),
+        "run_dir": str(run_dir), "panel": str(args.panel), "floor_run": str(floor), "tag": args.tag,
+        "factor_set": str(args.factor_set),
         "config": {k: (v if not isinstance(v, Path) else str(v)) for k, v in vars(args).items()} | {"hidden": hidden, "soft_taus_eval": SOFT_TAUS},
         "n_months": int(len(months)), "n_inputs": int(F), "n_runs": len(jobs), "capacity_check": capacity,
         "eval_top8_excess_by_split_type": {f"{a}/{b}": {"mean": float(r["mean"]), "std": float(r["std"]), "n": int(r["count"])}

@@ -245,12 +245,13 @@ def main() -> int:
     ap.add_argument("--k", type=int, default=8)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--threads", type=int, default=16)
+    ap.add_argument("--tag", default="", help="ablation tag; run dir becomes floor_<ts>_<tag> and the report lists it separately")
     args = ap.parse_args()
     if args.n_blocks < 2:
         ap.error("--n-blocks must be >= 2 (one block would hold out every month)")
 
     t0 = time.time()
-    run_dir = RESULTS_ROOT / f"floor_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    run_dir = RESULTS_ROOT / (f"floor_{datetime.now().strftime('%Y%m%d_%H%M%S')}" + (f"_{args.tag}" if args.tag else ""))
     run_dir.mkdir(parents=True, exist_ok=False)
     fmt = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
     log.setLevel(logging.INFO)
@@ -282,7 +283,10 @@ def main() -> int:
     n_in_month = panel.groupby("date")["fwd_excess"].transform("size")
     label_top8 = (rank_desc <= args.k).astype(int).to_numpy()
     label_decile = np.clip(np.floor((n_in_month - rank_desc) / n_in_month * 10), 0, 9).astype(int).to_numpy()
-    ref_score = panel[REFERENCE_FACTOR].fillna(0.0).to_numpy(float)
+    has_ref = REFERENCE_FACTOR in panel.columns
+    ref_score = panel[REFERENCE_FACTOR].fillna(0.0).to_numpy(float) if has_ref else None
+    if not has_ref:
+        log.warning("reference factor %s is not in this panel (ablation?) -- reference rows skipped", REFERENCE_FACTOR)
 
     log.info("panel: %d rows, %d months, %d features (+%d block-presence cols), target std %.4f",
              len(panel), len(months), len(feats), len(sources), y.std())
@@ -343,7 +347,8 @@ def main() -> int:
         ts = time.time()
 
         # reference single factor, no fitting
-        record(split_name, split_type, "reference_REER_CS", ref_score[tr], ref_score[ev], tr, ev)
+        if has_ref:
+            record(split_name, split_type, "reference_REER_CS", ref_score[tr], ref_score[ev], tr, ev)
 
         s_tr, s_ev, info = fit_ridge(X_ridge[tr], y[tr], month_id[tr], X_ridge[ev], args.k, seed)
         record(split_name, split_type, "ridge", s_tr, s_ev, tr, ev, info)
@@ -403,11 +408,13 @@ def main() -> int:
     summary_tbl.columns = ["_".join(c) for c in summary_tbl.columns]
     summary_tbl = summary_tbl.reset_index()
 
-    # noise floor: SE of the mean monthly excess for a random 8-pick over one eval set
-    sd_month = pd.concat(monthly)[lambda d: (d.model == "reference_REER_CS") & (d.set == "eval")]["top8_excess"].std()
+    # noise floor: SE of the mean monthly excess of an 8-pick basket over one eval set
+    nf_model = "reference_REER_CS" if has_ref else "ridge"
+    sd_month = pd.concat(monthly)[lambda d: (d.model == nf_model) & (d.set == "eval")]["top8_excess"].std()
     summary = {
-        "run_dir": str(run_dir), "panel": str(args.panel), "factor_set": str(args.factor_set),
-        "config": vars(args) | {"ridge_alphas": RIDGE_ALPHAS, "soft_taus": SOFT_TAUS, "reference_factor": REFERENCE_FACTOR},
+        "run_dir": str(run_dir), "panel": str(args.panel), "factor_set": str(args.factor_set), "tag": args.tag,
+        "config": vars(args) | {"ridge_alphas": RIDGE_ALPHAS, "soft_taus": SOFT_TAUS,
+                                "reference_factor": REFERENCE_FACTOR if has_ref else None},
         "n_rows": int(len(panel)), "n_months": int(len(months)), "n_features": len(feats),
         "n_eval_months_random": n_eval, "models": models,
         "summary_table": summary_tbl.to_dict("records"),

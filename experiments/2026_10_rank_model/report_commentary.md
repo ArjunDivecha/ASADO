@@ -86,6 +86,18 @@ The base configuration rerun inside the sweep reproduced the stage-5 numbers to 
 
 What surprised me: I wrote in the last section that the train–eval gap was "the obvious lever", and it was the wrong lever. The honest picture is that a small, barely-regularised net, stopped early and averaged over ten seeds, is close to the ceiling for these inputs — about 6.5 to 6.8% a year on random splits — and the remaining headroom is in what goes in (global context, cross-country structure), not in how hard the net is squeezed.
 
+## ablation_base256
+
+The hill-climb's recommendation held up when applied: the wider net with ten seeds makes 7.1% a year on evaluation months on the predict-then-select objective, against 6.3% for the stage-5 net, a paired gain of 0.75 points with a t-statistic of 2.6, better on 21 of 30 splits. The soft and warm-start objectives gain less (0.5 and 0.3 points, inside the noise) and the three objectives still tie with one another. On the contiguous blocks the predict-then-select net rises from 4.7% to 6.1% and the warm-start net from 4.3% to 6.6%. Against the broad linear model on the same splits the new base is 1.8 points a year ahead with a t-statistic of 3.2, better on 23 of 30 — the clearest margin any model has shown. Its training-month fit also rose, from 30% to 35% a year, which after the hill-climb is no longer something to worry about. This run is on the v1 panel, with REER still in; the cleaned v3 rerun is the number to carry forward.
+
+## ablation_nogdelt
+
+The net does not need the news block. With all 92 GDELT factors removed, the predict-then-select net makes 6.6% a year against 7.1%, a half-point drop with a t-statistic of −1.4 that the other two objectives do not share (they are up 0.2); ridge is unchanged at 5.4%. On the blocks the predict-then-select net falls from 6.1% to 4.0%, which with five blocks is suggestive rather than a finding. The point of this ablation was the decade question: GDELT only exists from 2015, so it cannot be the source of the 2000–2009 edge directly, but its absence before 2015 shapes the coverage pattern a net could read. Without GDELT the early-decade margin over ridge is still 3.3 points a year with a t-statistic of 2.3. Not GDELT.
+
+## ablation_nopresence
+
+Removing the fifteen per-source presence columns — the net's explicit view of which blocks of data exist in a given row — changes nothing that survives a t-test: the three objectives move by −0.4, +0.2 and +0.3 points, ridge by 0.02. The 2000–2009 margin over ridge is 3.5 points a year with a t-statistic of 2.7, the same as with them. So the early-decade edge is not the net reading the coverage structure of the early rows either. Between this and the GDELT run, what the net found in 2000–2009 is in the factor values of that era. Whether it is economics or a data-vintage artifact of the kind the REER audit found is exactly what the cleaned v3 rerun and the walk-forward are for.
+
 ## next
 
 The hill-climb moved the base: 256/128 hidden, dropout 0.15, weight decay 0.01, ten seeds — expected around 6.8% a year on random splits and five to six on blocks, one to one-and-a-half points over ridge. Regularisation is settled (leave it alone) and ensembling is settled (ten seeds). What is left is the inputs and the architecture, in this order:

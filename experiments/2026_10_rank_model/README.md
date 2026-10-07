@@ -216,6 +216,22 @@ Verdict: **regularising the net hurts; weight decay is irrelevant; wider is weak
 256/128, dropout 0.15, wd 0.01, 10 seeds. Ceiling here ≈ 6.5–6.8 %/yr random, ~1–1.5 pts
 over ridge; headroom is in inputs/architecture, not in squeezing the net.
 
+## Step 6b — new base and explain-the-decade ablations (2026-10-07, v1 panel)
+
+`train_nn.py --hidden 256,128 --seeds 10 --tag base256`, then `--tag nogdelt` (panel
+`v1_nogdelt`, `--drop-sources gdelt`) and `--tag nopresence` (`--no-presence`), each with its
+floor. Random-split eval, predict-then-select net, paired:
+
+| run | net %/yr | vs its base | blocks | 2000s edge vs ridge |
+|---|---|---|---|---|
+| stage-5 base (64/32 ×5) | +6.3 | — | 4.7 | +3.8 (t 3.0) |
+| new base 256/128 ×10 | +7.1 | +0.75, t 2.6 | 6.1 | +4.4 (t 3.2) |
+| no GDELT | +6.6 | −0.5, t −1.4 | 4.0 | +3.3 (t 2.3) |
+| no presence columns | +6.7 | −0.4, t −1.2 | 5.1 | +3.5 (t 2.7) |
+
+New base vs ridge: +1.8 %/yr, t 3.2, 23/30. Verdict: width + ten seeds is a real gain; the
+2000–09 edge is in the factor values, not GDELT or the coverage structure.
+
 ## Running report
 
 `build_report.py` → `results/report.html` — one self-contained light-mode page: a

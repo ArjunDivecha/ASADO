@@ -34,7 +34,9 @@ touches training, early stopping or model selection.
 Folds: the first cut-off is --first-train-months (default 60: five years of
 history, so the out-of-sample record runs from 2005; Arjun's choice,
 2026-10-07); each fold scores 12 months; the training window expands from
-there. The first folds train on very little (about 2,000 rows), which the
+there, or with --window N rolls (each fold trains only on the trailing N
+months before its cut-off; ridge's penalty CV and the net's early-stopping
+slice are drawn from that window too). The first folds train on very little (about 2,000 rows), which the
 per-fold table shows honestly. Models per fold:
   ridge        alpha by 5-fold month-grouped CV inside the training window
   nn_mse       the post-hill-climb MLP (256/128, dropout 0.15, wd 0.01), N seeds
@@ -112,6 +114,8 @@ def main() -> int:
                     help="hysteresis rank buffer M for the headline basket: hold a name while ranked <= M (default 16; 8 = plain top-8)")
     ap.add_argument("--max-month", type=int, default=0,
                     help="use only the first N months of the panel (design holdout: select on the first half); 0 = all")
+    ap.add_argument("--window", type=int, default=0,
+                    help="rolling training window in months (train only on the trailing N months before each cut-off); 0 = expanding")
     args = ap.parse_args()
     hidden = [int(h) for h in args.hidden.split(",")]
     objectives = [o for o in args.objectives.split(",") if o]
@@ -170,8 +174,12 @@ def main() -> int:
     if has_ref:
         scores["reference_REER_CS"] = ref_rows.copy()
     alphas = {}
+    def train_start(t_start: int) -> int:
+        return max(0, t_start - args.window) if args.window else 0
+    if args.window:
+        log.info("ROLLING window: each fold trains only on the trailing %d months before its cut-off", args.window)
     for fi, t_start, t_end in folds:
-        tr = r_m < t_start; oos = (r_m >= t_start) & (r_m < t_end)
+        tr = (r_m < t_start) & (r_m >= train_start(t_start)); oos = (r_m >= t_start) & (r_m < t_end)
         _, s_ev, info = fit_ridge(X_ridge[tr], y_rows[tr], r_m[tr], X_ridge[oos], args.k, args.seed + fi)
         scores["ridge"][oos] = s_ev; alphas[fi] = info["alpha"]
     log.info("ridge done for %d folds; alphas chosen: %s", len(folds), pd.Series(alphas).value_counts().to_dict())
@@ -181,7 +189,7 @@ def main() -> int:
             "weight_decay": args.weight_decay, "batch_months": 32, "epochs": 300, "patience": 30}
     jobs = []
     for fi, t_start, t_end in folds:
-        fit_m, val_m = inner_split(np.arange(t_start), args.seed + fi)
+        fit_m, val_m = inner_split(np.arange(train_start(t_start), t_start), args.seed + fi)
         for obj in objectives:
             for s in range(args.seeds):
                 jobs.append(base | {"split": f"fold_{fi}", "objective": obj, "seed": (args.seed + fi) * 100 + s, "tag": "real",

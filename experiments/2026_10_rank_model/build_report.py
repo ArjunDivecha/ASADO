@@ -1273,6 +1273,106 @@ design is walked over the same months for comparison.</p>
     return status, body
 
 
+# ── stage 10: rolling five-year window vs expanding, with run-to-run replicas ──
+def stage10(c: dict) -> tuple[str, str]:
+    walks = tagged_runs("walk")
+    exp0 = RESULTS / "walk_20261007_140136"
+    reps = {}   # (window_label, seed) -> run dir
+    if (exp0 / "summary.json").exists():
+        reps[("expanding", 0)] = exp0
+    for tag, p in walks.items():
+        m = re.match(r"^(roll60|exp)_s(\d+)$", tag)
+        if m:
+            reps[("rolling 5 years" if m.group(1) == "roll60" else "expanding", int(m.group(2)))] = p
+    if not any(k[0] == "rolling 5 years" for k in reps):
+        return "pending", '<div class="note pending">Not run yet.</div>'
+    rows, monthly = [], {}
+    for (win, sd), p in sorted(reps.items()):
+        s = json.load(open(p / "summary.json"))
+        mo = pd.read_parquet(p / "monthly_oos.parquet")
+        for rule in s["rules"]:
+            for m in ["nn_mse", "ridge"]:
+                a = s["overall"][rule].get(m)
+                if a is None:
+                    continue
+                g = mo[(mo.rule == rule) & (mo.model == m)].set_index("date")["top8_excess"].sort_index()
+                monthly[(win, sd, rule, m)] = g
+                first = g[g.index < pd.Timestamp("2013-06-01")]; second = g[g.index >= pd.Timestamp("2013-06-01")]
+                rows.append({"window": win, "seed draw": sd, "rule": rule, "model": m, "excess": a["top8_excess_ann_pct"], "t": a["top8_t"],
+                             "IR": a.get("info_ratio", np.nan), "names/month": a.get("names_changed_per_month", np.nan),
+                             "first": first.mean() * 1200, "second": second.mean() * 1200})
+    rd = pd.DataFrame(rows)
+    # summary: mean and range across seed draws (ridge is deterministic: one value)
+    summ = []
+    for (win, rule, m), g in rd.groupby(["window", "rule", "model"]):
+        summ.append({"window": win, "rule": "plain top-8" if rule == "plain_top8" else f"hold while ≤ {rule[8:]}",
+                     "model": MODEL_LABEL[m], "runs": len(g),
+                     "OOS excess %/yr (mean)": g["excess"].mean(), "lowest run": g["excess"].min(), "highest run": g["excess"].max(),
+                     "t (mean)": g["t"].mean(), "IR (mean)": g["IR"].mean(), "names changed / month": g["names/month"].mean(),
+                     "2005–13 %/yr": g["first"].mean(), "2013–26 %/yr": g["second"].mean()})
+    st = pd.DataFrame(summ)
+    order_w = {"expanding": 0, "rolling 5 years": 1}
+    st = st.sort_values(by=["rule", "model", "window"], key=lambda col: col.map(order_w) if col.name == "window" else col).reset_index(drop=True)
+    tbl = table(st, {"OOS excess %/yr (mean)": "{:+.2f}", "lowest run": "{:+.2f}", "highest run": "{:+.2f}", "t (mean)": "{:.2f}", "IR (mean)": "{:.2f}",
+                     "names changed / month": "{:.2f}", "2005–13 %/yr": "{:+.1f}", "2013–26 %/yr": "{:+.1f}"})
+    # paired: rolling minus expanding, matched seed draws, default rule
+    prow = []
+    def_rule = "buffer_M16"
+    for m in ["nn_mse", "ridge"]:
+        for rule in ["plain_top8", def_rule]:
+            diffs = []
+            for sd in sorted({k[1] for k in reps}):
+                a = monthly.get(("rolling 5 years", sd, rule, m)); b = monthly.get(("expanding", sd, rule, m))
+                if a is None or b is None:
+                    continue
+                d = (a - b.reindex(a.index)).dropna(); diffs.append(d)
+            if diffs:
+                dm = pd.concat(diffs, axis=1).mean(axis=1)
+                prow.append({"model": MODEL_LABEL[m], "rule": "plain top-8" if rule == "plain_top8" else "hold while ≤ 16",
+                             "rolling − expanding %/yr": dm.mean() * 1200, "t": dm.mean() / (dm.std() / np.sqrt(len(dm))),
+                             "seed draws paired": len(diffs)})
+    ptbl = table(pd.DataFrame(prow), {"rolling − expanding %/yr": "{:+.2f}", "t": "{:.2f}"}) if prow else ""
+    # run-to-run correlation of the net's monthly basket excess (default rule)
+    corr_txt = ""
+    for win in ["expanding", "rolling 5 years"]:
+        ser = [monthly[(w, sd, def_rule, "nn_mse")] for (w, sd, r, mm) in monthly if w == win and r == def_rule and mm == "nn_mse"]
+        if len(ser) >= 2:
+            M_ = pd.concat(ser, axis=1).dropna().corr().values
+            off = M_[np.triu_indices_from(M_, k=1)]
+            corr_txt += f"<li>{win}: net basket excess correlates {off.mean():.2f} between seed draws (range {off.min():.2f}–{off.max():.2f})</li>"
+    # chart: cumulative, default rule, net (seed-draw average of monthly excess) and ridge, both windows
+    fig, ax = plt.subplots(figsize=(12, 4.4), facecolor="white")
+    for win, colr in (("expanding", "#9467BD"), ("rolling 5 years", "#1F77B4")):
+        nets = [monthly[(w, sd, def_rule, "nn_mse")] for (w, sd, r, mm) in monthly if w == win and r == def_rule and mm == "nn_mse"]
+        if nets:
+            avg = pd.concat(nets, axis=1).mean(axis=1).sort_index()
+            ax.plot(avg.index, avg.cumsum() * 100, color=colr, lw=2.0, label=f"net, {win} (average of {len(nets)} seed draws)")
+        rid = [monthly[(w, sd, def_rule, "ridge")] for (w, sd, r, mm) in monthly if w == win and r == def_rule and mm == "ridge"]
+        if rid:
+            ax.plot(rid[0].index, rid[0].cumsum() * 100, color=colr, lw=1.2, ls="--", label=f"ridge, {win}")
+    ax.axhline(0, color="#444", lw=0.8); ax.set_ylabel("cumulative OOS excess, % (simple sum)")
+    ax.legend(frameon=False, fontsize=8.5, loc="upper left")
+    ax.set_title("Rolling five-year window vs expanding window — default basket rule (hold while ranked ≤ 16)", fontsize=10.5)
+    for sp in ("top", "right"):
+        ax.spines[sp].set_visible(False)
+    chart = img(fig_to_b64(fig), "Solid = net, dashed = ridge; blue = trained on the trailing five years only, purple = trained on all history to date.")
+    files = " · ".join(flink(p / "summary.json", f"{w}, seed {sd}") for (w, sd), p in sorted(reps.items()))
+    body = f"""
+<p class="lead">Every walk-forward so far trained each year on <em>all</em> history to date. This stage asks whether recent history forecasts better: each
+year the model is trained only on the trailing five years (60 months), everything else held fixed — the same 22 folds from February 2005, the same network,
+the same basket rule. Because stage 9 showed that the net's result moves with the seed draw, each version is run three times with independent seed draws,
+and the comparison is paired draw by draw. Ridge has no seeds, so its three runs are identical.</p>
+<h4>Results, averaged over seed draws (lowest and highest run shown)</h4>
+{tbl}
+<h4>Rolling minus expanding, paired month by month</h4>
+{ptbl}
+<ul>{corr_txt}</ul>
+{chart}
+{commentary_block(c, "stage10")}
+<div class="files"><div class="files-title">Files</div>{files} · {flink(EXP_DIR / "walk_forward.py", "script (--window)")}</div>"""
+    return "done", body
+
+
 # ── page ─────────────────────────────────────────────────────────────────────
 CSS = """
 :root{--bg:#ffffff;--fg:#1a1a1a;--muted:#5f6368;--line:#e4e7eb;--card:#f7f8fa;--accent:#1F77B4;--warn:#fff4e5;--warnb:#f0b35c;--ok:#2CA02C;--pend:#9E9E9E}
@@ -1327,6 +1427,7 @@ def main() -> int:
         ("stage7", "7 · Hill-climb", stage7),
         ("stage8", "8 · Walk-forward", stage8),
         ("stage9", "9 · Design holdout", stage9),
+        ("stage10", "10 · Rolling five-year window", stage10),
     ]
     rendered = []
     for key, title, fn in stages:
@@ -1359,6 +1460,7 @@ and links the files.</p>
 <div class="step"><b>7 · Hill-climb</b>Regularisation, width, learning rate, ensemble size — one at a time, paired.</div>
 <div class="step"><b>8 · Walk-forward</b>Train on the past, score the next year, roll. The only genuine forecast test.</div>
 <div class="step"><b>9 · Design holdout</b>Choose the design on the first half only; walk the second half blind.</div>
+<div class="step"><b>10 · Rolling window</b>Train only on the trailing five years; three seed draws each.</div>
 </div>
 {('<div class="note"><div class="note-title">Where things stand</div>' + overview_c + '</div>') if overview_c else ''}
 {sections}

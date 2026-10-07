@@ -1397,6 +1397,113 @@ and the comparison is paired draw by draw. Ridge has no seeds, so its three runs
     return "done", body
 
 
+# ── stage 11: the default model (rolling 60, 30 nets, hysteresis) with a range ──
+def stage11(c: dict) -> tuple[str, str]:
+    runs = sorted(p for p in RESULTS.glob("default_*") if p.is_dir() and (p / "summary.json").exists())
+    if not runs:
+        hb_dirs = sorted(p for p in RESULTS.glob("walk_*_default_s*") if p.is_dir())
+        msg = f"Running — {sum((p / 'summary.json').exists() for p in hb_dirs)} of 3 draws complete." if hb_dirs else "Not run yet."
+        return ("running" if hb_dirs else "pending"), f'<div class="note pending">{msg}</div>'
+    run = runs[-1]
+    s = json.load(open(run / "summary.json"))
+    dr = pd.read_parquet(run / "draws.parquet")
+    mo = pd.read_parquet(run / "monthly.parquet")
+    by = pd.read_parquet(run / "by_year.parquet")
+    rule = s["default_rule"]; M = rule[8:]
+    cfg = s["config"]; ndraws = len(s["draws"])
+    pooled_member = next((m for m in dr.member.unique() if m.startswith("pooled")), None)
+    def row(member, model, rule_=rule):
+        r = dr[(dr.member == member) & (dr.model == model) & (dr.rule == rule_)]
+        return r.iloc[0] if len(r) else None
+    mean_net, ridge = row("mean of draws", "nn_mse"), row("deterministic", "ridge")
+    sp = s["spread_across_draws"][f"nn_mse/{rule}"]
+    pv = s["paired_vs_ridge"][f"nn_mse/{rule}/mean of draws - ridge"]
+    pooled = row(pooled_member, "nn_mse") if pooled_member else None
+    k = kpis([
+        (f'{mean_net["excess_ann_pct"]:+.1f}%', "the default model's out-of-sample excess per year",
+         f'mean of {ndraws} independent 30-net draws · range {sp["min"]:+.1f}% to {sp["max"]:+.1f}% · t {mean_net["t"]:.1f} · {s["oos_start"][:7]} → {s["oos_end"][:7]}'),
+        (f'{ridge["excess_ann_pct"]:+.1f}%', "ridge, same window, same rule", f't {ridge["t"]:.1f} · deterministic'),
+        (f'{pv["ann_pct"]:+.1f}%', "net minus ridge, month by month", f't {pv["t"]:.1f} · net ahead in {pv["months_ahead_frac"]*100:.0f}% of months'),
+        (f'{mean_net["names_changed_per_month"]:.1f}', "names changed per month (of 8)", f'{mean_net["turnover_oneway_pct_yr"]:.0f}% one-way a year · max relative drawdown {mean_net["max_rel_drawdown_pct"]:.0f}%'),
+    ])
+    # table: every member, both rules
+    t = dr[dr.model.isin(["nn_mse", "ridge"])].copy()
+    t["rule"] = t["rule"].map(lambda r: "plain top-8" if r == "plain_top8" else f"hold while ≤ {r[8:]} (default)")
+    t["model"] = t["model"].map(MODEL_LABEL)
+    order_m = {"mean of draws": 0}; [order_m.setdefault(m, 1) for m in t.member.unique() if m.startswith("pooled")]
+    t["_o"] = t["member"].map(lambda m: order_m.get(m, 2 if m.startswith("draw") else 3))
+    t = t.sort_values(["rule", "model", "_o", "member"], ascending=[True, False, True, True]).drop(columns="_o")
+    show = t[["rule", "model", "member", "excess_ann_pct", "t", "info_ratio", "hit_rate", "names_changed_per_month", "max_rel_drawdown_pct",
+              "first_half_ann_pct", "second_half_ann_pct", "second_half_t"]].rename(columns={
+        "member": "run", "excess_ann_pct": "OOS excess %/yr", "info_ratio": "IR", "hit_rate": "hit", "names_changed_per_month": "names changed / month",
+        "max_rel_drawdown_pct": "max rel. DD %", "first_half_ann_pct": "2005–13 %/yr", "second_half_ann_pct": "2013–26 %/yr", "second_half_t": "t (2013–26)"})
+    tbl = table(show, {"OOS excess %/yr": "{:+.2f}", "t": "{:.2f}", "IR": "{:.2f}", "hit": "{:.2f}", "names changed / month": "{:.2f}",
+                       "max rel. DD %": "{:.1f}", "2005–13 %/yr": "{:+.1f}", "2013–26 %/yr": "{:+.1f}", "t (2013–26)": "{:.2f}"})
+    # chart A: cumulative — each draw thin, mean thick, pooled, ridge
+    fig, ax = plt.subplots(figsize=(12, 4.6), facecolor="white")
+    for mem in sorted(m for m in mo.member.unique() if m.startswith("draw")):
+        ser = mo[(mo.member == mem) & (mo.model == "nn_mse") & (mo.rule == rule)].set_index("date")["excess"].sort_index()
+        ax.plot(ser.index, ser.cumsum() * 100, color="#AEC7E8", lw=1.0, label="single 30-net draws" if mem == sorted(m for m in mo.member.unique() if m.startswith("draw"))[0] else None)
+    ser = mo[(mo.member == "mean of draws") & (mo.model == "nn_mse") & (mo.rule == rule)].set_index("date")["excess"].sort_index()
+    ax.plot(ser.index, ser.cumsum() * 100, color="#1F77B4", lw=2.4, label=f"net — mean of {ndraws} draws")
+    if pooled_member:
+        ser = mo[(mo.member == pooled_member) & (mo.model == "nn_mse") & (mo.rule == rule)].set_index("date")["excess"].sort_index()
+        ax.plot(ser.index, ser.cumsum() * 100, color="#9467BD", lw=1.4, ls="-.", label=f"net — {pooled_member}")
+    ser = mo[(mo.model == "ridge") & (mo.rule == rule)].set_index("date")["excess"].sort_index()
+    ax.plot(ser.index, ser.cumsum() * 100, color="#2CA02C", lw=1.6, ls="--", label="ridge")
+    ax.axhline(0, color="#444", lw=0.8); ax.set_ylabel("cumulative out-of-sample excess, % (simple sum)")
+    ax.legend(frameon=False, fontsize=8.5, loc="upper left")
+    ax.set_title(f"The default model, out of sample: rolling five-year training, 30 nets per year, hold while ranked ≤ {M}", fontsize=10.5)
+    for sp_ in ("top", "right"):
+        ax.spines[sp_].set_visible(False)
+    chartA = img(fig_to_b64(fig), "Every point is a genuine forecast. The pale lines are the individual draws; the spread between them is the run-to-run uncertainty that a single run's t-statistic does not show.")
+    # chart B: by year, mean-of-draws net vs ridge
+    ny = by[(by.member == "mean of draws") & (by.model == "nn_mse") & (by.rule == rule)].set_index("year")["excess_ann_pct"]
+    ry = by[(by.model == "ridge") & (by.rule == rule)].set_index("year")["excess_ann_pct"].reindex(ny.index)
+    fig, ax = plt.subplots(figsize=(12, 3.8), facecolor="white")
+    x = np.arange(len(ny))
+    ax.bar(x - 0.2, ny.values, width=0.4, color="#1F77B4", label="net (mean of draws)")
+    ax.bar(x + 0.2, ry.values, width=0.4, color="#2CA02C", label="ridge")
+    ax.axhline(0, color="#444", lw=0.8); ax.set_xticks(x); ax.set_xticklabels(ny.index, fontsize=8.5)
+    ax.set_ylabel("OOS excess, % per year"); ax.legend(frameon=False, fontsize=8.5, ncol=2)
+    ax.set_title("By calendar year (2026 is January–September)", fontsize=10.5)
+    for sp_ in ("top", "right"):
+        ax.spines[sp_].set_visible(False)
+    chartB = img(fig_to_b64(fig), "Years above zero are years the basket beat the equal-weight average out of sample.")
+    # chart C: underwater (relative), mean of draws vs ridge
+    fig, ax = plt.subplots(figsize=(12, 3.4), facecolor="white")
+    for model, mem, colr in (("nn_mse", "mean of draws", "#1F77B4"), ("ridge", "deterministic", "#2CA02C")):
+        g = mo[(mo.member == mem) & (mo.model == model) & (mo.rule == rule)].set_index("date").sort_index()
+        rel = (1 + g["basket_ret"]).cumprod() / (1 + g["bench_ret"]).cumprod(); uw = (rel / rel.cummax() - 1) * 100
+        ax.fill_between(uw.index, uw.values, 0, color=colr, alpha=0.18, lw=0); ax.plot(uw.index, uw.values, color=colr, lw=1.1, label=MODEL_LABEL[model])
+    ax.set_ylabel("below previous high, % (basket ÷ EW)"); ax.legend(frameon=False, fontsize=8.5, loc="lower left")
+    ax.set_title("Underwater: the basket's wealth relative to the equal-weight average, below its previous high", fontsize=10.5)
+    for sp_ in ("top", "right"):
+        ax.spines[sp_].set_visible(False)
+    chartC = img(fig_to_b64(fig), "Depth is the relative drawdown; width is how long recovery took.")
+    corr = s["run_to_run_corr"].get(f"nn_mse/{rule}", {})
+    pj = "".join(f"<li>{html.escape(k_.replace('nn_mse/', 'net ').replace('/', ', '))}: {v['ann_pct']:+.2f}% a year, t {v['t']:.2f}</li>"
+                 for k_, v in s["paired_vs_ridge"].items() if k_.startswith("nn_mse/"))
+    body = f"""
+<p class="lead">The project's default model, fixed on 7 October 2026: the shared network ({cfg.get("hidden")} hidden units), retrained every year on
+<strong>only the trailing five years</strong> (60 months — "the world changes"), <strong>30 nets averaged</strong> per year, on the cleaned 238-factor panel,
+with the hysteresis basket rule — hold a name while the model still ranks it in the top {M}. Because a single walk-forward of this net proved seed-sensitive,
+the whole walk-forward was run {ndraws} times with independent seed draws, and the headline is the mean of the draws with their range. Out of sample
+throughout: {s["oos_months"]} months, {s["oos_start"][:7]} to {s["oos_end"][:7]}. Gross of costs.</p>
+{k}
+{chartA}
+{tbl}
+<p>Paired against ridge on the same months:</p><ul>{pj}</ul>
+<p>Run-to-run: the draws' monthly basket excess correlates {corr.get("mean", float("nan")):.2f} on average (range {corr.get("min", float("nan")):.2f}–{corr.get("max", float("nan")):.2f}).</p>
+{chartB}
+{chartC}
+{commentary_block(c, "stage11")}
+<div class="files"><div class="files-title">Files</div>{flink(run / "draws.xlsx", "all draws, both rules (xlsx)")} · {flink(run / "monthly.parquet", "monthly baskets")} ·
+{flink(run / "by_year.parquet", "by year")} · {flink(run / "summary.json")} · {flink(run / "run.log")} · {flink(EXP_DIR / "default_model.py", "script")} ·
+{" · ".join(flink(Path(p) / "summary.json", f"draw s{sd}") for sd, p in s["draws"].items())}</div>"""
+    return "done", body
+
+
 # ── page ─────────────────────────────────────────────────────────────────────
 CSS = """
 :root{--bg:#ffffff;--fg:#1a1a1a;--muted:#5f6368;--line:#e4e7eb;--card:#f7f8fa;--accent:#1F77B4;--warn:#fff4e5;--warnb:#f0b35c;--ok:#2CA02C;--pend:#9E9E9E}
@@ -1452,6 +1559,7 @@ def main() -> int:
         ("stage8", "8 · Walk-forward", stage8),
         ("stage9", "9 · Design holdout", stage9),
         ("stage10", "10 · Rolling five-year window", stage10),
+        ("stage11", "11 · The default model", stage11),
     ]
     rendered = []
     for key, title, fn in stages:
@@ -1485,6 +1593,7 @@ and links the files.</p>
 <div class="step"><b>8 · Walk-forward</b>Train on the past, score the next year, roll. The only genuine forecast test.</div>
 <div class="step"><b>9 · Design holdout</b>Choose the design on the first half only; walk the second half blind.</div>
 <div class="step"><b>10 · Rolling window</b>Train only on the trailing five years; three seed draws each.</div>
+<div class="step"><b>11 · The default model</b>Rolling five years, 30 nets, hysteresis — three draws, reported as a range.</div>
 </div>
 {('<div class="note"><div class="note-title">Where things stand</div>' + overview_c + '</div>') if overview_c else ''}
 {sections}

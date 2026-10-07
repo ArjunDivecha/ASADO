@@ -189,6 +189,33 @@ on it; the nets lose ~0.5 pt (n.s.), keep the 2000–09 edge (10.1 vs 10.6 %/yr)
 margin over ridge narrows to +0.5–0.85 (t 1.0–1.5). Tagged runs sit in the report's
 Ablations section and never replace the headline runs.
 
+## Step 7 — hill-climb on the net (2026-10-07)
+
+`hillclimb_nn.py` → `results/hill_20261007_114124/` (2,450 nets, 7.8 min). One ingredient at a
+time from the stage-5 base (64/32, dropout 0.15, wd 0.01, lr 1e-3), objective `mse`, 5-seed
+ensembles, same 35 splits; base rerun reproduces stage 5 to 4 dp. Plus a 20-seed curve.
+
+| config | eval %/yr | vs base | t | blocks %/yr | train %/yr |
+|---|---|---|---|---|---|
+| 256/128 | +6.7 | +0.3 | 1.1 | +6.6 | 34 |
+| base 64/32 | +6.3 | — | — | +4.7 | 30 |
+| 128/64 | +6.3 | 0.0 | 0.0 | +4.9 | 32 |
+| wd 0.1 / 1.0 | +6.3 / +6.2 | −0.1 | −0.3 | +4.6 / +4.8 | 30 / 27 |
+| 32/16 | +5.9 | −0.5 | −1.1 | +4.3 | 23 |
+| dropout 0.30 | +5.1 | −1.2 | −3.4 | +2.7 | 24 |
+| heavy (32/16, do .3, wd .1) | +4.9 | −1.4 | −3.1 | +3.7 | 18 |
+| heavy wide (128/64, do .5, wd .1) | +5.1 | −1.3 | −3.4 | +3.4 | 20 |
+| dropout 0.50 | +4.3 | −2.0 | −4.3 | +1.9 | 16 |
+| lr 3e-4 | +4.3 | −2.0 | −4.9 | +1.4 | 20 |
+
+Seed curve (random eval, base): single net 4.6 → 2 seeds 5.3 → 3: 5.5 → 5: 6.3 → 8: 6.7 →
+10: 6.8 → 15: 6.7 → 20: 6.6. Saturates at ~8–10.
+
+Verdict: **regularising the net hurts; weight decay is irrelevant; wider is weakly better
+(256/128 best on blocks by a wide margin); ensembling saturates at ~10 seeds.** New base:
+256/128, dropout 0.15, wd 0.01, 10 seeds. Ceiling here ≈ 6.5–6.8 %/yr random, ~1–1.5 pts
+over ridge; headroom is in inputs/architecture, not in squeezing the net.
+
 ## Running report
 
 `build_report.py` → `results/report.html` — one self-contained light-mode page: a
@@ -198,7 +225,7 @@ Regenerate after any stage: `.venv/bin/python build_report.py && open results/re
 
 ## Next
 
-Hill-climb on the net (each full run < 4 min): regularisation/width sweep; 10–20 seed
-ensembles; explain the 2000–09 edge (rerun without GDELT, without presence columns).
-Then global-context block (v2 panel) and cross-country attention. Walk-forward through
-time only once the design settles.
+On the new base (256/128, 10 seeds): tagged ablations without GDELT and without presence
+columns (explain the 2000–09 edge); global-context block (v2 panel); cross-country attention
+(GPU); then walk-forward once the design settles. Worker thread pinning added to train_nn.py
+after the hill-climb (workers were oversubscribing cores ~3×).

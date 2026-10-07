@@ -84,8 +84,16 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
+# One BLAS/OpenMP thread per process: the nets are tiny and parallelism comes from the
+# process pool. Without this each of the 14 workers spawned ~16 Accelerate/OpenMP threads
+# and the first runs were ~3x slower than the per-net timings (load average 269 on 16
+# cores, 2026-10-07). Must be set before torch/numpy are imported; spawned workers
+# re-import this module so they inherit it.
+for _v in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "VECLIB_MAXIMUM_THREADS", "OPENBLAS_NUM_THREADS"):
+    os.environ.setdefault(_v, "1")
+
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
 
 EXP_DIR = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model")
 sys.path.insert(0, str(EXP_DIR))
@@ -99,6 +107,10 @@ log = logging.getLogger("train_nn")
 def _torch():
     import torch
     torch.set_num_threads(1)
+    try:
+        torch.set_num_interop_threads(1)
+    except RuntimeError:
+        pass  # already set once in this process
     return torch
 
 

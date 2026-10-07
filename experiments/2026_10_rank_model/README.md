@@ -247,6 +247,37 @@ the new base (256/128 ×10):
 Verdict: **neither is a lever.** Width + seeds remain the only gains; the headline is the shared
 MLP 256/128 ×10 on predict-then-select.
 
+## Step 7 — walk-forward (2026-10-07)
+
+`walk_forward.py --seeds 10` — first cut-off after 60 months, expanding, 12-month folds, 22
+folds, 260 OOS months 2005-02 → 2026-09. v1 run `walk_20261007_125534`, v3 run
+`walk_20261007_130906`.
+
+| model | v1 (with REER) %/yr | t | v3 clean %/yr | t | hit | years > 0 |
+|---|---|---|---|---|---|---|
+| net 256/128 ×10, predict-then-select | +4.0 | 3.3 | **+4.1** | **3.0** | 0.56 | 15/22 |
+| net, soft top-8 | +3.5 | 3.0 | +2.4 | 2.0 | 0.54 | |
+| ridge | +4.6 | 3.6 | +2.1 | 1.7 | 0.56 | 16/22 |
+
+Paired per month, v3 − v1: ridge −2.4 %/yr (t −2.6), net +0.07 (t 0.1). v3 net − ridge +2.0
+(t 1.5). SE of the whole-period figure ≈ 1.3 %/yr.
+
+## Step 8 — cleaned panel v3 headline reruns (2026-10-07)
+
+After the REER audit (`A Complete/T2 Factor Timing Fuzzy/Archive/REER_Audit_20261007/REPORT.md`):
+`factor_set_v3_clean.json` = v1 minus REER ×4, OECD CLI/BCI/CCI ×6, MS_Index_Weight ×2, and
+the CS forms of index levels (IMF CPI index, TRI, 120MA, BEST/Trailing EPS) → **238 factors**.
+Untagged reruns: `floor_20261007_125747`, `nn_20261007_130027` (256/128 ×10), `walk_20261007_130906`.
+
+Random-split eval, v3: ridge +4.7 (v1 5.3, −0.6 t −1.6); trees 1.7–2.0; net +6.2 / +6.1 / +6.0,
+vs ridge +1.5 (t 2.7, 19/30); blocks net 5.1 vs ridge 1.9; controls 0.7 / 0.8.
+
+**Final verdict (2026-10-07).** On clean inputs, trained only on the past, the net beats the
+equal-weight average by 4.1 %/yr (t 3.0) over 21 years and does not depend on the contaminated
+series; the broad linear model's apparent edge was mostly look-ahead from rebased levels (4.6 →
+2.1). Caveats: design chosen on random splits of the same history (design holdout is the next
+test); remaining inputs are current-vintage; annual swings of ±10–18 %.
+
 ## Running report
 
 `build_report.py` → `results/report.html` — one self-contained light-mode page: a
@@ -256,7 +287,6 @@ Regenerate after any stage: `.venv/bin/python build_report.py && open results/re
 
 ## Next
 
-On the new base (256/128, 10 seeds): tagged ablations without GDELT and without presence
-columns (explain the 2000–09 edge); global-context block (v2 panel); cross-country attention
-(GPU); then walk-forward once the design settles. Worker thread pinning added to train_nn.py
-after the hill-climb (workers were oversubscribing cores ~3×).
+Design holdout (choose architecture/seeds on the first half, walk forward on the second);
+vintage-archived slow inputs (extend the audit's ALFRED method; T2 macro lag per
+`docs/USER_FIX_LIST.md`); forward paper-trading of the frozen net.

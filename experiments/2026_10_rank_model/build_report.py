@@ -208,6 +208,7 @@ def md_to_html(text: str) -> str:
     def inline(s):
         s = html.escape(s)
         s = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", s)
+        s = re.sub(r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)", r"<em>\1</em>", s)
         s = re.sub(r"`(.+?)`", r"<code>\1</code>", s)
         return s
 

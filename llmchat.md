@@ -1895,6 +1895,13 @@ the net's result by as much as its edge. Verdict now: modest positive edge ~2–
 net and ridge indistinguishable once the design is held out; hysteresis halves turnover at no cost.
 Runs: `hill_*_holdout`, `walk_*_holdout_firsthalf`, `walk_*_holdout`, `walk_*_holdout_fullhist`.
 
+**Addendum 3 (14:55 PDT) — rolling window + seed replication; 4.5 % withdrawn.** Training only on the
+trailing 60 months (`walk_forward.py --window 60`) changes nothing (|diff| ≤ 0.75 %/yr, t ≤ 0.6, both models).
+Three independent seed draws of the expanding design gave 4.5 / 1.5 / 2.6 %/yr (M16): the stage-8 headline
+was the top draw. Pooled 30-net ensemble (`pool_draws.py` → `results/pooled_20261007_143632`): 2.95 %/yr
+(t 2.3) M16, 2.6 plain; ridge 2.1–2.3; pooled net − ridge +0.5..+0.7 (t ≤ 0.6). Headline now ~3 %/yr OOS,
+net = ridge statistically; large pooled ensembles required.
+
 ### What To Build Next
 - Monthly-refit walk-forward with 30–50 seeds (net and ridge), repeat the holdout, report run-to-run ranges.
 - (done) Design holdout: choose architecture/seeds on the first half of history, walk forward on the second.

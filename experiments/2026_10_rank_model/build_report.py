@@ -731,21 +731,46 @@ with the same metrics, so every comparison with ridge is paired. The bar is the 
 
 
 # ── stage 6: ablations (tagged reruns of the floor and the net) ──────────────
-ABLATION_TITLE = {"noreer": "Without REER (all four variants removed)"}
+ABLATION_TITLE = {
+    "noreer": "Without REER (all four variants removed)",
+    "base256": "New base after the hill-climb: 256/128 hidden, ten seeds (full panel)",
+    "nogdelt": "Without the GDELT news block (92 factors removed) — on the new base",
+    "nopresence": "Without the per-source presence columns — on the new base",
+}
+ABLATION_ORDER = ["noreer", "base256", "nogdelt", "nopresence"]
+# which run the NETS of each ablation are compared against: None = the untagged stage-5 run
+ABLATION_BASE = {"noreer": None, "base256": None, "nogdelt": "base256", "nopresence": "base256"}
+
+
+def _era_table(mo_base: pd.DataFrame, mo_abl: pd.DataFrame, ridge_mo: pd.DataFrame, model: str) -> pd.DataFrame:
+    """Eval top-8 excess by decade, pooled over months, for the net in the base run, in the ablation, and ridge."""
+    def bym(df, m):
+        e = df[(df.model == m) & (df.set == "eval") & (df.split.str.startswith("random"))]
+        return e.groupby("date")["top8_excess"].mean()
+    rows = []
+    series = {"with everything": bym(mo_base, model), "ablation": bym(mo_abl, model), "ridge (full panel)": bym(ridge_mo, "ridge")}
+    for lab, (a, b) in {"2000–2009": (2000, 2009), "2010–2019": (2010, 2019), "2020–2026": (2020, 2026)}.items():
+        row = {"era": lab}
+        for k, s in series.items():
+            x = s[(s.index.year >= a) & (s.index.year <= b)]
+            row[k + " %/yr"] = float(x.mean() * 1200) if len(x) else np.nan
+        rows.append(row)
+    return pd.DataFrame(rows)
 
 
 def stage6(c: dict) -> tuple[str, str]:
     fl_tags, nn_tags = tagged_runs("floor"), tagged_runs("nn")
-    tags = sorted(set(fl_tags) | set(nn_tags))
+    tags = [t for t in ABLATION_ORDER if t in fl_tags or t in nn_tags] + sorted(set(fl_tags) | set(nn_tags) - set(ABLATION_ORDER))
     base_floor, base_nn = latest("floor"), latest("nn")
     if not tags or base_floor is None:
         return "pending", '<div class="note pending">No ablation runs yet. An ablation is a rerun of the floor and the net on a changed panel, tagged so it sits here instead of replacing the headline.</div>'
     fb = pd.read_parquet(base_floor / "per_split.parquet")
-    fb = fb[fb.get("member", pd.Series("floor", index=fb.index)).ne("seed")] if "member" in fb else fb
-    nb = pd.read_parquet(base_nn / "per_split.parquet") if base_nn else pd.DataFrame()
-    if len(nb):
-        nb = nb[(nb.member == "ensemble")]
-    base = pd.concat([fb[fb.model.isin(["ridge", "lgbm_regression", "reference_REER_CS"])], nb], ignore_index=True)
+    floor_base = fb[fb.model.isin(["ridge", "lgbm_regression", "reference_REER_CS"])]
+    ridge_mo = pd.read_parquet(base_floor / "monthly.parquet")
+
+    def nn_rows(run):
+        d = pd.read_parquet(run / "per_split.parquet")
+        return d[d.member == "ensemble"]
     models = ["ridge", "lgbm_regression", "nn_mse", "nn_soft_top8", "nn_mse_then_soft"]
     parts = []
     for tag in tags:
@@ -753,8 +778,14 @@ def stage6(c: dict) -> tuple[str, str]:
         if tag in fl_tags:
             d = pd.read_parquet(fl_tags[tag] / "per_split.parquet"); d = d[d.model.isin(["ridge", "lgbm_regression"])]; pieces.append(d)
         if tag in nn_tags:
-            d = pd.read_parquet(nn_tags[tag] / "per_split.parquet"); d = d[d.member == "ensemble"]; pieces.append(d)
+            pieces.append(nn_rows(nn_tags[tag]))
         abl = pd.concat(pieces, ignore_index=True)
+        # comparison base: nets vs the configured base run; ridge/trees vs the untagged floor
+        nb_tag = ABLATION_BASE.get(tag)
+        nn_base_run = nn_tags.get(nb_tag) if nb_tag else base_nn
+        nb = nn_rows(nn_base_run) if nn_base_run is not None else pd.DataFrame()
+        base = pd.concat([floor_base, nb], ignore_index=True)
+        base_label = (ABLATION_TITLE.get(nb_tag, nb_tag).split(":")[0] if nb_tag else "stage 5 (64/32, five seeds)")
         rows, chart_rows = [], []
         for m in models:
             if m not in abl.model.values or m not in base.model.values:
@@ -765,19 +796,19 @@ def stage6(c: dict) -> tuple[str, str]:
             d = (a_ev[common] - b_ev[common])
             b_bl = base[(base.model == m) & (base.set == "eval") & (base.split_type == "blocked")]["top8_excess_ann_pct"].mean()
             a_bl = abl[(abl.model == m) & (abl.set == "eval") & (abl.split_type == "blocked")]["top8_excess_ann_pct"].mean()
-            rows.append({"model": MODEL_LABEL[m], "with everything %/yr": b_ev[common].mean(), "ablation %/yr": a_ev[common].mean(),
+            rows.append({"model": MODEL_LABEL[m], "base %/yr": b_ev[common].mean(), "ablation %/yr": a_ev[common].mean(),
                          "change %/yr": d.mean(), "paired t": d.mean() / (d.std() / np.sqrt(len(d))) if len(d) > 2 else float("nan"),
                          "splits where ablation is worse": int((d < 0).sum()), "splits": len(d),
-                         "blocks: with everything": b_bl, "blocks: ablation": a_bl})
+                         "blocks: base": b_bl, "blocks: ablation": a_bl})
             chart_rows.append((SHORT[m].replace("\n", " "), d.mean(), d.std() / np.sqrt(len(d))))
-        tbl = table(pd.DataFrame(rows), {"with everything %/yr": "{:+.1f}", "ablation %/yr": "{:+.1f}", "change %/yr": "{:+.2f}",
-                                         "paired t": "{:.2f}", "blocks: with everything": "{:+.1f}", "blocks: ablation": "{:+.1f}"})
+        tbl = table(pd.DataFrame(rows), {"base %/yr": "{:+.1f}", "ablation %/yr": "{:+.1f}", "change %/yr": "{:+.2f}",
+                                         "paired t": "{:.2f}", "blocks: base": "{:+.1f}", "blocks: ablation": "{:+.1f}"})
         fig, ax = plt.subplots(figsize=(9, 3.4), facecolor="white")
         ax.bar(range(len(chart_rows)), [r[1] for r in chart_rows], yerr=[2 * r[2] for r in chart_rows], color="#1F77B4", capsize=4, width=0.6)
         ax.axhline(0, color="#444", lw=0.8)
         ax.set_xticks(range(len(chart_rows))); ax.set_xticklabels([r[0] for r in chart_rows], fontsize=9)
         ax.set_ylabel("ablation minus full, % per year")
-        ax.set_title(f"{ABLATION_TITLE.get(tag, tag)}: change in evaluation top-8 excess, paired over the random splits (±2 SE)", fontsize=10)
+        ax.set_title(f"{ABLATION_TITLE.get(tag, tag).split(' — ')[0]}: change in evaluation top-8 excess vs its base, paired over the random splits (±2 SE)", fontsize=9.5)
         for sp in ("top", "right"):
             ax.spines[sp].set_visible(False)
         chart = img(fig_to_b64(fig), "Bars below zero mean the model lost edge when the inputs were removed; bars whose error range covers zero are ties.")
@@ -795,7 +826,13 @@ def stage6(c: dict) -> tuple[str, str]:
                        + ", ".join(f"<code>{html.escape(v)}</code>" for v in fsj["dropped"]) + ".</p>")
         files = " · ".join(flink(p / "per_split.xlsx", f"{kind} per-split (xlsx)") + " · " + flink(p / "summary.json", f"{kind} summary")
                            for kind, p in (("floor", fl_tags.get(tag)), ("net", nn_tags.get(tag))) if p is not None)
-        parts.append(f"""<h3>{html.escape(ABLATION_TITLE.get(tag, tag))}</h3>{dropped}{tbl}{chart}
+        era = ""
+        if tag in nn_tags and nn_base_run is not None and (nn_tags[tag] / "monthly.parquet").exists():
+            em = _era_table(pd.read_parquet(nn_base_run / "monthly.parquet"), pd.read_parquet(nn_tags[tag] / "monthly.parquet"), ridge_mo, "nn_mse")
+            era = ("<h4>By era — predict-then-select net, evaluation months pooled</h4>"
+                   + table(em, {k: "{:+.1f}" for k in em.columns if k != "era"}))
+        parts.append(f"""<h3>{html.escape(ABLATION_TITLE.get(tag, tag))}</h3>
+<p class="sub">Nets compared against: {html.escape(base_label)}. Ridge and trees compared against the full-panel floor.</p>{dropped}{tbl}{chart}{era}
 {commentary_block(c, f"ablation_{tag}")}<div class="files"><div class="files-title">Files</div>{files}</div>""")
     body = f"""
 <p class="lead">An ablation reruns the floor and the net on a changed panel — same {len(base[base.split_type=='random'].split.unique())} random splits,

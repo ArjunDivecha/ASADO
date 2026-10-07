@@ -246,6 +246,7 @@ def main() -> int:
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--threads", type=int, default=16)
     ap.add_argument("--tag", default="", help="ablation tag; run dir becomes floor_<ts>_<tag> and the report lists it separately")
+    ap.add_argument("--no-presence", action="store_true", help="drop the per-source 'fraction present' columns from every model")
     args = ap.parse_args()
     if args.n_blocks < 2:
         ap.error("--n-blocks must be >= 2 (one block would hold out every month)")
@@ -269,9 +270,9 @@ def main() -> int:
     month_id = panel["date"].map({m: i for i, m in enumerate(months)}).to_numpy()
     y = panel["fwd_excess"].to_numpy(float)
 
-    sources = sorted(set(src_of.values()))
+    sources = [] if args.no_presence else sorted(set(src_of.values()))
     present = pd.DataFrame({f"present_{s}": panel[[v for v in feats if src_of[v] == s]].notna().mean(axis=1)
-                            for s in sources})
+                            for s in sources}, index=panel.index)
     X_raw = panel[feats].to_numpy(float)
     X_tree = np.hstack([X_raw, present.to_numpy(float)])
     X_ridge = np.hstack([np.nan_to_num(np.clip(X_raw, -5, 5), nan=0.0), present.to_numpy(float)])

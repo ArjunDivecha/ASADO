@@ -271,6 +271,7 @@ def main() -> int:
     ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 4) - 2))
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--tag", default="", help="ablation tag; run dir becomes nn_<ts>_<tag>; floor rows joined from floor_*_<tag>")
+    ap.add_argument("--no-presence", action="store_true", help="drop the per-source 'fraction present' input columns")
     args = ap.parse_args()
     hidden = [int(h) for h in args.hidden.split(",")]
     objectives = [o for o in args.objectives.split(",") if o]
@@ -294,8 +295,9 @@ def main() -> int:
     countries = sorted(panel["country"].unique())
     mi = {m: i for i, m in enumerate(months)}
     ci = {c: i for i, c in enumerate(countries)}
-    sources = sorted(set(src_of.values()))
-    present = np.stack([panel[[v for v in feats if src_of[v] == s]].notna().mean(axis=1).to_numpy() for s in sources], axis=1)
+    sources = [] if args.no_presence else sorted(set(src_of.values()))
+    present = np.stack([panel[[v for v in feats if src_of[v] == s]].notna().mean(axis=1).to_numpy() for s in sources], axis=1) \
+        if sources else np.zeros((len(panel), 0))
     Xrows = np.hstack([np.nan_to_num(np.clip(panel[feats].to_numpy(float), -5, 5), nan=0.0), present]).astype(np.float32)
     F = Xrows.shape[1]
     X = np.zeros((len(months), len(countries), F), np.float32)

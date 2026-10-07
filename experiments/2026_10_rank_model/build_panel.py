@@ -93,6 +93,8 @@ def main() -> int:
     ap.add_argument("--version", default="v1")
     ap.add_argument("--drop-bases", default="PX_LAST,MCAP,MCAP Adj",
                     help="comma-separated base_variable names to drop (both _CS and _TS)")
+    ap.add_argument("--drop-sources", default="",
+                    help="comma-separated source names to drop entirely (e.g. gdelt), for ablations")
     args = ap.parse_args()
     if args.screen is None:
         args.screen = latest_screen()
@@ -109,11 +111,13 @@ def main() -> int:
     # ── 1. factor selection ────────────────────────────────────────────────
     screen = pd.read_parquet(args.screen)
     drop_bases = [b.strip() for b in args.drop_bases.split(",") if b.strip()]
+    drop_sources = [b.strip() for b in args.drop_sources.split(",") if b.strip()]
     scored = screen[screen["fm_t"].notna()]
-    dropped = scored[scored["base_variable"].isin(drop_bases)]
-    selected = scored[~scored["base_variable"].isin(drop_bases)].copy()
-    log.info("screen rows=%d scored=%d dropped(by base %s)=%d selected=%d",
-             len(screen), len(scored), drop_bases, len(dropped), len(selected))
+    drop_mask = scored["base_variable"].isin(drop_bases) | scored["source"].isin(drop_sources)
+    dropped = scored[drop_mask]
+    selected = scored[~drop_mask].copy()
+    log.info("screen rows=%d scored=%d dropped(by base %s, by source %s)=%d selected=%d",
+             len(screen), len(scored), drop_bases, drop_sources, len(dropped), len(selected))
     log.info("dropped: %s", dropped["variable"].tolist())
     cl80 = next((c for c in selected.columns if c.startswith("cluster_abs_rho_ge_0.80")), None)
     keep_cols = ["rank_by_abs_t", "variable", "base_variable", "normalization", "source", "lag_months",
@@ -130,7 +134,7 @@ def main() -> int:
         "rules": [
             "keep every factor with a screen t-stat (>= 24 usable months of >= 20 countries)",
             f"drop base variables {drop_bases} in both _CS and _TS",
-        ],
+        ] + ([f"drop sources {drop_sources} entirely"] if drop_sources else []),
         "n_factors": int(len(selected)),
         "by_source": selected["source"].value_counts().to_dict(),
         "by_normalization": selected["normalization"].value_counts().to_dict(),

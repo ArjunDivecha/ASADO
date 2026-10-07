@@ -110,6 +110,8 @@ def main() -> int:
     ap.add_argument("--no-presence", action="store_true")
     ap.add_argument("--buffer", type=int, default=DEFAULT_BUFFER,
                     help="hysteresis rank buffer M for the headline basket: hold a name while ranked <= M (default 16; 8 = plain top-8)")
+    ap.add_argument("--max-month", type=int, default=0,
+                    help="use only the first N months of the panel (design holdout: select on the first half); 0 = all")
     args = ap.parse_args()
     hidden = [int(h) for h in args.hidden.split(",")]
     objectives = [o for o in args.objectives.split(",") if o]
@@ -128,6 +130,10 @@ def main() -> int:
     feats = [f["variable"] for f in fs["factors"]]
     src_of = {f["variable"]: f["source"] for f in fs["factors"]}
     panel = pd.read_parquet(args.panel).sort_values(["date", "country"]).reset_index(drop=True)
+    if args.max_month:
+        cutoff = np.sort(panel["date"].unique())[args.max_month - 1]
+        panel = panel[panel["date"] <= cutoff].reset_index(drop=True)
+        log.info("design holdout: panel restricted to the first %d months (through %s)", args.max_month, pd.Timestamp(cutoff).strftime("%Y-%m"))
     months = pd.DatetimeIndex(np.sort(panel["date"].unique())); countries = sorted(panel["country"].unique())
     mi = {m: i for i, m in enumerate(months)}; ci = {c: i for i, c in enumerate(countries)}
     sources = [] if args.no_presence else sorted(set(src_of.values()))

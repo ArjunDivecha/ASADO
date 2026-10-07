@@ -109,11 +109,14 @@ def main() -> int:
     ap.add_argument("--patience", type=int, default=30)
     ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 4) - 2))
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--max-month", type=int, default=0,
+                    help="use only the first N months of the panel (design holdout: choose the design on the first half); 0 = all")
+    ap.add_argument("--tag", default="")
     args = ap.parse_args()
     configs = {n: CONFIGS[n] for n in args.configs.split(",") if n}
 
     t0 = time.time()
-    run_dir = RESULTS_ROOT / f"hill_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    run_dir = RESULTS_ROOT / (f"hill_{datetime.now().strftime('%Y%m%d_%H%M%S')}" + (f"_{args.tag}" if args.tag else ""))
     run_dir.mkdir(parents=True, exist_ok=False)
     fmt = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
     log.setLevel(logging.INFO)
@@ -127,6 +130,10 @@ def main() -> int:
     feats = [f["variable"] for f in fs["factors"]]
     src_of = {f["variable"]: f["source"] for f in fs["factors"]}
     panel = pd.read_parquet(args.panel).sort_values(["date", "country"]).reset_index(drop=True)
+    if args.max_month:
+        cutoff = np.sort(panel["date"].unique())[args.max_month - 1]
+        panel = panel[panel["date"] <= cutoff].reset_index(drop=True)
+        log.info("design holdout: panel restricted to the first %d months (through %s)", args.max_month, pd.Timestamp(cutoff).strftime("%Y-%m"))
     months = np.sort(panel["date"].unique())
     countries = sorted(panel["country"].unique())
     mi = {m: i for i, m in enumerate(months)}
@@ -237,6 +244,8 @@ def main() -> int:
     ridge = None
     floor = sorted(p for p in RESULTS_ROOT.glob("floor_*") if p.is_dir() and (p / "summary.json").exists()
                    and len(p.name) == len("floor_20261007_110654"))
+    if args.max_month:
+        floor = []   # the floor's splits cover the full panel; not comparable to a restricted one
     if floor:
         fl = pd.read_parquet(floor[-1] / "per_split.parquet")
         ridge = fl[(fl.model == "ridge") & (fl.set == "eval") & (fl.split_type == "random")].set_index("split")["top8_excess_ann_pct"]
@@ -264,6 +273,8 @@ def main() -> int:
     repro = None
     nn_runs = sorted(p for p in RESULTS_ROOT.glob("nn_*") if p.is_dir() and (p / "summary.json").exists()
                      and len(p.name) == len("nn_20261007_112400"))
+    if args.max_month:
+        nn_runs = []   # nothing to reproduce against on a restricted panel
     if nn_runs:
         prev = pd.read_parquet(nn_runs[-1] / "per_split.parquet")
         prev = prev[(prev.model == "nn_mse") & (prev.member == "ensemble") & (prev.set == "eval")].set_index("split")["top8_excess_ann_pct"]

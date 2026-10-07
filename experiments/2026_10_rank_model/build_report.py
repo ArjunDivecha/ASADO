@@ -961,16 +961,34 @@ def stage8(c: dict) -> tuple[str, str]:
     mo = pd.read_parquet(run / "monthly_oos.parquet")
     by = pd.read_parquet(run / "by_year.parquet")
     pf = pd.read_parquet(run / "per_fold.parquet")
-    ov = s["overall"]; pr = s["paired_vs_ridge"]
+    # rule-aware runs (walk_forward.py >= 2026-10-07 pm) nest overall/paired by rule; older runs are plain top-8 only
+    rule_aware = "default_rule" in s
+    default_rule = s.get("default_rule", "plain_top8")
+    rule_label = {"plain_top8": "plain top-8 (re-pick every month)"}
+    for r_ in s.get("rules", []):
+        if r_.startswith("buffer_M"):
+            rule_label[r_] = f"hysteresis: hold while ranked ≤ {r_[8:]} (the default)"
+    if rule_aware:
+        ov_all, pr_all = s["overall"], s["paired_vs_ridge"]
+        ov, pr = ov_all[default_rule], pr_all[default_rule]
+        mo_all, by_all, pf_all = mo, by, pf
+        mo, by, pf = mo[mo.rule == default_rule], by[by.rule == default_rule], pf[pf.rule == default_rule]
+    else:
+        ov, pr = s["overall"], s["paired_vs_ridge"]
+        ov_all, pr_all = {"plain_top8": ov}, {"plain_top8": pr}
+        mo_all, by_all, pf_all = mo.assign(rule="plain_top8"), by.assign(rule="plain_top8"), pf.assign(rule="plain_top8")
     models = [m for m in ["ridge", "reference_REER_CS", "nn_mse", "nn_soft_top8"] if m in ov]
     nets = [m for m in models if m.startswith("nn_")]
     best = max(nets, key=lambda m: ov[m]["top8_excess_ann_pct"]) if nets else "ridge"
     n_oos = s["oos_months"]
     sd_m = mo[mo.model == "ridge"]["top8_excess"].std()
     se = float(sd_m / np.sqrt(n_oos) * 1200)
+    turnover_note = (f' · {ov[best]["names_changed_per_month"]:.1f} names change / month ({ov[best]["turnover_oneway_pct_yr"]:.0f}% one-way / yr)'
+                     if "names_changed_per_month" in ov[best] else "")
     k = kpis([
-        (f'{ov[best]["top8_excess_ann_pct"]:+.1f}%', f"{MODEL_LABEL[best]}: out-of-sample top-8 excess per year", f'{s["oos_start"]} → {s["oos_end"]}, {n_oos} months never seen in training · t {ov[best]["top8_t"]:.1f} · hit {ov[best]["top8_hit_rate"]:.2f}'),
-        (f'{ov["ridge"]["top8_excess_ann_pct"]:+.1f}%', "ridge, same months, same protocol", f't {ov["ridge"]["top8_t"]:.1f} · hit {ov["ridge"]["top8_hit_rate"]:.2f}'),
+        (f'{ov[best]["top8_excess_ann_pct"]:+.1f}%', f"{MODEL_LABEL[best]}: out-of-sample basket excess per year ({rule_label.get(default_rule, default_rule).split(' (')[0]})",
+         f'{s["oos_start"]} → {s["oos_end"]}, {n_oos} months never seen in training · t {ov[best]["top8_t"]:.1f} · hit {ov[best]["top8_hit_rate"]:.2f}{turnover_note}'),
+        (f'{ov["ridge"]["top8_excess_ann_pct"]:+.1f}%', "ridge, same months, same rule", f't {ov["ridge"]["top8_t"]:.1f} · hit {ov["ridge"]["top8_hit_rate"]:.2f}'),
         (f'{pr[best]["minus_ridge_ann_pct"]:+.1f}%' if best in pr else "—", "net minus ridge, month by month", f't {pr[best]["t"]:.1f} · net ahead in {pr[best]["wins_frac"]*100:.0f}% of months' if best in pr else ""),
         (f'±{se:.1f}%', "noise on the whole out-of-sample figure", f"one standard error over {n_oos} months"),
     ])
@@ -1003,30 +1021,42 @@ def stage8(c: dict) -> tuple[str, str]:
         ax.spines[sp].set_visible(False)
     chartB = img(fig_to_b64(fig), "Years above zero are years the basket beat the equal-weight average out of sample.")
     rows = []
-    for m in models:
-        a = ov[m]
-        rows.append({"model": MODEL_LABEL[m], "OOS top-8 excess %/yr": a["top8_excess_ann_pct"], "t": a["top8_t"], "hit rate": a["top8_hit_rate"],
-                     "caught of true top 8": a["precision8"] * 8, "rank IC": a["rank_ic"], "soft-k %/yr (sharp)": a[f"soft_excess_ann_pct_tau{SOFT_TAUS[0]}"],
-                     "vs ridge %/yr": pr.get(m, {}).get("minus_ridge_ann_pct", np.nan), "t (vs ridge)": pr.get(m, {}).get("t", np.nan),
-                     "L−S %/yr": a["ls_spread_ann_pct"]})
-    tbl = table(pd.DataFrame(rows), {"OOS top-8 excess %/yr": "{:+.1f}", "t": "{:.2f}", "hit rate": "{:.2f}", "caught of true top 8": "{:.2f}",
-                                     "rank IC": "{:.3f}", "soft-k %/yr (sharp)": "{:+.1f}", "vs ridge %/yr": "{:+.2f}", "t (vs ridge)": "{:.2f}", "L−S %/yr": "{:+.1f}"})
-    # ── trading diagnostics: turnover, information ratio, drawdowns (from the OOS picks) ──
+    for rule_ in ([default_rule] + [r_ for r_ in ov_all if r_ != default_rule]):
+        for m in models:
+            if m not in ov_all[rule_]:
+                continue
+            a = ov_all[rule_][m]; p_ = pr_all[rule_]
+            rows.append({"rule": rule_label.get(rule_, rule_), "model": MODEL_LABEL[m], "OOS excess %/yr": a["top8_excess_ann_pct"], "t": a["top8_t"],
+                         "hit rate": a["top8_hit_rate"], "IR": a.get("info_ratio", np.nan), "names changed / month": a.get("names_changed_per_month", np.nan),
+                         "max rel. DD %": a.get("max_rel_drawdown_pct", np.nan), "caught of true top 8": a["precision8"] * 8, "rank IC": a["rank_ic"],
+                         "vs ridge %/yr": p_.get(m, {}).get("minus_ridge_ann_pct", np.nan), "t (vs ridge)": p_.get(m, {}).get("t", np.nan),
+                         "L−S %/yr": a["ls_spread_ann_pct"]})
+    tbl = table(pd.DataFrame(rows), {"OOS excess %/yr": "{:+.1f}", "t": "{:.2f}", "hit rate": "{:.2f}", "IR": "{:.2f}", "names changed / month": "{:.2f}",
+                                     "max rel. DD %": "{:.1f}", "caught of true top 8": "{:.2f}", "rank IC": "{:.3f}", "vs ridge %/yr": "{:+.2f}",
+                                     "t (vs ridge)": "{:.2f}", "L−S %/yr": "{:+.1f}"})
+    # ── trading diagnostics: turnover, information ratio, drawdowns, per rule ──
     diag_html = ""
     try:
-        pr = pd.read_parquet(run / "predictions_oos.parquet")
-        panel_path = Path(s["panel"])
-        pnl = pd.read_parquet(panel_path, columns=["date", "country", "fwd_ret", "bench_ret"])
-        pr = pr.merge(pnl, on=["date", "country"])
+        pr_ = pd.read_parquet(run / "predictions_oos.parquet")
+        pnl = pd.read_parquet(Path(s["panel"]), columns=["date", "country", "fwd_ret", "bench_ret"])
+        pr_ = pr_.merge(pnl, on=["date", "country"])
         K = int(s["config"].get("k", 8))
         drows, under_series = [], {}
-        for m in models:
-            d = pr[pr.model == m].sort_values(["date", "score"], ascending=[True, False])
-            top = d.groupby("date").head(K)
-            hold = top.groupby("date")["country"].apply(set)
-            dts = hold.index
-            changed = np.mean([len(hold[dts[i]] - hold[dts[i - 1]]) for i in range(1, len(dts))]) if len(dts) > 1 else np.nan
-            bask = top.groupby("date")["fwd_ret"].mean(); bench = top.groupby("date")["bench_ret"].first(); exc = bask - bench
+        rule_series = {}
+        for rule_ in ([default_rule] + [r_ for r_ in ov_all if r_ != default_rule]):
+            for m in models:
+                mr = mo_all[(mo_all.rule == rule_) & (mo_all.model == m)].sort_values("date")
+                if len(mr) and "basket_ret" in mr.columns:
+                    bask = mr.set_index("date")["basket_ret"]; bench = mr.set_index("date")["bench_ret"]
+                    changed = float(mr["names_changed"].iloc[1:].mean())
+                else:  # older runs: rebuild the plain top-8 from the scores
+                    d = pr_[pr_.model == m].sort_values(["date", "score"], ascending=[True, False])
+                    top = d.groupby("date").head(K); hold = top.groupby("date")["country"].apply(set); dts = hold.index
+                    changed = np.mean([len(hold[dts[i]] - hold[dts[i - 1]]) for i in range(1, len(dts))]) if len(dts) > 1 else np.nan
+                    bask = top.groupby("date")["fwd_ret"].mean(); bench = top.groupby("date")["bench_ret"].first()
+                rule_series[(rule_, m)] = (bask, bench, changed)
+        for (rule_, m), (bask, bench, changed) in rule_series.items():
+            exc = bask - bench
             wb, wbm = (1 + bask).cumprod(), (1 + bench).cumprod(); rel = wb / wbm
             def dd(wealth):
                 peak = wealth.cummax(); dmin = (wealth / peak - 1)
@@ -1037,9 +1067,10 @@ def stage8(c: dict) -> tuple[str, str]:
             peak = rel.cummax(); under = (rel < peak); longest = 0; run_len = 0
             for u in under:
                 run_len = run_len + 1 if u else 0; longest = max(longest, run_len)
-            under_series[m] = (rel / peak - 1) * 100
+            if rule_ == default_rule:
+                under_series[m] = (rel / peak - 1) * 100
             yrs = len(wb) / 12
-            drows.append({"model": MODEL_LABEL[m], "names changed / month (of 8)": changed, "one-way turnover %/yr": changed / K * 1200,
+            drows.append({"rule": rule_label.get(rule_, rule_), "model": MODEL_LABEL[m], "names changed / month (of 8)": changed, "one-way turnover %/yr": changed / K * 1200,
                           "excess vol %/yr": exc.std() * np.sqrt(12) * 100, "information ratio": exc.mean() / exc.std() * np.sqrt(12),
                           "worst month %": exc.min() * 100, "max relative drawdown %": rd * 100,
                           "drawdown peak → trough": f"{rp:%Y-%m} → {rt:%Y-%m}" + ("" if pd.notna(rr) else " (not yet recovered)"),
@@ -1055,7 +1086,7 @@ def stage8(c: dict) -> tuple[str, str]:
                 ax.plot(under_series[m].index, under_series[m].values, color=colr.get(m, "#444"), lw=1.2 if m == best else 0.9, label=MODEL_LABEL[m])
         ax.set_ylabel("below previous peak, % (basket ÷ EW)")
         ax.legend(frameon=False, fontsize=8.5, loc="lower left")
-        ax.set_title("Underwater chart: how far the basket's wealth relative to the equal-weight average sits below its previous high", fontsize=10)
+        ax.set_title(f"Underwater chart ({rule_label.get(default_rule, default_rule).split(' (')[0]}): how far the basket's wealth relative to the equal-weight average sits below its previous high", fontsize=10)
         for sp in ("top", "right"):
             ax.spines[sp].set_visible(False)
         under_img = img(fig_to_b64(fig), "Depth is the size of the relative drawdown; width is how long it took to get back. Absolute drawdowns (in the table) are dominated by 2008 for every long-only country basket.")
@@ -1108,6 +1139,12 @@ scores of the walk-forward.</p>{htbl}{hchart}"""
     pfs = pfs.reset_index().rename(columns={"oos_start": "fold starts"})
     tbl2 = table(pfs, {c: "{:+.1f}" for c in pfs.columns if c != "fold starts"})
     cfg = s["config"]
+    rule_para = (f'<div class="note"><div class="note-title">Basket rule</div><p>The headline figures use the project default since 7 October 2026: '
+                 f'<strong>{html.escape(rule_label.get(default_rule, default_rule))}</strong>. A held name stays while the model still ranks it in the top '
+                 f'{default_rule[8:] if default_rule.startswith("buffer_M") else "8"} of the universe; only names that fall below are replaced, by the best-ranked names not held. '
+                 f'The plain rule — re-pick the top eight every month — is shown alongside in every table. Both are formed from the same out-of-sample scores; the '
+                 f'random-split stages above use the plain rule because a path-dependent rule has no meaning on scattered months.</p></div>'
+                 if rule_aware else "")
     body = f"""
 <p class="lead">Everything before this section re-partitioned the same history at random, which tests whether a fitted relationship transfers to
 other months of the <em>same</em> history. This section is the test that was deliberately left until the design settled: train on everything
@@ -1115,6 +1152,7 @@ before a cut-off, score the next twelve months, move the cut-off forward a year,
 of history, so the out-of-sample record runs from {s["oos_start"]} to {s["oos_end"]} — {n_oos} months, {s["n_folds"]} folds, expanding window.
 Models: ridge (penalty chosen inside each training window), the post-hill-climb net ({cfg["hidden"][0]}/{cfg["hidden"][1]}, {cfg["seeds"]} seeds
 averaged, early-stopped inside the training window) on both objectives, and the single-factor reference.</p>
+{rule_para}
 {k}
 {chartA}
 {tbl}

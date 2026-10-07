@@ -293,6 +293,22 @@ hold a name while ranked ≤ M, replace only names that fall below M.
 Ridge: 519 → 191 %/yr at M=16, excess flat ~2.2. Verdict: **M = 16 halves turnover at no cost**;
 fix it a priori ("hold while in the top half").
 
+## Step 10 — hysteresis is the default (2026-10-07)
+
+`hysteresis.py` carries `DEFAULT_BUFFER = 16`; `walk_forward.py --buffer` (default 16) now forms the
+headline basket with it and reports `plain_top8` alongside (`rule` column in monthly_oos / per_fold /
+by_year; `overall` and `paired_vs_ridge` nested by rule in summary.json). Random-split stages stay on
+plain top-8 (path-dependent rules have no meaning on scattered months). Rerun:
+`walk_20261007_140136` (v3 clean) — reproduces the scores exactly.
+
+| v3 walk-forward | net MSE | net soft | ridge |
+|---|---|---|---|
+| **buffer M=16 (default)** %/yr (t) | **+4.5 (3.4)** | +4.3 (3.3) | +2.25 (1.9) |
+| plain top-8 %/yr (t) | +4.1 (3.0) | +2.4 (2.0) | +2.1 (1.7) |
+| names changed / month, default | 1.8 | 1.6 | 1.3 |
+
+Net − ridge, default rule: +2.25 %/yr, t 1.8.
+
 ## Running report
 
 `build_report.py` → `results/report.html` — one self-contained light-mode page: a

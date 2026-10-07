@@ -13,9 +13,11 @@ INPUT FILES:
 
 OUTPUT FILES (inside
   /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model/results/walk_<YYYYMMDD_HHMMSS>[_<tag>]/ ):
-- monthly_oos.parquet        per (model, month): out-of-sample top-8 excess, precision@8, rank IC, soft-k excess
-- per_fold.parquet / .xlsx   per (model, fold): the same, aggregated over that fold's 12 months
-- by_year.parquet            per (model, year): annualized OOS top-8 excess, hit rate
+- monthly_oos.parquet        per (model, rule, month): out-of-sample basket excess, basket and
+                             benchmark return, names changed, plus score-based precision@8, rank IC,
+                             soft-k excess. rule = plain_top8 or buffer_M<--buffer> (the default headline)
+- per_fold.parquet / .xlsx   per (model, rule, fold): the same, aggregated over that fold's 12 months
+- by_year.parquet            per (model, rule, year): annualized OOS excess, hit rate
 - predictions_oos.parquet    per (model, date, country): score, realized excess
 - summary.json, heartbeat.json, run.log
 
@@ -40,9 +42,16 @@ per-fold table shows honestly. Models per fold:
   nn_soft_top8 same net on the soft top-8 objective
   reference    REER_CS alone (no fitting), when present in the panel
 
-Reported: mean monthly OOS excess of the top-8 basket (x12), its t-stat over
-OOS months, hit rate, precision@8, rank IC; by year; paired net-minus-ridge
-over OOS months; and the cumulative series for the chart.
+Basket rule (project default since 2026-10-07, see hysteresis.py): hold a
+name while the model still ranks it in the top --buffer (16) of the
+universe; replace only names that fall below, with the best-ranked names not
+held. The plain re-pick-the-top-8 rule is reported alongside. Both are formed
+from the same out-of-sample scores.
+
+Reported per rule: mean monthly OOS excess of the basket (x12), its t-stat over
+OOS months, hit rate, information ratio, turnover, maximum relative drawdown,
+precision@8, rank IC; by year; paired net-minus-ridge over OOS months; and the
+cumulative series for the chart.
 
 DEPENDENCIES: torch, pandas, numpy, scipy, scikit-learn, pyarrow, xlsxwriter (experiment .venv)
 
@@ -75,6 +84,7 @@ EXP_DIR = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/ex
 sys.path.insert(0, str(EXP_DIR))
 from train_floor import PANEL, FACTOR_SET, RESULTS_ROOT, REFERENCE_FACTOR, SOFT_TAUS, aggregate, fit_ridge, month_metrics, tstat  # noqa: E402
 from train_nn import _init_worker, train_one  # noqa: E402
+from hysteresis import DEFAULT_BUFFER, build_baskets  # noqa: E402
 
 log = logging.getLogger("walk_forward")
 
@@ -98,6 +108,8 @@ def main() -> int:
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--tag", default="")
     ap.add_argument("--no-presence", action="store_true")
+    ap.add_argument("--buffer", type=int, default=DEFAULT_BUFFER,
+                    help="hysteresis rank buffer M for the headline basket: hold a name while ranked <= M (default 16; 8 = plain top-8)")
     args = ap.parse_args()
     hidden = [int(h) for h in args.hidden.split(",")]
     objectives = [o for o in args.objectives.split(",") if o]
@@ -190,36 +202,63 @@ def main() -> int:
             ens = np.mean([r["scores"][r_m, r_c] for r in rs], axis=0)
             scores[f"nn_{obj}"][oos] = ens[oos]
 
-    # ── OOS scoring ─────────────────────────────────────────────────────────
+    # ── OOS scoring: plain top-8 and the hysteresis-buffered basket (the headline) ──
+    # The scores are the same; the rules differ only in how the basket is formed from them.
+    # Score-based diagnostics (precision@8, rank IC, bottom-8, soft-k) come from the plain
+    # month_metrics and are carried unchanged onto the buffered rows.
     oos_all = r_m >= folds[0][1]
+    rules = {"plain_top8": args.k}
+    if args.buffer and args.buffer > args.k:
+        rules[f"buffer_M{args.buffer}"] = args.buffer
+    default_rule = f"buffer_M{args.buffer}" if args.buffer and args.buffer > args.k else "plain_top8"
+    score_cols = ["precision8", "rank_ic", "bottom8_excess"] + [c for c in
+                 [f"soft_excess_tau{t}" for t in SOFT_TAUS] + [f"neff_tau{t}" for t in SOFT_TAUS]]
     monthly, per_fold, preds = [], [], []
     for model, sc in scores.items():
-        mm = month_metrics(sc[oos_all], y_rows[oos_all], r_m[oos_all], args.k)
-        mm.insert(0, "model", model); mm["date"] = months[mm["month_id"].to_numpy()]
-        mm["fold"] = [next(fi for fi, a, b in folds if a <= m < b) for m in mm["month_id"]]
-        monthly.append(mm)
-        for fi, g in mm.groupby("fold"):
-            a = aggregate(g.drop(columns=["model", "date", "fold"])); a.update({"model": model, "fold": fi,
-                "oos_start": months[folds[fi][1]].strftime("%Y-%m"), "train_months": folds[fi][1]}); per_fold.append(a)
-        preds.append(pd.DataFrame({"model": model, "date": panel["date"][oos_all].to_numpy(), "country": panel["country"][oos_all].to_numpy(),
-                                   "score": sc[oos_all], "fwd_excess": y_rows[oos_all]}))
+        mm_plain = month_metrics(sc[oos_all], y_rows[oos_all], r_m[oos_all], args.k)
+        mm_plain["date"] = months[mm_plain["month_id"].to_numpy()]
+        d = pd.DataFrame({"date": panel["date"][oos_all].to_numpy(), "country": panel["country"][oos_all].to_numpy(),
+                          "score": sc[oos_all], "fwd_excess": y_rows[oos_all],
+                          "fwd_ret": panel["fwd_ret"][oos_all].to_numpy(), "bench_ret": panel["bench_ret"][oos_all].to_numpy()})
+        preds.append(d[["date", "country", "score", "fwd_excess"]].assign(model=model))
+        for rule, M in rules.items():
+            b = build_baskets(d, args.k, M).rename(columns={"excess": "top8_excess"})
+            mm = b.merge(mm_plain[["date", "month_id", "n"] + score_cols], on="date", how="left")
+            mm.insert(0, "rule", rule); mm.insert(0, "model", model)
+            mm["fold"] = [next(fi for fi, a, bb in folds if a <= m < bb) for m in mm["month_id"]]
+            monthly.append(mm)
+            for fi, g in mm.groupby("fold"):
+                a = aggregate(g.drop(columns=["model", "rule", "date", "fold", "basket_ret", "bench_ret", "names_changed", "n_held"]))
+                a.update({"model": model, "rule": rule, "fold": fi, "oos_start": months[folds[fi][1]].strftime("%Y-%m"),
+                          "train_months": folds[fi][1], "names_changed_per_month": float(g["names_changed"].mean())})
+                per_fold.append(a)
     mo = pd.concat(monthly, ignore_index=True)
     pf = pd.DataFrame(per_fold)
-    by_year = (mo.assign(year=mo["date"].dt.year).groupby(["model", "year"])
+    by_year = (mo.assign(year=mo["date"].dt.year).groupby(["model", "rule", "year"])
                .agg(top8_excess_ann_pct=("top8_excess", lambda x: x.mean() * 1200), hit_rate=("top8_excess", lambda x: (x > 0).mean()),
                     months=("top8_excess", "size")).reset_index())
-    overall = {}
-    for model, g in mo.groupby("model"):
-        a = aggregate(g.drop(columns=["model", "date", "fold"]))
-        overall[model] = a
-    paired = {}
-    rid = mo[mo.model == "ridge"].set_index("date")["top8_excess"]
-    for model in scores:
-        if model == "ridge":
-            continue
-        d = mo[mo.model == model].set_index("date")["top8_excess"].reindex(rid.index) - rid
-        paired[model] = {"minus_ridge_ann_pct": float(d.mean() * 1200), "t": tstat(d), "months": int(d.notna().sum()),
-                         "wins_frac": float((d > 0).mean())}
+    overall, paired = {}, {}
+    for rule in rules:
+        overall[rule], paired[rule] = {}, {}
+        mr = mo[mo.rule == rule]
+        for model, g in mr.groupby("model"):
+            a = aggregate(g.drop(columns=["model", "rule", "date", "fold", "basket_ret", "bench_ret", "names_changed", "n_held"]))
+            ch = g["names_changed"].iloc[1:]
+            wb, wbm = (1 + g["basket_ret"]).cumprod(), (1 + g["bench_ret"]).cumprod(); rel = wb / wbm
+            dd = (rel / rel.cummax() - 1)
+            a.update({"names_changed_per_month": float(ch.mean()), "turnover_oneway_pct_yr": float(ch.mean() / args.k * 1200),
+                      "info_ratio": float(g["top8_excess"].mean() / g["top8_excess"].std(ddof=1) * np.sqrt(12)),
+                      "excess_vol_pct_yr": float(g["top8_excess"].std(ddof=1) * np.sqrt(12) * 100),
+                      "max_rel_drawdown_pct": float(dd.min() * 100), "basket_cagr_pct": float((wb.iloc[-1] ** (12 / len(wb)) - 1) * 100),
+                      "bench_cagr_pct": float((wbm.iloc[-1] ** (12 / len(wbm)) - 1) * 100)})
+            overall[rule][model] = a
+        rid = mr[mr.model == "ridge"].set_index("date")["top8_excess"]
+        for model in scores:
+            if model == "ridge":
+                continue
+            dd_ = mr[mr.model == model].set_index("date")["top8_excess"].reindex(rid.index) - rid
+            paired[rule][model] = {"minus_ridge_ann_pct": float(dd_.mean() * 1200), "t": tstat(dd_), "months": int(dd_.notna().sum()),
+                                   "wins_frac": float((dd_ > 0).mean())}
 
     mo.to_parquet(run_dir / "monthly_oos.parquet", index=False)
     pf.to_parquet(run_dir / "per_fold.parquet", index=False)
@@ -228,20 +267,25 @@ def main() -> int:
     with pd.ExcelWriter(run_dir / "per_fold.xlsx", engine="xlsxwriter") as xw:
         pf.to_excel(xw, sheet_name="per_fold", index=False, na_rep="—")
         by_year.to_excel(xw, sheet_name="by_year", index=False, na_rep="—")
-        pd.DataFrame(overall).T.to_excel(xw, sheet_name="overall", na_rep="—")
+        pd.concat({r: pd.DataFrame(o).T for r, o in overall.items()}, names=["rule", "model"]).to_excel(xw, sheet_name="overall", na_rep="—")
     runs = pd.DataFrame([{k: v for k, v in r.items() if k != "scores"} for r in results])
     summary = {"run_dir": str(run_dir), "panel": str(args.panel), "factor_set": str(args.factor_set), "tag": args.tag,
                "config": {k: (str(v) if isinstance(v, Path) else v) for k, v in vars(args).items()} | {"hidden": hidden},
                "n_folds": len(folds), "oos_start": months[folds[0][1]].strftime("%Y-%m"), "oos_end": months[-1].strftime("%Y-%m"),
-               "oos_months": int(mo[mo.model == "ridge"].shape[0]), "overall": overall, "paired_vs_ridge": paired,
+               "oos_months": int(mo[(mo.model == "ridge") & (mo.rule == default_rule)].shape[0]),
+               "rules": list(rules), "default_rule": default_rule,
+               "overall": overall, "paired_vs_ridge": paired,
                "ridge_alphas": {str(k): v for k, v in alphas.items()},
                "net_runs_stats": runs.groupby("objective")[["best_epoch", "seconds"]].mean().round(1).to_dict("index") if len(runs) else {},
                "elapsed_s": round(time.time() - t0, 1)}
     (run_dir / "summary.json").write_text(json.dumps(summary, indent=2, default=str))
     heartbeat("done")
-    log.info("OUT-OF-SAMPLE (%s -> %s, %d months): %s", summary["oos_start"], summary["oos_end"], summary["oos_months"],
-             {m: f'{a["top8_excess_ann_pct"]:+.2f}%/yr t={a["top8_t"]:.2f} hit={a["top8_hit_rate"]:.2f}' for m, a in overall.items()})
-    log.info("paired vs ridge: %s", {m: f'{p["minus_ridge_ann_pct"]:+.2f} t={p["t"]:.2f}' for m, p in paired.items()})
+    for rule in rules:
+        log.info("OUT-OF-SAMPLE [%s]%s (%s -> %s, %d months): %s", rule, " (default)" if rule == default_rule else "",
+                 summary["oos_start"], summary["oos_end"], summary["oos_months"],
+                 {m: f'{a["top8_excess_ann_pct"]:+.2f}%/yr t={a["top8_t"]:.2f} hit={a["top8_hit_rate"]:.2f} turnover={a["turnover_oneway_pct_yr"]:.0f}%'
+                  for m, a in overall[rule].items()})
+        log.info("  paired vs ridge: %s", {m: f'{p["minus_ridge_ann_pct"]:+.2f} t={p["t"]:.2f}' for m, p in paired[rule].items()})
     log.info("done in %.1f min", (time.time() - t0) / 60)
     return 0
 

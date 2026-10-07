@@ -58,6 +58,10 @@ import pandas as pd
 
 EXP_DIR = Path("/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model")
 RESULTS = EXP_DIR / "results"
+# The project default (Arjun, 2026-10-07): hold a name while the model still ranks it in the top 16
+# of 34 — "still in the top half" — replace only names that fall below. Chosen a priori from a
+# flat sweep over M = 12..16 on the clean walk-forward; walk_forward.py uses it as its headline rule.
+DEFAULT_BUFFER = 16
 
 
 def latest_walk() -> Path:

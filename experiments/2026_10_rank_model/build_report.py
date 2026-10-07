@@ -118,8 +118,21 @@ def strip_chart(ev: pd.DataFrame, bl: pd.DataFrame, order: list[str], se: float,
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 def latest(prefix: str) -> Path | None:
-    runs = sorted(p for p in RESULTS.glob(f"{prefix}_*") if p.is_dir())
+    """Newest UNTAGGED run directory (<prefix>_<YYYYMMDD>_<HHMMSS>); tagged ablations are listed by tagged_runs()."""
+    pat = re.compile(rf"^{prefix}_\d{{8}}_\d{{6}}$")
+    runs = sorted(p for p in RESULTS.glob(f"{prefix}_*") if p.is_dir() and pat.match(p.name))
     return runs[-1] if runs else None
+
+
+def tagged_runs(prefix: str) -> dict[str, Path]:
+    """{tag: newest run dir} for <prefix>_<ts>_<tag> directories that completed (summary.json present)."""
+    pat = re.compile(rf"^{prefix}_\d{{8}}_\d{{6}}_(.+)$")
+    out: dict[str, Path] = {}
+    for p in sorted(q for q in RESULTS.glob(f"{prefix}_*") if q.is_dir()):
+        m = pat.match(p.name)
+        if m and (p / "summary.json").exists():
+            out[m.group(1)] = p
+    return out
 
 
 def flink(p: Path | str, label: str | None = None) -> str:
@@ -717,6 +730,158 @@ with the same metrics, so every comparison with ridge is paired. The bar is the 
     return "done", body
 
 
+# ── stage 6: ablations (tagged reruns of the floor and the net) ──────────────
+ABLATION_TITLE = {"noreer": "Without REER (all four variants removed)"}
+
+
+def stage6(c: dict) -> tuple[str, str]:
+    fl_tags, nn_tags = tagged_runs("floor"), tagged_runs("nn")
+    tags = sorted(set(fl_tags) | set(nn_tags))
+    base_floor, base_nn = latest("floor"), latest("nn")
+    if not tags or base_floor is None:
+        return "pending", '<div class="note pending">No ablation runs yet. An ablation is a rerun of the floor and the net on a changed panel, tagged so it sits here instead of replacing the headline.</div>'
+    fb = pd.read_parquet(base_floor / "per_split.parquet")
+    fb = fb[fb.get("member", pd.Series("floor", index=fb.index)).ne("seed")] if "member" in fb else fb
+    nb = pd.read_parquet(base_nn / "per_split.parquet") if base_nn else pd.DataFrame()
+    if len(nb):
+        nb = nb[(nb.member == "ensemble")]
+    base = pd.concat([fb[fb.model.isin(["ridge", "lgbm_regression", "reference_REER_CS"])], nb], ignore_index=True)
+    models = ["ridge", "lgbm_regression", "nn_mse", "nn_soft_top8", "nn_mse_then_soft"]
+    parts = []
+    for tag in tags:
+        pieces = []
+        if tag in fl_tags:
+            d = pd.read_parquet(fl_tags[tag] / "per_split.parquet"); d = d[d.model.isin(["ridge", "lgbm_regression"])]; pieces.append(d)
+        if tag in nn_tags:
+            d = pd.read_parquet(nn_tags[tag] / "per_split.parquet"); d = d[d.member == "ensemble"]; pieces.append(d)
+        abl = pd.concat(pieces, ignore_index=True)
+        rows, chart_rows = [], []
+        for m in models:
+            if m not in abl.model.values or m not in base.model.values:
+                continue
+            b_ev = base[(base.model == m) & (base.set == "eval") & (base.split_type == "random")].set_index("split")["top8_excess_ann_pct"]
+            a_ev = abl[(abl.model == m) & (abl.set == "eval") & (abl.split_type == "random")].set_index("split")["top8_excess_ann_pct"]
+            common = b_ev.index.intersection(a_ev.index)
+            d = (a_ev[common] - b_ev[common])
+            b_bl = base[(base.model == m) & (base.set == "eval") & (base.split_type == "blocked")]["top8_excess_ann_pct"].mean()
+            a_bl = abl[(abl.model == m) & (abl.set == "eval") & (abl.split_type == "blocked")]["top8_excess_ann_pct"].mean()
+            rows.append({"model": MODEL_LABEL[m], "with everything %/yr": b_ev[common].mean(), "ablation %/yr": a_ev[common].mean(),
+                         "change %/yr": d.mean(), "paired t": d.mean() / (d.std() / np.sqrt(len(d))) if len(d) > 2 else float("nan"),
+                         "splits where ablation is worse": int((d < 0).sum()), "splits": len(d),
+                         "blocks: with everything": b_bl, "blocks: ablation": a_bl})
+            chart_rows.append((SHORT[m].replace("\n", " "), d.mean(), d.std() / np.sqrt(len(d))))
+        tbl = table(pd.DataFrame(rows), {"with everything %/yr": "{:+.1f}", "ablation %/yr": "{:+.1f}", "change %/yr": "{:+.2f}",
+                                         "paired t": "{:.2f}", "blocks: with everything": "{:+.1f}", "blocks: ablation": "{:+.1f}"})
+        fig, ax = plt.subplots(figsize=(9, 3.4), facecolor="white")
+        ax.bar(range(len(chart_rows)), [r[1] for r in chart_rows], yerr=[2 * r[2] for r in chart_rows], color="#1F77B4", capsize=4, width=0.6)
+        ax.axhline(0, color="#444", lw=0.8)
+        ax.set_xticks(range(len(chart_rows))); ax.set_xticklabels([r[0] for r in chart_rows], fontsize=9)
+        ax.set_ylabel("ablation minus full, % per year")
+        ax.set_title(f"{ABLATION_TITLE.get(tag, tag)}: change in evaluation top-8 excess, paired over the random splits (±2 SE)", fontsize=10)
+        for sp in ("top", "right"):
+            ax.spines[sp].set_visible(False)
+        chart = img(fig_to_b64(fig), "Bars below zero mean the model lost edge when the inputs were removed; bars whose error range covers zero are ties.")
+        fs_path = None
+        for src in (nn_tags.get(tag), fl_tags.get(tag)):
+            if src is not None:
+                s = json.load(open(src / "summary.json"))
+                fs_path = s.get("factor_set") or s.get("config", {}).get("factor_set")
+                if fs_path:
+                    break
+        dropped = ""
+        if fs_path and Path(fs_path).exists():
+            fsj = json.load(open(fs_path))
+            dropped = (f'<p>Factor set: <strong>{fsj["n_factors"]}</strong> factors. Removed by rule: '
+                       + ", ".join(f"<code>{html.escape(v)}</code>" for v in fsj["dropped"]) + ".</p>")
+        files = " · ".join(flink(p / "per_split.xlsx", f"{kind} per-split (xlsx)") + " · " + flink(p / "summary.json", f"{kind} summary")
+                           for kind, p in (("floor", fl_tags.get(tag)), ("net", nn_tags.get(tag))) if p is not None)
+        parts.append(f"""<h3>{html.escape(ABLATION_TITLE.get(tag, tag))}</h3>{dropped}{tbl}{chart}
+{commentary_block(c, f"ablation_{tag}")}<div class="files"><div class="files-title">Files</div>{files}</div>""")
+    body = f"""
+<p class="lead">An ablation reruns the floor and the net on a changed panel — same {len(base[base.split_type=='random'].split.unique())} random splits,
+same blocks, same seeds — so the only thing that moved is the inputs, and every comparison with the full-panel run is paired split by split.</p>
+{''.join(parts)}"""
+    return "done", body
+
+
+# ── stage 7: hill-climb ──────────────────────────────────────────────────────
+def stage7(c: dict) -> tuple[str, str]:
+    run = latest("hill")
+    if run is None or not (run / "summary.json").exists():
+        hb = json.load(open(run / "heartbeat.json")) if run is not None and (run / "heartbeat.json").exists() else None
+        msg = (f'Running now — {hb["runs_done"]} of {hb["runs_total"]} nets trained, {hb["elapsed_s"]//60} min elapsed'
+               if hb else "Not run yet.")
+        return ("running" if hb else "pending"), f'<div class="note pending">{msg}</div>'
+    s = json.load(open(run / "summary.json"))
+    cfg = pd.read_parquet(run / "configs.parquet")
+    curve = pd.read_parquet(run / "seed_curve.parquet")
+    ps = pd.read_parquet(run / "per_split.parquet")
+    floor_run = latest("floor")
+    se = json.load(open(floor_run / "summary.json"))["noise_floor"]["se_ann_pct_random_split"] if floor_run else 2.9
+    base_row = cfg[cfg.config == "base"].iloc[0]
+    best = cfg.iloc[0]
+    k = kpis([
+        (f'{best["eval_top8_ann_pct"]:+.1f}%', "best config, eval top-8 excess per year", f'{best["config"]} · {best["hidden"]} hidden, dropout {best["dropout"]}, wd {best["weight_decay"]}'),
+        (f'{best["vs_base_pct"]:+.2f}%', "best minus base, paired", f'paired t {best["vs_base_t"]:.1f} · wins {int(best["wins_vs_base"])}/{int(best["n_splits"])}'),
+        (f'{base_row["eval_top8_ann_pct"]:+.1f}%', "base config (stage 5 reproduced)", (f'max difference to stage 5: {s["reproducibility_max_abs_diff_vs_stage5"]:.3f}%' if s.get("reproducibility_max_abs_diff_vs_stage5") is not None else "")),
+        (f'{best["train_top8_ann_pct"]:+.0f}%', "best config on its training months", f'base fits {base_row["train_top8_ann_pct"]:+.0f}%; the gap is memorisation'),
+    ])
+    # chart A: configs — eval (dot) with ±2SE paired vs base, train (faint), blocked (diamond)
+    order = cfg.sort_values("eval_top8_ann_pct", ascending=True)
+    fig, ax = plt.subplots(figsize=(11, 5.4), facecolor="white")
+    y = np.arange(len(order))
+    ax.barh(y, order["train_top8_ann_pct"], color="#E8EEF5", height=0.6, label="training months (fit)")
+    ax.errorbar(order["eval_top8_ann_pct"], y, xerr=2 * order["eval_sd_splits"] / np.sqrt(order["n_splits"]), fmt="o", color="#1F77B4", capsize=3, label="evaluation months (±2 SE over splits)")
+    ax.scatter(order["blocked_top8_ann_pct"], y, marker="D", color="#D62728", s=40, zorder=5, label="contiguous blocks")
+    ax.axvline(base_row["eval_top8_ann_pct"], color="#2CA02C", ls="--", lw=1, label="base config, eval")
+    ax.set_yticks(y); ax.set_yticklabels(order["config"], fontsize=9)
+    ax.set_xlabel("top-8 excess over the average, % per year")
+    ax.legend(frameon=False, fontsize=8.5, loc="lower right")
+    ax.set_title("The sweep: each config as a 5-seed ensemble on the same 30 random splits and 5 blocks", fontsize=10.5)
+    for sp in ("top", "right"):
+        ax.spines[sp].set_visible(False)
+    chartA = img(fig_to_b64(fig), "Read the blue dots against the green line (base) and the pink error bars; the faint bars show how hard each config fits its own training months.")
+    # chart B: seed curve
+    cr = curve[curve.split_type == "random"].groupby("n_seeds")["top8_excess_ann_pct"].agg(["mean", "std", "count"]).reset_index()
+    single = cr[cr.n_seeds == 0]["mean"].iloc[0] if (cr.n_seeds == 0).any() else np.nan
+    cr = cr[cr.n_seeds > 0]
+    fig, ax = plt.subplots(figsize=(8.5, 3.8), facecolor="white")
+    ax.errorbar(cr["n_seeds"], cr["mean"], yerr=2 * cr["std"] / np.sqrt(cr["count"]), marker="o", color="#1F77B4", capsize=3)
+    if not np.isnan(single):
+        ax.axhline(single, color="#9E9E9E", ls="--", lw=1, label=f"average single net ({single:+.1f}%)")
+    ax.set_xscale("log"); ax.set_xticks(cr["n_seeds"]); ax.set_xticklabels(cr["n_seeds"].astype(int))
+    ax.set_xlabel("nets averaged (seeds)"); ax.set_ylabel("eval top-8 excess, % per year")
+    ax.set_title("Seed curve, base config: how much does averaging more nets buy?", fontsize=10.5)
+    ax.legend(frameon=False, fontsize=8.5)
+    for sp in ("top", "right"):
+        ax.spines[sp].set_visible(False)
+    chartB = img(fig_to_b64(fig), "Where the curve flattens is the ensemble size worth paying for.")
+    show = cfg[["config", "hidden", "dropout", "weight_decay", "lr", "eval_top8_ann_pct", "eval_sd_splits", "vs_base_pct", "vs_base_t", "wins_vs_base",
+                "vs_ridge_pct", "vs_ridge_t", "blocked_top8_ann_pct", "train_top8_ann_pct", "eval_hit_rate", "eval_rank_ic", "mean_best_epoch"]].rename(columns={
+        "weight_decay": "wd", "eval_top8_ann_pct": "eval %/yr", "eval_sd_splits": "± splits", "vs_base_pct": "vs base", "vs_base_t": "t",
+        "wins_vs_base": "wins/30", "vs_ridge_pct": "vs ridge", "vs_ridge_t": "t (ridge)", "blocked_top8_ann_pct": "blocks %/yr",
+        "train_top8_ann_pct": "train %/yr", "eval_hit_rate": "hit", "eval_rank_ic": "rank IC", "mean_best_epoch": "epochs"})
+    tbl = table(show, {"dropout": "{:.2f}", "wd": "{:.2f}", "lr": "{:.4f}", "eval %/yr": "{:+.1f}", "± splits": "{:.1f}", "vs base": "{:+.2f}", "t": "{:.1f}",
+                       "vs ridge": "{:+.2f}", "t (ridge)": "{:.1f}", "blocks %/yr": "{:+.1f}", "train %/yr": "{:+.0f}", "hit": "{:.2f}", "rank IC": "{:.3f}", "epochs": "{:.0f}"})
+    body = f"""
+<p class="lead">The hill-climb: change one ingredient of the stage-5 network at a time — dropout, weight decay, width, learning rate, and two
+"heavy" combinations — and keep what improves the evaluation months on the same {s["n_splits"]} splits. Objective: predict-then-select
+({s["objective"]}), the fastest of the three and the best on contiguous blocks. Every config is a {s["seeds_sweep"]}-seed ensemble and every comparison
+is paired against the base config and against ridge. Separately, the base config is trained with {s["seeds_curve"]} seeds to find where averaging saturates.
+{s["n_runs"]} nets in {s["elapsed_s"]/60:.0f} minutes.</p>
+{k}
+{chartA}
+<h4>All configs, sorted by evaluation result</h4>
+{tbl}
+{chartB}
+{commentary_block(c, "stage7")}
+<div class="files"><div class="files-title">Files</div>
+{flink(run / "per_split.xlsx", "configs / per-split / seed-curve (xlsx)")} · {flink(run / "configs.parquet", "configs (parquet)")} ·
+{flink(run / "seed_curve.parquet", "seed curve (parquet)")} · {flink(run / "per_split.parquet", "per-split (parquet)")} · {flink(run / "runs.parquet", "one row per net")} ·
+{flink(run / "summary.json")} · {flink(run / "run.log")} · {flink(EXP_DIR / "hillclimb_nn.py", "script")}</div>"""
+    return "done", body
+
+
 # ── page ─────────────────────────────────────────────────────────────────────
 CSS = """
 :root{--bg:#ffffff;--fg:#1a1a1a;--muted:#5f6368;--line:#e4e7eb;--card:#f7f8fa;--accent:#1F77B4;--warn:#fff4e5;--warnb:#f0b35c;--ok:#2CA02C;--pend:#9E9E9E}
@@ -767,6 +932,8 @@ def main() -> int:
         ("stage3", "3 · Your factor set & the modelling panel", stage3),
         ("stage4", "4 · The floor: linear model & trees", stage4),
         ("stage5", "5 · The neural network", stage5),
+        ("stage6", "6 · Ablations", stage6),
+        ("stage7", "7 · Hill-climb", stage7),
     ]
     rendered = []
     for key, title, fn in stages:
@@ -794,7 +961,9 @@ and links the files.</p>
 <div class="step"><b>2 · Which factors predict anything alone?</b>Regress each on next-month return; top-8 baskets.</div>
 <div class="step"><b>3 · Freeze the inputs</b>Your pick, lags applied, one modelling table.</div>
 <div class="step"><b>4 · The floor</b>Ridge and boosted trees on the top-8 objective, many random splits.</div>
-<div class="step"><b>5 · Neural net</b>Shared net, three objectives, same splits as the floor; then cross-country attention.</div>
+<div class="step"><b>5 · Neural net</b>Shared net, three objectives, same splits as the floor.</div>
+<div class="step"><b>6 · Ablations</b>Rerun floor and net with inputs removed; what does the edge depend on?</div>
+<div class="step"><b>7 · Hill-climb</b>Regularisation, width, learning rate, ensemble size — one at a time, paired.</div>
 </div>
 {('<div class="note"><div class="note-title">Where things stand</div>' + overview_c + '</div>') if overview_c else ''}
 {sections}

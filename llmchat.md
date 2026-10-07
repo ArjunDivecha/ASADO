@@ -1902,7 +1902,16 @@ was the top draw. Pooled 30-net ensemble (`pool_draws.py` → `results/pooled_20
 (t 2.3) M16, 2.6 plain; ridge 2.1–2.3; pooled net − ridge +0.5..+0.7 (t ≤ 0.6). Headline now ~3 %/yr OOS,
 net = ridge statistically; large pooled ensembles required.
 
+**Addendum 4 (16:00 PDT) — the default model.** Arjun prefers the 5-year rolling window ("the world
+changes") and rejects the first-half/second-half split as a headline test. Defaults now in `walk_forward.py`:
+`--window 60 --seeds 30 --buffer 16`. Three independent draws (`walk_*_default_s0/s1000/s2000`) summarised by
+`default_model.py` → `results/default_20261007_155223`: **+3.1 %/yr OOS 2005-02→2026-09 (t 2.8, IR 0.59)**,
+draws 3.05/3.28/3.02, pooled 90 nets 3.2; even by decade (2.7/3.3/3.1); 1.8 names/month; max rel DD −12.6 %.
+Ridge same window: 1.95 (M16), 2.9 (plain); net − ridge +1.2 (t 1.1). The buffer is what makes runs agree
+(plain-rule draws 1.6/3.1/1.9). Earlier 4.1/4.5 % headlines withdrawn (single draws).
+
 ### What To Build Next
+- Forward paper-trade the default model; vintage-archived slow inputs + T2 macro lag.
 - Monthly-refit walk-forward with 30–50 seeds (net and ridge), repeat the holdout, report run-to-run ranges.
 - (done) Design holdout: choose architecture/seeds on the first half of history, walk forward on the second.
 - Vintage-archived slow inputs (extend the audit's ALFRED method); T2 macro publication lags.

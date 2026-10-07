@@ -450,10 +450,15 @@ def stage4(c: dict) -> tuple[str, str]:
     order = [m for m in MODEL_ORDER if m in agg.index]
     real = [m for m in order if "shuffled" not in m and not m.startswith("reference")]
     best = agg.loc[real, "mean"].idxmax()
+    has_ref = "reference_REER_CS" in agg.index
+    third = ((f'{agg.loc["reference_REER_CS", "mean"]:+.1f}%', "single best factor, same months", "the bar the models must clear (retired after the REER audit)")
+             if has_ref else
+             (f'{agg.loc["ridge", "blocked_mean"]:+.1f}%' if "blocked_mean" in agg.columns else f'{agg_bl.loc["ridge", "mean"]:+.1f}%',
+              "ridge on contiguous blocks", "no single-factor reference on the cleaned panel — REER was retired by the audit"))
     k = kpis([
         (f'{agg.loc[best, "mean"]:+.1f}%', "best model's top-8 excess, per year (eval months)", f'{MODEL_LABEL[best]} · hit rate {agg.loc[best, "hit"]:.2f}'),
         (f'±{se:.1f}%', "noise on any single split", f"standard error of one split's annual figure; {n_rand} splits average it down"),
-        (f'{agg.loc["reference_REER_CS", "mean"]:+.1f}%', "single best factor, same months", "the bar the models must clear"),
+        third,
         (f'{agg_tr[best]:+.1f}%', "the same model on its training months", "the gap to eval is how much is memorised"),
     ])
 

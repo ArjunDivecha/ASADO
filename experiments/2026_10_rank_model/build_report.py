@@ -125,7 +125,9 @@ def latest(prefix: str) -> Path | None:
     """Newest UNTAGGED run directory (<prefix>_<YYYYMMDD>_<HHMMSS>); tagged ablations are listed by tagged_runs()."""
     pat = re.compile(rf"^{prefix}_\d{{8}}_\d{{6}}$")
     runs = sorted(p for p in RESULTS.glob(f"{prefix}_*") if p.is_dir() and pat.match(p.name))
-    return runs[-1] if runs else None
+    done = [p for p in runs if (p / "summary.json").exists()]
+    # prefer the newest COMPLETED run; an in-progress run (heartbeat, no summary) is returned only if nothing is complete
+    return done[-1] if done else (runs[-1] if runs else None)
 
 
 def tagged_runs(prefix: str) -> dict[str, Path]:

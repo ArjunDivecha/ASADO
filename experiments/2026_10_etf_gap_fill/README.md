@@ -218,3 +218,23 @@ trial can measure it.
 The impact term in cost-model v1.0 (square-root on ETF ADV) was dropped. It contradicted the
 measured slippage and ignored ETF creation/redemption liquidity. Its output (−53%/yr at $1M) is
 not a result.
+
+---
+
+# Sizing by the size of the move (2026-10-07, `etf_reversal_sizing.py`, run `runs/sizing_20261007_001345`)
+
+Variants were fixed before results. Signal z = (r − group mean) / own 60d vol.
+- **The payoff is convex in move size.** The next-day active return of the one-name pick is flat
+  across the four mildest quintiles of |z| (roughly 8-19bp) and jumps in the most extreme
+  quintile: 23bp over the full history, 55bp over the last 5y, 53bp in E5.
+- **Sizing the one-name position down on mild days does not help.** The trailing-80th-percentile
+  scaling and the half/full tiers both lower full-history Sharpe (−0.14 and −0.17, CIs below
+  zero) and are flat recently. They raise return per dollar of exposure and cut turnover by a
+  quarter, so net of costs in E5 they are a wash (1.96 vs 1.93). Mild days still earn money, so
+  sitting partly out gives it up. Sizing UP with leverage on extreme days was not tested.
+- **Inverse-vol sizing** changes nothing for one name, and is slightly worse for seven.
+- **Signal-weighting across names helps somewhat.** Weighting every name with z < 0 in
+  proportion to −z ("allneg_sigw") beats the original raw seven-name rule over the full history
+  (Sharpe 2.19 vs 1.94, CI +0.05 to +0.46). It ties over the last 5y (1.60 vs 1.55) and is not
+  significantly better in E5 (gross 2.44 vs 2.14; net +2.9%/yr vs −0.3%, CI spans zero). It is
+  the only diversified book that is not negative net of the half spread, but only barely.

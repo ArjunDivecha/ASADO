@@ -369,6 +369,20 @@ Verdict: **default = rolling 60, 30 nets, predict-then-select, M16 → ~3.1 %/yr
 across runs (±0.15), even across decades.** Not distinguishable from ridge as a forecaster; better
 behaved under the trading rule. Next: forward paper-trade; vintage inputs.
 
+## Step 14 — blend of net and ridge (2026-10-07)
+
+`blend.py` → `results/blend_20261007_193006/`. Within-month z-scores, 0.5 × net + 0.5 × ridge, fixed a
+priori, on the three default draws' saved OOS scores.
+
+| OOS 2005–2026, %/yr (IR) | blend | net | ridge |
+|---|---|---|---|
+| default rule M16 | +2.86 (0.50) | **+3.11 (0.59)** | +1.95 (0.34) |
+| plain top-8 | **+3.20 (0.55)**, runs 3.0–3.4 | +2.20 (0.41) | +2.89 (0.48) |
+
+Blend − net: M16 −0.26 (t −0.4); plain +1.00 (t 1.4). Blend plain: max rel DD −10.3 %, 3.4 names/month.
+Verdict: **no improvement on the default; the buffer and the blend do the same job.** Every robust
+configuration converges near 3 %/yr, IR 0.5–0.6. Default unchanged.
+
 ## Running report
 
 `build_report.py` → `results/report.html` — one self-contained light-mode page: a
@@ -376,7 +390,40 @@ section per stage with number tiles, charts, sortable tables, commentary
 (`report_commentary.md`, written after the numbers) and links to every file.
 Regenerate after any stage: `.venv/bin/python build_report.py && open results/report.html`.
 
+## Step 15 — GDELT as conditioning (2026-10-07, `gdelt_veto/`)
+
+Three pre-registered rules on the daily GDELT store — veto the most-shocked holding, exclude countries with news
+score ≤ −1, boost news score ≥ +1 — all FAIL (exclusion cost 1.2 %/yr). The daily deep theme/event file is empty.
+Family verdict: Investment Learnings `GDELT Country Rotation Conditioning.md`. News dropped from the programme.
+
+## Step 16 — rolling five years vs recency-weighted all history (2026-10-07, `ema_window/`)
+
+Expanding window, equal weights and half-lives 24/36/60/120 months, three draws each: every paired t within ±0.7 of
+rolling-60; all-history arms 3–17× less stable across draws (spreads 2.7–4.5 points vs 0.26). Rolling-60 kept.
+
+## Step 17 — the fundamentals toolkit, rung B (2026-10-08, `toolkit/`)
+
+Hindsight ceiling: best single swap +23 %/yr. Six of seven fundamental-change heads beat naive baselines (vol rank IC
+0.39). Stacked ridge comparator −2.1 %/yr (score-only control −1.7 %/yr). Forecasts as six extra inputs −2.9 %/yr
+(six shuffled columns −1.6 %/yr). Multi-task net (return + six auxiliary losses): λ 0.005 / 0.05 / 0.5 / 2 / 2+warm-up
+→ +0.04 / +0.24 / **+0.84** / +0.06 / −0.59 %/yr vs default; best t 0.76. No arm passes. Full detail in
+`toolkit/README.md`.
+
+## Step 18 — default vs multi-task λ 0.5 vs 50/50 (2026-10-08, `results/three_way_20261008_091245/`)
+
+| Full period, gross | return | std | max DD | DD vs EW | turnover |
+|---|---|---|---|---|---|
+| default | 11.24 % | 20.2 % | −61.0 % | −18.0 % | 262 % |
+| multi-task λ 0.5 | 12.15 % | 20.3 % | −57.0 % | −11.6 % | 254 % |
+| 50/50 score blend | 12.09 % | 20.3 % | −60.8 % | −12.5 % | 266 % |
+
+The multi-task net's drawdown advantage is one episode (2005-12 → 2008-11, training window = dot-com years); since 2010
+the default's worst relative drawdown is −9.3 % against −11.6 %, and the default leads over 5y and 3y.
+
+## Decision (2026-10-08, Arjun): **keep the default.** Project closed — see `CLOSEOUT.md` / `CLOSEOUT.html`.
+
 ## Next
 
-Forward paper-trade the default; vintage-archived slow inputs + T2 macro lag; optional nested rolling
-design re-selection; implementation costs at 1.8 names/month.
+Forward paper-trade the default; vintage-archived slow inputs + T2 macro lag. Reopen only on a forward record that
+diverges from the backtest, a 2005–08-style regime break (multi-task λ 0.5 is the ready alternative), or a genuinely
+new information source that is not a function of the 238 factors.

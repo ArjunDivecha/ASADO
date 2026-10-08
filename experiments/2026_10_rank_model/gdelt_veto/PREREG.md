@@ -106,6 +106,38 @@ includes an economically useful effect, the verdict is "inconclusive", stated as
 - Secondary and exploratory results cannot rescue a primary FAIL. They can motivate a *new*
   pre-registration.
 
+---
+
+# Test 2 (Arjun's rule, 2026-10-07 22:10): exclude countries with significantly negative news
+
+Written before `filter_test.py` was first run. Uses the shocks and scores saved by test 1
+(`results/gdelt_veto_20261007_214235/`), so no new data construction.
+
+**Rule.** Run the default model exactly as normal (pooled scores, hold while ranked ≤ 16, eight
+names), except that each month any country whose **news score ≤ −1** is ineligible: it cannot be
+bought and, if held, it is dropped and the next-ranked eligible country fills the slot. Ranks are
+the model's ranks over all 34; eligibility only removes names. A country with no shock value that
+month stays eligible.
+
+**News score.** Minus the test-1 composite shock (attention, tone, dispersion, risk; 14-day window
+ending the day before rebalance; standardised against the trailing year). So "≤ −1" means a
+composite shock of at least one standard deviation of bad news.
+
+**Primary statistic.** Monthly excess return of the filtered basket minus that of the unfiltered
+default basket (paired, same months), annualised, with its t over the roughly 124 months from
+2016-03. Hypothesis: positive.
+
+**Secondary.** Thresholds −0.5 and −1.5; windows 7 and 30 days; the `composite_share` and
+tone-only scores; names dropped per month and the resulting turnover; the filtered basket's own
+excess, t and information ratio for the record.
+
+**Controls.** Stale news (score from three months earlier) under the same rule; 500
+country-shuffled permutations of the score each month, giving a null distribution of the paired t.
+
+**Decision.** PASS if the primary paired t ≥ 2.0, above the 95th percentile of the shuffled null,
+and stronger than the stale-news t (which must itself be below 2.0). Otherwise FAIL, with the
+inconclusive label if the 95% interval still admits +1% a year.
+
 ## Amendments
 
 **A1, 2026-10-07 21:45, before any result of the full run was read.** A sanity check of the

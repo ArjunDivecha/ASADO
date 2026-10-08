@@ -92,3 +92,10 @@ and every month has now been used, so there is no independent slice to confirm i
 a forward record, which is not worth the attention for a rule of this shape.
 
 Three stated rules, three fails. GDELT aggregates are closed on this project; nothing changes the default model.
+
+---
+
+*Note (2026-10-08).* `holdings.parquet` in the test-1 run holds the default basket from 2016-03 with the hysteresis state
+carried from 2005 (3.36% a year over those months). Tests 2 and 3 re-ran the hysteresis from a cold start at 2016-03 for
+both their filtered/boosted baskets and their default comparator (3.01% a year), so their paired comparisons are like
+with like; the two "default" figures differ only in warm-up. No verdict depends on it.

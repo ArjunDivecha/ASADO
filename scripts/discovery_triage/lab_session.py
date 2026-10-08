@@ -54,7 +54,7 @@ from .paths import DETECTOR_DRAFTS, DISCOVERY_CONFIG, DRAFTS_DIR, RESEARCH_LOOKS
 from .record_look import record_look
 from .surface_loader import check_surface, load_country_snapshot
 
-DEFAULT_MODEL = "claude-opus-5"
+DEFAULT_MODEL = "claude-opus-5-5"
 
 # FuguPRD §24 forbidden vocabulary — the Lab emits drafts, never validation claims.
 _FORBIDDEN = re.compile(
@@ -291,12 +291,13 @@ def run_lab_session(
     compact = compact_snapshot(snapshot)
     user = (f"Discovery search: {searches[search_id].get('label', search_id)}\n"
             f"as_of: {as_of}\nallowed_surfaces: {allowed}\n\n"
+            f"Respond by calling the emit_discovery_cards tool.\n\n"
             f"OUTCOME-BLIND SNAPSHOT (latest per country, date <= as_of):\n"
             f"{json.dumps(compact, default=str)[:45000]}")
     response = client.messages.create(
         model=model_id, max_tokens=max_tokens, system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user}],
-        tools=[CARD_TOOL], tool_choice={"type": "tool", "name": "emit_discovery_cards"},
+        tools=[CARD_TOOL], tool_choice={"type": "auto"},
     )
     cards = _extract_cards(response)
     _u = getattr(response, "usage", None)

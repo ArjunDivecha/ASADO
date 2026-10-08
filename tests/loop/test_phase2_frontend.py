@@ -250,7 +250,7 @@ def test_read_fable_forces_conjecture_tag(monkeypatch, tmp_path):
     m = _bcd()
     art = tmp_path / "connections_latest.json"
     art.write_text(json.dumps({
-        "as_of": "2026-06-30", "model": "claude-fable-5",
+        "as_of": "2026-06-30", "model": "claude-fable-5-1",
         "connections": [{"title": "t", "epistemic_tag": "FACT"}],  # hostile input
     }))
     monkeypatch.setattr(m, "FABLE_JSON", art)

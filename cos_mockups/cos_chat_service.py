@@ -573,7 +573,7 @@ def call_opus_agent(question: str, data: dict[str, Any], timeout: int = 90) -> t
         "system": system,
         "messages": [{"role": "user", "content": user}],
     }
-    if not model.startswith("claude-opus-5"):
+    if not model.startswith("claude-"):  # every current Claude model rejects temperature
         payload["temperature"] = 0.1
     response = requests.post(
         "https://api.anthropic.com/v1/messages",

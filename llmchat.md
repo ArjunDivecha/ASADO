@@ -1995,3 +1995,51 @@ Claude wrote `llm_rl/BRIEF.md` and `NOTES_own_analysis.md`, then ran GPT (`gpt-6
 ---
 SESSION END: 2026-10-07 20:36 PDT | Agent: Claude Code (auto, precompact, session dc8244a3)
 ---
+
+---
+SESSION START: 2026-10-07 21:09 PDT | Agent: Claude Code (auto, idle, session dc8244a3)
+---
+
+### Session Summary
+Arjun asked whether to run a deep standalone test of the daily GDELT data, then asked for the GDELT repos in A Working and A Complete to be read. Four Sonnet agents surveyed six repos. The recommendation is no to a broad standalone test, because it has effectively been run twice. Instead, run one narrow test that nobody has tried. `llm_rl/DESIGN.md` was corrected for the dead-end findings, re-rendered to `DESIGN.html` with pandoc, and committed on `exp/NN` as `cd9aa77` (not pushed). Three commits are now unpushed: `7edc0b9`, `f209fb0` and `cd9aa77`.
+
+### Decisions Made
+- DESIGN.md changes:
+  - A new section, "What has already been tried", records the prior art.
+  - Rung C is now a single news-as-veto test.
+  - Rung D counts as a test of value only when the LLM is given text. Given only numbers, it is a stability check, since LLM-1M already killed that (rank-corr 0.002, and a tree model beat it two to one).
+  - Decision 5 now asks about the veto test and the freshness build, not about restarting the deep GDELT pipeline.
+- Recommendation, awaiting Arjun's approval: run the veto test. If it finds nothing, GDELT's only remaining role is as text for a forward LLM.
+
+### Architecture / Design
+Veto test:
+- Question: does a news shock in the 1–2 weeks before rebalance flag which of the default model's 8 holdings will lag the other holdings?
+- Controls: stale-news and country-shuffled-news.
+- Cost: about one day of compute on existing data.
+- Power: about 130 overlapping months, so only an effect of roughly 2.5%/yr or more would show reliably.
+
+### Constraints & Gotchas
+Survey findings:
+- GDELT Factor Timing Fuzzy Daily put 74 daily tone and attention factors through the daily factor-timing stack. The optimised strategy made about 1%/yr at Sharpe 0.22. The average factor's information ratio was about zero.
+- On 27 July, both the 93-variable keep-list and the deep panel (~1,100 columns) failed the permutation check.
+- T2 GDELT had Sharpe 0.07, and factor-picking did worse than equal-weighting all of them.
+- Removing all 92 GDELT factors from our own model costs about 0.5 pt/yr, which is not significant.
+- The earned law that index-space alpha is roughly zero at the US-listed ETF close also cuts against a daily-horizon version.
+- Narrative freshness (H_20260727_003) is the only open GDELT hypothesis, but its embedding build stalled. It was killed repeatedly on 5 August (exit 137) and gated in at 2019-07 to 2019-08. The sampled daily feature files stop at 2015-08-10, against a needed 2021-12. Finishing it is about 73 hours of compute, and whether the job is still running is unknown.
+
+### Open Questions
+- Does Arjun approve the veto test?
+- Should the freshness build be resumed?
+- Should a verdict-skill draft of an Investment Learnings entry for GDELT Factor Timing Fuzzy Daily be written? It has none, and the fork gate requires one.
+- In T2 GDELT, the final portfolio returns file shows exactly zero return in 117 of 124 months. This is either a bug or the liquidity cap, and the survey did not diagnose it.
+
+### Context for Next Session
+- `Loop Pilot-gdelt/looppilot.config.json` holds a Telegram bot token in plaintext. The full path was not recorded. The token should be rotated, and the file should be kept out of git.
+- Files:
+  - `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model/llm_rl/DESIGN.md`
+  - `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model/llm_rl/DESIGN.html`
+  - `/Users/arjundivecha/Dropbox/AAA Backup/A Complete/Investment Learnings/LLM-1M Country Rotation.md`
+
+---
+SESSION END: 2026-10-07 21:09 PDT | Agent: Claude Code (auto, idle, session dc8244a3)
+---

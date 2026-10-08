@@ -15,7 +15,7 @@ OUTPUT FILES (in /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/e
 - monthly.parquet            per arm/member/month: basket excess
 - summary.json, charts.pdf, report.html (light mode), run.log
 
-VERSION: 1.0   LAST UPDATED: 2026-10-07   AUTHOR: Claude for Arjun Divecha
+VERSION: 1.1 (generic --arms/--since)   LAST UPDATED: 2026-10-08   AUTHOR: Claude for Arjun Divecha
 
 DESCRIPTION:
 Pre-registered comparison (ema_window/PREREG.md): rolling five-year training window versus
@@ -60,7 +60,16 @@ def load(tag: str) -> pd.DataFrame | None:
 
 
 def main() -> int:
-    ts = datetime.now().strftime("%Y%m%d_%H%M%S"); run_dir = RESULTS / f"ema_compare_{ts}"; run_dir.mkdir(parents=True)
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--arms", default=None, help="comma list name=tag, e.g. rolling60=default,heads=heads ; default: the EMA grid")
+    ap.add_argument("--since", default=None, help="restrict the comparison to months >= this date (YYYY-MM-DD)")
+    ap.add_argument("--prefix", default="ema_compare")
+    a = ap.parse_args()
+    global ARMS
+    if a.arms:
+        ARMS = dict(kv.split("=") for kv in a.arms.split(","))
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S"); run_dir = RESULTS / f"{a.prefix}_{ts}"; run_dir.mkdir(parents=True)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s", handlers=[logging.StreamHandler(), logging.FileHandler(run_dir / "run.log")])
     t0 = time.time()
     panel = pd.read_parquet(PANEL, columns=["date", "country", "fwd_ret", "bench_ret", "fwd_excess"]); panel["date"] = pd.to_datetime(panel["date"])
@@ -73,6 +82,8 @@ def main() -> int:
         sc = pd.concat(draws, axis=1); sc["pooled"] = sc.mean(axis=1)
         for member in list(draws) + ["pooled"]:
             d = sc[member].rename("score").reset_index().merge(panel, on=["date", "country"]).dropna(subset=["score"])
+            if a.since:
+                d = d[d["date"] >= pd.Timestamp(a.since)]
             mo = build_baskets(d, K, M); st = stats(mo, K)
             series[(arm, member)] = mo.set_index("date")["excess"]
             rows.append({"arm": arm, "member": member, **st}); monthly.append(mo.assign(arm=arm, member=member))
@@ -110,7 +121,8 @@ def main() -> int:
     # charts
     import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
     from matplotlib.backends.backend_pdf import PdfPages
-    cols = {"rolling60": "#222222", "exp": "#999999", "ema24": "#b22222", "ema36": "#1f4e79", "ema60": "#2e8b57", "ema120": "#b8860b"}
+    palette = ["#222222", "#b22222", "#1f4e79", "#2e8b57", "#b8860b", "#999999", "#6a3d9a"]
+    cols = {arm: palette[i % len(palette)] for i, arm in enumerate(ARMS)}
     imgs = []
     def b64(fig):
         b = io.BytesIO(); fig.savefig(b, format="png", dpi=130, bbox_inches="tight"); return base64.b64encode(b.getvalue()).decode()

@@ -30,7 +30,7 @@ OUTPUT FILES (in /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/e
 - report.html           self-contained light-mode report of everything above
 - run.log
 
-VERSION: 1.0
+VERSION: 1.1 (amendment A1: attention_share / composite_share secondaries)
 LAST UPDATED: 2026-10-07
 AUTHOR: Claude for Arjun Divecha
 
@@ -95,7 +95,10 @@ BASELINE_DAYS, STALE_SHIFT = 365, 90
 FIRST_MONTH = pd.Timestamp("2016-03-01")
 # live-store components: column -> sign (+1 = higher is worse news)
 LIVE_COMPONENTS = {"attention": ("n_articles", +1), "tone": ("tone_mean", -1),
-                   "dispersion": ("tone_dispersion", +1), "risk": ("country_news_risk_raw", +1)}
+                   "dispersion": ("tone_dispersion", +1), "risk": ("country_news_risk_raw", +1),
+                   # PREREG amendment A1 (secondary): share of the day's firehose, because total GDELT volume is capacity-bound
+                   "attention_share": ("attention_share", +1)}
+SHARE_COMPOSITE = ["attention_share", "tone", "dispersion", "risk"]
 DEEP_COMPONENTS = {"uncertainty": ("gcam_lm_uncertainty_mean", +1), "goldstein": ("event_goldstein_mean", -1),
                    "protest": ("event_root_protest_n", +1)}
 
@@ -158,6 +161,8 @@ def shock_table(daily: pd.DataFrame, components: dict[str, tuple[str, int]], win
             s = g[col].astype(float)
             if comp == "attention":
                 s = np.log1p(s)
+            elif comp == "attention_share":
+                s = np.log(s.where(s > 0))
             s = s * sign
             for w in windows:
                 rm = s.rolling(w, min_periods=max(2, w // 2)).mean()
@@ -361,7 +366,7 @@ code{{background:#f3f3f3;padding:0 .25rem}}
 <img src="data:image/png;base64,{imgs[0]}"><img src="data:image/png;base64,{imgs[1]}">
 
 <h2>Secondary: every component and window (pooled scores, always flag)</h2>
-<p>Negative t means the shocked holding lagged. "theme_surge", "uncertainty", "goldstein", "protest" and "deep_composite" come from the retired deep file and end 2026-04.</p>
+<p>Negative t means the shocked holding lagged. "attention_share" and "composite_share" are the amendment A1 secondaries. "theme_surge", "uncertainty", "goldstein", "protest" and "deep_composite" come from the retired deep file and end 2026-04.</p>
 <img src="data:image/png;base64,{imgs[2]}">
 {tbl(a_main, cols, fmt)}
 
@@ -427,8 +432,10 @@ def main() -> int:
     live = pd.read_parquet(LIVE, columns=["date", "country_iso3", "n_articles", "tone_mean", "tone_dispersion", "country_news_risk_raw"])
     live = live[live["country_iso3"].isin(iso_set)].rename(columns={"country_iso3": "iso3"})
     live["date"] = pd.to_datetime(live["date"])
+    live["attention_share"] = live["n_articles"] / live.groupby("date")["n_articles"].transform("sum")
     sh = shock_table(live, LIVE_COMPONENTS)
-    sh = add_composite(sh, list(LIVE_COMPONENTS), "composite")
+    sh = add_composite(sh, ["attention", "tone", "dispersion", "risk"], "composite")   # the registered primary composite
+    sh = add_composite(sh, SHARE_COMPOSITE, "composite_share")                        # amendment A1, secondary
     log.info("live shocks: %d rows, %.0fs", len(sh), time.time() - t0)
 
     # --- exploratory deep arm
@@ -476,7 +483,7 @@ def main() -> int:
     monthly = pd.concat(monthly, ignore_index=True)
     arms.to_parquet(run_dir / "arms.parquet", index=False); monthly.to_parquet(run_dir / "monthly.parquet", index=False)
     with pd.ExcelWriter(run_dir / "arms.xlsx") as xw:
-        arms.to_excel(xw, "arms", index=False); monthly.to_excel(xw, "monthly", index=False)
+        arms.to_excel(xw, sheet_name="arms", index=False); monthly.to_excel(xw, sheet_name="monthly", index=False)
     log.info("arms done, %.0fs", time.time() - t0)
 
     primary = monthly[(monthly["arm"] == "matched") & (monthly["component"] == PRIMARY_COMP) & (monthly["window"] == PRIMARY_W) & monthly["gate"].isna() & (monthly["draw"] == "pooled")]

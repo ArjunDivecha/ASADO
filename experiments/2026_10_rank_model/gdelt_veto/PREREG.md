@@ -108,4 +108,14 @@ includes an economically useful effect, the verdict is "inconclusive", stated as
 
 ## Amendments
 
-(none)
+**A1, 2026-10-07 21:45, before any result of the full run was read.** A sanity check of the
+shock measure on two known episodes (Turkey, rebalance 2018-09-01; United States, rebalance
+2020-04-01) showed that absolute article counts barely move: US articles in March 2020 were
+79,000 a day against a 79,000 baseline. GDELT's total daily volume is capacity-bound and fell by
+half between 2017 and 2020, so `log1p(n_articles)` cannot register a surge for a large country.
+Added as **secondary** components: `attention_share` = log of the country's share of that day's
+total articles across the 31 news countries; and `composite_share`, the composite with
+`attention_share` in place of `attention`. The primary (composite, w = 14, absolute attention)
+is unchanged and remains the decision statistic. The same check also showed the 14-day window
+ending 31 August 2018 missed the Turkish crisis week of 10–17 August; the 30-day secondary
+window covers it, and no window was added.

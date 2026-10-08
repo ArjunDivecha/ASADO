@@ -59,5 +59,10 @@ eligible name fills the slot.
   was negative, except two cells at the loosest filter (−1.5, 30 days: +0.4% and +0.6%, t 0.3–0.5). The tighter the
   filter, the larger the loss: at −0.5 the cost is 2–4% a year.
 
-Why excluding bad-news countries hurts: see the diagnostic printed in the run log below. Nothing here changes the
-default model. This closes the last stated-rule use of GDELT aggregates on this project.
+Why excluding bad-news countries hurts (diagnostic, same data): the model's score is positively correlated with the
+news shock within a month (Spearman 0.063, t 2.5) — the model leans slightly toward countries in the news, which are
+often the cheap, distressed ones it likes. Bad-news holdings did do a little worse (−0.07% a month against +0.29% for
+the other holdings), but the names that replaced them, further down the ranking, did worse still, and the filter also
+skipped top-ranked newcomers with bad news and broke the hysteresis (2.6 names changed a month against 1.8). The
+model's ranking beats the news filter. Nothing here changes the default model. This closes the last stated-rule use of
+GDELT aggregates on this project.

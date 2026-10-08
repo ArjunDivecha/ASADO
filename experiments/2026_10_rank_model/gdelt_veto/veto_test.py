@@ -249,6 +249,9 @@ def run_arm(hold: pd.DataFrame, sh: pd.DataFrame, window: int, component: str, u
 
 
 def summarise(mo: pd.DataFrame) -> dict:
+    if mo.empty or "diff" not in mo:
+        return {"months": 0, "mean_diff_pct_mo": np.nan, "t": np.nan, "hit_neg": np.nan, "spearman_mean": np.nan,
+                "spearman_t": np.nan, "swap_gain_ann_pct": np.nan, "swap_gain_t": np.nan, "flag_months": 0}
     d = mo["diff"].dropna()
     out = {"months": int(len(d)), "mean_diff_pct_mo": float(d.mean() * 100) if len(d) else np.nan,
            "t": tstat(d), "hit_neg": float((d < 0).mean()) if len(d) else np.nan,
@@ -446,8 +449,17 @@ def main() -> int:
         deep = pd.read_parquet(DEEP, columns=cols + theme_cols)
         deep = deep[deep["country_iso3"].isin(iso_set)].rename(columns={"country_iso3": "iso3"})
         deep["date"] = pd.to_datetime(deep["date"])
-        shd = shock_table(deep[["date", "iso3"] + [v[0] for v in DEEP_COMPONENTS.values()]], DEEP_COMPONENTS)
-        shd = add_composite(shd, list(DEEP_COMPONENTS), "deep_composite")
+        # the daily deep file's GCAM and event families are almost entirely empty for the 31 countries (checked 2026-10-07):
+        # drop any component with fewer than 5% non-missing values rather than report an all-NaN arm
+        usable = {k: v for k, v in DEEP_COMPONENTS.items() if deep[v[0]].notna().mean() >= 0.05}
+        dropped = sorted(set(DEEP_COMPONENTS) - set(usable))
+        log.info("deep components usable: %s; dropped as empty: %s", sorted(usable), dropped)
+        if usable:
+            shd = shock_table(deep[["date", "iso3"] + [v[0] for v in usable.values()]], usable)
+            if len(usable) > 1:
+                shd = add_composite(shd, list(usable), "deep_composite")
+        else:
+            shd = pd.DataFrame(columns=["date", "iso3", "window", "component", "z", "z_stale"])
         sht = theme_surge(deep[["date", "iso3"] + theme_cols])
         sh = pd.concat([sh, shd, sht], ignore_index=True)
         log.info("deep shocks added (%d themes), %.0fs", len(theme_cols), time.time() - t0)
@@ -455,6 +467,8 @@ def main() -> int:
     last = pd.Timestamp(a.max_month) if a.max_month else hold_all["pooled"]["date"].max()
     hold = {k: v[(v["date"] >= FIRST_MONTH) & (v["date"] <= last)] for k, v in hold_all.items()}
     sh = sh[(sh["date"] >= FIRST_MONTH) & (sh["date"] <= last)]
+    cov = sh[sh["window"] == PRIMARY_W].groupby("component")["z"].apply(lambda x: float(x.notna().mean()))
+    log.info("share of shock values present (w=%d): %s", PRIMARY_W, cov.round(3).to_dict())
     sh.to_parquet(run_dir / "shocks.parquet", index=False)
     hold["pooled"].to_parquet(run_dir / "holdings.parquet", index=False)
 

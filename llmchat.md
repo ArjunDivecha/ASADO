@@ -2134,3 +2134,51 @@ Verdict entry: `/Users/arjundivecha/Dropbox/AAA Backup/A Complete/Investment Lea
 ---
 SESSION END: 2026-10-07 23:29 PDT | Agent: Claude Code (auto, idle, session dc8244a3)
 ---
+
+---
+SESSION START: 2026-10-08 02:05 PDT | Agent: Claude Code (auto, idle, session dc8244a3)
+---
+
+### Session Summary
+Rung B (the fundamental-forecast toolkit) was run to completion and closed. The default stays rolling-60 on 238 factors, and no part of B beat it under the pre-registered rules. Earlier in this activity, the EMA grid (decision 2) finished. The verdict was to keep rolling-60: pooled over 3 draws it made 3.19%/yr (t 2.5), all-history arms ranged 2.42–3.26%, and every paired t was inside ±0.7 against a bar of 2.0. Decisions 3, 4 and 6 were closed. On decision 3, Arjun said the capital decision is his judgment, with no numerical thresholds. On decision 4, the point-in-time models are kept in the plan, scoped to measuring hindsight leakage only. Arjun then dropped news entirely, which removes rung C and the PIT experiment. All six design decisions are now closed. `exp/NN` is pushed; the last commit is `5f8d9f2`.
+
+### Decisions Made
+- **Keep rolling-60.** All-history arms were seed-fragile. On seed 0 they scored 4.5–6.0%, on the other two seeds 1.2–2.5%. Rolling-60's three draws were 3.05, 3.28 and 3.02. The early 4.55% and 5.70% numbers were the lucky-seed draw.
+- **Skip news.** Plan is now A → B, plus off-line LLM uses (proposed interaction features and factor-sign priors) and Arjun's own forward judgment.
+- **B primary is a full re-rank.** One- and two-swap variants are secondary, since swaps were only an LLM-era cap on discretion.
+- **Stage 1 heads:** 6 of 7 survive their naive baselines. Realised vol has rank IC 0.39. Long-term growth is dropped because persistence matches it.
+- **Stage 2 comparator FAIL.** The re-rank made 1.37%/yr against the default's 3.46% (t −1.25), behind in all 3 draws. The score-only control also lost 1.7%/yr, so a re-fitted second-stage ridge is itself harmful.
+- **B2a FAIL.** The six head forecasts appended as inputs gave a pooled 0.51%/yr against 3.46%. The shuffled-placebo columns cost about 1.6%/yr, an "input tax". The real forecasts beat the placebo in every draw, by 0.2, 1.1 and 0.5 points.
+- **B2b (multi-task net) no arm passes.** The λ 0.5 arm made 4.03%/yr against 3.19% and was ahead in all 3 draws, with IR 0.65 against 0.53, but t was only 0.76. The gain was +5.5 points in 2005–09 and negative in 2010–19. λ 2 was flat, and the curriculum arm made 2.60%.
+
+### Architecture / Design
+- **Ceiling:** the hindsight best single swap adds 23%/yr, or 11% when restricted to near the cut-off. A random swap costs about 0.5 points.
+- **B2b trainer:** seven outputs, with output 0 the return score. The six auxiliary targets are scaled and masked, with loss weight λ. Early stopping stays on the return objective. Flags are `--aux-lambda` and `--aux-warmup` in `train_nn.py` and `walk_forward.py`.
+
+### What To Build Next
+- Optional, not registered: a multi-task net with λ 0.1–0.25. I estimate +0.5 to +1%/yr, below the +2.2% bar.
+- The vol head could be used as a risk input rather than a return input.
+- Off-line LLM uses, once there is a result to compare against.
+
+### Constraints & Gotchas
+- **Input tax:** adding inputs to the default net costs about 1.6%/yr even when they are noise. The net is at the edge of what 60 months of data supports.
+- The B2a panel build first failed on a pandas name clash (`fc.head` is a method), and was fixed and relaunched.
+- Detecting a difference needs about ±2%/yr. Results of "no better" are not "worse".
+
+### Open Questions
+- Does Arjun want the post-hoc low-λ multi-task run, under a new pre-registration?
+- Whether to drop the 92 GDELT factors is still unanswered.
+
+### Context for Next Session
+Base: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model/`
+- `toolkit/README.md`, `toolkit/PREREG.md`, `toolkit/swap_ceiling.py`, `toolkit/heads.py`, `toolkit/comparator.py`, `toolkit/run_b2a.sh`, `toolkit/run_b2b.sh`
+- `ema_window/README.md`, `ema_window/compare.py`
+- `llm_rl/DESIGN.md` and `llm_rl/DESIGN.html`
+- `results/ema_compare_20261007_233844/`, `results/ceiling_20261008_001652/`, `results/heads_20261008_001954/`, `results/comparator_20261008_002153/`, `results/b2a_compare_20261008_005612/`, `results/b2b_compare_20261008_013806/`
+- `factor_set_v3_heads.json`
+
+The Investment Learnings verdict (`3952f7b`) is still unpushed. No rung-B verdict entry has been written there yet.
+
+---
+SESSION END: 2026-10-08 02:05 PDT | Agent: Claude Code (auto, idle, session dc8244a3)
+---

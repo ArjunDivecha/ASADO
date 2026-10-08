@@ -66,3 +66,29 @@ the other holdings), but the names that replaced them, further down the ranking,
 skipped top-ranked newcomers with bad news and broke the hysteresis (2.6 names changed a month against 1.8). The
 model's ranking beats the news filter. Nothing here changes the default model. This closes the last stated-rule use of
 GDELT aggregates on this project.
+
+---
+
+# Test 3 — Arjun's rule: boost countries with news score ≥ +1
+
+**Verdict: FAIL** (run `results/gdelt_boost_20261007_224509/`, 2026-10-07 22:45, 127 months). Pre-registered as "Test 3"
+in `PREREG.md`, committed before the run.
+
+Rule: default model as normal, but a country with news score ≥ +1 (good news) moves up four places in the ranking
+before the buffer rule. About 2.6 countries a month qualified and 0.65 boosted names a month were held; the basket
+differed from the default in 31 of 127 months.
+
+- Primary: **cost 0.19% a year** against the default (t −0.60); 95% interval −0.8% to +0.4%. Stale news: −0.14% (t −0.22).
+  Shuffled null 95th percentile t +1.63; the matched t sits at the 17th percentile.
+- Every good-news cell (thresholds +0.5/+1/+1.5, boosts 2/4/8, windows 7/14/30, three scores) is within ±0.9% a year
+  and none reaches |t| 1.6. Good news does not help the model pick.
+
+**The mirror (boost bad-news names, pre-registered as secondary, cannot pass on its own):** at threshold 1.0, 14-day
+window, boost 4 it gave **+1.22% a year (t +2.26)**, and boost 8 gave +1.79% (t +2.58). Read with the rest of its grid:
+at threshold 1.5 the same rule *loses* (−0.54%, t −2.24); at 0.5 it is +0.7% with t below 1; at 7- and 30-day windows it
+is +0.35% and +0.14% with t 0.6 and 0.3. Two cells above t 2 and one below −2 out of 27, with no monotone response to
+threshold or window, is what noise looks like under multiple comparisons, not a contrarian signal. GDELT starts in 2015
+and every month has now been used, so there is no independent slice to confirm it on; the only honest follow-up would be
+a forward record, which is not worth the attention for a rule of this shape.
+
+Three stated rules, three fails. GDELT aggregates are closed on this project; nothing changes the default model.

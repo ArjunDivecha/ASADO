@@ -2182,3 +2182,54 @@ The Investment Learnings verdict (`3952f7b`) is still unpushed. No rung-B verdic
 ---
 SESSION END: 2026-10-08 02:05 PDT | Agent: Claude Code (auto, idle, session dc8244a3)
 ---
+
+---
+SESSION START: 2026-10-08 08:56 PDT | Agent: Claude Code (auto, idle, session dc8244a3)
+---
+
+### Session Summary
+Arjun asked what λ = 0.5 means. Checking the loss scales showed my earlier "light touch" label for 0.5 was wrong. Return squared error is about 0.002, because monthly excess returns are about 0.05. Fundamentals squared error is near 1, because targets are scaled to unit size. At λ 0.5 the fundamentals therefore made up about 220 times more of the loss than returns did, and about 10 to 20 times more of the gradient into the shared layers. Early stopping on return performance was the only thing keeping returns in charge. I corrected `toolkit/README.md` (commit `9e0c132`). Arjun then approved running the genuinely calibrated weights (B2c, λ 0.005 and 0.05). He also asked for a closer look at the 0.5 arm.
+
+### Decisions Made
+- **B2c pre-registered** in `toolkit/PREREG.md` before any result, with the same three-draw rule as before. This is a new test of a setting never run, not post-hoc fishing.
+- **B2c verdict: no arm passes; rung B is closed and the default stays.** The five-arm weight sweep gives:
+  - λ 0.005 made 3.23% a year against the default's 3.19%, so indistinguishable.
+  - λ 0.05 was +0.24%/yr.
+  - λ 0.5 peaked at +0.84%/yr (t 0.76) and is the only setting ahead in all 3 draws.
+  - λ 2 was +0.06%/yr.
+  - The gain rises and falls smoothly with the weight, so 0.5 is less likely to be a lone fluke. The peak is still far below the bar.
+
+### Architecture / Design
+`toolkit/deep_dive.py` is new. It compares a candidate arm with the default by period, year, draw, country, concentration and risk.
+
+### What To Build Next
+- Optional: a 50/50 combination of the default's scores and the λ 0.5 net's scores, as its own pre-registered test. The two baskets share 5 of 8 names and have monthly correlation 0.64. Last night's net-plus-ridge blend came to nothing, so expect it may land flat.
+
+### Constraints & Gotchas
+- **Correction to the earlier "crisis gain" claim.** It holds only for the pooled ensemble, which averages the three draws' scores. No single draw shows a 2008–09 gain, with +1.1, +0.3 and +0.0. Excluding 2008–09, the pooled gap falls from +0.84% to +0.37% a year, but each draw against its same-seed default is still ahead in all three (+1.1, +0.3, +0.6 points).
+- **The only consistent edge is 2005–07.** The candidate made 5.7%/yr against the default's 0.2%, with gains of 3.8 to 6.2 points in every draw. After that the gap alternates:
+  - 2010–14: −1.8
+  - 2015–19: about 0
+  - 2020–22: +2.5
+  - 2023–26: −1.9 pooled, with the draws 15 points apart.
+- The gain is noise around a small mean. The five best months account for the whole cumulative gap.
+- The gain is spread across countries. The largest contributor is Turkey at +0.4%/yr, and no single factor drives it.
+- Risk profile at λ 0.5 versus the default:
+  - Information ratio 0.65 against 0.53.
+  - Worst underperformance run 11.5% against 17%.
+  - Turnover is the same.
+  - Tracking error is 5.2%/yr.
+- The 2010s return falls monotonically as λ rises: 4.5, 2.7, 1.8 and 1.2%. It is a story across three periods and five settings, not evidence.
+
+### Context for Next Session
+Base: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model/`
+- `toolkit/deep_dive.py`, `toolkit/PREREG.md` (B2c section), `toolkit/README.md` (B2c section)
+- `results/deep_dive_mt05_20261008_081100/` (`report.html`, `deep_dive.xlsx`, `charts.pdf`)
+- `results/b2c_compare_20261008_084021/` (`report.html`, `arms.xlsx`, `charts.pdf`)
+- `results/b2c_launch.log`
+
+Commits `9e0c132` and `fa2db5f` are on `exp/NN` and pushed. The Investment Learnings verdict (`3952f7b`) is still unpushed, and no rung-B verdict entry has been written there yet.
+
+---
+SESSION END: 2026-10-08 08:56 PDT | Agent: Claude Code (auto, idle, session dc8244a3)
+---

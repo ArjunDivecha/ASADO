@@ -16,11 +16,31 @@ The reviewers sharpen the hybrid in one important way. Sakana frames it as a lad
 
 B tests whether the toolkit adds anything. C tests whether news adds anything. D tests whether the LLM's judgment adds anything beyond a fitted rule. Both reviewers rate news as the clearest genuinely new information an LLM can bring.
 
-**Your GDELT instinct has substance.** The retired GDELT pipeline left a daily news dataset that no model has ever used. It covers every country, every day, February 2015 to April 2026: 568 theme shares (debt, taxation, elections, protests, corruption, the stock market…), 75 emotion and uncertainty measures, and 24 political-event measures. Our models have only seen 46 monthly tone and attention summaries. This is the raw material for rung C. Its historical test is clean, because the features are computed by GDELT, not by an LLM that knows how history turned out.
+**Correction (later on 7 October).** The first version of this document said the deep GDELT file had never been used and that an LLM on numeric inputs was an open question. Both statements were wrong; I had not checked Investment Learnings. The deep GDELT panel died in a 27 July walk-forward, and in July an LLM reading numeric country dossiers predicted nothing. Rung D now depends on text, not numbers, and rung C is narrowed to the GDELT angles nobody has tested. The section "What has already been tried" sets out the record.
+
+**News is still the most promising thing an LLM can add, but it is not untouched ground.** Broad tests of GDELT as a return predictor have failed at both monthly and daily frequency. Two things remain open. One is news as *conditioning*, meaning when to trust or override the default model, which is the only role the research agenda leaves GDELT. The other is news an LLM *reads*, which has never been tested.
 
 **The evaluation is harder than the build.** A named frontier LLM cannot be backtested honestly, because it has read the history. Hiding names doesn't hide identity: countries are re-identifiable 94% of the time. And an override adding 1–2% a year takes many years to prove forward. So the order is: build the toolkit and the clean news features first, measure each rung, then put the LLM in the loop and judge it forward.
 
 Nothing here has been tested. This document is for deciding what to test.
+
+# What has already been tried
+
+**An LLM reading numbers (July 2026, dead).** The LLM-1M Country Rotation project gave a frozen, blinded LLM a monthly dossier of about 30 z-scored fields for each of the 34 countries. The LLM scored six sub-scores, and a ridge combined them. Out of sample, over 197 months, the rank correlation with next-month returns was 0.002, and the permutation canary failed. A plain gradient-boosted model on the same raw fields beat the LLM by about two to one in the burn-in decade. The lesson recorded: LLMs are not feature extractors for numeric panels. Two parts of it carry over to this design. The blinding protocol worked operationally. And a tabular model on the same inputs is the kill baseline, which is exactly what rungs B and C are.
+
+**GDELT as a monthly predictor (dead, several times).**
+- The gdelt_narrative_v2 Stage 1 test (27 July) ran a walk-forward over 2017–2021 on the 34 buckets, with the 2022–26 lockbox untouched. The 93-variable keep-list scored a rank correlation of −0.019 with trees and +0.014 with ridge. The full deep panel (about 1,100 columns of themes, emotions and events) scored −0.033 at t −2.2. All three failed the permutation canary. That deep panel is the file the first draft of this document called unused.
+- In T2 GDELT, GDELT factors run through the T2 factor-timing optimizer gave a Sharpe of 0.07. Equal-weighting every factor beat any selection of them.
+- In this project, dropping all 92 GDELT factors from the default model costs about 0.5% a year, at t −1.4. That contribution is small and not significant.
+- The research agenda (v2) excludes standalone GDELT projects. GDELT tone survives only as a conditioning input.
+
+**GDELT at daily frequency (weak, no verdict).** The GDELT Factor Timing Fuzzy Daily project ran 74 daily tone and attention factors through the daily factor-timing stack. The optimised strategy earned about 1% a year at a Sharpe of 0.22. Across the 74 factors, the average information ratio was roughly zero. It has no Investment Learnings entry. Daily country-ETF timing also has an earned law against it: index-space alpha is about zero at the US-listed ETF close.
+
+**Still open.**
+- *Narrative freshness* (H_20260727_003): do stories that are new, as opposed to ones that keep running, carry the signal? The hypothesis is registered and its measurement is gated. The embedding build it needs stalled on 5 August, after repeated kills, with features complete only through August 2015.
+- *GDELT as conditioning*, meaning whether a news shock predicts when the default model's picks fail. Never tested.
+- *Last-week timing* within the month. Never tested.
+- *LLM-read text*. Never tested historically. The article archive was deleted in July, so this works forward only, unless articles are re-fetched from GDELT's links.
 
 # What we are trying to get from an LLM
 
@@ -74,6 +94,8 @@ Two of today's lessons apply directly. Every head should be a large seed ensembl
 
 ## 2. The hybrid — the LLM as decision-maker (rung D)
 
+**Restricted after LLM-1M.** An LLM given only numbers (toolkit outputs, scores, fundamentals) is a re-run of LLM-1M, which died. So rung D is tested only where the LLM gets something a fitted rule cannot easily use: text (news, policy statements) and checks on whether inputs are valid. A numeric-only rung D can still run cheaply as a stability and tool-use check (phase 0b), but it is not a test of value.
+
 Each month the LLM starts from the default model's actual buffered portfolio and may replace at most one holding. Candidates come from a fixed set: the three lowest-ranked holdings against the three highest-ranked non-holdings, nine possible swaps. Abstaining is always allowed. The override lasts one month, then the portfolio reverts to the baseline's own buffer state, so small discretion cannot drift into a different portfolio.
 
 **What an override must contain:**
@@ -114,29 +136,20 @@ Reasoning traces fitted to realised winners would teach a model to explain shock
 
 # News: what GDELT could give beyond what we use today
 
-**What exists.** The live GDELT store, refreshed nightly, has daily tone, attention, tone dispersion and local-versus-foreign coverage for every country since February 2015. The model has only seen monthly summaries of it. The retired GDELT pipeline kept a much richer daily file that no model has ever touched:
+**What exists.** The live GDELT store is refreshed nightly. It holds daily tone, attention, tone dispersion and local-versus-foreign coverage for every country since February 2015. The retired deep pipeline left a daily file of 568 theme shares, 75 emotion and uncertainty measures and 24 political-event measures. That file covers February 2015 to April 2026 and is no longer updated.
 
-- **568 theme shares:** the fraction of a country's coverage about each topic, for example debt, taxation, elections, protests, corruption, housing prices, the stock market and disease.
-- **75 emotion and uncertainty measures:** for example litigious, uncertainty and modal-strength word counts from finance dictionaries.
-- **24 political-event measures:** counts of protests, assaults, threats and cooperation, and a cooperation-to-conflict score.
+**What has failed.** Using these series as broad predictors of next-month returns has failed. The keep-list, the full deep panel and the T2 factor-timing stack all failed, and the daily factor-timing version was weak. Monthly tone mostly follows prices: bad markets produce bad news. Rebuilding wide monthly theme features and putting them through another walk-forward would be a fourth attempt at a dead idea. I am dropping that from the plan.
 
-It covers February 2015 to April 2026, about 135 months. It stopped when the pipeline was retired, and it was never validated.
+**What is left, narrowly.**
 
-**Why the current use probably leaves value on the table.** Monthly tone mostly follows prices: bad markets produce bad news, so its level carries little that returns don't already show. The value is more likely in four places:
+1. **Conditioning, meaning a veto.** Does a sharp news shock in the weeks before rebalance (attention spike, tone collapse, dispersion jump, a theme surging against the country's own norm) predict that one of the default model's holdings will lag the others? Each month this asks about 8 holdings, not 34 countries, and the action is "swap one out". That matches the hybrid's action space and the agenda's "GDELT only as conditioning". It has never been tested.
+2. **Last-week timing.** Whether moves in the final days before rebalance carry information that monthly averages wash out. This folds into test 1 as one of its feature windows.
+3. **Narrative freshness** (H_20260727_003). The open hypothesis is that new stories, unlike continuing ones, move prices. Testing it needs the stalled embedding build finished, about 73 hours of compute by the original estimate.
+4. **LLM-read news (rung D, forward).** An LLM classifies what happened (event type, direction, novelty, whether it is price-relevant) into structured fields, and a mechanical rule decides what to do. Asking the LLM to describe events rather than forecast them limits how much its hindsight can leak in. A historical test needs article text re-fetched from GDELT's links. Forward, it is straightforward.
 
-1. **Surprise and novelty.** A theme that suddenly dominates a country's coverage relative to its own norm: capital controls, a debt restructuring, an IMF programme.
-2. **Topics that aren't about prices.** Policy, institutions, conflict, elections.
-3. **Uncertainty and disagreement.** Tone dispersion was the strongest top-8 basket in the original single-factor screen.
-4. **Timing.** What happened in the final week before the rebalance, which daily data allows and monthly data hides.
+**The controls Sakana insists on, and I agree:** the matched current news must beat stale news (from an earlier month) and country-shuffled news (another country's coverage). Only then is the news itself doing the work, rather than some property of having more inputs.
 
-**Two ways to use it, with different evidence:**
-
-- **Mechanical features (rung C, historical test possible).** Turn the daily file into point-in-time monthly features: theme-share surprises against each country's trailing norm, uncertainty spikes, event counts, late-month shifts. Run them through the same rolling walk-forward. Because GDELT computes the features with fixed dictionaries, an LLM's hindsight never touches them. That makes this the cleanest test of the news idea we can run.
-- **LLM-read news (rungs C and D, forward).** An LLM classifies what happened (event type, direction, novelty, whether it is price-relevant) into structured fields. A mechanical rule decides what to do with them. Using the LLM to describe what happened, not to forecast what happens next, sharply limits how much its hindsight can leak in. Historically this needs article text. The article archive was deleted in July's GDELT cleanup, so it would have to be re-fetched from GDELT's links. Forward, it is straightforward.
-
-**The controls Sakana insists on, and I agree:** the matched current news must beat stale news (from an earlier month) and country-shuffled news (another country's coverage). Only then is it the news itself doing the work, not some property of having more inputs.
-
-**Honest limits.** About 135 months gives weak statistical power. With a 0.8% monthly noise level, only effects of roughly 2.5% a year or more would be reliably detected. The theme taxonomy drifts over time. And restarting the retired pipeline for forward use is a change in the GDELT repository that needs your approval.
+**Honest limits.** The overlap between GDELT (from 2015) and the default model's out-of-sample record is about 130 months. Only veto effects of roughly 2.5% a year or more would be reliably detected. The 2015 start date also means every GDELT test sits inside a period that has been looked at heavily.
 
 # The contamination question
 
@@ -171,8 +184,8 @@ For the middle decision, a Bayesian rule fixed in advance is defensible. Example
 | 0 | **Freeze and audit.** Reproduce the 3.1% default exactly. Build every legal one-swap reward per month, and the one-swap ceiling (best possible, random, near-cut-off). Run power with realistic dependence. Audit data vintages. | Default reproduces exactly; the ceiling leaves room after costs | Compute only, about 1–2 days |
 | 0b | **Capability and leakage checks.** Synthetic tables with known rules (≥95% correct). Five row reorderings (≥7.5 of 8 picks unchanged). Country and period re-identification attacks on the exact packets the LLM would see. | All pass; anything identity-free must re-identify countries at no more than about 6% (twice chance) | ≤ $100 API, 2 days |
 | 1 | **Rung B: the toolkit.** Fundamental-forecast heads (earnings, inflation, volatility) and input health, each a seed ensemble. Plus a small fitted model that may swap one name. | Each head beats its simple baseline; B − A reported over several runs, with a futility stop if its upper bound is below 1%/yr | Compute only |
-| 2 | **Rung C: news.** Mechanical features from the daily GDELT theme, emotion and event file (2015–2026). Same mechanical swap rule. Stale-news and country-shuffled-news controls. | Matched news beats both controls; C − B reported | Compute only |
-| 3 | **Rung D: the LLM decides,** with exactly C's information. One swap from a fixed candidate set. Five calls, act if four agree. Reason codes, falsifiable forecasts. | Stability ≤10% format-driven changes; reasons actually drive actions; D − C upper bound above 0.5%/yr, else stop | API calls: tens to low hundreds of dollars |
+| 2 | **Rung C: news as conditioning.** One pre-registered veto test: do pre-rebalance news shocks (attention, tone, dispersion, theme surges, last-week windows) flag default holdings that lag? Stale-news and country-shuffled-news controls. No wide monthly GDELT features, which already failed. | Matched news beats both controls; flagged holdings lag unflagged ones; C − B reported | Compute only, about a day |
+| 3 | **Rung D: the LLM decides,** with C's information plus text. A numbers-only D is a stability check only, since LLM-1M already failed that way. One swap from a fixed candidate set. Five calls, act if four agree. Reason codes, falsifiable forecasts. | Stability ≤10% format-driven changes; reasons actually drive actions; D − C upper bound above 0.5%/yr, else stop | API calls: tens to low hundreds of dollars |
 | 4 | **Forward, frozen and timestamped:** A, B, C, D and a named, live-news version of D, with an input hash committed before each month. | Six clean cycles before any capital; then the decision rules above | Small monthly cost |
 | R | **Research track:** hypotheses-first rule generation; full placebo pipeline | Only if D beats C | Larger; cloud GPUs if weights are ever trained |
 
@@ -196,7 +209,7 @@ For the middle decision, a Bayesian rule fixed in advance is defensible. Example
 2. **Rolling five years, or a stable model on all history plus a recent-years head?** Both reviewers push back on pure five-year relearning for the toolkit. GPT says "the world changes" argues for adapting, not for deleting history. Sakana calls a long-lived prior plus five-year relearning "internally inconsistent". Your rolling preference is also why the default holds up evenly across decades. My suggestion is to build both and compare. Your call.
 3. **The evidence standard for capital:** the Bayesian rule, the minimum effect, the sleeve size and the stop.
 4. **Which LLMs.** Pin versions. Each model upgrade starts a new forward record, and record each model's knowledge cutoff.
-5. **Restart the GDELT theme/emotion/event pipeline?** It stopped in April 2026. The historical test (rung C) can run on what exists, but forward use needs it running again. That's a change in the GDELT repository, so it's yours to approve.
+5. **GDELT.** Should we run the narrow veto test (rung C)? It needs only the live nightly store and the existing deep file. Separately, should we revive the stalled narrative-freshness build (about 73 hours) to give H_20260727_003 its verdict? Restarting the deep theme pipeline only makes sense if the veto test finds something.
 6. **Data upgrades.** Point-in-time fixed-fiscal-year consensus earnings and first-release macro prints with consensus would make the fundamental heads much more honest. Bloomberg can likely supply both. That's a deliberate pull, given how expensive Bloomberg data is to re-fetch.
 
 # What the outside reviewers said

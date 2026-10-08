@@ -154,11 +154,22 @@ What this does not settle. The inputs are current-vintage, so revision look-ahea
 
 What surprised me: that the buffer, which I added to cut turnover, turned out to be what makes the net's runs agree with each other.
 
+## stage12
+
+The blend does not improve on the default model; it reaches the same place by a different route. Under the default basket rule — hold while ranked in the top 16 — the half-net, half-ridge blend makes 2.9% a year over the equal-weight average with an information ratio of 0.50, against 3.1% and 0.59 for the net alone; the difference is −0.3 points with a t-statistic of −0.4, a tie. On the plain re-pick-the-top-eight rule the blend makes 3.2% a year with an information ratio of 0.55 — better than the net alone (2.2%, t-statistic of the difference 1.4) and better than ridge alone (2.9%) — and its three runs agree within 0.4 points (3.0 to 3.4%), where the net's plain-rule runs had ranged from 1.6 to 3.1%.
+
+The two findings fit together. The buffer and the blend do the same job: both damp the noise around the cut-off, the buffer by ignoring small moves in rank, the blend by averaging away the countries one model likes and the other does not. Either one turns the net into a stable 3% strategy; doing both adds nothing. The diversification arithmetic also checks out where it should: on the plain rule the net and ridge have information ratios of 0.41 and 0.48 and correlate 0.54, which predicts a blend near 0.51 — it came in at 0.55.
+
+So there are now two credible versions of the same strategy. The default model (net, buffer) has the higher information ratio and half the turnover, 1.8 names a month. The plain-rule blend has the shallowest relative drawdown of anything on this page, 10.3%, and is the most even across runs, but replaces 3.4 names a month. On returns they are indistinguishable, and I would keep the default — the turnover difference is real money at implementation and the return difference is not real.
+
+What this says about the ceiling: every robust configuration on this page — net with buffer, blend on the plain rule, pooled ensembles, either window — now converges on about 3% a year, information ratio around 0.5 to 0.6. That looks like what these inputs carry at this sample size, rather than a limit of any one model.
+
 ## next
 
 The default is fixed: rolling five years, thirty nets, predict-then-select, hold while ranked in the top 16, cleaned 238-factor panel, about 3.1% a year out of sample with a range across runs of 3.0 to 3.3%. What would move it from a research result toward a decision:
 
 - **Forward paper-trading.** Freeze the default, score each month as it arrives, record the basket and its excess. Nothing on this page substitutes for that.
+- **TabPFN** — a pretrained small-table model with no tuning, the one remaining model type with a genuinely different inductive bias; a blend of net and ridge (stage 12) reached the same ~3% as the default.
 - **Vintage-archived slow inputs** and the T2 macro publication lag (`docs/USER_FIX_LIST.md`) — the largest remaining unmeasured source of look-ahead.
 - **Re-choose the design every year on the trailing five years** (a nested rolling walk-forward), if you want the selection question closed in a way that respects "the world changes"; about 20 minutes of compute.
 - **Implementation costs** at the measured 1.8 names a month, at implementation time rather than as a research penalty.

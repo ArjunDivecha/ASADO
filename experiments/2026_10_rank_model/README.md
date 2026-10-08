@@ -369,6 +369,20 @@ Verdict: **default = rolling 60, 30 nets, predict-then-select, M16 → ~3.1 %/yr
 across runs (±0.15), even across decades.** Not distinguishable from ridge as a forecaster; better
 behaved under the trading rule. Next: forward paper-trade; vintage inputs.
 
+## Step 14 — blend of net and ridge (2026-10-07)
+
+`blend.py` → `results/blend_20261007_193006/`. Within-month z-scores, 0.5 × net + 0.5 × ridge, fixed a
+priori, on the three default draws' saved OOS scores.
+
+| OOS 2005–2026, %/yr (IR) | blend | net | ridge |
+|---|---|---|---|
+| default rule M16 | +2.86 (0.50) | **+3.11 (0.59)** | +1.95 (0.34) |
+| plain top-8 | **+3.20 (0.55)**, runs 3.0–3.4 | +2.20 (0.41) | +2.89 (0.48) |
+
+Blend − net: M16 −0.26 (t −0.4); plain +1.00 (t 1.4). Blend plain: max rel DD −10.3 %, 3.4 names/month.
+Verdict: **no improvement on the default; the buffer and the blend do the same job.** Every robust
+configuration converges near 3 %/yr, IR 0.5–0.6. Default unchanged.
+
 ## Running report
 
 `build_report.py` → `results/report.html` — one self-contained light-mode page: a

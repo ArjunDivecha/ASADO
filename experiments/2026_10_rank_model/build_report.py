@@ -1504,6 +1504,67 @@ throughout: {s["oos_months"]} months, {s["oos_start"][:7]} to {s["oos_end"][:7]}
     return "done", body
 
 
+# ── stage 12: blending the net and ridge ─────────────────────────────────────
+def stage12(c: dict) -> tuple[str, str]:
+    runs = sorted(p for p in RESULTS.glob("blend_*") if p.is_dir() and (p / "summary.json").exists())
+    if not runs:
+        return "pending", '<div class="note pending">Not run yet.</div>'
+    run = runs[-1]
+    s = json.load(open(run / "summary.json"))
+    res = pd.read_parquet(run / "blend.parquet")
+    mo = pd.read_parquet(run / "monthly.parquet")
+    lab = {"blend": "Blend: ½ net + ½ ridge (within-month z-scores)", "nn_mse": MODEL_LABEL["nn_mse"], "ridge": MODEL_LABEL["ridge"]}
+    def get(model, rule, member):
+        r = res[(res.model == model) & (res.rule == rule) & (res.member == member)]
+        return r.iloc[0] if len(r) else None
+    dr = s["default_rule"]
+    bm, bp = get("blend", dr, "mean of draws"), get("blend", "plain_top8", "mean of draws")
+    nm = get("nn_mse", dr, "mean of draws")
+    k = kpis([
+        (f'{bp["excess_ann_pct"]:+.1f}%', "blend, plain top-8 rule", f'IR {bp["info_ratio"]:.2f} · runs {s["paired"]["plain_top8/blend draw range"]["min"]:+.1f}% to {s["paired"]["plain_top8/blend draw range"]["max"]:+.1f}% · {bp["names_changed_per_month"]:.1f} names/month'),
+        (f'{bm["excess_ann_pct"]:+.1f}%', "blend, default rule (hold while ≤ 16)", f'IR {bm["info_ratio"]:.2f} · {bm["names_changed_per_month"]:.1f} names/month'),
+        (f'{nm["excess_ann_pct"]:+.1f}%', "the default model (net, hold while ≤ 16)", f'IR {nm["info_ratio"]:.2f} · {nm["names_changed_per_month"]:.1f} names/month'),
+        (f'{s["correlations"][dr]["net~ridge"]:.2f}', "monthly correlation, net vs ridge", "why a blend was worth testing"),
+    ])
+    t = res.copy()
+    t["model"] = t["model"].map(lab)
+    t["rule"] = t["rule"].map(lambda r: "plain top-8" if r == "plain_top8" else f"hold while ≤ {r[8:]}")
+    t["_o"] = t["member"].map(lambda m: 0 if m == "mean of draws" else (1 if m == "deterministic" else 2))
+    t = t.sort_values(["rule", "_o", "model", "member"]).drop(columns="_o")
+    show = t[["rule", "model", "member", "excess_ann_pct", "t", "info_ratio", "hit_rate", "names_changed_per_month", "max_rel_drawdown_pct",
+              "first_half_ann_pct", "second_half_ann_pct"]].rename(columns={
+        "member": "run", "excess_ann_pct": "OOS excess %/yr", "info_ratio": "IR", "hit_rate": "hit", "names_changed_per_month": "names changed / month",
+        "max_rel_drawdown_pct": "max rel. DD %", "first_half_ann_pct": "2005–13 %/yr", "second_half_ann_pct": "2013–26 %/yr"})
+    tbl = table(show, {"OOS excess %/yr": "{:+.2f}", "t": "{:.2f}", "IR": "{:.2f}", "hit": "{:.2f}", "names changed / month": "{:.2f}",
+                       "max rel. DD %": "{:.1f}", "2005–13 %/yr": "{:+.1f}", "2013–26 %/yr": "{:+.1f}"})
+    fig, axes = plt.subplots(1, 2, figsize=(13, 4.2), facecolor="white", sharey=True)
+    for ax, rule, title in ((axes[0], "plain_top8", "plain top-8 rule"), (axes[1], dr, f"hold while ranked ≤ {dr[8:]}")):
+        for model, member, colr, lw, ls in (("blend", "mean of draws", "#D62728", 2.2, "-"), ("nn_mse", "mean of draws", "#1F77B4", 1.6, "-"),
+                                            ("ridge", "deterministic", "#2CA02C", 1.4, "--")):
+            ser = mo[(mo.model == model) & (mo.rule == rule) & (mo.member == member)].set_index("date")["excess"].sort_index()
+            ax.plot(ser.index, ser.cumsum() * 100, color=colr, lw=lw, ls=ls, label=lab[model].split(" (")[0].split(":")[0])
+        ax.axhline(0, color="#444", lw=0.8); ax.set_title(title, fontsize=10.5)
+        for sp_ in ("top", "right"):
+            ax.spines[sp_].set_visible(False)
+    axes[0].set_ylabel("cumulative OOS excess, % (simple sum)"); axes[0].legend(frameon=False, fontsize=8.5, loc="upper left")
+    chart = img(fig_to_b64(fig), "Left: on the plain rule the blend beats both of its parts. Right: under the default buffer it lands between them — the buffer was already doing the blend's job.")
+    pj = "".join(f"<li>{html.escape(k_.replace('buffer_M16', 'hold while ≤ 16').replace('plain_top8', 'plain top-8'))}: {v['ann_pct']:+.2f}% a year, t {v['t']:.2f}</li>"
+                 for k_, v in s["paired"].items() if "ann_pct" in v)
+    body = f"""
+<p class="lead">The default net and ridge agree on only about four of their eight picks each month, and their monthly excess returns correlate
+{s["correlations"][dr]["net~ridge"]:.2f}. Two edges of similar size that disagree that much should combine into something better than either. This stage
+tests that with a blend fixed in advance — within each month, z-score each model's scores across the countries and average them 50/50 — on the saved
+out-of-sample scores of the three default runs. Nothing is retrained and no weight is searched.</p>
+{k}
+{chart}
+{tbl}
+<p>Paired, month by month (blend = mean of the three runs):</p><ul>{pj}</ul>
+{commentary_block(c, "stage12")}
+<div class="files"><div class="files-title">Files</div>{flink(run / "blend.xlsx", "blend results (xlsx)")} · {flink(run / "monthly.parquet", "monthly baskets")} ·
+{flink(run / "summary.json")} · {flink(run / "run.log")} · {flink(EXP_DIR / "blend.py", "script")}</div>"""
+    return "done", body
+
+
 # ── page ─────────────────────────────────────────────────────────────────────
 CSS = """
 :root{--bg:#ffffff;--fg:#1a1a1a;--muted:#5f6368;--line:#e4e7eb;--card:#f7f8fa;--accent:#1F77B4;--warn:#fff4e5;--warnb:#f0b35c;--ok:#2CA02C;--pend:#9E9E9E}
@@ -1560,6 +1621,7 @@ def main() -> int:
         ("stage9", "9 · Design holdout", stage9),
         ("stage10", "10 · Rolling five-year window", stage10),
         ("stage11", "11 · The default model", stage11),
+        ("stage12", "12 · Blending the net and ridge", stage12),
     ]
     rendered = []
     for key, title, fn in stages:
@@ -1594,6 +1656,7 @@ and links the files.</p>
 <div class="step"><b>9 · Design holdout</b>Choose the design on the first half only; walk the second half blind.</div>
 <div class="step"><b>10 · Rolling window</b>Train only on the trailing five years; three seed draws each.</div>
 <div class="step"><b>11 · The default model</b>Rolling five years, 30 nets, hysteresis — three draws, reported as a range.</div>
+<div class="step"><b>12 · Blend</b>Half net, half ridge, fixed in advance — does diversifying the model beat either alone?</div>
 </div>
 {('<div class="note"><div class="note-title">Where things stand</div>' + overview_c + '</div>') if overview_c else ''}
 {sections}

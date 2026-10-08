@@ -109,3 +109,26 @@ the heads' content is worth a fraction of a point.
 
 Per the pre-registration no arm passes and rung B is closed. The default stays rolling-60 on 238 factors. A calibrated λ
 (fundamentals comparable to returns, ≈ 0.002–0.01) was not registered and has not been run.
+
+## B2c — calibrated weights, and the whole λ range together (`results/b2c_compare_20261008_082537`): **no arm passes; rung B closed**
+
+Pre-registered as B2c (commit `9b31c8e`). Fundamentals term relative to the return MSE: ≈2× at λ 0.005, 22× at 0.05,
+220× at 0.5, 880× at 2.
+
+| λ | pooled %/yr | vs default | paired t | draws s0 / s1000 / s2000 | max rel DD | 2005–09 | 2010–19 | 2020–26 |
+|---|---|---|---|---|---|---|---|---|
+| default | 3.19 | — | — | 3.05 / 3.28 / 3.02 | −18.0 | 2.13 | 2.74 | 4.62 |
+| 0.005 | 3.23 | +0.04 | +0.04 | 3.02 / 3.16 / 2.64 | −22.0 | 0.53 | 4.47 | 3.36 |
+| 0.05 | 3.43 | +0.24 | +0.25 | 3.15 / 3.46 / 2.86 | −11.5 | 4.92 | 2.69 | 3.45 |
+| 0.5 | 4.03 | +0.84 | +0.76 | 4.18 / 3.58 / 3.57 | −11.6 | 7.65 | 1.81 | 4.68 |
+| 2 | 3.25 | +0.06 | +0.05 | 3.10 / 3.75 / 1.78 | −16.5 | 4.94 | 1.15 | 5.13 |
+| 2, warm-up | 2.60 | −0.59 | −0.43 | 2.28 / 2.45 / 3.06 | −17.6 | 0.81 | 1.45 | 5.62 |
+
+The calibrated light touch (0.005) is indistinguishable from the default, as it should be. The gain rises to a peak at
+0.5 and falls away at 2: a smooth enough dose–response that 0.5 is unlikely to be a lone fluke, but its peak is still
+t 0.76 and only 0.5 leads in all three draws. The period columns show a consistent structure across λ: the more weight
+on fundamentals, the better 2005–09 and 2020–26 and the worse 2010–19 (4.47 → 2.69 → 1.81 → 1.15). Forcing the net to
+learn fundamentals helps in the periods that start or end with macro shocks and hurts through the QE decade — a story
+worth recording, not evidence. Five arms have now been tried; none meets the pre-registered bar. **Rung B is closed and
+the default stays.** Candidate for a future pre-registration only: a 50/50 score combination of the default and λ = 0.5
+(two different baskets of similar quality, 5 of 8 names shared, monthly correlation 0.64).

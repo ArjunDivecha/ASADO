@@ -420,6 +420,22 @@ Hindsight ceiling: best single swap +23 %/yr. Six of seven fundamental-change he
 The multi-task net's drawdown advantage is one episode (2005-12 → 2008-11, training window = dot-com years); since 2010
 the default's worst relative drawdown is −9.3 % against −11.6 %, and the default leads over 5y and 3y.
 
+## Step 19 — T2 factors only (2026-10-08, Arjun; `results/t2only_compare_20261008_100353/`, `results/t2only_vs_default_*`)
+
+The default model, unchanged, on the 91 T2 factors only (no GDELT, Bloomberg, IMF, EPU, BIS, GPR): three draws.
+
+| OOS 2005–2026, gross | default (238) | T2 only (91) |
+|---|---|---|
+| pooled 90 nets: excess %/yr (t) | 3.19 (2.48) | 3.02 (2.11) |
+| mean of three draws: excess %/yr | 3.11 | **1.39** (paired −1.73, t −2.25) |
+| draws s0 / s1000 / s2000 | 3.05 / 3.28 / 3.02 | 0.29 / 2.02 / 1.85 |
+| total return / std / max DD | 11.2 % / 20.2 % / −61 % | 10.9 % / 21.0 % / −61 % |
+| turnover one-way; DD vs EW | 262 %; −18.0 % | 190 %; −14.6 % |
+
+Pooling 90 nets rescues the T2-only model to within 0.2 %/yr of the default, but each individual 30-net run is much
+weaker and far less stable (spread 1.7 points against 0.26). The other 147 factors add little to the *average*
+signal; they make each training run reliably find it. Default unchanged.
+
 ## Decision (2026-10-08, Arjun): **keep the default.** Project closed — see `CLOSEOUT.md` / `CLOSEOUT.html`.
 
 ## Next

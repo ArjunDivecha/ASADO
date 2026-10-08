@@ -186,6 +186,9 @@ def train_one(job: dict) -> dict:
     Xt = torch.tensor(X, dtype=torch.float32)
     Yt = torch.tensor(Y, dtype=torch.float32)
     Mt = torch.tensor(M, dtype=torch.bool)
+    # optional per-month sample weights (exponential recency weighting, walk_forward --half-life); ones when absent
+    Wm = torch.tensor(job["month_weights"], dtype=torch.float32) if job.get("month_weights") is not None \
+        else torch.ones(X.shape[0], dtype=torch.float32)
     model = build_model(torch, X.shape[-1], hidden, job["dropout"])
     opt = torch.optim.AdamW(model.parameters(), lr=job["lr"], weight_decay=job["weight_decay"])
 
@@ -193,14 +196,18 @@ def train_one(job: dict) -> dict:
         s = model(Xt[idx]).squeeze(-1)
         return s
 
-    def loss_fn(s, y, m, objective):
+    def wmean(per_month, idx):
+        w = Wm[idx]
+        return (per_month * w).sum() / w.sum().clamp_min(1e-8)
+
+    def loss_fn(s, y, m, objective, idx):
         if objective == "mse":
             per_month = (((s - y) ** 2) * m).sum(dim=1) / m.sum(dim=1).clamp_min(1)
-            return per_month.mean()
+            return wmean(per_month, idx)
         z = month_zscore(torch, s, m)
         mem = soft_topk(z, m, k, tau)
         w = mem / k
-        return -((w * y).sum(dim=1)).mean() * 100.0  # % per month, negated
+        return -wmean((w * y).sum(dim=1), idx) * 100.0  # % per month, negated
 
     def val_score():
         model.eval()
@@ -208,7 +215,7 @@ def train_one(job: dict) -> dict:
             s = forward(va_idx)
             z = month_zscore(torch, s, Mt[va_idx])
             mem = soft_topk(z, Mt[va_idx], k, 0.25)
-            v = float(((mem / k) * Yt[va_idx]).sum(dim=1).mean())
+            v = float(wmean(((mem / k) * Yt[va_idx]).sum(dim=1), va_idx))
         model.train()
         return v
 
@@ -223,7 +230,7 @@ def train_one(job: dict) -> dict:
             for i in range(0, len(perm), job["batch_months"]):
                 idx = perm[i:i + job["batch_months"]]
                 s = forward(idx)
-                loss = loss_fn(s, Yt[idx], Mt[idx], objective)
+                loss = loss_fn(s, Yt[idx], Mt[idx], objective, idx)
                 opt.zero_grad()
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 5.0)

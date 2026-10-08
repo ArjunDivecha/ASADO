@@ -122,6 +122,9 @@ def main() -> int:
                     help="hysteresis rank buffer M for the headline basket: hold a name while ranked <= M (default 16; 8 = plain top-8)")
     ap.add_argument("--max-month", type=int, default=0,
                     help="use only the first N months of the panel (design holdout: select on the first half); 0 = all")
+    ap.add_argument("--half-life", type=float, default=0.0,
+                    help="months; >0 weights each training month by 0.5**(age/half_life) (age = months before the fold cut-off), "
+                         "normalised to mean 1. Use with --window 0 (expanding) for the 'all history, recency-weighted' variant.")
     ap.add_argument("--window", type=int, default=60,
                     help="rolling training window in months: train only on the trailing N months before each cut-off "
                          "(default 60 — Arjun 2026-10-07: 'the world changes'); 0 = expanding")
@@ -187,6 +190,19 @@ def main() -> int:
         return max(0, t_start - args.window) if args.window else 0
     if args.window:
         log.info("ROLLING window: each fold trains only on the trailing %d months before its cut-off", args.window)
+    def month_weights(t_start: int):
+        """Exponential recency weights over the fold's training months (mean 1); None when --half-life is 0."""
+        if not args.half_life:
+            return None
+        w = np.zeros(len(months), np.float32)
+        tr_m = np.arange(train_start(t_start), t_start)
+        age = (t_start - 1) - tr_m
+        w[tr_m] = 0.5 ** (age / args.half_life)
+        w[tr_m] /= w[tr_m].mean()
+        return w.tolist()
+    if args.half_life:
+        log.info("RECENCY WEIGHTS: half-life %.0f months (weight of the oldest month in the first fold = %.3f of mean)",
+                 args.half_life, 0.5 ** ((args.first_train_months - 1) / args.half_life))
     for fi, t_start, t_end in folds:
         tr = (r_m < t_start) & (r_m >= train_start(t_start)); oos = (r_m >= t_start) & (r_m < t_end)
         _, s_ev, info = fit_ridge(X_ridge[tr], y_rows[tr], r_m[tr], X_ridge[oos], args.k, args.seed + fi)
@@ -199,10 +215,11 @@ def main() -> int:
     jobs = []
     for fi, t_start, t_end in folds:
         fit_m, val_m = inner_split(np.arange(train_start(t_start), t_start), args.seed + fi)
+        mw = month_weights(t_start)
         for obj in objectives:
             for s in range(args.seeds):
                 jobs.append(base | {"split": f"fold_{fi}", "objective": obj, "seed": (args.seed + fi) * 100 + s, "tag": "real",
-                                    "tr_months": fit_m, "va_months": val_m, "_fold": fi})
+                                    "tr_months": fit_m, "va_months": val_m, "_fold": fi, "month_weights": mw})
     log.info("net jobs: %d (%d folds x %d objectives x %d seeds); workers=%d", len(jobs), len(folds), len(objectives), args.seeds, args.workers)
     results, done = [], 0
     def heartbeat(last):

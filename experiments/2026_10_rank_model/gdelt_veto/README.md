@@ -37,3 +37,27 @@ Two data facts found on the way:
 
 Consequence: GDELT's remaining role in this project is as text an LLM reads forward. Nothing here
 changes the live default model.
+
+---
+
+# Test 2 — Arjun's rule: exclude countries with news score ≤ −1
+
+**Verdict: FAIL** (run `results/gdelt_filter_20261007_223003/`, 2026-10-07 22:30, 127 months 2016-03 → 2026-09).
+Pre-registered as "Test 2" in `PREREG.md`, committed before the run.
+
+Rule: run the default model exactly as normal, but any country whose news score (minus the 14-day composite
+shock) is −1 or worse is ineligible that month; a held name with bad news is dropped and the next-ranked
+eligible name fills the slot.
+
+- About 2.8 of 34 countries were ineligible in a typical month and 0.47 holdings a month were dropped for news;
+  the basket differed from the default in 96 of 127 months.
+- The filtered basket made 1.83% a year against the default's 3.01% over the same months: a **cost of 1.18% a year**
+  (paired t −1.21), beating the default in 34% of months. The 95% interval on the gain is −3.1% to +0.7% a year.
+- Stale news (three months old) under the same rule cost 1.86% a year (t −2.34). The harm is not about timing.
+- Country-shuffled news: 95th percentile of the paired t is +0.82; the matched t sits at the 18th percentile.
+- Every threshold (−0.5, −1, −1.5), window (7/14/30 days) and score (composite, attention-share composite, tone alone)
+  was negative, except two cells at the loosest filter (−1.5, 30 days: +0.4% and +0.6%, t 0.3–0.5). The tighter the
+  filter, the larger the loss: at −0.5 the cost is 2–4% a year.
+
+Why excluding bad-news countries hurts: see the diagnostic printed in the run log below. Nothing here changes the
+default model. This closes the last stated-rule use of GDELT aggregates on this project.

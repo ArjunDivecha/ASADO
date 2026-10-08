@@ -2087,3 +2087,50 @@ Arjun approved the GDELT news-as-veto test. I wrote a pre-registration and a tes
 ---
 SESSION END: 2026-10-07 22:13 PDT | Agent: Claude Code (auto, idle, session dc8244a3)
 ---
+
+---
+SESSION START: 2026-10-07 23:29 PDT | Agent: Claude Code (auto, idle, session dc8244a3)
+---
+
+### Session Summary
+Arjun relayed six decisions from the LLM-rung design document. Decision 1 (adopt the ladder) is YES. Decision 2 is a test of a rolling 5-year window against EMA recency weighting. Decision 5 (restart the GDELT theme pipeline) was answered NO by the veto result. Arjun then proposed two further GDELT rules, a news-score filter and a news-score boost, and I ran both as pre-registered tests. Both failed, and Arjun closed GDELT. The EMA grid was still running when this activity ended, with no verdict yet.
+
+### Decisions Made
+- **GDELT is closed for country rotation.** Test 1 (veto) FAILED. Test 2, Arjun's rule making countries with a news score of −1 or worse ineligible, FAILED at −1.2%/yr (t −1.2). Test 3, a four-place rank boost for countries with a score of +1 or better, FAILED at −0.19%/yr (t −0.6).
+- The mirror boost of bad-news names reached +1.22%/yr (t 2.26) and +1.79%/yr (t 2.58) at one setting. I judged it noise: two cells above t 2 and one below −2 out of 27, with the sign flipping at a threshold of 1.5. Per the pre-registration it cannot pass on its own.
+- The 92 monthly GDELT factors stay in the default model. Dropping them costs about 0.5 points a year, not significant. I told Arjun and offered to re-run without them. He has not replied.
+- Decision 2 was implemented as per-month sample weights in `train_nn.py` and `walk_forward.py`, with `--window 0 --half-life N`. The smoke test passed.
+
+### Architecture / Design
+- EMA grid: expanding equal-weight, plus half-lives of 24, 36, 60 and 120 months, with 3 seed draws each. That is 15 walk-forwards against the 3 existing rolling-60 draws.
+- The bar for changing the default is a pooled paired t of at least 2, with all 3 draws ahead. That needs about +2.2%/yr.
+
+### Constraints & Gotchas
+- The first `walk_forward.py` smoke invocations produced no output and had to be rerun with stdout redirected to `results/smoke_ema_stdout.log`.
+- Early single-draw grid numbers looked large: 4.55% a year (t 3.6) for expanding equal weight and 5.70% a year (t 4.2) for the 24-month half-life, against about 3.05% for rolling. I flagged these as unreliable until the pooled result is in.
+
+### Open Questions
+- Decisions 3 (evidence standard), 4 (which LLMs, pinned versions) and 6 (Bloomberg fixed-fiscal-year consensus earnings and first-release macro data) are unanswered.
+- Is the point-in-time model text test worth pursuing? It needs a corpus first. Three options were laid out: re-fetched GDELT URLs, Common Crawl News from 2016, or a licensed archive. Nothing is decided.
+- The small point-in-time models (1–4B parameters) can test text features and calibrate contamination, but they cannot test frontier judgment, which stays forward-only.
+
+### Context for Next Session
+Under `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model/`:
+- `gdelt_veto/README.md` (appended with test 2 and test 3)
+- `gdelt_veto/PREREG.md`
+- `gdelt_veto/filter_test.py`
+- `gdelt_veto/boost_test.py`
+- `results/gdelt_veto_20261007_214235/`
+- `results/gdelt_filter_20261007_223003/`
+- `results/gdelt_boost_20261007_224509/`
+- `ema_window/PREREG.md`
+- `ema_window/run_grid.sh`
+- `results/ema_grid_launch.log`
+
+The grid is expected to finish around 11:30 pm Pacific on 2026-10-07. Check for the "GRID DONE" line, then run the pooled comparison.
+
+Verdict entry: `/Users/arjundivecha/Dropbox/AAA Backup/A Complete/Investment Learnings/GDELT Country Rotation Conditioning.md`, with an index line in `INDEX.md` there, committed as `3952f7b`. Test 3 is commit `3d7a1f9` on `exp/NN`. Neither is pushed.
+
+---
+SESSION END: 2026-10-07 23:29 PDT | Agent: Claude Code (auto, idle, session dc8244a3)
+---

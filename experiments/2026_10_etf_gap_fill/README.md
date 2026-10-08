@@ -255,3 +255,47 @@ known at T; an in-sample cutoff is shown as an upper bound), 100% otherwise. Gro
 - The 2010-2019 drawdown deepens: the max drawdown of cumulative active log return goes from 0.98
   to 1.18 (relative wealth falls to about 31% of its peak vs about 38%). The worst day doubles to
   −19% vs −10%.
+
+---
+
+# The live rule on US sector and industry ETFs (2026-10-07, `etf_reversal_us_sectors.py`, run `runs/us_sectors_20261007_230253`)
+
+**Result: the rule does not work on US sector or industry ETFs.** The live rule was applied with no
+retuning: one name by relative-vol z, $10k, or $20k on top-quintile days, in a $20k sleeve. Over the
+full history it earns an active Sharpe of 0.13 on the 11 SPDR sectors, 0.09 on 30 industry ETFs and
+−0.14 on the two combined. The control country universe earns 1.50. None of the US universes is
+distinguishable from zero (bootstrap p 0.25 to 0.81). All three are significantly worse than the
+control on the same dates, with paired Sharpe differences of −0.8 to −1.6 and every CI below zero. Over
+the last 5 years all three are negative: sectors −0.43, industries −0.23, combined −0.79. The
+constant-size one-name book and the long-only bottom-quintile book tell the same story. The best of
+them is the sectors quintile book at 0.43 full history, which comes mostly from 2000-09.
+
+**The mechanism prediction held.** For the control, 72% of the live rule's active return is earned
+overnight: 18%/yr from close to next open against 7%/yr from open to close (t 7.1 vs 3.0). The
+overnight leg is what the stale-underlying story predicts, and on US underlyings it is gone. It is
+0.7%/yr for sectors, 2.1%/yr for industries and 1.6%/yr combined, none of it significant. Over the last
+5 years it is between −2.9% and +0.7%. The funds with large non-US holdings (GDX, TAN, PBW) add no
+overnight edge either: GDX's overnight contribution is −0.4%/yr. Whatever daytime return exists is
+small and changes sign by window.
+
+**One surprise, probably noise.** On the 15:30 ET signal (E5, 2024-05 to 2026-10), industries look
+better than on the close signal over the same dates: Sharpe 0.67 vs 0.14 for the live rule. That is
+still insignificant on its own (NW t 1.1). The gap comes entirely from the 18% of days on which the
+two signals pick different names. The close signal's picks had fallen a further 6bp in the last
+half hour and kept underperforming the next day. The paired bootstrap gives p 0.02 for E5 beating
+E1. But the test was added after the gap was noticed, and it rests on about 108 days, so it is a
+lead at most. It may be a late-day continuation effect in US names. It is also not a reversal
+edge: the E5 industry return is all daytime, not overnight.
+
+**Control reproduction.** Run on the cached country data with the reference conventions, the code
+reproduces every cell of `runs/double_top_20261007_003049` exactly: daily active Sharpe 1.506 / 1.963
+/ 2.709 / 2.822 for the 100% rule and 1.400 / 1.909 / 2.541 / 3.079 doubled (Full / 5y / 3y / 1y),
+and E5 2.853 and 2.695. The spec's own conventions (60-day entry, a minimum of 80% of priced names
+valid) move the full-history Sharpe by at most 0.014.
+
+**Caveats.** Ticker lists are today's survivors. No requested ticker was missing from Yahoo, and none
+is delisted. US industries only have 8+ members from 2005-11, so their "2000-09" sub-period is 2005-11
+to 2009. XAR, XHE and XTN have some zero-volume days and missing 15:30 bars. EDEN is missing about
+38% of its 15:30 bars, which the original E5 cache already had. Gross returns throughout. Turnover is
+about 270 to 290 times the sleeve a year in every universe (a fact, not a penalty). Nothing here changes the
+live strategy. It stays a country-ETF trade, and there is no case for extending it to US sectors.

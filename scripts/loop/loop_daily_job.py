@@ -113,7 +113,7 @@ com.arjundivecha.asado-loop-daily) in this order:
                             just after build_combiner in the actual sequence;
                             Consensus Matrix / Edge Board substrate)
  35. build_fable_connections - non-deterministic Fable pass: bounded warehouse
-                            + Neo4j packet -> claude-fable-5 -> CONJECTURE
+                            + Neo4j packet -> claude-fable-5-1 -> CONJECTURE
                             connections JSON (optional; ASADO_SKIP_FABLE=1 skips)
  36. refresh_cockpit_data / refresh_live_cockpit - FINAL cockpit rebuild so the
                             payload reflects tonight's run (the early build
@@ -341,7 +341,7 @@ STEPS = [
     # Pure reporting (no warehouse writes, no signal) — safe as the final step.
     ("build_jst_risk_report", [PY, "scripts/loop/build_jst_risk_report.py"]),
     # Fable connections (the one deliberately NON-deterministic step): bounded
-    # custody-scrubbed warehouse+Neo4j packet -> claude-fable-5 -> 3-7
+    # custody-scrubbed warehouse+Neo4j packet -> claude-fable-5-1 -> 3-7
     # CONJECTURE cross-surface connections in Data/loop/fable/. One API call
     # (~25KB in / <=12K tokens out). ASADO_SKIP_FABLE=1 or missing key -> exit 2
     # PARTIAL. Runs AFTER dislocations/gaps/family ranks so it sees tonight's

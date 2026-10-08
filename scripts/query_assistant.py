@@ -323,7 +323,7 @@ class ASADOQueryAssistant:
             os.getenv("ASADO_QUERY_MODEL")
             or os.getenv("ASADO_QUERY_ANTHROPIC_MODEL")
             or os.getenv("ANTHROPIC_MODEL")
-            or "claude-sonnet-5"
+            or "claude-sonnet-5-5"
         )
 
     def _schema_bundle(self) -> Dict[str, Any]:
@@ -694,7 +694,6 @@ class ASADOQueryAssistant:
             "system": system_prompt,
             "messages": [{"role": "user", "content": user_prompt}],
             "max_tokens": 2200,
-            "temperature": 0.1,
         }
         response = requests.post(
             "https://api.anthropic.com/v1/messages",

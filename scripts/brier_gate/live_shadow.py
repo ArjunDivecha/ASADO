@@ -249,9 +249,8 @@ def match_kalshi(
         listing = "\n".join(f"{i}. {k['title'][:120]}" for i, k in enumerate(shortlist))
         try:
             resp = llm_client.messages.create(
-                model="claude-sonnet-5",
-                max_tokens=50,
-                temperature=0,
+                model="claude-sonnet-5-5",
+                max_tokens=2048,
                 system=(
                     "You match prediction-market questions across venues. Answer with ONLY "
                     'a JSON object {"match": <index or null>}. A match must ask about the '
@@ -262,7 +261,7 @@ def match_kalshi(
                     "role": "user",
                     "content": f"QUESTION: {question}\n\nCANDIDATES:\n{listing}\n\nWhich candidate (if any) is the same question?",
                 }],
-                thinking={"type": "disabled"},
+                output_config={"effort": "low"},
             )
             text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
             idx = json.loads(re.search(r"\{.*\}", text, re.DOTALL).group(0)).get("match")

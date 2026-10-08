@@ -286,9 +286,9 @@ def _resolve_fable_model(key: str) -> str:
         r = requests.get("https://api.anthropic.com/v1/models",
                          headers={"x-api-key": key, "anthropic-version": "2023-06-01"}, timeout=30)
         models = [m["id"] for m in r.json().get("data", []) if m.get("id", "").startswith("claude-fable-")]
-        return sorted(models)[-1] if models else "claude-fable-5"
+        return sorted(models)[-1] if models else "claude-fable-5-1"
     except Exception:  # noqa: BLE001
-        return "claude-fable-5"
+        return "claude-fable-5-1"
 
 
 def append_lesson(record: dict) -> None:

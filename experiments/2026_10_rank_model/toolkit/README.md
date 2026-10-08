@@ -32,3 +32,31 @@ alone are worth through a one-name override: about the same as the default, not 
 Per the pre-registration this is a FAIL for B as designed; nothing changes the default. A fairer test needs a new
 pre-registration with a second stage that cannot hurt by itself: fixed economic signs with equal small weights (no
 fitting), or a long-window / expanding second stage justified by its tiny parameter count. Not run; the owner's call.
+
+## B2a — head forecasts as six extra inputs to the default net (`results/b2a_compare_20261008_005156`): **default stays, and the forecasts hurt**
+
+Default net unchanged, 244 inputs (238 factors + six CS-standardised OOS head forecasts), panel from 2005-02, three seed
+draws, OOS 2010-02 → 2026-09 (200 months). Pre-registered as B2a in `PREREG.md` (commit `47cf18b`).
+
+| | pooled | s0 | s1000 | s2000 |
+|---|---|---|---|---|
+| rolling-60 default | 3.46 | 2.62 | 3.87 | 3.08 |
+| default + forecasts | **0.51** | 1.46 | 2.61 | 3.17 |
+
+Pooled: −2.95% a year against the default, paired t −2.29; behind in all three draws. Information ratio 0.09 against
+0.63; max relative drawdown −19.8% against −9.3%. By period the damage is concentrated in 2020–26 (−0.3% against +4.6%).
+The pooled ensemble sits *below all three of its own draws* (the default's pooled 3.46 sits above its draws' mean). A
+diagnostic shows this is not because the draws disagree more: within-month rank agreement between draws is 0.64 with the
+forecasts against 0.67 without, and top-8 overlap 4.7 against 4.8 names. The pooled basket is a nonlinear function of the
+averaged scores and simply landed badly; the per-draw figures (1.5 / 2.6 / 3.2 against 2.6 / 3.9 / 3.1) are the fairer
+read, and they are behind in every draw.
+
+Why the record starts in 2010: two stacked 60-month windows on a panel that begins 2000-02. The heads' first OOS forecast is
+2005-02; the net then needs 60 months of forecast-bearing rows, so its first fold is 2010-02. Both arms are compared over
+the same 200 months.
+
+Why this can't have added information: each head is a ridge — a *linear function of the same 238 inputs* the net already
+sees. Appending them gives the net nothing it could not form itself; it only adds a strong inductive bias toward the
+directions that predict fundamental changes. The result says those are not the directions that predict returns, and
+pushing the net toward them costs 3% a year. That is evidence against the multi-task version too, since it shapes the
+representation toward the same directions, though through the loss rather than the inputs.

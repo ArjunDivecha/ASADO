@@ -94,6 +94,33 @@ default over the same months 2010-02 → 2026-09, annualised, with t; each draw 
 stays; report the interval. Secondary, for understanding only: the net's draw-to-draw spread, and the result with
 the six columns shuffled across countries within month (one run, seed 0) as a placebo.
 
+---
+
+# B2b (2026-10-08 01:05, Arjun's design): one net, many heads — fundamentals as auxiliary losses
+
+Written before any run. B2a showed that *inputs* carry a tax (six noise columns cost ~1.6% a year) and that the heads'
+content is worth only a fraction of a point as inputs. This design adds no inputs: the default net keeps its 238 factors
+and its return head; six extra output heads forecast next month's change in the six surviving fundamentals, and their
+losses shape the shared trunk. Only the return head is used for ranking.
+
+**Architecture.** Default trunk (256, 128, GELU, dropout 0.15) with 7 outputs: output 0 = return score (trained with the
+default's objectives, mse and soft_top8, headline nn_mse); outputs 1–6 = next-month change in `Trailing EPS_TS`,
+`BEST EPS_TS`, `Best ROE_TS`, `IMF_CPI_Inflation_YoY_TS`, `20 Day Vol_TS`, `BBG_Govt_Bond_10Y_TS`, each scaled by its
+standard deviation over the fold's training rows, masked where missing.
+
+**Loss.** L = L_return + λ · mean over the six heads of masked MSE. Early stopping unchanged: on the return objective over
+the inner validation months, so the auxiliary losses act as a regulariser and can never be selected for.
+
+**Arms (fixed in advance).** λ = 0.5; λ = 2; λ = 2 with a 30-epoch warm-up in which only the auxiliary losses train
+("learn the economy first, then the market"). Three seed draws each (0, 1000, 2000). Panel: cleaned v3, 238 inputs,
+rolling 60, 30 nets per fold, OOS 2005-02 → 2026-09 (260 months, the default's full record).
+
+**Comparison and decision.** As before: pooled three-draw ensemble under the default basket rule, paired against the
+pooled rolling-60 default; the default changes only if an arm has pooled paired t ≥ 2.0 and leads in all three draws.
+Three arms are tested, so a single pass at that bar carries roughly three times the false-positive risk of one; a
+pass must also be the best of the three arms and will be re-run with three fresh seeds before adoption. If no arm
+passes, rung B is closed and the default stays.
+
 ## Amendments
 
 (none)

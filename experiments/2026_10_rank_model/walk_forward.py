@@ -122,6 +122,10 @@ def main() -> int:
                     help="hysteresis rank buffer M for the headline basket: hold a name while ranked <= M (default 16; 8 = plain top-8)")
     ap.add_argument("--max-month", type=int, default=0,
                     help="use only the first N months of the panel (design holdout: select on the first half); 0 = all")
+    ap.add_argument("--aux-lambda", type=float, default=0.0,
+                    help="multi-task (toolkit/PREREG.md B2b): weight on auxiliary heads forecasting next-month changes in --aux-targets; 0 = off")
+    ap.add_argument("--aux-warmup", type=int, default=0, help="epochs of auxiliary-only training before the return objective (curriculum)")
+    ap.add_argument("--aux-targets", default="Trailing EPS_TS,BEST EPS_TS,Best ROE_TS,IMF_CPI_Inflation_YoY_TS,20 Day Vol_TS,BBG_Govt_Bond_10Y_TS")
     ap.add_argument("--half-life", type=float, default=0.0,
                     help="months; >0 weights each training month by 0.5**(age/half_life) (age = months before the fold cut-off), "
                          "normalised to mean 1. Use with --window 0 (expanding) for the 'all history, recency-weighted' variant.")
@@ -162,6 +166,20 @@ def main() -> int:
     r_m = pd.DatetimeIndex(panel["date"]).map(mi).to_numpy(); r_c = panel["country"].map(ci).to_numpy()
     X[r_m, r_c] = Xrows; Y[r_m, r_c] = panel["fwd_excess"].to_numpy(np.float32); M[r_m, r_c] = True
     y_rows = panel["fwd_excess"].to_numpy(float)
+    # auxiliary targets for the multi-task net: next month's change in each named column, per country (NaN where missing)
+    Y_aux = M_aux = None
+    if args.aux_lambda > 0:
+        aux_cols = [c for c in args.aux_targets.split(",") if c]
+        missing = [c for c in aux_cols if c not in panel.columns]
+        if missing:
+            raise SystemExit(f"--aux-targets not in panel: {missing}")
+        Y_aux = np.full((len(months), len(countries), len(aux_cols)), np.nan, np.float32)
+        for j, c in enumerate(aux_cols):
+            nxt = panel.groupby("country")[c].shift(-1) - panel[c]
+            Y_aux[r_m, r_c, j] = nxt.to_numpy(np.float32)
+        M_aux = np.isfinite(Y_aux); Y_aux = np.nan_to_num(Y_aux, nan=0.0)
+        log.info("MULTI-TASK: lambda %.2f, warm-up %d epochs, %d auxiliary targets (%s); target coverage %.1f%%",
+                 args.aux_lambda, args.aux_warmup, len(aux_cols), ", ".join(aux_cols), 100 * M_aux[M].mean())
     X_ridge = Xrows.astype(float)
     has_ref = REFERENCE_FACTOR in panel.columns
     ref_rows = panel[REFERENCE_FACTOR].fillna(0.0).to_numpy(float) if has_ref else None
@@ -211,7 +229,8 @@ def main() -> int:
 
     # ── nets per fold (process pool) ────────────────────────────────────────
     base = {"k": args.k, "tau": args.tau, "hidden": hidden, "dropout": args.dropout, "lr": args.lr,
-            "weight_decay": args.weight_decay, "batch_months": 32, "epochs": 300, "patience": 30}
+            "weight_decay": args.weight_decay, "batch_months": 32, "epochs": 300, "patience": 30,
+            "aux_lambda": args.aux_lambda, "aux_warmup": args.aux_warmup}
     jobs = []
     for fi, t_start, t_end in folds:
         fit_m, val_m = inner_split(np.arange(train_start(t_start), t_start), args.seed + fi)
@@ -227,7 +246,7 @@ def main() -> int:
         (run_dir / "heartbeat.json").write_text(json.dumps({"last": last, "runs_done": done, "runs_total": len(jobs),
             "elapsed_s": round(el), "eta_s": round(el / done * (len(jobs) - done)) if done else None,
             "updated": datetime.now().isoformat(timespec="seconds")}, indent=2))
-    with ProcessPoolExecutor(max_workers=args.workers, initializer=_init_worker, initargs=(X, Y, M)) as pool:
+    with ProcessPoolExecutor(max_workers=args.workers, initializer=_init_worker, initargs=(X, Y, M, Y_aux, M_aux)) as pool:
         futs = {pool.submit(train_one, j): j for j in jobs}
         for fut in as_completed(futs):
             r = fut.result(); j = futs[fut]; r["_fold"] = j["_fold"]; results.append(r); done += 1

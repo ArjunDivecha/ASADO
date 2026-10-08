@@ -114,13 +114,14 @@ def _torch():
     return torch
 
 
-def build_model(torch, n_in: int, hidden: list[int], dropout: float):
+def build_model(torch, n_in: int, hidden: list[int], dropout: float, n_out: int = 1):
+    """Shared trunk; n_out = 1 for the default, 1 + n_aux for the multi-task net (output 0 is always the return score)."""
     nn = torch.nn
     layers, d = [], n_in
     for h in hidden:
         layers += [nn.Linear(d, h), nn.GELU(), nn.Dropout(dropout)]
         d = h
-    layers += [nn.Linear(d, 1)]
+    layers += [nn.Linear(d, n_out)]
     return nn.Sequential(*layers)
 
 
@@ -168,9 +169,10 @@ def month_zscore(torch, s, mask):
 _DATA: dict = {}
 
 
-def _init_worker(X, Y, M):
-    """Each pool worker receives the panel tensors once (not once per job)."""
-    _DATA.update(X=X, Y=Y, M=M)
+def _init_worker(X, Y, M, Y_aux=None, M_aux=None):
+    """Each pool worker receives the panel tensors once (not once per job). Y_aux/M_aux: (months, N, J) auxiliary
+    targets and their masks for the multi-task net (walk_forward --aux-lambda); None for the default."""
+    _DATA.update(X=X, Y=Y, M=M, Y_aux=Y_aux, M_aux=M_aux)
 
 
 def train_one(job: dict) -> dict:
@@ -186,15 +188,28 @@ def train_one(job: dict) -> dict:
     Xt = torch.tensor(X, dtype=torch.float32)
     Yt = torch.tensor(Y, dtype=torch.float32)
     Mt = torch.tensor(M, dtype=torch.bool)
+    # multi-task: auxiliary heads on next-month fundamental changes (toolkit/PREREG.md B2b); off when aux_lambda is 0
+    aux_lambda = float(job.get("aux_lambda", 0.0) or 0.0); aux_warmup = int(job.get("aux_warmup", 0) or 0)
+    use_aux = aux_lambda > 0 and _DATA.get("Y_aux") is not None
+    if use_aux:
+        Ya = torch.tensor(_DATA["Y_aux"], dtype=torch.float32); Ma = torch.tensor(_DATA["M_aux"], dtype=torch.bool)
+        # scale each target by its std over the fold's training rows (no look-ahead)
+        sc = torch.stack([Ya[tr_idx][..., j][Ma[tr_idx][..., j]].std() for j in range(Ya.shape[-1])]).clamp_min(1e-6)
+        Ya = torch.nan_to_num(Ya / sc, nan=0.0)
+    n_out = 1 + (Ya.shape[-1] if use_aux else 0)
     # optional per-month sample weights (exponential recency weighting, walk_forward --half-life); ones when absent
     Wm = torch.tensor(job["month_weights"], dtype=torch.float32) if job.get("month_weights") is not None \
         else torch.ones(X.shape[0], dtype=torch.float32)
-    model = build_model(torch, X.shape[-1], hidden, job["dropout"])
+    model = build_model(torch, X.shape[-1], hidden, job["dropout"], n_out=n_out)
     opt = torch.optim.AdamW(model.parameters(), lr=job["lr"], weight_decay=job["weight_decay"])
 
     def forward(idx):
-        s = model(Xt[idx]).squeeze(-1)
-        return s
+        return model(Xt[idx])[..., 0]            # return score
+
+    def aux_loss(idx):
+        out = model(Xt[idx])[..., 1:]; y = Ya[idx]; m = Ma[idx]
+        per_head = ((out - y) ** 2 * m).sum(dim=(0, 1)) / m.sum(dim=(0, 1)).clamp_min(1)
+        return per_head.mean()
 
     def wmean(per_month, idx):
         w = Wm[idx]
@@ -223,6 +238,13 @@ def train_one(job: dict) -> dict:
         else [(job["objective"], job["epochs"])]
     best_state, best_val, best_epoch, epoch_counter, t0 = None, -1e9, 0, 0, time.time()
     rng = np.random.default_rng(job["seed"])
+    if use_aux and aux_warmup > 0:                 # curriculum: auxiliary losses only, no early stopping, before the phases
+        for ep in range(aux_warmup):
+            perm = rng.permutation(tr_idx)
+            for i in range(0, len(perm), job["batch_months"]):
+                idx = perm[i:i + job["batch_months"]]
+                loss = aux_lambda * aux_loss(idx)
+                opt.zero_grad(); loss.backward(); torch.nn.utils.clip_grad_norm_(model.parameters(), 5.0); opt.step()
     for objective, n_epochs in phases:
         bad = 0
         for ep in range(n_epochs):
@@ -231,6 +253,8 @@ def train_one(job: dict) -> dict:
                 idx = perm[i:i + job["batch_months"]]
                 s = forward(idx)
                 loss = loss_fn(s, Yt[idx], Mt[idx], objective, idx)
+                if use_aux:
+                    loss = loss + aux_lambda * aux_loss(idx)
                 opt.zero_grad()
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 5.0)
@@ -248,7 +272,7 @@ def train_one(job: dict) -> dict:
         model.load_state_dict(best_state)
     model.eval()
     with torch.no_grad():
-        s_all = model(Xt).squeeze(-1).numpy()
+        s_all = model(Xt)[..., 0].numpy()
     return {"split": job["split"], "objective": job["objective"], "seed": job["seed"], "tag": job["tag"],
             "scores": s_all, "best_epoch": best_epoch, "epochs_run": epoch_counter,
             "inner_val_soft_excess_pct_month": best_val * 100, "seconds": round(time.time() - t0, 1)}

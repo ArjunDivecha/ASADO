@@ -1926,3 +1926,38 @@ Ridge same window: 1.95 (M16), 2.9 (plain); net − ridge +1.2 (t 1.1). The buff
 ---
 SESSION END: 2026-10-07 13:25 PDT | Agent: Claude Code (Fable 5.1)
 ---
+
+---
+SESSION START: 2026-10-07 16:49 PDT | Agent: Claude Code (auto, idle, session dc8244a3)
+---
+
+### Session Summary
+Arjun rejected the first-half/second-half split as a headline test ("the world changes") and preferred a 5-year rolling window. The rolling window had been requested before seeing results, so adopting it was legitimate. The defaults in `walk_forward.py` are now `--window 60 --seeds 30 --buffer 16`. Three independent draws (`walk_20261007_154626_default_s0`, `_s1000`, `_s2000`) were summarised by the new `default_model.py` into `results/default_20261007_155223/`. The headline is **+3.1 %/yr OOS vs the equal-weight average, 2005–2026 (t 2.8)**. The three draws made 3.05, 3.28 and 3.02, so the result is stable across reruns. Report stage 11 and the commentary were rewritten around this headline, and the 4.1 % and 4.5 % figures are withdrawn on the page. Then `exp/NN` and main were pushed, and `exp/NN` was merged into main (see Decisions).
+
+### Decisions Made
+- Default model: rolling 60-month window, 30-net ensemble, 16-name hysteresis buffer. The half split stays in the report as a diagnostic only.
+- Arjun approved the push and the merge. All 12 scripts now locate themselves via `Path(__file__)` instead of the hardcoded `ASADO-exp-NN` path. Rebuilding the report and a small walk-forward in the worktree worked, and the scripts compile from main.
+- Merge of `exp/NN` into main used `--no-ff`. The five conflicts were files main deleted this morning, and the branch version was taken for each. Only the 19 files under `experiments/2026_10_rank_model/` changed.
+- Main is at `d733d66` and `exp/NN` at `504be7d`; both are pushed.
+
+### Constraints & Gotchas
+- The merge silently took main's deletion of the folder's `.gitignore` (no conflict raised). It was restored from `exp/NN`, and `results/` and `.venv/` are confirmed ignored on main.
+- Main has no `results/` or `.venv`, so the report builder run from main shows stages as pending. Keep running everything from the worktree `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model/` until the worktree is retired.
+- Buffer finding: the plain top-8 rule on the same 30-net runs gave 1.6/3.1/1.9. The 10-net buffered runs gave 2.7/2.0/1.9. The buffer, not only the ensemble size, is what makes runs agree.
+- The ±1.1 %/yr uncertainty implies a plausible range of about 1–5 %. Inputs are not vintage-archived. Results are before costs; each 10bp one-way costs about 0.26 %/yr.
+
+### What To Build Next
+- Register the default model as a harness trial charged to a family in `config/family_registry.yaml`.
+- Write its verdict into Investment Learnings. Arjun has not yet answered the offer to do both.
+- Freeze the default and start forward paper-trading; add vintage-archived slow inputs.
+
+### Open Questions
+- Whether the net actually forecasts better than ridge. On the default rule, net − ridge is +1.2 (t 1.1), which is not proven. The net is better behaved, with shallower drawdowns, and is not underwater since 2021.
+
+### Context for Next Session
+- Merged code: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/experiments/2026_10_rank_model/`. Report: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model/results/report.html`.
+- Default results: `results/default_20261007_155223/` (`draws.xlsx`, `summary.json`, `monthly.parquet`, `by_year.parquet`).
+
+---
+SESSION END: 2026-10-07 16:49 PDT | Agent: Claude Code (auto, idle, session dc8244a3)
+---

@@ -2043,3 +2043,47 @@ Survey findings:
 ---
 SESSION END: 2026-10-07 21:09 PDT | Agent: Claude Code (auto, idle, session dc8244a3)
 ---
+
+---
+SESSION START: 2026-10-07 22:13 PDT | Agent: Claude Code (auto, idle, session dc8244a3)
+---
+
+### Session Summary
+Arjun approved the GDELT news-as-veto test. I wrote a pre-registration and a test script, committed them before any result existed, and launched the full run in the background. The run was still in its permutation stage when this activity ended, so there is no verdict yet. The next step is to read the result when the run notifies and open the report.
+
+### Decisions Made
+- The pre-registration was committed before the first run. Amendment A1 added `attention_share` secondaries and was committed before any full-run result existed.
+- The live arm uses two components: attention (`n_articles`, sign +1) and tone (`tone_mean`, sign -1). A deep-panel arm runs alongside it.
+- `llm_rl/DESIGN.md` was edited again, in the paragraph that describes the existing GDELT store.
+
+### Architecture / Design
+- The script rebuilds the default model's 8-holding monthly basket from saved walk-forward predictions. The rebuilt basket matches the saved default run to about 1e-18, at 3.19% a year both ways.
+- Inputs:
+  - Live panel: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/GDELT/data/panels/country_signal_daily.parquet`
+  - Deep panel: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/GDELT/Deep/data/features/country_signal_daily_deep.parquet`
+  - Saved default run: `results/default_20261007_155223/`
+  - Predictions: `results/walk_*default_s*/predictions_oos.parquet`
+- Outputs go to `results/gdelt_veto_<timestamp>/`, with `arms` and `monthly` sheets in the Excel file.
+
+### Constraints & Gotchas
+- The two-year smoke test failed on `to_excel`, because pandas needs `sheet_name=` as a keyword. This was fixed and the smoke directory `results/gdelt_veto_20261007_213930_smoke` was deleted.
+- The full run was launched with nohup before the later edits: A1, an empty or all-abstain guard in `summarise`, and a deep-arm shock-table patch. Python does not reload a running script. Check that the process now running started after those edits. If it did not, the result is from stale code and the run must be redone.
+- The launch log, `results/gdelt_veto_full_launch.log`, was grepped for Traceback and Error. I did not record a clean pass.
+
+### Open Questions
+- Does the veto test show an effect of about 2.5% a year or more? The ~130 overlapping months give little power below that.
+- If it finds nothing, GDELT's only remaining role is as text for a forward LLM. That is a decision for Arjun.
+
+### Context for Next Session
+- Under `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model/`:
+  - `gdelt_veto/PREREG.md`
+  - `gdelt_veto/veto_test.py`
+  - `results/gdelt_veto_full_launch.log`
+  - `results/gdelt_veto_2*/`
+  - `llm_rl/DESIGN.md` (edited, not yet re-rendered to HTML or committed)
+- A `python3 -m http.server` is serving the `results` directory on 127.0.0.1:18771 so the report can be opened in a browser. Kill it when finished.
+- Unpushed commits on `exp/NN` now include the pre-registration and A1 commits, in addition to `7edc0b9`, `f209fb0` and `cd9aa77`.
+
+---
+SESSION END: 2026-10-07 22:13 PDT | Agent: Claude Code (auto, idle, session dc8244a3)
+---

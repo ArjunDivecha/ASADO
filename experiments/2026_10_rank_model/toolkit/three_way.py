@@ -16,7 +16,7 @@ OUTPUT FILES (in /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/e
 - three_way.xlsx           summary, windows (Full/5y/3y/1y), periods, by-year, monthly
 - report.html (light mode), charts.pdf, summary.json, run.log
 
-VERSION: 1.0   LAST UPDATED: 2026-10-08   AUTHOR: Claude for Arjun Divecha
+VERSION: 1.1 (--second / --no-blend)   LAST UPDATED: 2026-10-08   AUTHOR: Claude for Arjun Divecha
 
 DESCRIPTION:
 Side-by-side statistics for three portfolios, each a pooled three-draw ensemble
@@ -103,27 +103,40 @@ def block(mo: dict, sl) -> pd.DataFrame:
 
 
 def main() -> int:
-    ts = datetime.now().strftime("%Y%m%d_%H%M%S"); run_dir = RESULTS / f"three_way_{ts}"; run_dir.mkdir(parents=True)
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--second", default="mt05", help="tag of the second arm (walk_*_<tag>_s*)")
+    ap.add_argument("--second-label", default="Multi-task λ 0.5")
+    ap.add_argument("--no-blend", action="store_true", help="omit the 50/50 score combination")
+    ap.add_argument("--prefix", default="three_way")
+    a = ap.parse_args()
+    NAMES["mt05"] = a.second_label
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S"); run_dir = RESULTS / f"{a.prefix}_{ts}"; run_dir.mkdir(parents=True)
     panel = pd.read_parquet(PANEL, columns=["date", "country", "fwd_ret", "bench_ret", "fwd_excess"]); panel["date"] = pd.to_datetime(panel["date"])
-    sd, sm = pooled("default"), pooled("mt05")
+    sd, sm = pooled("default"), pooled(a.second)
     S = pd.concat([sd.rename("default"), sm.rename("mt05")], axis=1).dropna()
     S["blend"] = 0.5 * S.groupby(level="date")["default"].transform(zs) + 0.5 * S.groupby(level="date")["mt05"].transform(zs)
     mo = {}
-    for k in ("default", "mt05", "blend"):
+    ARMS_ = ("default", "mt05") if a.no_blend else ("default", "mt05", "blend")
+    for k in ARMS_:
         d = S[k].rename("score").reset_index().merge(panel, on=["date", "country"])
         mo[k] = build_baskets(d, K, M).set_index("date")
     end = mo["default"].index.max()
     windows = {"Full": slice(None, None), "5y": slice(end - pd.DateOffset(months=59), None), "3y": slice(end - pd.DateOffset(months=35), None),
                "1y": slice(end - pd.DateOffset(months=11), None)}
+    if a.no_blend:
+        mo["blend"] = mo["mt05"]   # placeholder so block() runs; blend rows dropped below
     win = pd.concat([block(mo, sl).assign(window=w) for w, sl in windows.items()], ignore_index=True)
     per = pd.concat([block(mo, slice(a, b)).assign(window=lab) for lab, (a, b) in PERIODS.items()], ignore_index=True)
+    if a.no_blend:
+        win = win[win["portfolio"] != NAMES["blend"]]; per = per[per["portfolio"] != NAMES["blend"]]
     yrs = sorted(set(mo["default"].index.year))
-    by_year = pd.DataFrame({NAMES[k]: [ann_ret(mo[k].loc[str(y), "basket_ret"]) for y in yrs] for k in ("default", "mt05", "blend")} | {NAMES["ew"]: [ann_ret(mo["default"].loc[str(y), "bench_ret"]) for y in yrs]}, index=yrs)
+    by_year = pd.DataFrame({NAMES[k]: [ann_ret(mo[k].loc[str(y), "basket_ret"]) for y in yrs] for k in ARMS_} | {NAMES["ew"]: [ann_ret(mo["default"].loc[str(y), "bench_ret"]) for y in yrs]}, index=yrs)
     by_year.index.name = "year"
     # overlap of the blend with each parent
     def sets(k):
         return None
-    allm = pd.concat({k: v.add_prefix(f"{k}_") for k, v in mo.items()}, axis=1); allm.columns = [c[1] for c in allm.columns]
+    allm = pd.concat({k: v.add_prefix(f"{k}_") for k, v in mo.items() if k in ARMS_}, axis=1); allm.columns = [c[1] for c in allm.columns]
     allm.to_parquet(run_dir / "monthly.parquet")
     with pd.ExcelWriter(run_dir / "three_way.xlsx") as xw:
         win.to_excel(xw, sheet_name="Full_5y_3y_1y", index=False); per.to_excel(xw, sheet_name="periods", index=False)
@@ -139,18 +152,18 @@ def main() -> int:
         b = io.BytesIO(); fig.savefig(b, format="png", dpi=130, bbox_inches="tight"); return base64.b64encode(b.getvalue()).decode()
     with PdfPages(run_dir / "charts.pdf") as pdf:
         fig, ax = plt.subplots(figsize=(10, 4.6))
-        for k in ("default", "mt05", "blend"):
+        for k in ARMS_:
             ax.plot(mo[k].index, (1 + mo[k]["basket_ret"]).cumprod(), color=cols[k], lw=2, label=NAMES[k])
         ax.plot(mo["default"].index, (1 + mo["default"]["bench_ret"]).cumprod(), color=cols["ew"], lw=1.6, ls="--", label=NAMES["ew"])
         ax.set_yscale("log"); ax.set_title("Growth of $1, gross, monthly rebalance (log scale)"); ax.legend(frameon=False); ax.grid(alpha=.25)
         pdf.savefig(fig); imgs.append(b64(fig)); plt.close(fig)
         fig, ax = plt.subplots(figsize=(10, 4.6))
-        for k in ("default", "mt05", "blend"):
+        for k in ARMS_:
             rel = (1 + mo[k]["basket_ret"]).cumprod() / (1 + mo[k]["bench_ret"]).cumprod(); ax.plot(rel.index, (rel / rel.cummax() - 1) * 100, color=cols[k], lw=1.6, label=NAMES[k])
         ax.set_title("Drawdown relative to the equal-weight benchmark, %"); ax.legend(frameon=False); ax.grid(alpha=.25)
         pdf.savefig(fig); imgs.append(b64(fig)); plt.close(fig)
-        pp = per.pivot_table(index="window", columns="portfolio", values="ann_return_pct", sort=False)[[NAMES[k] for k in ("default", "mt05", "blend", "ew")]]
-        fig, ax = plt.subplots(figsize=(10, 4.6)); pp.plot(kind="bar", ax=ax, color=[cols[k] for k in ("default", "mt05", "blend", "ew")], edgecolor="white")
+        pp = per.pivot_table(index="window", columns="portfolio", values="ann_return_pct", sort=False)[[NAMES[k] for k in ARMS_ + ("ew",)]]
+        fig, ax = plt.subplots(figsize=(10, 4.6)); pp.plot(kind="bar", ax=ax, color=[cols[k] for k in ARMS_ + ("ew",)], edgecolor="white")
         ax.axhline(0, color="k", lw=.5); ax.set_ylabel("% a year"); ax.set_title("Annualised return by period"); plt.xticks(rotation=0); ax.legend(frameon=False); ax.grid(axis="y", alpha=.25)
         pdf.savefig(fig); imgs.append(b64(fig)); plt.close(fig)
 
@@ -166,15 +179,15 @@ def main() -> int:
         for w in df["window"].unique():
             x = df[df["window"] == w].rename(columns=hdr); h += f"<h3>{title} {w} ({int(df[df['window'] == w]['months'].iloc[0])} months)</h3>" + tbl(x, [hdr[c] for c in show], {hdr[k]: v for k, v in f.items()})
         return h
-    pr = per.pivot_table(index="window", columns="portfolio", values="ann_return_pct", sort=False)[[NAMES[k] for k in ("default", "mt05", "blend", "ew")]].reset_index().rename(columns={"window": "Period"})
-    pe = per[per["portfolio"] != NAMES["ew"]].pivot_table(index="window", columns="portfolio", values="excess_ann_pct", sort=False)[[NAMES[k] for k in ("default", "mt05", "blend")]].reset_index().rename(columns={"window": "Period"})
+    pr = per.pivot_table(index="window", columns="portfolio", values="ann_return_pct", sort=False)[[NAMES[k] for k in ARMS_ + ("ew",)]].reset_index().rename(columns={"window": "Period"})
+    pe = per[per["portfolio"] != NAMES["ew"]].pivot_table(index="window", columns="portfolio", values="excess_ann_pct", sort=False)[[NAMES[k] for k in ARMS_]].reset_index().rename(columns={"window": "Period"})
     yr_t = by_year.reset_index().rename(columns={"year": "Year"})
-    html = f"""<!DOCTYPE html><html lang="en" data-theme="light"><head><meta charset="utf-8"><title>Default, multi-task and 50/50</title>
+    html = f"""<!DOCTYPE html><html lang="en" data-theme="light"><head><meta charset="utf-8"><title>{' vs '.join(NAMES[k] for k in ARMS_)}</title>
 <style>:root{{color-scheme:light}} body{{font-family:-apple-system,Helvetica,Arial,sans-serif;max-width:1100px;margin:2rem auto;padding:0 1rem;color:#222;background:#fff;line-height:1.55}}
 h1{{font-size:1.5rem}} h2{{font-size:1.15rem;margin-top:2rem;border-bottom:1px solid #ddd}} h3{{font-size:1rem;margin:1.2rem 0 .3rem}} table{{border-collapse:collapse;font-size:.86rem;margin:.4rem 0}} th,td{{border:1px solid #ddd;padding:.3rem .55rem;text-align:right}} td:first-child,th:first-child{{text-align:left}}
 .note{{background:#f6f8fa;border-left:4px solid #1f4e79;padding:.6rem .9rem;margin:.8rem 0}} img{{max-width:100%;border:1px solid #eee;margin:.4rem 0}}</style></head><body>
-<h1>Default, multi-task λ 0.5, and their 50/50 combination</h1>
-<p>Each portfolio: pooled three-draw ensemble, top 8 equal weight, hold while ranked ≤ 16, monthly, gross of costs, {summ['first']} → {summ['last']} ({summ['months']} months). The 50/50 averages the two scores after standardising each within month, then applies the same rule. It is a descriptive look, not a pre-registered test. Returns are geometric annualised; drawdowns are peak to trough of cumulative wealth; turnover is one-way, names replaced ÷ 8, annualised.</p>
+<h1>{', '.join(NAMES[k] for k in ARMS_)}</h1>
+<p>Each portfolio: pooled three-draw ensemble, top 8 equal weight, hold while ranked ≤ 16, monthly, gross of costs, {summ['first']} → {summ['last']} ({summ['months']} months). {'' if a.no_blend else 'The 50/50 averages the two scores after standardising each within month, then applies the same rule. It is a descriptive look, not a pre-registered test. '}Returns are geometric annualised; drawdowns are peak to trough of cumulative wealth; turnover is one-way, names replaced ÷ 8, annualised.</p>
 <img src="data:image/png;base64,{imgs[0]}">
 <h2>Full, 5-year, 3-year, 1-year</h2>{section(win, '')}
 <h2>Annualised return by period</h2><img src="data:image/png;base64,{imgs[2]}">

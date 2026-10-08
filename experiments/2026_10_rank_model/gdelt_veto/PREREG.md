@@ -138,6 +138,29 @@ country-shuffled permutations of the score each month, giving a null distributio
 and stronger than the stale-news t (which must itself be below 2.0). Otherwise FAIL, with the
 inconclusive label if the 95% interval still admits +1% a year.
 
+---
+
+# Test 3 (Arjun's rule, 2026-10-07 22:50): boost countries with significantly positive news
+
+Written before `boost_test.py` was first run. Same saved shocks and scores as tests 1 and 2.
+
+**Rule.** Run the default model as normal, except that each month any country whose **news score ≥ +1**
+(good news: composite shock ≤ −1) is moved **up four places** in the model's ranking before the buffer
+rule (hold while ranked ≤ 16, eight names) is applied. Ties on the adjusted rank break by original rank.
+Nothing else changes.
+
+**Primary statistic.** Paired monthly excess of the boosted basket minus the unfiltered default, annualised,
+with its t over the ~124 months from 2016-03. Hypothesis (Arjun's): positive.
+
+**Secondary.** Boosts of 2 and 8 places; thresholds +0.5 and +1.5; windows 7 and 30 days; the
+`composite_share` and tone-only scores. **Mirror arm, labelled "contrarian":** the same boost applied to
+countries with news score ≤ −1 (bad news), because tests 1 and 2 both showed shocked names doing slightly
+better. The mirror is secondary and cannot pass on its own; if it looks strong it motivates a new test.
+
+**Controls and decision.** As test 2: stale news (three months earlier) under the same rule; 500
+country-shuffled permutations. PASS if the primary paired t ≥ 2.0, above the shuffled 95th percentile, and
+stronger than stale (stale t < 2.0). Otherwise FAIL, inconclusive if the 95% interval still admits +1% a year.
+
 ## Amendments
 
 **A1, 2026-10-07 21:45, before any result of the full run was read.** A sanity check of the

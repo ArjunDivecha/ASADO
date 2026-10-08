@@ -1961,3 +1961,37 @@ Arjun rejected the first-half/second-half split as a headline test ("the world c
 ---
 SESSION END: 2026-10-07 16:49 PDT | Agent: Claude Code (auto, idle, session dc8244a3)
 ---
+
+---
+SESSION START: 2026-10-07 20:36 PDT | Agent: Claude Code (auto, precompact, session dc8244a3)
+---
+
+### Session Summary
+Arjun asked whether other model types might give different solutions. The answer was that most would land near the same ~3%/yr, because the limit is noise in ~2,000 rows per window. A fixed 50/50 net+ridge blend was built (`blend.py`, stage 12 in the report, `exp/NN` commit `7edc0b9`, not pushed). Result: no improvement over the default. The default buffer rule gives blend 2.9% vs net 3.1% (t −0.4). On plain top-8 the blend gives 3.2% with IR 0.55, against the net's 2.2% and ridge's 2.9%. The net and ridge overlap by 4.2 of 8 picks, with score rank-corr 0.56 and excess-return corr 0.58. The buffer and the blend do the same job, so the default stays (it trades 1.8 names/month against 3.4).
+
+Arjun then pushed an LLM line: LLM as RL data generator, then a hybrid. Claude initially misread "RL hill-climbing" as numeric RL. Arjun clarified they meant the reasoning-model paradigm: rationalise the known outcome, then RL on realised returns. They also proposed a hybrid in which a trained numeric model acts as a tool for a frontier LLM.
+
+Claude wrote `llm_rl/BRIEF.md` and `NOTES_own_analysis.md`, then ran GPT (`gpt-6-astra`, xhigh, two rounds) and a Sakana deep council (~$2.20, web off; the first attempt was killed and logged as `sakana_attempt1_stderr.log`). Output: `llm_rl/DESIGN.md` and `DESIGN.html`, committed on `exp/NN` as `f209fb0`, not pushed. A grep of the committed logs for credentials found no keys.
+
+### Decisions Made
+- Both reviewers independently rejected the rationalise-then-RL pipeline, because it teaches the model to explain noise. Both backed the hybrid, with each rung measured separately.
+- The ladder is A (default net), B (fundamental-forecast toolkit), C (B plus news features), D (LLM override).
+- The six decisions for Arjun are listed in DESIGN: adopt the ladder, rolling window versus stable-plus-recent layer, the evidence standard, which pinned LLMs, whether to restart the GDELT theme pipeline, and whether to pull Bloomberg fixed-fiscal-year consensus and first-release macro.
+
+### Constraints & Gotchas
+- GPT caught that the SNR table used one plain top-8 run (1.57%/yr), not the 3.1% headline. The headline's five-year t is ~1.3, not 0.8.
+- Name-masking is only a diagnostic: countries are re-identified from their factors 94% of the time. The "named LLM backtest" is a screen, not a kill test.
+- `codex exec resume` needs `--skip-git-repo-check`.
+- The deep GDELT parquet (~568 themes, 75 emotion, 24 event measures, daily, Feb 2015 to Apr 2026) is under `A Working/GDELT/Deep/data/features/`.
+- Claude failed to check Investment Learnings before writing the design. A 27 July walk-forward on the deep GDELT file was ruled DEAD (rank-corr −0.033, t −2.2), as was the 93-variable keep-list. Narrative freshness (H_20260727_003) was falsified at first implementation and never received a verdict. Research Agenda v2 excludes standalone GDELT projects. `LLM-1M Country Rotation` (19 July) found an LLM on numeric dossiers dead (rank-corr 0.002), so ladder rung D, an LLM on numbers, is a re-proposal of a dead end. The LLM's role should be limited to news and vetoes.
+
+### Open Questions
+- Arjun asked whether to run a standalone GDELT test first. The provisional answer is no to a broad test, since that has already died, though a narrow untried angle might be worth running. The recommendation is pending.
+
+### Context for Next Session
+- Four Sonnet agents are surveying six GDELT repos. Only the GDELT-localFT and Loop Pilot-gdelt survey had returned when the log ended. `DESIGN.md` needs correcting for the dead-end findings.
+- Directory: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model/llm_rl/`.
+
+---
+SESSION END: 2026-10-07 20:36 PDT | Agent: Claude Code (auto, precompact, session dc8244a3)
+---

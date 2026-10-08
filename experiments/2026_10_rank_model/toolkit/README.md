@@ -90,13 +90,22 @@ Default net with seven outputs (return + six fundamental changes as auxiliary lo
 | λ = 2 | 3.25 | 2.38 | 0.51 | −16.5 | +0.06 | +0.05 | 3.10 / 3.75 / 1.78 | 4.94 | 1.15 | 5.13 |
 | λ = 2, 30-epoch warm-up | 2.60 | 1.90 | 0.41 | −17.6 | −0.59 | −0.43 | 2.28 / 2.45 / 3.06 | 0.81 | 1.45 | 5.62 |
 
-The light-touch arm (λ = 0.5) is the first toolkit variant to come out ahead: +0.84% a year pooled, ahead in all three
+**Correction (2026-10-08, after the run): λ was not calibrated, and "light touch" below is wrong.** The return loss is a
+mean squared error on monthly excess returns (sd 0.048), so at a zero forecast it is about 0.0023; each fundamental loss
+is on targets scaled to unit spread, so it starts near 1.0. At λ = 0.5 the fundamentals' term in the headline (mse)
+objective was therefore about **220 times** the return term, and at λ = 2 about 880 times; in the push each gives the
+shared layers the gap is closer to ten to twenty times. In every arm the trunk was built mostly to forecast fundamentals,
+with the return head reading off it and early stopping on return keeping it honest — closer to "learn the economy, read
+the market off it" than to a light regulariser. A genuinely light touch (fundamentals comparable to returns) would be
+λ ≈ 0.002–0.01. The arms below are reported as run.
+
+The λ = 0.5 arm is the first toolkit variant to come out ahead: +0.84% a year pooled, ahead in all three
 draws (+1.1, +0.3, +0.6), a higher information ratio and a drawdown a third shallower. But the paired t is 0.76 against a
 bar of 2.0, and the gain is concentrated in 2005–09 (+5.5 points) while 2010–19 is *worse* than the default (1.81 against
 2.74) and 2020–26 is level. A gain that lives in one five-year window containing the GFC is not one to adopt. Heavier
-weighting (λ = 2) is flat, and the curriculum (fundamentals first) hurts, so the pattern is "a little regularisation from
-the fundamentals is harmless-to-mildly-helpful, a lot is not" — consistent with B2a's finding that the heads' content is
-worth a fraction of a point.
+weighting (λ = 2) is flat, and the curriculum (fundamentals first) hurts, so the pattern is that fundamentals dominating
+the trunk heavily is harmless-to-mildly-helpful and dominating it even more is not — consistent with B2a's finding that
+the heads' content is worth a fraction of a point.
 
-Per the pre-registration no arm passes and rung B is closed. The default stays rolling-60 on 238 factors. A lower λ
-(0.1–0.25) was not registered and is not run; noted here only as the direction the three arms point.
+Per the pre-registration no arm passes and rung B is closed. The default stays rolling-60 on 238 factors. A calibrated λ
+(fundamentals comparable to returns, ≈ 0.002–0.01) was not registered and has not been run.

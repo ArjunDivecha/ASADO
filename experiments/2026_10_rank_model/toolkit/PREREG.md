@@ -121,6 +121,18 @@ Three arms are tested, so a single pass at that bar carries roughly three times 
 pass must also be the best of the three arms and will be re-run with three fresh seeds before adoption. If no arm
 passes, rung B is closed and the default stays.
 
+---
+
+# B2c (2026-10-08, after the λ-scale correction): calibrated auxiliary weights
+
+Written before any run. B2b's λ values were not calibrated: at λ = 0.5 the fundamentals term was ~220× the return MSE, so
+the "light" setting was never tested. B2c runs the multi-task net exactly as in B2b at **λ = 0.005** (fundamentals term
+≈ 2× the return MSE at a zero forecast, roughly comparable) and **λ = 0.05** (≈ 22×), no warm-up, three seed draws each,
+same panel, window, nets and basket rule, OOS 2005-02 → 2026-09.
+
+Decision as B2b: pooled paired t ≥ 2.0 against the rolling-60 default with all three draws ahead; across B2b and B2c five
+arms have now been tried, so any pass must be the best of the five and survive three fresh seeds before adoption.
+
 ## Amendments
 
 (none)

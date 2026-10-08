@@ -4,3 +4,5 @@ results/
 .venv/
 # Rendered design document (regenerate: pandoc llm_rl/DESIGN.md -s --embed-resources -c llm_rl/design.css -o llm_rl/DESIGN.html)
 llm_rl/DESIGN.html
+# Rendered close-out (regenerate: pandoc CLOSEOUT.md -s --embed-resources -c llm_rl/design.css -o CLOSEOUT.html)
+CLOSEOUT.html

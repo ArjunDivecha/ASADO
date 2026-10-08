@@ -69,6 +69,31 @@ reported with the realised interval, and "inconclusive" is used only when the in
 No new targets, head models, rules or windows after seeing results; secondaries cannot rescue the primary; no cost or
 turnover gating. Head survival is judged before stage 2 is run, and the surviving set is written to the run log.
 
+---
+
+# B2a (2026-10-08 00:40, Arjun's choice): the head forecasts as six extra inputs to the default net
+
+Written before any run. Motivation: stage 2 showed a fitted second stage hurts on its own, so the heads were not fairly
+tested. Here there is no second stage: the default net is retrained exactly as it is, with the six surviving heads'
+out-of-sample forecasts appended to its 238 inputs, and the net decides what they are worth.
+
+**Panel.** `panel_v3_heads`: the cleaned v3 panel plus six columns `h_<head>` = the stage-1 head's out-of-sample
+forecast (run `heads_20261008_001954`), cross-sectionally standardised within each month so they sit on the same scale
+as the other inputs. Rows restricted to 2005-02-01 onward, the first month the forecasts exist, so every training
+window sees real forecasts rather than zeros. The six columns carry source `heads`, so the net's presence feature
+tracks them like any other source.
+
+**Model.** `walk_forward.py` unchanged: rolling 60, 30 nets per fold, objectives mse and soft_top8, hold while ranked
+≤ 16; three independent seed draws (0, 1000, 2000). Out of sample from 2010-02 (60 months after the panel starts),
+about 200 months.
+
+**Comparison.** Pooled three-draw ensemble, default basket rule, paired monthly excess against the pooled rolling-60
+default over the same months 2010-02 → 2026-09, annualised, with t; each draw against the same-seed default draw.
+
+**Decision.** Replace the default only if the pooled paired t ≥ 2.0 and all three draws are ahead. Otherwise the default
+stays; report the interval. Secondary, for understanding only: the net's draw-to-draw spread, and the result with
+the six columns shuffled across countries within month (one run, seed 0) as a placebo.
+
 ## Amendments
 
 (none)

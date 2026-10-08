@@ -60,3 +60,20 @@ sees. Appending them gives the net nothing it could not form itself; it only add
 directions that predict fundamental changes. The result says those are not the directions that predict returns, and
 pushing the net toward them costs 3% a year. That is evidence against the multi-task version too, since it shapes the
 representation toward the same directions, though through the loss rather than the inputs.
+
+### B2a placebo: the same six columns shuffled across countries within month (three seeds; `results/b2a_compare_20261008_005609`)
+
+| | pooled | s0 | s1000 | s2000 | paired vs default (pooled) |
+|---|---|---|---|---|---|
+| rolling-60 default | 3.46 | 2.62 | 3.87 | 3.08 | — |
+| + real forecasts | 0.51 | 1.46 | 2.61 | 3.17 | −2.95%/yr, t −2.29 |
+| + shuffled forecasts | 1.85 | 1.23 | 1.55 | 2.72 | −1.61%/yr, t −1.16 |
+
+Two readings follow. First, **six columns of pure noise cost the net about 1.6% a year** on this window, below the
+same-seed default in all three draws (−1.4, −2.3, −0.4). The default net is close to the edge of what 60 months of
+data can support; adding inputs is not free, and anyone proposing more factors should expect this tax. Second, the
+real forecasts beat the shuffled ones in every draw (by +0.2, +1.1, +0.5 points), so their content is worth roughly
+half a point to a point a year — not nothing, but less than the tax on carrying them, and the pooled ensemble of the
+real-forecast nets happened to land worst of all. **Verdict: the forecasts are not a useful input to the net.** The one
+design not yet tried is the multi-task net (shared trunk, fundamentals as auxiliary losses, return head alone used for
+ranking), which adds no inputs and so avoids the tax; after B2a the prior on it is low.

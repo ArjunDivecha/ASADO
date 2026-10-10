@@ -2233,3 +2233,53 @@ Commits `9e0c132` and `fa2db5f` are on `exp/NN` and pushed. The Investment Learn
 ---
 SESSION END: 2026-10-08 08:56 PDT | Agent: Claude Code (auto, idle, session dc8244a3)
 ---
+
+---
+SESSION START: 2026-10-08 10:35 PDT | Agent: Claude Code (auto, idle, session dc8244a3)
+---
+
+### Session Summary
+Arjun asked for a three-way look at the default, the multi-task net (λ 0.5) and a 50/50 score blend, with annualized return, std, max drawdown and turnover. Over 2005-02 to 2026-09 (gross) the multi-task net and the blend both beat the default by about a point a year (12.1% vs 11.2%). Volatility is about 20% for all three, and turnover is similar at roughly 260% one-way a year. Absolute drawdowns are all about −57% to −61%, dominated by 2008. Over the last five and three years the default is best and the blend is worst. The blend is also the only one behind equal weight over the last three years (17.6% vs 18.3%), and its turnover rose to about 320%. Arjun then chose to keep the default and closed the project. Afterwards he asked for one more test, using only the T2 factors, which was run and recorded as step 19.
+
+### Decisions Made
+- **Default kept, project closed (2026-10-08).** The default is 238 cleaned factors, a rolling 60-month training window, 30 nets per fold, and a buffer that holds a name while it stays in the top 16.
+- **Why drawdown does not change the verdict.** Against equal weight the default's worst drawdown is −18.0%, from Dec 2005 to Nov 2008, and it recovered in Mar 2010. That is the same early-years gap already examined, seen from another angle. After 2010 the default's worst is −9.3%, while the multi-task net's 2018 drawdown was −11.6%. The ulcer index averages 4.3 for the multi-task net against 5.5 for the default.
+- **Offered but not run:** splitting capital 50/50 between the two baskets, which differs from the score blend.
+- **Step 19, T2-only (91 factors), verdict: default stays.**
+  - Pooled over all 90 nets, T2-only made 3.02%/yr excess against 3.19% (paired t −0.15).
+  - Single 30-net runs are worse: 0.29, 2.02 and 1.85%, averaging 1.39% against the default's 3.11% (t −2.25).
+  - The three runs spread 1.7 points, against 0.25 for the default.
+  - Full-period figures: 10.86% return, 21.0% std, −61.1% max drawdown, 190% turnover (vs 262%), and −14.6% drawdown vs equal weight (vs −18.0%).
+
+### Architecture / Design
+New files:
+- `toolkit/three_way.py` (extended with `--second`, `--second-label`, `--no-blend` and `--prefix`)
+- `toolkit/run_t2only.sh`
+- `factor_set_v3_t2only.json`
+
+### What To Build Next
+The next step is a forward paper-trade of the default, with each month's basket timestamped before the month starts.
+
+### Constraints & Gotchas
+- The three-way blend was descriptive, not pre-registered.
+- The T2-only test was not pre-registered either. It was a one-off ablation requested by Arjun.
+
+### Context for Next Session
+Base: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO-exp-NN/experiments/2026_10_rank_model/`
+- `CLOSEOUT.md`, `CLOSEOUT.html` and `README.md` (steps 15 to 19)
+- `results/three_way_20261008_091245/` (`report.html`, `three_way.xlsx`, `charts.pdf`)
+- `results/t2only_compare_20261008_100353/`
+- `results/t2only_vs_default_<timestamp>/`
+- `results/t2only_launch.log`
+
+New verdict entry: `/Users/arjundivecha/Dropbox/AAA Backup/A Complete/Investment Learnings/Country Top-8 Rank Model.md`. It is pushed, and the commits are `3952f7b` and `d33afed`.
+
+Git:
+- `exp/NN` was merged into `main` at `95f44a1` and pushed (`d733d66..95f44a1`).
+- Step 19 is on `exp/NN` as `a276e84`, merged into `main` as `c382b2f` and pushed.
+
+The memory note is `rank-model-closed.md`.
+
+---
+SESSION END: 2026-10-08 10:35 PDT | Agent: Claude Code (auto, idle, session dc8244a3)
+---

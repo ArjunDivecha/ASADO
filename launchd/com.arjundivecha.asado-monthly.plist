@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>ASADO_LOCK_GUARD_KILL</key>
+		<string>0</string>
+		<key>PYTHONUNBUFFERED</key>
+		<string>1</string>
+	</dict>
+	<key>Label</key>
+	<string>com.arjundivecha.asado-monthly</string>
+	<key>LowPriorityIO</key>
+	<true/>
+	<key>ProcessType</key>
+	<string>Background</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/venv/bin/python</string>
+		<string>/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/monthly_readiness.py</string>
+		<string>--notify</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>StandardErrorPath</key>
+	<string>/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/monthly/launchd.err.log</string>
+	<key>StandardOutPath</key>
+	<string>/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/monthly/launchd.out.log</string>
+	<key>StartInterval</key>
+	<integer>3600</integer>
+	<key>WorkingDirectory</key>
+	<string>/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO</string>
+</dict>
+</plist>

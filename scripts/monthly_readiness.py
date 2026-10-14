@@ -280,13 +280,23 @@ def build_status(root, cfg, now, rows, accepted):
             state = "QUOTA_BLOCKED"
         if any("changed:" in p or "factor set changed" in p for p in problems):
             state = "CONTRACT_REVIEW_REQUIRED"
+        attempt = read(root / f"Data/monthly/attempts/{target}.json")
+        if attempt:
+            if attempt.get("state") == "FAILED_STOPPED":
+                state = "FAILED_STOPPED"
+                problems.append("Monthly attempt stopped; no automatic retry: " + attempt.get("error", "see attempt receipt") + "; evidence " + attempt["run"])
+            elif attempt.get("state") in ("CLAIMED", "RUNNING", "PUBLISHING"):
+                state = "MONTHLY_RUNNING"
+            elif attempt.get("state") == "ACCEPTED":
+                state = "ACCEPTANCE_INVALID"
+                problems.append("Attempt says accepted but durable acceptance missing; reconcile, never replay")
     return dict(schema_version=1, checked_at=now.isoformat(), timezone="America/Los_Angeles",
                 trade_month=target, observation_month=shift(target, -1), state=state,
                 accepted=receipt is not None, accepted_at=receipt.get("accepted_at") if receipt else None,
                 inputs_ready=fr["passed"], full_coverage=fr["full_coverage"],
                 problems=problems, warnings=warnings, freshness=fr, quota=q, consumer=nn,
                 missed_trade_months=missed, next_eligibility=shift(target, 1) + "-01T00:00:00 America/Los_Angeles",
-                daily_success_does_not_cover_monthly=True, producer_execution="manual bounded refresh; readiness job never invokes producers",
+                daily_success_does_not_cover_monthly=True, producer_execution="readiness invokes no producer; monthly_service dispatches one gated worker attempt for unaccepted eligible months",
                 accepted_receipt=str(root / f"Data/monthly/accepted/{target}.json") if receipt else None)
 
 
@@ -320,10 +330,22 @@ def accept(state_dir, status, receipt_path):
                  full_coverage=status["full_coverage"], warnings=status["warnings"])
     path = state_dir / "accepted" / f"{target}.json"
     path.parent.mkdir(exist_ok=True)
-    with path.open("x") as f:
-        json.dump(value, f, indent=2)
-        f.flush()
-        os.fsync(f.fileno())
+    temporary=path.with_name(f'.{path.name}.{os.getpid()}.tmp')
+    try:
+        with temporary.open('x') as f:
+            json.dump(value,f,indent=2)
+            f.flush()
+            os.fsync(f.fileno())
+        # Atomic exclusive publication: a failed write cannot leave a partial
+        # acceptance marker that would suppress subsequent reconciliation.
+        os.link(temporary,path)
+        directory=os.open(str(path.parent),os.O_RDONLY)
+        try:
+            os.fsync(directory)
+        finally:
+            os.close(directory)
+    finally:
+        temporary.unlink(missing_ok=True)
     append(state_dir / "events.jsonl", {"event": "accepted", **value})
     return value
 
@@ -372,7 +394,7 @@ def persist(state_dir, status, notify=False):
              "## Problems", *["- " + p for p in status["problems"]], "", "## Warnings",
              *["- " + p for p in status["warnings"]], "", "## Bloomberg local preflight",
              json.dumps(status["quota"], indent=2), "", "## Next action",
-             "Accepted months are never rerun by this readiness job. For an unaccepted month: inspect input gaps; obtain a bounded refresh receipt; validate a separate NN sandbox; publish; adopt its verified receipt."]
+             "Accepted months are never rerun. The monthly service dispatches one gated staged collection/NN validation/publication attempt per eligible month. Failed or interrupted attempts stop for reconciliation; no hourly collection retries. See attempts/YYYY-MM.json and the run directory."]
     report = state_dir / "status.md"
     tmp = report.with_suffix(".tmp")
     tmp.write_text("\n".join(lines) + "\n")

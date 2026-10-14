@@ -52,7 +52,7 @@
     }
   ],
   "request_scope": {
-    "qualification": "Conservative NN-core bounded scope preview, not permission to execute full monthly_update.py. T2352 names/1109 pairs; selected supported BBG186 names/254 pairs; setup3 hits; bounded completed-month history includes continuity anchor. GDELT has no Bloomberg quota. Provider gates remain mandatory.",
+    "qualification": "Approved monthly worker:1363 planned historical security-field/currency hits + maximum10 setup/ping hits; no automatic retries. Local estimate only; original provider gates always active.",
     "securities": [
       "AAPL US Equity",
       "ACPMYOY Index",
@@ -576,9 +576,10 @@
       "XAU Curncy",
       "ZAR  Curncy"
     ],
-    "estimated_hits": 1366
+    "estimated_hits": 1373
   },
   "consumer_source_hashes": {
-    "production/run_monthly.py": "1bd2ca5ba87bb41602c3ef44a29b81c11be4048817eb58e84a52b45cdebafa2a"
+    "production/run_monthly.py": "635a98d81bba961d5b9514ae73b81e5eb02c665136dfb8796637a9fcdcc6f539",
+    "production/monthly_lock.py": "177d57d1419e1060a5d6ebd0a4ebd0f2c83c634e06b6c8d60ae9415d9dae92a5"
   }
 }

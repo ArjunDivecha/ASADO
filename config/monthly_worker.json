@@ -1,0 +1,4046 @@
+{
+  "schema_version": 1,
+  "enabled": true,
+  "first_trade_month": "2026-11",
+  "authorization": "Human Yes, October14 2026 00:28PDT, Sentinel_4ce29c054d9c8191ac4d25006590362e; recurring monthly collection through validated publication; one attempt, no automatic retries, no trades/access changes",
+  "nn_root": "/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 NN",
+  "bbg_root": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg",
+  "asado_python": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/venv/bin/python",
+  "bbg_prefix": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg/.venv",
+  "bbg_python": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg/.venv/bin/python",
+  "nn_python": "/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 NN/rank_model/.venv/bin/python",
+  "nn_script": "/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 NN/production/run_monthly.py",
+  "factor_set_sha256": "c20498466d157788d99d523f16d3baf5a6b90710b2ec0323f0285674eb947bb7",
+  "countries": [
+    "Singapore",
+    "Australia",
+    "Canada",
+    "Germany",
+    "Japan",
+    "Switzerland",
+    "U.K.",
+    "NASDAQ",
+    "U.S.",
+    "France",
+    "Netherlands",
+    "Sweden",
+    "Italy",
+    "ChinaA",
+    "Chile",
+    "Indonesia",
+    "Philippines",
+    "Poland",
+    "US SmallCap",
+    "Malaysia",
+    "Taiwan",
+    "Mexico",
+    "Korea",
+    "Brazil",
+    "South Africa",
+    "Denmark",
+    "India",
+    "ChinaH",
+    "Hong Kong",
+    "Thailand",
+    "Turkey",
+    "Spain",
+    "Vietnam",
+    "Saudi Arabia"
+  ],
+  "quota_associations": [
+    {
+      "month": "2026-10",
+      "caller": "recovery_collect.py",
+      "reason": "45 names from approved ASADO recovery; retain accounting without editing quota ledger"
+    }
+  ],
+  "request_scope": {
+    "qualification": "One automatic attempt per unaccepted trade month;1363 historical security-field/currency hits + at most10 setup/ping hits. Hard stop/budget refusal never retries. Exact planned replies required; no fallbacks.",
+    "securities": [
+      "AAPL US Equity",
+      "ACPMYOY Index",
+      "ASHR US Equity",
+      "AUCPIYOY Index",
+      "AUD  Curncy",
+      "AUSTLA CDS USD SR 5Y Corp",
+      "BISBAUR Index",
+      "BISBBRR Index",
+      "BISBCAR Index",
+      "BISBCHR Index",
+      "BISBCLR Index",
+      "BISBCNR Index",
+      "BISBDER Index",
+      "BISBDKR Index",
+      "BISBESR Index",
+      "BISBFRR Index",
+      "BISBGBR Index",
+      "BISBHKR Index",
+      "BISBIDR Index",
+      "BISBINR Index",
+      "BISBITR Index",
+      "BISBJPR Index",
+      "BISBKRR Index",
+      "BISBMXR Index",
+      "BISBMYR Index",
+      "BISBNLR Index",
+      "BISBPHR Index",
+      "BISBPLR Index",
+      "BISBSAR Index",
+      "BISBSER Index",
+      "BISBSGR Index",
+      "BISBTHR Index",
+      "BISBTRR Index",
+      "BISBTWR Index",
+      "BISBUSR Index",
+      "BISBZAR Index",
+      "BOJDPBAL Index",
+      "BRAZIL CDS USD SR 5Y Corp",
+      "BRL  Curncy",
+      "BTRR1DAY Index",
+      "BZPIIPCY Index",
+      "BZSTSETA Index",
+      "CABROVER Index",
+      "CACPIYOY Index",
+      "CAD  Curncy",
+      "CCMP Index",
+      "CHF  Curncy",
+      "CHILE CDS USD SR 5Y Corp",
+      "CHINAG CDS USD SR 5Y Corp",
+      "CHLR12M Index",
+      "CHOVCHOV Index",
+      "CLGB10Y Index",
+      "CLP  Curncy",
+      "CNCPIYOY Index",
+      "CNPINSYO Index",
+      "CNY  Curncy",
+      "CO1 Comdty",
+      "CPI YOY Index",
+      "DNCPIYOY Index",
+      "ECH US Equity",
+      "EDEN US Equity",
+      "EHBBAUY Index",
+      "EHBBBRY Index",
+      "EHBBCAY Index",
+      "EHBBCHY Index",
+      "EHBBCLY Index",
+      "EHBBCNY Index",
+      "EHBBDEY Index",
+      "EHBBDKY Index",
+      "EHBBESY Index",
+      "EHBBFRY Index",
+      "EHBBGBY Index",
+      "EHBBHKY Index",
+      "EHBBIDY Index",
+      "EHBBINY Index",
+      "EHBBITY Index",
+      "EHBBJPY Index",
+      "EHBBKRY Index",
+      "EHBBMXY Index",
+      "EHBBMYY Index",
+      "EHBBNLY Index",
+      "EHBBPHY Index",
+      "EHBBPLY Index",
+      "EHBBSAY Index",
+      "EHBBSEY Index",
+      "EHBBSGY Index",
+      "EHBBTHY Index",
+      "EHBBTRY Index",
+      "EHBBTWY Index",
+      "EHBBUSY Index",
+      "EHBBVNY Index",
+      "EHBBZAY Index",
+      "EHCAAU Index",
+      "EHCABR Index",
+      "EHCACA Index",
+      "EHCACH Index",
+      "EHCACL Index",
+      "EHCACN Index",
+      "EHCADE Index",
+      "EHCADK Index",
+      "EHCAES Index",
+      "EHCAFR Index",
+      "EHCAGB Index",
+      "EHCAHK Index",
+      "EHCAID Index",
+      "EHCAIN Index",
+      "EHCAIT Index",
+      "EHCAJP Index",
+      "EHCAKR Index",
+      "EHCAMX Index",
+      "EHCAMY Index",
+      "EHCANL Index",
+      "EHCAPH Index",
+      "EHCAPL Index",
+      "EHCASA Index",
+      "EHCASE Index",
+      "EHCASG Index",
+      "EHCATH Index",
+      "EHCATR Index",
+      "EHCATW Index",
+      "EHCAUS Index",
+      "EHCAVN Index",
+      "EHCAZA Index",
+      "EHGDAUY Index",
+      "EHGDBRY Index",
+      "EHGDCAY Index",
+      "EHGDCHY Index",
+      "EHGDCLY Index",
+      "EHGDCNY Index",
+      "EHGDDEY Index",
+      "EHGDDKY Index",
+      "EHGDESY Index",
+      "EHGDFRY Index",
+      "EHGDGBY Index",
+      "EHGDHKY Index",
+      "EHGDIDY Index",
+      "EHGDINY Index",
+      "EHGDITY Index",
+      "EHGDJPY Index",
+      "EHGDKRY Index",
+      "EHGDMXY Index",
+      "EHGDMYY Index",
+      "EHGDNLY Index",
+      "EHGDPHY Index",
+      "EHGDPLY Index",
+      "EHGDSAY Index",
+      "EHGDSEY Index",
+      "EHGDSGY Index",
+      "EHGDTHY Index",
+      "EHGDTRY Index",
+      "EHGDTWY Index",
+      "EHGDUSY Index",
+      "EHGDVNY Index",
+      "EHGDZAY Index",
+      "EIDO US Equity",
+      "EPHE US Equity",
+      "EPOL US Equity",
+      "EUR  Curncy",
+      "EURR002W Index",
+      "EWA US Equity",
+      "EWC US Equity",
+      "EWD US Equity",
+      "EWG US Equity",
+      "EWH US Equity",
+      "EWI US Equity",
+      "EWJ US Equity",
+      "EWL US Equity",
+      "EWM US Equity",
+      "EWN US Equity",
+      "EWP US Equity",
+      "EWQ US Equity",
+      "EWS US Equity",
+      "EWT US Equity",
+      "EWU US Equity",
+      "EWW US Equity",
+      "EWY US Equity",
+      "EWZ US Equity",
+      "EZA US Equity",
+      "FDTR Index",
+      "FRANCE CDS USD SR 5Y D14 Corp",
+      "FRCPIYOY Index",
+      "FXI US Equity",
+      "GACGB10 Index",
+      "GACGB2 Index",
+      "GACGB5 Index",
+      "GBP  Curncy",
+      "GBTPGR10 Index",
+      "GBTPGR2 Index",
+      "GBTPGR5 Index",
+      "GCAN10YR Index",
+      "GCAN2YR Index",
+      "GCAN5YR Index",
+      "GCNY10YR Index",
+      "GCNY2YR Index",
+      "GCNY5YR Index",
+      "GDBR10 Index",
+      "GDBR2 Index",
+      "GDBR5 Index",
+      "GDGB10YR Index",
+      "GDGB2YR Index",
+      "GEBR10Y Index",
+      "GEBR5Y Index",
+      "GFRN10 Index",
+      "GFRN2 Index",
+      "GFRN5 Index",
+      "GGVF10YR Index",
+      "GIDN10YR Index",
+      "GIDN2YR Index",
+      "GIDN5YR Index",
+      "GIND10YR Index",
+      "GIND2YR Index",
+      "GIND5YR Index",
+      "GJGB10 Index",
+      "GJGB2 Index",
+      "GJGB5 Index",
+      "GMXN02YR Index",
+      "GMXN05YR Index",
+      "GMXN10YR Index",
+      "GNTH10YR Index",
+      "GNTH2YR Index",
+      "GNTH5YR Index",
+      "GRCP20YY Index",
+      "GSAB10YR Index",
+      "GSAB2YR Index",
+      "GSAB5Y Index",
+      "GSGB10YR Index",
+      "GSGB2YR Index",
+      "GSGB5YR Index",
+      "GSPG10YR Index",
+      "GSPG2YR Index",
+      "GSPG5YR Index",
+      "GSWISS10 Index",
+      "GSWISS2 Index",
+      "GT10 Govt",
+      "GTAUD10YR Corp",
+      "GTBRL10YR Corp",
+      "GTBRL2Y Govt",
+      "GTCAD10YR Corp",
+      "GTCHF10YR Corp",
+      "GTCLP10YR Corp",
+      "GTCNY10YR Corp",
+      "GTEUR10YR Corp",
+      "GTGBP10YR Corp",
+      "GTIDR10YR Corp",
+      "GTINR10YR Corp",
+      "GTJPY10YR Corp",
+      "GTKRW10YR Corp",
+      "GTMXN10YR Corp",
+      "GTMYR10Y Govt",
+      "GTMYR10YR Corp",
+      "GTMYR5Y Govt",
+      "GTPHP10Y Govt",
+      "GTPHP10YR Corp",
+      "GTPHP5Y Govt",
+      "GTPLN10YR Corp",
+      "GTSAR10Y Govt",
+      "GTSAR10YR Corp",
+      "GTSAR5Y Govt",
+      "GTSEK10YR Corp",
+      "GTSGD10YR Corp",
+      "GTTHB10YR Corp",
+      "GTTRY10Y Govt",
+      "GTTRY10YR Corp",
+      "GTTRY2Y Govt",
+      "GTTRY5Y Govt",
+      "GTZAR10YR Corp",
+      "GUKG10 Index",
+      "GUKG2 Index",
+      "GUKG5 Index",
+      "GVSK10YR Index",
+      "GVSK2YR Index",
+      "GVSK5YR Index",
+      "GVTL10YR Index",
+      "GVTL2YR Index",
+      "GVTL5YR Index",
+      "HG1 Comdty",
+      "HKCPIY Index",
+      "HKD  Curncy",
+      "HPDDAUST Index",
+      "HPDDBRAZ Index",
+      "HPDDCANA Index",
+      "HPDDCHIL Index",
+      "HPDDCHIN Index",
+      "HPDDDENM Index",
+      "HPDDFRAN Index",
+      "HPDDGERM Index",
+      "HPDDHONG Index",
+      "HPDDINDI Index",
+      "HPDDINDO Index",
+      "HPDDITAL Index",
+      "HPDDJAPA Index",
+      "HPDDKORE Index",
+      "HPDDMASI Index",
+      "HPDDMEXI Index",
+      "HPDDNETH Index",
+      "HPDDPHIL Index",
+      "HPDDPOLA Index",
+      "HPDDSAFR Index",
+      "HPDDSAUD Index",
+      "HPDDSING Index",
+      "HPDDSPAI Index",
+      "HPDDSWED Index",
+      "HPDDSWIT Index",
+      "HPDDTAIW Index",
+      "HPDDTHAI Index",
+      "HPDDTURK Index",
+      "HPDDUKGB Index",
+      "HPDDUNIT Index",
+      "HPDDVIET Index",
+      "IDCPIY Index",
+      "IDR  Curncy",
+      "INDA US Equity",
+      "INDON CDS USD SR 5Y Corp",
+      "INFUTOTY Index",
+      "INR  Curncy",
+      "INRPYLDP Index",
+      "ITALY CDS USD SR 5Y D14 Corp",
+      "ITCPIYOY Index",
+      "ITCPNICY Index",
+      "IWM US Equity",
+      "JAPAN CDS USD SR 5Y Corp",
+      "JNCPIYOY Index",
+      "JPY  Curncy",
+      "KOCPIYOY Index",
+      "KOREA CDS USD SR 5Y Corp",
+      "KORP7DR Index",
+      "KRW  Curncy",
+      "KSA US Equity",
+      "M1IN Index",
+      "M3PH Index",
+      "MACPIYOY Index",
+      "MALAYS CDS USD SR 5Y Corp",
+      "MAOPRATE Index",
+      "MASB10Y Index",
+      "MASB2Y Index",
+      "MASB5Y Index",
+      "MEXICO CDS USD SR 5Y Corp",
+      "MGCUAE Index",
+      "MPMIAUMA Index",
+      "MPMICAMA Index",
+      "MPMICNMA Index",
+      "MPMIDEMA Index",
+      "MPMIESMA Index",
+      "MPMIFRMA Index",
+      "MPMIGBMA Index",
+      "MPMIIDMA Index",
+      "MPMIINMA Index",
+      "MPMIITMA Index",
+      "MPMIMXMA Index",
+      "MPMIMYMA Index",
+      "MPMINLMA Index",
+      "MPMIPHMA Index",
+      "MPMIPLMA Index",
+      "MPMITHMA Index",
+      "MPMITRMA Index",
+      "MPMITWMA Index",
+      "MPMIUSMA Index",
+      "MPMIVNMA Index",
+      "MSDLAS Index",
+      "MSDLCA Index",
+      "MSDLDE Index",
+      "MSDLGE Index",
+      "MSDLMAF Index",
+      "MSDLSG Index",
+      "MSDLSP Index",
+      "MSDUAS  Index",
+      "MSDUCA Index",
+      "MSDUDE Index",
+      "MSDUFR Index",
+      "MSDUGR Index",
+      "MSDUIT Index",
+      "MSDUJN Index",
+      "MSDUNE Index",
+      "MSDUSP Index",
+      "MSDUSW Index",
+      "MSDUSZ Index",
+      "MSDUUK Index",
+      "MSELTBR Index",
+      "MSELTCF Index",
+      "MSELTCH Index",
+      "MSELTMXF Index",
+      "MSEUSCF Index",
+      "MSEUSTW Index",
+      "MXAU Index",
+      "MXBR Index",
+      "MXCL Index",
+      "MXCPYOY Index",
+      "MXHK Index",
+      "MXID Index",
+      "MXIN Index",
+      "MXKR Index",
+      "MXMX Index",
+      "MXMY Index",
+      "MXN  Curncy",
+      "MXONBR Index",
+      "MXPH Index",
+      "MXPL Index",
+      "MXQA Index",
+      "MXSA Index",
+      "MXSG Index",
+      "MXTH Index",
+      "MXTR Index",
+      "MXVI Index",
+      "MXZA Index",
+      "MYR  Curncy",
+      "NECPIYOY Index",
+      "PHC2II Index",
+      "PHILIP CDS USD SR 5Y Corp",
+      "PHP  Curncy",
+      "PLN  Curncy",
+      "POCPIYOY Index",
+      "POGB10YR Index",
+      "POGB2YR Index",
+      "POGB5YR Index",
+      "POLAND CDS USD SR 5Y D14 Corp",
+      "QQQ US Equity",
+      "RBATCTR Index",
+      "REPSOU CDS USD SR 5Y D14 Corp",
+      "RSSCAUOR Index",
+      "RSSCBROR Index",
+      "RSSCCAOR Index",
+      "RSSCCHOR Index",
+      "RSSCCNOR Index",
+      "RSSCDNOR Index",
+      "RSSCFROR Index",
+      "RSSCGEOR Index",
+      "RSSCHKOR Index",
+      "RSSCIDOR Index",
+      "RSSCINOR Index",
+      "RSSCITOR Index",
+      "RSSCJPOR Index",
+      "RSSCMLOR Index",
+      "RSSCMXOR Index",
+      "RSSCNEOR Index",
+      "RSSCPHOR Index",
+      "RSSCPOOR Index",
+      "RSSCSAOR Index",
+      "RSSCSDOR Index",
+      "RSSCSKOR Index",
+      "RSSCSNOR Index",
+      "RSSCSPOR Index",
+      "RSSCSTOR Index",
+      "RSSCSWOR Index",
+      "RSSCTHOR Index",
+      "RSSCTROR Index",
+      "RSSCTWOR Index",
+      "RSSCUKOR Index",
+      "RSSCUSOR Index",
+      "RSSCVTOR Index",
+      "RTY Index",
+      "SACPIYOY Index",
+      "SAR  Curncy",
+      "SARPRT Index",
+      "SAUDI CDS USD SR 5Y Corp",
+      "SEK  Curncy",
+      "SGD  Curncy",
+      "SHCOMP Index",
+      "SICPIYOY Index",
+      "SPAIN CDS USD SR 5Y D14 Corp",
+      "SPGCAG Index",
+      "SPIPCYOY Index",
+      "SPX Index",
+      "SPY US Equity",
+      "SWCPIYOY Index",
+      "SWRRATEI Index",
+      "SZCPIYOY Index",
+      "TAMSCI Index",
+      "THAI CDS USD SR 5Y Corp",
+      "THB  Curncy",
+      "THCPIYOY Index",
+      "THD US Equity",
+      "TPGBTW10 Index",
+      "TRY  Curncy",
+      "TUCPIY Index",
+      "TUR US Equity",
+      "TURKEY CDS USD SR 5Y Corp",
+      "TWCPIYOY Index",
+      "TWD  Curncy",
+      "UKBRBASE Index",
+      "UKRPCJYR Index",
+      "USD  Curncy",
+      "USGG10YR Index",
+      "USGG2YR Index",
+      "USGG5YR Index",
+      "VIETNM CDS USD SR 5Y Corp",
+      "VNCPIYOY Index",
+      "VND  Curncy",
+      "VNM US Equity",
+      "WCAUAUST Index",
+      "WCAUBRAZ Index",
+      "WCAUCAN Index",
+      "WCAUCHIL Index",
+      "WCAUCHIN Index",
+      "WCAUDENM Index",
+      "WCAUFRAN Index",
+      "WCAUGERM Index",
+      "WCAUHK Index",
+      "WCAUINDI Index",
+      "WCAUINDO Index",
+      "WCAUITAL Index",
+      "WCAUJAPA Index",
+      "WCAUMALA Index",
+      "WCAUMEX Index",
+      "WCAUNETH Index",
+      "WCAUPHIL Index",
+      "WCAUPOLA Index",
+      "WCAUSAF Index",
+      "WCAUSAUD Index",
+      "WCAUSING Index",
+      "WCAUSK Index",
+      "WCAUSPAI Index",
+      "WCAUSWED Index",
+      "WCAUSWIT Index",
+      "WCAUTAIW Index",
+      "WCAUTHAI Index",
+      "WCAUTURK Index",
+      "WCAUUK Index",
+      "WCAUUS Index",
+      "WCAUVIET Index",
+      "XAU Curncy",
+      "ZAR  Curncy"
+    ],
+    "estimated_hits": 1373
+  },
+  "history_hits": 1363,
+  "max_setup_hits": 10,
+  "max_runtime_seconds": 7200,
+  "bloomberg_requests": [
+    {
+      "family": "bonds",
+      "security": "GACGB2 Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Australia"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_2Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GACGB5 Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Australia"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GACGB10 Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Australia"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_10Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "cds",
+      "security": "AUSTLA CDS USD SR 5Y Corp",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Australia"
+      ],
+      "outputs": [
+        "BBG_CDS_5Y",
+        "BBG_MIPD_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GTBRL2Y Govt",
+      "fields": [
+        "YLD_YTM_MID"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Brazil"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_2Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GEBR5Y Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Brazil"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GEBR10Y Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Brazil"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_10Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "cds",
+      "security": "BRAZIL CDS USD SR 5Y Corp",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Brazil"
+      ],
+      "outputs": [
+        "BBG_CDS_5Y",
+        "BBG_MIPD_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GCAN2YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Canada"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_2Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GCAN5YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Canada"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GCAN10YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Canada"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_10Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "CLGB10Y Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Chile"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_10Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "cds",
+      "security": "CHILE CDS USD SR 5Y Corp",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Chile"
+      ],
+      "outputs": [
+        "BBG_CDS_5Y",
+        "BBG_MIPD_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GCNY2YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "ChinaA",
+        "ChinaH"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_2Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GCNY5YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "ChinaA",
+        "ChinaH"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GCNY10YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "ChinaA",
+        "ChinaH"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_10Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "cds",
+      "security": "CHINAG CDS USD SR 5Y Corp",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "ChinaA",
+        "ChinaH"
+      ],
+      "outputs": [
+        "BBG_CDS_5Y",
+        "BBG_MIPD_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GDGB2YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Denmark"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_2Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GDGB10YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Denmark"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_10Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GFRN2 Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "France"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_2Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GFRN5 Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "France"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GFRN10 Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "France"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_10Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "cds",
+      "security": "FRANCE CDS USD SR 5Y D14 Corp",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "France"
+      ],
+      "outputs": [
+        "BBG_CDS_5Y",
+        "BBG_MIPD_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GDBR2 Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Germany"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_2Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GDBR5 Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Germany"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GDBR10 Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Germany"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_10Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GIND2YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "India"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_2Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GIND5YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "India"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GIND10YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "India"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_10Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GIDN2YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Indonesia"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_2Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GIDN5YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Indonesia"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GIDN10YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Indonesia"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_10Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "cds",
+      "security": "INDON CDS USD SR 5Y Corp",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Indonesia"
+      ],
+      "outputs": [
+        "BBG_CDS_5Y",
+        "BBG_MIPD_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GBTPGR2 Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Italy"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_2Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GBTPGR5 Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Italy"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GBTPGR10 Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Italy"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_10Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "cds",
+      "security": "ITALY CDS USD SR 5Y D14 Corp",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Italy"
+      ],
+      "outputs": [
+        "BBG_CDS_5Y",
+        "BBG_MIPD_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GJGB2 Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Japan"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_2Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GJGB5 Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Japan"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GJGB10 Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Japan"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_10Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "cds",
+      "security": "JAPAN CDS USD SR 5Y Corp",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Japan"
+      ],
+      "outputs": [
+        "BBG_CDS_5Y",
+        "BBG_MIPD_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GVSK2YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Korea"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_2Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GVSK5YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Korea"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GVSK10YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Korea"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_10Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "cds",
+      "security": "KOREA CDS USD SR 5Y Corp",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Korea"
+      ],
+      "outputs": [
+        "BBG_CDS_5Y",
+        "BBG_MIPD_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GTMYR5Y Govt",
+      "fields": [
+        "YLD_YTM_MID"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Malaysia"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GTMYR10Y Govt",
+      "fields": [
+        "YLD_YTM_MID"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Malaysia"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_10Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "cds",
+      "security": "MALAYS CDS USD SR 5Y Corp",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Malaysia"
+      ],
+      "outputs": [
+        "BBG_CDS_5Y",
+        "BBG_MIPD_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GMXN02YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Mexico"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_2Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GMXN05YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Mexico"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GMXN10YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Mexico"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_10Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "cds",
+      "security": "MEXICO CDS USD SR 5Y Corp",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Mexico"
+      ],
+      "outputs": [
+        "BBG_CDS_5Y",
+        "BBG_MIPD_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "USGG2YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "NASDAQ",
+        "U.S.",
+        "US SmallCap"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_2Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "USGG5YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "NASDAQ",
+        "U.S.",
+        "US SmallCap"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "USGG10YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "NASDAQ",
+        "U.S.",
+        "US SmallCap"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_10Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GNTH2YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Netherlands"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_2Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GNTH5YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Netherlands"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GNTH10YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Netherlands"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_10Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GTPHP5Y Govt",
+      "fields": [
+        "YLD_YTM_MID"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Philippines"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GTPHP10Y Govt",
+      "fields": [
+        "YLD_YTM_MID"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Philippines"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_10Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "cds",
+      "security": "PHILIP CDS USD SR 5Y Corp",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Philippines"
+      ],
+      "outputs": [
+        "BBG_CDS_5Y",
+        "BBG_MIPD_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "POGB2YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Poland"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_2Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "POGB5YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Poland"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "POGB10YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Poland"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_10Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "cds",
+      "security": "POLAND CDS USD SR 5Y D14 Corp",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Poland"
+      ],
+      "outputs": [
+        "BBG_CDS_5Y",
+        "BBG_MIPD_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GTSAR5Y Govt",
+      "fields": [
+        "YLD_YTM_MID"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Saudi Arabia"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GTSAR10Y Govt",
+      "fields": [
+        "YLD_YTM_MID"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Saudi Arabia"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_10Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "cds",
+      "security": "SAUDI CDS USD SR 5Y Corp",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Saudi Arabia"
+      ],
+      "outputs": [
+        "BBG_CDS_5Y",
+        "BBG_MIPD_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "MASB2Y Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Singapore"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_2Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "MASB5Y Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Singapore"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "MASB10Y Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Singapore"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_10Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GSAB2YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "South Africa"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_2Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GSAB5Y Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "South Africa"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GSAB10YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "South Africa"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_10Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "cds",
+      "security": "REPSOU CDS USD SR 5Y D14 Corp",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "South Africa"
+      ],
+      "outputs": [
+        "BBG_CDS_5Y",
+        "BBG_MIPD_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GSPG2YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Spain"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_2Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GSPG5YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Spain"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GSPG10YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Spain"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_10Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "cds",
+      "security": "SPAIN CDS USD SR 5Y D14 Corp",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Spain"
+      ],
+      "outputs": [
+        "BBG_CDS_5Y",
+        "BBG_MIPD_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GSGB2YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Sweden"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_2Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GSGB5YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Sweden"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GSGB10YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Sweden"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_10Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GSWISS2 Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Switzerland"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_2Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GSWISS10 Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Switzerland"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_10Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "TPGBTW10 Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Taiwan"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_10Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GVTL2YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Thailand"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_2Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GVTL5YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Thailand"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GVTL10YR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Thailand"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_10Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "cds",
+      "security": "THAI CDS USD SR 5Y Corp",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Thailand"
+      ],
+      "outputs": [
+        "BBG_CDS_5Y",
+        "BBG_MIPD_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GTTRY2Y Govt",
+      "fields": [
+        "YLD_YTM_MID"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Turkey"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_2Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GTTRY5Y Govt",
+      "fields": [
+        "YLD_YTM_MID"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Turkey"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GTTRY10Y Govt",
+      "fields": [
+        "YLD_YTM_MID"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Turkey"
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_10Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "cds",
+      "security": "TURKEY CDS USD SR 5Y Corp",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Turkey"
+      ],
+      "outputs": [
+        "BBG_CDS_5Y",
+        "BBG_MIPD_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GUKG2 Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "U.K."
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_2Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GUKG5 Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "U.K."
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_5Y"
+      ]
+    },
+    {
+      "family": "bonds",
+      "security": "GUKG10 Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "U.K."
+      ],
+      "outputs": [
+        "BBG_Govt_Bond_10Y",
+        "BBG_Yield_Curve_10Y2Y"
+      ]
+    },
+    {
+      "family": "cds",
+      "security": "VIETNM CDS USD SR 5Y Corp",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Vietnam"
+      ],
+      "outputs": [
+        "BBG_CDS_5Y",
+        "BBG_MIPD_5Y"
+      ]
+    },
+    {
+      "family": "policy_rate_history",
+      "security": "RBATCTR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Australia"
+      ],
+      "outputs": [
+        "BBG_WIRP_ImpliedRate"
+      ]
+    },
+    {
+      "family": "policy_rate_history",
+      "security": "BZSTSETA Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Brazil"
+      ],
+      "outputs": [
+        "BBG_WIRP_ImpliedRate"
+      ]
+    },
+    {
+      "family": "policy_rate_history",
+      "security": "CABROVER Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Canada"
+      ],
+      "outputs": [
+        "BBG_WIRP_ImpliedRate"
+      ]
+    },
+    {
+      "family": "policy_rate_history",
+      "security": "CHOVCHOV Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Chile"
+      ],
+      "outputs": [
+        "BBG_WIRP_ImpliedRate"
+      ]
+    },
+    {
+      "family": "policy_rate_history",
+      "security": "CHLR12M Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "ChinaA",
+        "ChinaH"
+      ],
+      "outputs": [
+        "BBG_WIRP_ImpliedRate"
+      ]
+    },
+    {
+      "family": "policy_rate_history",
+      "security": "EURR002W Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "France",
+        "Germany",
+        "Italy",
+        "Netherlands",
+        "Spain"
+      ],
+      "outputs": [
+        "BBG_WIRP_ImpliedRate"
+      ]
+    },
+    {
+      "family": "policy_rate_history",
+      "security": "INRPYLDP Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "India"
+      ],
+      "outputs": [
+        "BBG_WIRP_ImpliedRate"
+      ]
+    },
+    {
+      "family": "policy_rate_history",
+      "security": "BOJDPBAL Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Japan"
+      ],
+      "outputs": [
+        "BBG_WIRP_ImpliedRate"
+      ]
+    },
+    {
+      "family": "policy_rate_history",
+      "security": "KORP7DR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Korea"
+      ],
+      "outputs": [
+        "BBG_WIRP_ImpliedRate"
+      ]
+    },
+    {
+      "family": "policy_rate_history",
+      "security": "MAOPRATE Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Malaysia"
+      ],
+      "outputs": [
+        "BBG_WIRP_ImpliedRate"
+      ]
+    },
+    {
+      "family": "policy_rate_history",
+      "security": "MXONBR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Mexico"
+      ],
+      "outputs": [
+        "BBG_WIRP_ImpliedRate"
+      ]
+    },
+    {
+      "family": "policy_rate_history",
+      "security": "FDTR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "NASDAQ",
+        "U.S.",
+        "US SmallCap"
+      ],
+      "outputs": [
+        "BBG_WIRP_ImpliedRate"
+      ]
+    },
+    {
+      "family": "policy_rate_history",
+      "security": "SARPRT Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "South Africa"
+      ],
+      "outputs": [
+        "BBG_WIRP_ImpliedRate"
+      ]
+    },
+    {
+      "family": "policy_rate_history",
+      "security": "SWRRATEI Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Sweden"
+      ],
+      "outputs": [
+        "BBG_WIRP_ImpliedRate"
+      ]
+    },
+    {
+      "family": "policy_rate_history",
+      "security": "BTRR1DAY Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Thailand"
+      ],
+      "outputs": [
+        "BBG_WIRP_ImpliedRate"
+      ]
+    },
+    {
+      "family": "policy_rate_history",
+      "security": "UKBRBASE Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "U.K."
+      ],
+      "outputs": [
+        "BBG_WIRP_ImpliedRate"
+      ]
+    },
+    {
+      "family": "cpi_history",
+      "security": "AUCPIYOY Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Australia"
+      ],
+      "outputs": [
+        "BBG_ECFC_CPI"
+      ]
+    },
+    {
+      "family": "cpi_history",
+      "security": "CACPIYOY Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Canada"
+      ],
+      "outputs": [
+        "BBG_ECFC_CPI"
+      ]
+    },
+    {
+      "family": "cpi_history",
+      "security": "FRCPIYOY Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "France"
+      ],
+      "outputs": [
+        "BBG_ECFC_CPI"
+      ]
+    },
+    {
+      "family": "cpi_history",
+      "security": "GRCP20YY Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Germany"
+      ],
+      "outputs": [
+        "BBG_ECFC_CPI"
+      ]
+    },
+    {
+      "family": "cpi_history",
+      "security": "HKCPIY Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Hong Kong"
+      ],
+      "outputs": [
+        "BBG_ECFC_CPI"
+      ]
+    },
+    {
+      "family": "cpi_history",
+      "security": "IDCPIY Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Indonesia"
+      ],
+      "outputs": [
+        "BBG_ECFC_CPI"
+      ]
+    },
+    {
+      "family": "cpi_history",
+      "security": "ITCPNICY Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Italy"
+      ],
+      "outputs": [
+        "BBG_ECFC_CPI"
+      ]
+    },
+    {
+      "family": "cpi_history",
+      "security": "JNCPIYOY Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Japan"
+      ],
+      "outputs": [
+        "BBG_ECFC_CPI"
+      ]
+    },
+    {
+      "family": "cpi_history",
+      "security": "KOCPIYOY Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Korea"
+      ],
+      "outputs": [
+        "BBG_ECFC_CPI"
+      ]
+    },
+    {
+      "family": "cpi_history",
+      "security": "MACPIYOY Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Malaysia"
+      ],
+      "outputs": [
+        "BBG_ECFC_CPI"
+      ]
+    },
+    {
+      "family": "cpi_history",
+      "security": "CPI YOY Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "NASDAQ",
+        "U.S.",
+        "US SmallCap"
+      ],
+      "outputs": [
+        "BBG_ECFC_CPI"
+      ]
+    },
+    {
+      "family": "cpi_history",
+      "security": "POCPIYOY Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Poland"
+      ],
+      "outputs": [
+        "BBG_ECFC_CPI"
+      ]
+    },
+    {
+      "family": "cpi_history",
+      "security": "SICPIYOY Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Singapore"
+      ],
+      "outputs": [
+        "BBG_ECFC_CPI"
+      ]
+    },
+    {
+      "family": "cpi_history",
+      "security": "SACPIYOY Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "South Africa"
+      ],
+      "outputs": [
+        "BBG_ECFC_CPI"
+      ]
+    },
+    {
+      "family": "cpi_history",
+      "security": "SWCPIYOY Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Sweden"
+      ],
+      "outputs": [
+        "BBG_ECFC_CPI"
+      ]
+    },
+    {
+      "family": "cpi_history",
+      "security": "SZCPIYOY Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Switzerland"
+      ],
+      "outputs": [
+        "BBG_ECFC_CPI"
+      ]
+    },
+    {
+      "family": "cpi_history",
+      "security": "TWCPIYOY Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Taiwan"
+      ],
+      "outputs": [
+        "BBG_ECFC_CPI"
+      ]
+    },
+    {
+      "family": "cpi_history",
+      "security": "THCPIYOY Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Thailand"
+      ],
+      "outputs": [
+        "BBG_ECFC_CPI"
+      ]
+    },
+    {
+      "family": "cpi_history",
+      "security": "UKRPCJYR Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "U.K."
+      ],
+      "outputs": [
+        "BBG_ECFC_CPI"
+      ]
+    },
+    {
+      "family": "manufacturing_pmi",
+      "security": "MPMIAUMA Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Australia"
+      ],
+      "outputs": [
+        "BBG_PMI_Manufacturing"
+      ]
+    },
+    {
+      "family": "manufacturing_pmi",
+      "security": "MPMICAMA Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Canada"
+      ],
+      "outputs": [
+        "BBG_PMI_Manufacturing"
+      ]
+    },
+    {
+      "family": "manufacturing_pmi",
+      "security": "MPMICNMA Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "ChinaA",
+        "ChinaH"
+      ],
+      "outputs": [
+        "BBG_PMI_Manufacturing"
+      ]
+    },
+    {
+      "family": "manufacturing_pmi",
+      "security": "MPMIFRMA Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "France"
+      ],
+      "outputs": [
+        "BBG_PMI_Manufacturing"
+      ]
+    },
+    {
+      "family": "manufacturing_pmi",
+      "security": "MPMIDEMA Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Germany"
+      ],
+      "outputs": [
+        "BBG_PMI_Manufacturing"
+      ]
+    },
+    {
+      "family": "manufacturing_pmi",
+      "security": "MPMIINMA Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "India"
+      ],
+      "outputs": [
+        "BBG_PMI_Manufacturing"
+      ]
+    },
+    {
+      "family": "manufacturing_pmi",
+      "security": "MPMIIDMA Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Indonesia"
+      ],
+      "outputs": [
+        "BBG_PMI_Manufacturing"
+      ]
+    },
+    {
+      "family": "manufacturing_pmi",
+      "security": "MPMIITMA Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Italy"
+      ],
+      "outputs": [
+        "BBG_PMI_Manufacturing"
+      ]
+    },
+    {
+      "family": "manufacturing_pmi",
+      "security": "MPMIMYMA Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Malaysia"
+      ],
+      "outputs": [
+        "BBG_PMI_Manufacturing"
+      ]
+    },
+    {
+      "family": "manufacturing_pmi",
+      "security": "MPMIMXMA Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Mexico"
+      ],
+      "outputs": [
+        "BBG_PMI_Manufacturing"
+      ]
+    },
+    {
+      "family": "manufacturing_pmi",
+      "security": "MPMIUSMA Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "NASDAQ",
+        "U.S.",
+        "US SmallCap"
+      ],
+      "outputs": [
+        "BBG_PMI_Manufacturing"
+      ]
+    },
+    {
+      "family": "manufacturing_pmi",
+      "security": "MPMINLMA Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Netherlands"
+      ],
+      "outputs": [
+        "BBG_PMI_Manufacturing"
+      ]
+    },
+    {
+      "family": "manufacturing_pmi",
+      "security": "MPMIPHMA Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Philippines"
+      ],
+      "outputs": [
+        "BBG_PMI_Manufacturing"
+      ]
+    },
+    {
+      "family": "manufacturing_pmi",
+      "security": "MPMIPLMA Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Poland"
+      ],
+      "outputs": [
+        "BBG_PMI_Manufacturing"
+      ]
+    },
+    {
+      "family": "manufacturing_pmi",
+      "security": "MPMIESMA Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Spain"
+      ],
+      "outputs": [
+        "BBG_PMI_Manufacturing"
+      ]
+    },
+    {
+      "family": "manufacturing_pmi",
+      "security": "MPMITWMA Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Taiwan"
+      ],
+      "outputs": [
+        "BBG_PMI_Manufacturing"
+      ]
+    },
+    {
+      "family": "manufacturing_pmi",
+      "security": "MPMITHMA Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Thailand"
+      ],
+      "outputs": [
+        "BBG_PMI_Manufacturing"
+      ]
+    },
+    {
+      "family": "manufacturing_pmi",
+      "security": "MPMITRMA Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Turkey"
+      ],
+      "outputs": [
+        "BBG_PMI_Manufacturing"
+      ]
+    },
+    {
+      "family": "manufacturing_pmi",
+      "security": "MPMIGBMA Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "U.K."
+      ],
+      "outputs": [
+        "BBG_PMI_Manufacturing"
+      ]
+    },
+    {
+      "family": "manufacturing_pmi",
+      "security": "MPMIVNMA Index",
+      "fields": [
+        "PX_LAST"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Vietnam"
+      ],
+      "outputs": [
+        "BBG_PMI_Manufacturing"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "EWA US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Australia"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "EWZ US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Brazil"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "EWC US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Canada"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "ECH US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Chile"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "ASHR US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "ChinaA"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "FXI US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "ChinaH"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "EDEN US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Denmark"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "EWQ US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "France"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "EWG US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Germany"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "EWH US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Hong Kong"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "INDA US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "India"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "EIDO US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Indonesia"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "EWI US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Italy"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "EWJ US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Japan"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "EWY US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Korea"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "EWM US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Malaysia"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "EWW US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Mexico"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "QQQ US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "NASDAQ"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "EWN US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Netherlands"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "EPHE US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Philippines"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "EPOL US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Poland"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "KSA US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Saudi Arabia"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "EWS US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Singapore"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "EZA US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "South Africa"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "EWP US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Spain"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "EWD US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Sweden"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "EWL US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Switzerland"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "EWT US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Taiwan"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "THD US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Thailand"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "TUR US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Turkey"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "EWU US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "U.K."
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "SPY US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "U.S."
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "IWM US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "US SmallCap"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    },
+    {
+      "family": "country_etfs",
+      "security": "VNM US Equity",
+      "fields": [
+        "PX_LAST",
+        "EQY_SH_OUT",
+        "FUND_FLOW"
+      ],
+      "start": "20260701",
+      "end": "20260930",
+      "periodicity": "MONTHLY",
+      "countries": [
+        "Vietnam"
+      ],
+      "outputs": [
+        "MS_Country_ETF_AUM_USD",
+        "MS_Country_ETF_NetFlow_USD",
+        "MS_ETF_NetCreation_Shares",
+        "MS_ETF_NetFlow_to_MarketCap",
+        "MS_Passive_AUM_to_MarketCap",
+        "MS_Passive_Flow_Distortion"
+      ]
+    }
+  ],
+  "bloomberg_base_variables": [
+    "BBG_CDS_5Y",
+    "BBG_ECFC_CPI",
+    "BBG_Govt_Bond_10Y",
+    "BBG_Govt_Bond_2Y",
+    "BBG_Govt_Bond_5Y",
+    "BBG_MIPD_5Y",
+    "BBG_PMI_Manufacturing",
+    "BBG_WIRP_ImpliedRate",
+    "BBG_Yield_Curve_10Y2Y",
+    "MS_Country_ETF_AUM_USD",
+    "MS_Country_ETF_NetFlow_USD",
+    "MS_ETF_NetCreation_Shares",
+    "MS_ETF_NetFlow_to_MarketCap",
+    "MS_Passive_AUM_to_MarketCap",
+    "MS_Passive_Flow_Distortion"
+  ],
+  "bloomberg_selected_variables": [
+    "MS_Country_ETF_AUM_USD_CS",
+    "BBG_Yield_Curve_10Y2Y_CS",
+    "BBG_ECFC_CPI_CS",
+    "MS_Passive_Flow_Distortion_CS",
+    "MS_Passive_AUM_to_MarketCap_CS",
+    "BBG_Yield_Curve_10Y2Y_TS",
+    "BBG_Govt_Bond_5Y_CS",
+    "BBG_Govt_Bond_2Y_CS",
+    "MS_Passive_AUM_to_MarketCap_TS",
+    "BBG_Govt_Bond_10Y_CS",
+    "MS_Country_ETF_AUM_USD_TS",
+    "BBG_WIRP_ImpliedRate_CS",
+    "MS_ETF_NetFlow_to_MarketCap_CS",
+    "BBG_PMI_Manufacturing_CS",
+    "BBG_MIPD_5Y_CS",
+    "BBG_CDS_5Y_CS",
+    "MS_ETF_NetFlow_to_MarketCap_TS",
+    "BBG_ECFC_CPI_TS",
+    "MS_Passive_Flow_Distortion_TS",
+    "BBG_CDS_5Y_TS",
+    "BBG_MIPD_5Y_TS",
+    "MS_ETF_NetCreation_Shares_CS",
+    "BBG_Govt_Bond_5Y_TS",
+    "MS_Country_ETF_NetFlow_USD_CS",
+    "BBG_Govt_Bond_2Y_TS",
+    "BBG_Govt_Bond_10Y_TS",
+    "MS_ETF_NetCreation_Shares_TS",
+    "BBG_WIRP_ImpliedRate_TS",
+    "MS_Country_ETF_NetFlow_USD_TS"
+  ],
+  "data_targets": [
+    "Data/asado.duckdb",
+    "Data/work/t2/T2 Bloomberg Master.xlsx",
+    "Data/work/t2/T2 Master.xlsx",
+    "Data/work/t2/P2P_Country_Historical_Scores.xlsx",
+    "Data/work/t2/P2P_Monthly_Adjusted_Prices.parquet",
+    "Data/work/t2/Normalized_T2_MasterCSV.csv",
+    "Data/work/t2/Normalized_T2_Master.xlsx",
+    "Data/work/gdelt/T2 Master.xlsx",
+    "Data/work/gdelt/Normalized_T2_MasterCSV.csv",
+    "Data/work/econ/T2 Master.xlsx",
+    "Data/work/econ/Normalized_T2_MasterCSV.csv",
+    "Data/work/gdelt/GDELT.xlsx",
+    "Data/work/gdelt/GDELT_Factors_MasterCSV.csv",
+    "Data/gdelt/spreadsheet/GDELT.xlsx",
+    "Data/gdelt/panels/country_signal_monthly_fullhistory.parquet",
+    "Data/gdelt/panels/country_signal_monthly_fullhistory.csv",
+    "Data/processed/bloomberg_factors_panel.parquet",
+    "Data/processed/bloomberg_factors_panel.csv",
+    "Data/processed/bloomberg_variable_catalog.csv",
+    "Data/processed/bloomberg_run_history.json",
+    "Data/raw/bloomberg/bond_yields.parquet",
+    "Data/raw/bloomberg/cds_spreads.parquet",
+    "Data/raw/bloomberg/wirp.parquet",
+    "Data/raw/bloomberg/ecfc.parquet",
+    "Data/raw/bloomberg/pmi.parquet",
+    "Data/raw/bloomberg/country_etf_passive.parquet",
+    "Data/raw/bloomberg/worldbank_market_cap_usd.parquet",
+    "Data/gdelt/lookups/masterfilelist.txt",
+    "Data/gdelt/lookups/COUNTRY-GEO-LOOKUP.TXT",
+    "Data/gdelt/lookups/geonames_countryInfo.txt",
+    "Data/gdelt/lookups/gdelt_domains_by_country_2015_2021.csv"
+  ],
+  "required_inputs": [
+    "Data/asado.duckdb",
+    "Data/work/t2/T2 Bloomberg Master.xlsx",
+    "Data/work/t2/T2 Master.xlsx",
+    "Data/work/t2/Normalized_T2_MasterCSV.csv",
+    "Data/work/t2/P2P_Country_Historical_Scores.xlsx",
+    "Data/work/gdelt/GDELT_Factors_MasterCSV.csv",
+    "Data/processed/bloomberg_factors_panel.parquet",
+    "Data/raw/bloomberg/worldbank_market_cap_usd.parquet",
+    "Data/work/t2/P2P_Monthly_Adjusted_Prices.parquet",
+    "Data/raw/bloomberg/bond_yields.parquet",
+    "Data/raw/bloomberg/cds_spreads.parquet",
+    "Data/raw/bloomberg/wirp.parquet",
+    "Data/raw/bloomberg/ecfc.parquet",
+    "Data/raw/bloomberg/pmi.parquet",
+    "Data/raw/bloomberg/country_etf_passive.parquet"
+  ],
+  "pinned_sources": {
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/config/monthly_readiness.json": "90ea45f9a4004da64f2710915110b1e767cab0c1e1941cfc4e94751bbe91065d",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/monthly_collect.py": "5b15c91695d5a0996c07fabd5affc933f38d911b75eee57adf97cdf18c97f180",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/monthly_gdelt.py": "adca28c9bca9a466fa7dc9e62cbd4f63aded1f03d9c14b2ec1ae8ca0e4159867",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/monthly_nn.py": "3e95097f90b38558f0995ed6498b5340a13f24a8ac4c7cd86cc35c26ae06e405",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/monthly_publish.py": "411eb4754da251da9a2878d4fc7edfe5255ae2e983871cb4af882b79d1b9abc6",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/monthly_readiness.py": "aca0a265a3af43d689b9a8021e48c96f2ae9173000df3db296032db46f62de5b",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/monthly_service.py": "96429565e85e4b0123f1d3db91bb6646f6d4d3a3e8f3ffacc67e809765176e13",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/monthly_stage.py": "48bd67b07dc23bf1b63407a9910ec846fce4a4046759466fd9445cf4fd80ffaf",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/monthly_update.py": "2bdcbe5d836ff585b798687ab0f56c49a2f2cb980c5423e78a71dc97f6a63ec5",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/monthly_worker.py": "1d72e1e3023c493ac47246b08b6b9d7efae331038f40ade94fec04623edff940",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/duckdb_lock_guard.py": "b706569463db0045b5d0ea785eb60d4374256a85265d46bafdcf1eb6d96ee2f7",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/build_t2_master.py": "e7524ca11404c39017d6e34db0a4e2d6d8b32d9e871f7c0ed92a3ec000ec5e36",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/p2p_monthly.py": "ed06af09688c9c353bcd257cbe24761396bc6390ae072c0e2c76162a624d2619",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/t2_normalize.py": "4fd344121dacb374fee2b14d34c61ac72be44aa551f5f4202af6d5f05ea58833",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/gdelt_normalize.py": "7f1ff781d4e1d871e85763332e0e14af3bac3a40442124328bcfba95624da569",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/collect_t2_bloomberg.py": "1a1db6b97bc23af002a1661238e77d0042efebf38d22019a2ad9677d6f8ff167",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/collect_bloomberg.py": "c59a5ff98f9514357e53493126b9cceea21464a3ed6af6010d1cf4ef8a0bc6dd",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/build_normalized_panel.py": "2680f5b9a2f7ac4080e2488a7b57d283df42905e217e280dd1c932fecde4e51e",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/setup_duckdb.py": "b983026b64e727345829465fe6dbf760a434a9d38249e735a8106f264eb4fc18",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/config/t2_bbg_manifest.json": "70378882ed59ed34040f31a7088a615c8d8a31429e2f937a670dc7ae135bc662",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/config/p2p_country_etfs.json": "69acc87a5ab5c346f2ad34cd50a1219d7c0a54e10b387834cb3bc36037db0db5",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/config/country_mapping.json": "d65053f00fab07438b652fee2d1511d05fd7c792b94d64a01c5ea8b76dd662d6",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/gdelt_ingest/build_country_signals.py": "7dd3c93b482faca2e93335a95bb87e62fde9d87b1047cd9c101adea8902aa8c5",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/gdelt_ingest/build_daily_metronome.py": "6592e4f56e929d71dbc9adf6c7b8653bac024c7738099b33c3e0831e2849b370",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/gdelt_ingest/build_fullhistory_workbook.py": "64d05f159cd87b9cd7ca3c7258811bc08670a15ef0517731ad9cac8c5547b96a",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/gdelt_ingest/build_monthly_metronome.py": "5594943b00e6affeba2821178b4b7096f077ccd0477ddffddaec26cb4d864b68",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/gdelt_ingest/export_country_sentiment_workbook.py": "48ebdd8c4e558309a81460243291a9872b3f2b747bac4eb60a4b7b083ce32b8e",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/gdelt_ingest/export_daily_workbook.py": "a5364f80502df234acf91a90930e6b62c830e5075aae2aa4d4ec371635752d61",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/gdelt_ingest/gdelt_support.py": "b5e66b295f3abf0dc46f6bbd178a57e7e76340ee9ddd4e9d1fb8b4f8a211de70",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/gdelt_ingest/stream_build_country_day.py": "f7a5d04e4bab391a783600293ddd01625f3913e542cda9c3cf08ce6f0d150727",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 NN/production/run_monthly.py": "635a98d81bba961d5b9514ae73b81e5eb02c665136dfb8796637a9fcdcc6f539",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 NN/production/monthly_lock.py": "177d57d1419e1060a5d6ebd0a4ebd0f2c83c634e06b6c8d60ae9415d9dae92a5",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 NN/rank_model/factor_set_v3_clean.json": "c20498466d157788d99d523f16d3baf5a6b90710b2ec0323f0285674eb947bb7",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg/bbg.py": "1223ee221af4b1a83d08d5199808fd86b5408fa547a0bb1db9abd840cf3e9279",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg/budget_gate.py": "f60278166ce031bed1edb9474c113b77e3f09ccad77797e71d34d62c06ba6d3f",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg/quota_guard.py": "ff7d7f464033ceb774868230630ad18b0eb3ad71917856fbe00b87db929f2b8c",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg/master_ledger.py": "1138f858e424ac8dae17f44a9308dc635bee7ff37dc826fd6a199977136b5d6a",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg/bloomberg_connect.py": "6b88bb2b9348275ae5cfb6ac627dc0f3384528688417a29d37a96558d97effcf",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg/opus_blpapi_hook.py": "88841b4faf07809f3431ca3660ea630fe6b52787f1732910a0ddbdcbbea50657",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg/.venv/lib/python3.12/site-packages/opusbloomberg_gate.pth": "9fdbd6ec6407a34e6c4d6117b9079b38b1ffd889269b2c3fa819d73e27ad035f",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/monthly_owner.py": "ebcea34658abf886b92d9a000c47caae56ce553570171c04561338d0567f89f4",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 NN/rank_model/train_nn.py": "7a8b5693884b430918e0ced0d777fa73f2eb56a2e5a2052684a4aeac3351850a",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 NN/rank_model/train_floor.py": "565b393ceeabca3aead2515b49d5a588d350e299f93eab3fcae4cd8f0756b8fb"
+  },
+  "validated_model_hashes": {
+    "2026-02": {
+      "nets.pt": "a5eabb730610e0ca1017bb0d57da24713450f8f1637031a5550bf841428b1f5c",
+      "meta.json": "f3c191e968caebb1195a990140fb469b7e198f70aa2fbbb23a01be73f0e74a0d"
+    }
+  }
+}

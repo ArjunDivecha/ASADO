@@ -160,7 +160,7 @@ class MonthlyReadinessTests(unittest.TestCase):
             M.accept(self.state, self.status(), receipt)
         s = self.status(accepted={"2026-10": accepted})
         self.assertEqual(s["state"], "ACCEPTED")
-        self.assertIn("never invokes producers", s["producer_execution"])
+        self.assertIn("readiness invokes no producer", s["producer_execution"])
 
     def test_changed_accepted_output_invalidates_no_replay(self):
         receipt = self.contract()
@@ -187,6 +187,14 @@ class MonthlyReadinessTests(unittest.TestCase):
         self.snapshot.write_bytes(b"tampered")
         with self.assertRaises(RuntimeError):
             M.accept(self.state, self.status(), receipt)
+
+    def test_acceptance_link_failure_leaves_no_partial_commit_marker(self):
+        receipt = self.contract()
+        with patch.object(M.os, 'link', side_effect=OSError('disk publication failure')):
+            with self.assertRaises(OSError):
+                M.accept(self.state, self.status(), receipt)
+        self.assertFalse((self.state / 'accepted/2026-10.json').exists())
+        self.assertFalse(list((self.state / 'accepted').glob('*.tmp')))
 
     def test_source_definition_drift_is_failure(self):
         p = self.write("scripts/fake.py", {"a": 1})

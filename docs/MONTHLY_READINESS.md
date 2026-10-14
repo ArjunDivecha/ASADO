@@ -1,58 +1,51 @@
-# ASADO monthly readiness and NN acceptance
+# ASADO monthly collection and NN publication
 
-Installed job: `com.arjundivecha.asado-monthly`. launchd runs the readiness checker hourly and at login/load. The checker uses Pacific calendar months, so DST and missed wakeups do not determine the data month. It creates one durable ticket for the current trade month and coalesces missed checks. It reports intervening unaccepted months and never replays them.
+The installed `com.arjundivecha.asado-monthly` job runs `scripts/monthly_service.py` hourly and at load/login. The service checks readiness, dispatches one gated monthly worker, then refreshes readiness. This replaces the readiness-only deployment of October 13. User authorization: October 14, 2026, 00:28 PDT, Sentinel_4ce29c054d9c8191ac4d25006590362e, recurring collection through validated NN publication, with backups, duplicate protection, failure alerts and no automatic retry. Nothing places trades.
 
-Canonical program: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/monthly_readiness.py`.
-Configuration: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/config/monthly_readiness.json`.
-Plist source: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/launchd/com.arjundivecha.asado-monthly.plist`.
-Installed plist: `/Users/arjundivecha/Library/LaunchAgents/com.arjundivecha.asado-monthly.plist`.
+Canonical root: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO`.
+NN root: `/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 NN`.
+Configuration: `config/monthly_worker.json` and `config/monthly_readiness.json` under the canonical root. Plist source: `launchd/com.arjundivecha.asado-monthly.plist`; installed copy: `/Users/arjundivecha/Library/LaunchAgents/com.arjundivecha.asado-monthly.plist`.
 
-## Monthly contract
+## Trigger and month semantics
 
-Trade month M uses completed observation month M-1. T2 and GDELT already carry M+1 availability labels, so their required label is M. The 29 selected Bloomberg inputs carry observation labels, so they require M-1. September observations therefore feed October NN. Realized 1MRet requires M-1 for all 34 NN countries. The 238-factor list and producer definitions are hash-pinned; changing them requires reviewing this contract and its bounded request scope.
+The first eligible trade month is November 2026. The first hourly tick after November 1, 00:00 Pacific, or a later login/wake, can claim that month. The schedule coalesces missed ticks and never automatically backfills intervening months. It starts no work between 04:00 and 08:30 Pacific; earlier work has a two-hour maximum and must finish before 06:00 or month rollover. An existing producer or NN lock defers before claiming.
 
-The existing NN 90% trailing-12 source coverage gate remains. T2 contains sparse/annual/quarterly features; missing individual T2 cells warn, and source aggregate failure blocks readiness. Empty Bloomberg or GDELT selected inputs block readiness even if an aggregate could hide the gap. Every missing/thin input reports its exact required month, latest month, coverage and historically present missing countries. No interpolation or forward fill is performed. Slow sources warn. A month can be accepted with warnings: this is never full coverage.
+Trade month M uses completed observation month M-1. T2/GDELT availability labels are M; the 29 selected Bloomberg inputs use observation label M-1. Realized 1MRet must reach M-1 for all 34 countries. November therefore needs October observations, and October's accepted September-observation result is an immediate producer no-op.
 
-October 2026 was independently validated and published October 13, 16:53:37 PDT. Its original acceptance receipt is adopted without repeating collectors or NN. All 29 Bloomberg inputs reach September, but the two CPI variants have 9 countries versus trailing mean 18.3. Eight T2 variants (GDP, Budget Def, Current Account, Bloom Country Risk) have no October label; 26 slow-source inputs also lag. These warnings remain visible despite the NN's aggregate gate passing.
+A tick does not prove that source observations exist at midnight. The first claimed attempt can stop on unavailable Bloomberg infrastructure, unpublished source data, quota refusal, validation failure or runtime deadline. It records the failure and alerts; later hourly ticks cannot repeat collection. Successful acceptance is also a durable no-op. Source pins, previous accepted holdings/output hashes, required input files, annual model allowlist and disk headroom must pass before providers.
 
-## Artifacts and alerts
+## Bounded execution and coverage
 
-`/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/monthly/status.json` and `status.md` carry the current independent monthly status. The durable directory also contains `tickets/YYYY-MM.json`, exclusive-create `accepted/YYYY-MM.json`, append-only `events.jsonl` and `alerts.jsonl`, deduplicated `alert_state.json`, and launchd stdout/stderr logs. Preserve accepted receipts through warehouse rebuilds; this state lives outside DuckDB.
+The worker takes the monthly singleton and existing pipeline, loop, repair and NN publication locks. It verifies backups of every possible publication target before collection. It uses the shared gated OpusBloomberg `.venv/bin/python`, preserving the original hard-stop and request gates. The frozen scope is T2 352 names/1109 security-field-currency pairs plus Bloomberg 186 names/254 pairs: union 521 names including AAPL, 1363 historical hits plus at most 10 setup/ping hits. Dates are derived from completed observation months; historical blueprint dates are not request dates. There is no ticker discovery, fallback request or repeated history request. Local quota previews reserve nothing. October's ASADO accounting includes ASADO64 + recovery_collect.py45 =109/150; ledgers are never rewritten or cleared.
 
-A native macOS notification is requested when the alert set changes. Delivery depends on macOS notification settings; durable alerts are authoritative. XO's `/Users/arjundivecha/Dropbox/AAA Backup/A Working/NightWatch/overseer/asado_monthly_health.py` reads this receipt independently of daily green. It returns WARN for accepted partial coverage, unavailable evidence or unaccepted work, and STALE when hourly evidence is over 2 hours old. Registry flags disable producer reruns and fixers. A full XO controller pass was not run for testing. Subsequent read-only inspection confirmed the new criterion in the live XO actions ledger at October 13, 17:35:04 PDT, reporting WARN with the input gaps; full-coverage OK has not occurred.
+Bloomberg must already be available. The wrapper permits canonical read-only setup inspection and prevents VM startup, login, portproxy/firewall changes and failed-setup retries. T2/P2P/GDELT/Bloomberg outputs are staged below `Data/monthly/runs/<run>/`; GDELT requires every completed-month day at 96/96 GKG archives, with no HTTP retry. P2P uses the existing certified completed-month cache or a single monthly Yahoo download per mapped ETF. The controller terminates only its own child process group at the deadline.
 
-## Quota and exclusion
+Existing observed history is preserved. Current input labels are appended, and only previously NULL forward returns whose windows have completed may be realized. Every original warehouse table is checked; 31 unrelated tables receive no additions. No daily panels or loop database are publication targets. External/slow-source collectors, graph rebuilds and optimizers are outside this NN-core profile.
 
-This checker never calls Bloomberg or imports a producer. Quota preflight reads local ledgers only and does not reserve quota. The pinned NN-core preview is T2 352 names/1109 security-field-currency pairs plus Bloomberg 186 names/254 security-field pairs, and an AAPL setup allowance of 3 hits: union 521 names, 1366 estimated hits. This is not the larger full monthly_update command. Actual collection must remain bounded to an independently reviewed manifest and retain every original hard-stop/gated-send check.
+The existing NN source aggregate gate remains 90% of the trailing-12 observed-month mean. Empty selected Bloomberg/GDELT inputs block; sparse T2 variants warn. October has eight missing T2 dimensions (CS/TS GDP, Budget Def, Current Account and Bloom Country Risk), retained as zero by the existing NN preprocessing. The 26 lagging slow-source dimensions and two thin CPI variants remain explicit warnings. Existing T2 Fill=P cells and cached annual World Bank denominators are recorded as source lineage warnings; their availability labels do not certify fresh monthly underlying observations. Accepted-with-warnings never means full coverage. This worker does not alter lags, imputation, factors, network formulas or basket rules.
 
-October ASADO usage includes both ASADO and recovery_collect.py: 64+45=109/150 at installation. The accounting files are never edited. November projected initial nonrecurring names are 109 using September/October recurrence; this is a preview, not a vendor-certified allowance. Hard-stop/global/day/caller limits all stop readiness for collection; no retries or automatic clearing. Missing/corrupt quota evidence fails closed.
+Two separate NN sandboxes score the same immutable snapshot using the same validated existing model cache and prior holdings. All 34 scores, eight weights and contract metadata must agree before native workbook packaging. `--existing-models-only` forbids training. Only the validated `fold_2026-02` model hashes are allowlisted; February 2027 will stop before collection until a separately validated model is authorized. Manual NN commands now honor the same production lock; sandbox commands use their own locks.
 
-The checker takes its own singleton plus the existing pipeline, loop and repair locks. It uses a guarded read-only, one-thread warehouse query, closes within seconds and never kills holders. Overlap defers the check and preserves the accepted ledger. No production full run, VM startup/login, credential/access change, trade or third-party message is part of this schedule.
+## Publication, receipts and alerts
 
-## Operator workflow
+Publication uses a closed destination list, verified original backup hashes, staged hashes, a PREPARED-before-rename journal, file fsync/atomic replacement and canonical hash checks. Complete exclusive acceptance is published only after all validation. A failure before acceptance rolls back known replaced bytes; a later writer's conflicting bytes are never overwritten. Interrupted attempts perform only rollback/reconciliation when locks become free, then stop without recollection. Completed acceptance is not undone for a later status/log failure.
 
-Read status.md. For an unaccepted month, perform a separately bounded source refresh only for the named missing inputs, retain rollback backups and immutable request receipts, validate the NN in a separate sandbox and publish its verified result. The readiness schedule does not execute collection or NN production; it makes due work and its precise gates visible. Attaching the broad destructive monthly_update command is outside this readiness deployment.
+Authoritative runtime evidence is under `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/monthly/`: `status.json`, `status.md`, `attempts/YYYY-MM.json`, `runs/<run>/`, `accepted/YYYY-MM.json`, `tickets/YYYY-MM.json`, append-only events/alerts, deduplication state and launchd stdout/stderr. Runs retain backup manifests, exact wire/reply receipts, stage/preservation gates, two sandbox logs, score parity, publication plan/journal and canonical NN receipt paths. Preserve this directory and the original recovery backup across warehouse rebuilds; there is no automatic deletion policy.
 
-After independent publication, adopt a receipt with `NN_month`, aware `accepted_at`, `NN_scores_match_sandbox: true` and its canonical `NN_manifest` (including snapshot path/hash and run_dir):
+A changed failure/gap set requests a native macOS notification; durable alerts remain authoritative if macOS suppresses delivery. NightWatch's `overseer/asado_monthly_health.py` reads this monthly evidence independently of daily green, reports accepted gaps as WARN and old evidence as STALE, with fixer/rerun disabled. Exit 0 from a checker or no-op is not successful monthly publication. Read `state`, `accepted`, `inputs_ready`, `full_coverage`, problems and warnings.
 
-```sh
-'/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/venv/bin/python' \
-  '/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/monthly_readiness.py' \
-  --adopt-receipt '/absolute/path/to/verified_publication_receipt.json'
-```
+## Operator reconciliation and disabling
 
-The checker verifies current freshness, pinned definitions, contract/state agreement and snapshot hash before exclusive acceptance. Changed accepted contracts/evidence trigger reconciliation; an accepted month is never silently replaced or rerun. Exit 0 means the check produced a truthful report, not that the month completed. Consumers must read `state`, `accepted`, `inputs_ready`, `full_coverage`, problems and warnings.
+For FAILED_STOPPED, preserve the claim, backups and source receipts. Inspect the stage log, wire journal and `publication.jsonl`; reconcile any partial publication or later-writer conflict before proposing repair. There is no force/retry/reset CLI. Do not remove the attempt marker or acceptance receipt to induce hourly recollection. A new collection or model/cache replacement requires a separately bounded, explicitly authorized reconciliation.
 
-Next eligibility after October: November 1, 2026, 00:00 PDT. The first hourly check after that time (or login/wake) creates November's ticket; it may wait on source publication or quota. It does not claim observations exist at midnight.
-
-## Verification and rollback
-
-Isolated tests cover exact month semantics, sparse/partial inputs, missing/changed artifacts, quota stops without ledger writes, duplicate acceptance/checks, competing producer locks, Pacific rollover/DST, missed months, successful acceptance and released DB connections. Production verification adopts only the already completed October receipt and evaluates the XO criterion directly; no producer is run.
-
-To disable only this readiness job:
+To disable this one owned monthly job, without disturbing daily jobs:
 
 ```sh
 launchctl bootout gui/501/com.arjundivecha.asado-monthly
 ```
 
-Remove its installed plist only after disabling it. Preserve `/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/Data/monthly/` for evidence. The deployment backup in `/Users/arjundivecha/Documents/Codex/2026-10-13/task/prevention_deployment/` contains exact original NightWatch controller/manifest and hashes. Restore those only if still unchanged by other work; otherwise remove just this registry entry, loader and dispatch branch. Do not restore the old warehouse or NN merely to roll back monitoring. Retain the recovery rollback backup separately.
+Keep its plist disabled until code/config versions are consistent. The exact pre-worker sources, installed plist, status, dirty-file hashes and canonical-data fingerprints are retained in `/Users/arjundivecha/Documents/Codex/2026-10-13/task/monthly_worker_deployment/`. Restore those source/plist versions only if no later work changed them, then bootstrap the restored readiness-only plist if desired. Do not restore an old warehouse or NN output merely to revert this schedule. For a failed actual publication, use the run's verified backup/journal with all producer/NN locks; refuse any later-writer conflict. Preserve accepted receipts and recovery evidence throughout.
+
+## Validation
+
+Isolated tests cover duplicate/concurrent starts, missing prerequisites, bounded wire scope, quota exhaustion, month rollover, stale/missing inputs, stage/score failure, publication crash/rollback, changed canonical bytes and acceptance failure. A full offline replay using persisted source fixtures ran native builders and two existing-model NN sandboxes, preserved all 36 warehouse tables' original observations, matched October's published 34 scores/eight holdings, and journal-published only into task-local fixture roots. Production activation is verified by loaded launchctl arguments, a read-only November preflight and an October ACCEPTED_NOOP with unchanged warehouse/NN/model/quota fingerprints. No production provider collection is used as a deployment test.

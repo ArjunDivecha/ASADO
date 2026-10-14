@@ -79,3 +79,6 @@ experiments/**/results/*.parquet
 
 # Ad-hoc analysis outputs (data, not code)
 Data/analysis/**/*.csv
+
+# Durable monthly readiness receipts, alerts and runtime logs
+/Data/monthly/

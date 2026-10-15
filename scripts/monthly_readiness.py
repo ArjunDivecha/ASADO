@@ -3,7 +3,7 @@
 
 Inputs: /Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/config/monthly_readiness.json,
 Data/asado.duckdb (guarded, short read), scripts/config/t2_bbg_manifest.json;
-/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 NN/rank_model/factor_set_v3_clean.json,
+/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 NN/<config "factor_set">, currently rank_model/factor_set_v4_pit_slow_ffill.json,
 production/output/contracts/nn_contract_YYYY-MM.{json,parquet}, production/state/holdings.json;
 /Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg/{budget_config.json,
 logs/touched_securities_YYYY-MM.json,logs/gate_usage_YYYY-MM.json,
@@ -232,7 +232,7 @@ def consumer(nn, target, fs_hash, accepted=None):
 
 def build_status(root, cfg, now, rows, accepted):
     target = now.astimezone(PACIFIC).strftime("%Y-%m")
-    fs_path = Path(cfg["nn_root"]) / "rank_model/factor_set_v3_clean.json"
+    fs_path = Path(cfg["nn_root"]) / cfg["factor_set"]
     fs = read(fs_path)
     problems = []
     fs_hash = sha(fs_path)
@@ -435,7 +435,7 @@ def main():
                 for relative in ("Data/.pipeline.lock", "Data/loop/.loop_daily.lock", "Data/.xo_monthly_repair.lock"):
                     handle = locks.enter_context((root / relative).open("r"))
                     fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                fs = read(Path(cfg["nn_root"]) / "rank_model/factor_set_v3_clean.json")
+                fs = read(Path(cfg["nn_root"]) / cfg["factor_set"])
                 rows = load_counts(root, fs["factors"], cfg["countries"])
             accepted_dir = state_dir / "accepted"
             accepted = {p.stem: read(p) for p in accepted_dir.glob("*.json")} if accepted_dir.exists() else {}

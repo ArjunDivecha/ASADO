@@ -42,13 +42,13 @@ class MonthlyReadinessTests(unittest.TestCase):
             p.write_text(json.dumps(data))
             return p
         self.write = write
-        fs = self.write("NN/rank_model/factor_set_v3_clean.json", {"factors": self.factors})
+        fs = self.write("NN/rank_model/factor_set_fixture.json", {"factors": self.factors})
         self.write("BBG/budget_config.json", dict(monthly_ceiling=20, daily_hit_ceiling=100, free_new_per_caller_month=10))
         self.write("BBG/logs/gate_usage_2026-10.json", {"free": {"ASADO": 2, "recovery_collect.py": 3}})
         for key in ("2026-08", "2026-09", "2026-10"):
             self.write(f"BBG/logs/touched_securities_{key}.json", ["existing"])
         (self.bbg / "logs/master_bloomberg_log.csv").write_text("timestamp,est_hits\n2026-10-13T17:00:00-07:00,5\n2026-10-12T17:00:00-07:00,7\n")
-        self.cfg = dict(nn_root=str(self.nn), bbg_root=str(self.bbg), countries=["A", "B"],
+        self.cfg = dict(nn_root=str(self.nn), bbg_root=str(self.bbg), countries=["A", "B"], factor_set="rank_model/factor_set_fixture.json",
                         factor_set_sha256=M.sha(fs), source_hashes={},
                         quota_associations=[dict(month="2026-10", caller="recovery_collect.py")],
                         request_scope=dict(securities=["existing", "new"], estimated_hits=3))

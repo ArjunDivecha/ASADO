@@ -256,7 +256,7 @@ def run_once(root, cfg, *, clock=None, executor=command, before=None, final=None
             from monthly_readiness import load_counts, build_status, accept
             if not final:
                 ready_cfg = read(root / "config/monthly_readiness.json")
-                fs = read(Path(cfg["nn_root"]) / "rank_model/factor_set_v3_clean.json")
+                fs = read(Path(cfg["nn_root"]) / ready_cfg["factor_set"])
                 rows = load_counts(root, fs["factors"], ready_cfg["countries"])
                 prior = {p.stem: read(p) for p in (state_dir / "accepted").glob("*.json")}
                 status = build_status(root, ready_cfg, now(), rows, prior)

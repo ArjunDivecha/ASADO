@@ -385,7 +385,7 @@ def warehouse(c, stage):
             preservation[table]=dict(original_observations_preserved=True,added_or_realized_rows=extra)
         counts=con.execute("""SELECT source,variable,strftime(date,'%Y-%m'),list(distinct country) FROM feature_panel_observed
           WHERE value IS NOT NULL AND isfinite(value) GROUP BY source,variable,date""").fetchall()
-        fs=read(Path(c['nn_root'])/'rank_model/factor_set_v3_clean.json')
+        fs=read(Path(c['nn_root'])/cfg['factor_set'])
         report=freshness(counts,fs['factors'],cfg['countries'],c['month'])
         fills=[r for r in read(run/'T2_SOURCE_WARNINGS.json',[]) if r['reason']=='Existing legacy Fill=P']
         if fills:

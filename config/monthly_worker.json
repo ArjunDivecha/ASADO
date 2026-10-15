@@ -10,7 +10,8 @@
   "bbg_python": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg/.venv/bin/python",
   "nn_python": "/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 NN/rank_model/.venv/bin/python",
   "nn_script": "/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 NN/production/run_monthly.py",
-  "factor_set_sha256": "c20498466d157788d99d523f16d3baf5a6b90710b2ec0323f0285674eb947bb7",
+  "factor_set": "rank_model/factor_set_v4_pit_slow_ffill.json",
+  "factor_set_sha256": "279628d9e3011796ebc838bdc6328bb2fc56a0dbeea89f59c1de654b16fbde33",
   "countries": [
     "Singapore",
     "Australia",
@@ -3993,16 +3994,16 @@
     "Data/raw/bloomberg/country_etf_passive.parquet"
   ],
   "pinned_sources": {
-    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/config/monthly_readiness.json": "90ea45f9a4004da64f2710915110b1e767cab0c1e1941cfc4e94751bbe91065d",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/config/monthly_readiness.json": "80c0a5e4354e6162b5fcc01bb271c58f19c2e576c102b15a1151f91e83f0b3f3",
     "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/monthly_collect.py": "5b15c91695d5a0996c07fabd5affc933f38d911b75eee57adf97cdf18c97f180",
     "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/monthly_gdelt.py": "adca28c9bca9a466fa7dc9e62cbd4f63aded1f03d9c14b2ec1ae8ca0e4159867",
     "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/monthly_nn.py": "3e95097f90b38558f0995ed6498b5340a13f24a8ac4c7cd86cc35c26ae06e405",
     "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/monthly_publish.py": "411eb4754da251da9a2878d4fc7edfe5255ae2e983871cb4af882b79d1b9abc6",
-    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/monthly_readiness.py": "aca0a265a3af43d689b9a8021e48c96f2ae9173000df3db296032db46f62de5b",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/monthly_readiness.py": "58ef027d8b770c2bb0130f201c1e8690a41f19f6c8bbea9166d160ac93d49f97",
     "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/monthly_service.py": "96429565e85e4b0123f1d3db91bb6646f6d4d3a3e8f3ffacc67e809765176e13",
-    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/monthly_stage.py": "48bd67b07dc23bf1b63407a9910ec846fce4a4046759466fd9445cf4fd80ffaf",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/monthly_stage.py": "8c7d408f754ebe5aca080a19f5769fd0e6e5dfc3a4dd873abc3063a896f31aba",
     "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/monthly_update.py": "2bdcbe5d836ff585b798687ab0f56c49a2f2cb980c5423e78a71dc97f6a63ec5",
-    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/monthly_worker.py": "1d72e1e3023c493ac47246b08b6b9d7efae331038f40ade94fec04623edff940",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/monthly_worker.py": "9c25310cf85a248fafae6f1d0bde46753074fb37ff84972165b61655d6e14f14",
     "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/duckdb_lock_guard.py": "b706569463db0045b5d0ea785eb60d4374256a85265d46bafdcf1eb6d96ee2f7",
     "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/build_t2_master.py": "e7524ca11404c39017d6e34db0a4e2d6d8b32d9e871f7c0ed92a3ec000ec5e36",
     "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/p2p_monthly.py": "ed06af09688c9c353bcd257cbe24761396bc6390ae072c0e2c76162a624d2619",
@@ -4023,9 +4024,9 @@
     "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/gdelt_ingest/export_daily_workbook.py": "a5364f80502df234acf91a90930e6b62c830e5075aae2aa4d4ec371635752d61",
     "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/gdelt_ingest/gdelt_support.py": "b5e66b295f3abf0dc46f6bbd178a57e7e76340ee9ddd4e9d1fb8b4f8a211de70",
     "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO/scripts/gdelt_ingest/stream_build_country_day.py": "f7a5d04e4bab391a783600293ddd01625f3913e542cda9c3cf08ce6f0d150727",
-    "/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 NN/production/run_monthly.py": "635a98d81bba961d5b9514ae73b81e5eb02c665136dfb8796637a9fcdcc6f539",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 NN/production/run_monthly.py": "fe6bb905d886e96d940d1b8088e7020ec42d9fbc5cf0dca613062789a68b2697",
     "/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 NN/production/monthly_lock.py": "177d57d1419e1060a5d6ebd0a4ebd0f2c83c634e06b6c8d60ae9415d9dae92a5",
-    "/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 NN/rank_model/factor_set_v3_clean.json": "c20498466d157788d99d523f16d3baf5a6b90710b2ec0323f0285674eb947bb7",
+    "/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 NN/rank_model/factor_set_v4_pit_slow_ffill.json": "279628d9e3011796ebc838bdc6328bb2fc56a0dbeea89f59c1de654b16fbde33",
     "/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg/bbg.py": "1223ee221af4b1a83d08d5199808fd86b5408fa547a0bb1db9abd840cf3e9279",
     "/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg/budget_gate.py": "f60278166ce031bed1edb9474c113b77e3f09ccad77797e71d34d62c06ba6d3f",
     "/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg/quota_guard.py": "ff7d7f464033ceb774868230630ad18b0eb3ad71917856fbe00b87db929f2b8c",
@@ -4039,8 +4040,8 @@
   },
   "validated_model_hashes": {
     "2026-02": {
-      "nets.pt": "a5eabb730610e0ca1017bb0d57da24713450f8f1637031a5550bf841428b1f5c",
-      "meta.json": "f3c191e968caebb1195a990140fb469b7e198f70aa2fbbb23a01be73f0e74a0d"
+      "nets.pt": "51db4b7e278af0502c6c4712b7c33538be9cfd1be83f7cbb22c088672a02ad02",
+      "meta.json": "c9b6aeb875f99659474c3636fa9dec21fa19ce4326c9da8959f4b5251054c22d"
     }
   }
 }

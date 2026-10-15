@@ -2,7 +2,8 @@
   "schema_version": 1,
   "nn_root": "/Users/arjundivecha/Dropbox/AAA Backup/A Complete/T2 NN",
   "bbg_root": "/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg",
-  "factor_set_sha256": "c20498466d157788d99d523f16d3baf5a6b90710b2ec0323f0285674eb947bb7",
+  "factor_set": "rank_model/factor_set_v4_pit_slow_ffill.json",
+  "factor_set_sha256": "279628d9e3011796ebc838bdc6328bb2fc56a0dbeea89f59c1de654b16fbde33",
   "countries": [
     "Singapore",
     "Australia",
@@ -579,7 +580,7 @@
     "estimated_hits": 1373
   },
   "consumer_source_hashes": {
-    "production/run_monthly.py": "635a98d81bba961d5b9514ae73b81e5eb02c665136dfb8796637a9fcdcc6f539",
+    "production/run_monthly.py": "fe6bb905d886e96d940d1b8088e7020ec42d9fbc5cf0dca613062789a68b2697",
     "production/monthly_lock.py": "177d57d1419e1060a5d6ebd0a4ebd0f2c83c634e06b6c8d60ae9415d9dae92a5"
   }
 }

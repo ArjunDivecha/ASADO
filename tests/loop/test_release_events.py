@@ -10,12 +10,20 @@ from pathlib import Path
 import pytest
 import pandas as pd
 
-from scripts.loop.loopdb import loop_connection, T2_UNIVERSE
+from scripts.loop.loopdb import LOOP_DB, MAIN_DB, loop_connection, T2_UNIVERSE
 from scripts.loop.event_study import preset_events
+
+# These tests read the PRODUCTION loop DB. They only SELECT, so open it
+# read-only (a write handle would block the nightly writers), and skip rather
+# than fail on a checkout that has no databases (worktrees, CI, cloud clones).
+pytestmark = pytest.mark.skipif(
+    not (LOOP_DB.exists() and MAIN_DB.exists()),
+    reason="live loop DB / warehouse not present",
+)
 
 
 def test_release_events_tables_exist_and_non_empty():
-    con = loop_connection()
+    con = loop_connection(read_only=True)
     try:
         tables = [t[0] for t in con.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='main'").fetchall()]
         assert "release_events_daily" in tables
@@ -30,7 +38,7 @@ def test_release_events_tables_exist_and_non_empty():
 
 
 def test_release_events_invariants():
-    con = loop_connection()
+    con = loop_connection(read_only=True)
     try:
         # 1. Signal date must be >= release date (PIT invariant)
         bad_pit = con.execute("SELECT COUNT(*) FROM release_events_daily WHERE signal_date < release_date").fetchone()[0]
@@ -54,7 +62,7 @@ def test_release_events_invariants():
 
 
 def test_event_study_release_presets():
-    con = loop_connection()
+    con = loop_connection(read_only=True)
     try:
         args = argparse.Namespace(threshold=1.5, agency=None, detector=None, category=None)
 

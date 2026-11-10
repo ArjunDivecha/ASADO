@@ -16,7 +16,6 @@ NEXT STEP:
 FILE STATE:
 - Pre-computation check: PASS
 - Full analysis: Requires Bloomberg futures/FX data
-"""
 
 The question: Your program has PIT-proven index-space signals (combiner NW-t 10.7,
 PIT graph families) but the US-listed ETF at US close reads zero. Where on the

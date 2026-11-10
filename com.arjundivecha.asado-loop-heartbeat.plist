@@ -4,7 +4,7 @@
 <dict>
     <!--
     ASADO Governance Layer (A2) — loop liveness WATCHDOG.
-    Runs ~1 hour after the 11:30 nightly loop. heartbeat.py --watchdog checks
+    Runs ~1 hour after the 11:30 nightly loop. heartbeat.py (watchdog mode) checks
     Data/loop/governance/heartbeat.json: if it is missing or its as_of is stale
     (> ~2h), the loop itself never ran (the silent-death case an in-process
     heartbeat cannot catch) -> it fires an iMessage push. This is the listener

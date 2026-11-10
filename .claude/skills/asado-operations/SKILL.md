@@ -116,7 +116,7 @@ launchctl print "gui/$(id -u)/com.arjundivecha.asado-daily"
 
 Every flag below was verified against the script's argparse block (file:line cited). Runtimes
 marked `(doc)` are from repo docs, not measured. Always `source venv/bin/activate` first.
-The nightly loop = **47 steps** per `config/governance_contract.yaml` (canonical); the
+The nightly loop = **51 steps** per `config/governance_contract.yaml` (canonical); the
 `loop_daily_job.py` docstring saying 37 and `CLAUDE.md` saying ~33 are **both stale** — do not
 trust the docstring count.
 
@@ -136,7 +136,7 @@ python scripts/monthly_update.py
 python scripts/daily_update.py --resume
 #   --skip-bloomberg --skip-gdelt --skip-neo4j --skip-db --skip-loop --t2-only
 
-# The nightly LOOP alone (Layer-1 dislocation engine, 47 steps).
+# The nightly LOOP alone (Layer-1 dislocation engine, 51 steps).
 # argparse: scripts/loop/loop_daily_job.py:400 — ONLY flag is --only.
 python scripts/loop/loop_daily_job.py               # full run
 python scripts/loop/loop_daily_job.py --only <step> # run a single named step
@@ -296,7 +296,9 @@ cd "/Users/arjundivecha/Dropbox/AAA Backup/A Working/ASADO" && source venv/bin/a
 python -m pytest tests/ \
   --deselect tests/loop/test_gap_engine.py::test_live_gap_engine_tables_if_present
 ```
-All other collected tests use `:memory:` / `tmp_path` and are safe.
+`tests/loop/test_release_events.py` (3 tests) also reads the production loop DB — read-only,
+and skipped when the DBs are absent. Add `--deselect tests/loop/test_release_events.py` to keep
+a run fully off production. All other collected tests use `:memory:` / `tmp_path` and are safe.
 
 Note: `tests/loop/test_daily_pipeline.py` is a **standalone script** with its own argparse
 `main()` — pytest collects **0** tests from it. Do not expect it to run under pytest; invoke it

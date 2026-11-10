@@ -8,7 +8,7 @@ description: >
   know "why is it built this way / what will break if I change it". Covers: the collectors →
   tidy-long parquet → destructive DuckDB rebuild → panels → loop-DB data-flow contract and its
   isolation rules; the two-DB split and the guarded_connect locking boundary; the loop's
-  fail-soft 47-step model; the skeptic harness gate sequence; Neo4j soft coupling; and the
+  fail-soft 51-step model; the skeptic harness gate sequence; Neo4j soft coupling; and the
   cross-repo contracts (Fable Daily Trading, cockpit, Bloomberg env split). Do NOT use this to
   run, operate, or debug a live failure (route to asado-operations and asado-debugging-playbook),
   to learn the experiment→ledger research method (asado-research-protocol), to check whether an
@@ -117,7 +117,7 @@ Two live DuckDB files, **each single-writer / many-reader**:
 
 **HARD RULE — never hold a connection to either DB, not even an idle read-only one.** DuckDB
 allows one read-write process OR many read-only processes; a single stray holder (a Codex
-Desktop analysis-sandbox kernel under `~/.Codex-science/` was the real culprit) blocks every
+Desktop analysis-sandbox kernel under `~/.claude-science/` was the real culprit) blocks every
 nightly writer. This caused the 2026-07-02 and 2026-07-03 pipeline failures — documented at
 `duckdb_lock_guard.py:22-24`.
 
@@ -126,7 +126,7 @@ in the module docstring at `:26-64`; called at the connect site, e.g. `setup_duc
 is the mitigation. It is a *reactive retry wrapper*, not a global
 lock: on a DuckDB lock IOException it parses the holder's exe path + PID from DuckDB's own error
 message, and (only if BOTH the exe path and the live `ps` command line match a killable pattern —
-default `.Codex-science`, `DEFAULT_KILLABLE_PATTERNS` at :84) SIGTERMs it, escalating to
+default `.claude-science`, `DEFAULT_KILLABLE_PATTERNS` at :84) SIGTERMs it, escalating to
 SIGKILL after 10s, up to `MAX_KILLS = 5` squatters. If the holder is NOT killable (e.g. a
 legitimate overlapping ASADO job), it waits with backoff up to 300s (`DEFAULT_WAIT_BUDGET_S`)
 then raises a loud, actionable error — FAIL IS FAIL, no silent fallback. Overrides:
@@ -157,14 +157,14 @@ If you add a new pipeline writer to the main DB, use `guarded_connect`, not `duc
 ## 4. The loop's fail-soft execution model
 
 `scripts/loop/loop_daily_job.py` orchestrates the nightly Alpha-Hunting Loop. Its docstring's
-step count is STALE — the real count is **47 steps**, matching the 47 entries in
+step count is STALE — the real count is **51 steps**, matching the 51 entries in
 `config/governance_contract.yaml` under `steps:` (verified count). Design:
 
-- **47 steps, always all run.** Each step is its own subprocess; one failure does not stop the
+- **51 steps, always all run.** Each step is its own subprocess; one failure does not stop the
   rest (`loop_daily_job.py:128-129`).
 - **Optionality is data-driven.** `_load_optional_steps()` (`loop_daily_job.py:361-368`) reads
-  `optional: true` from the governance contract. Of the 47 steps, **20 are `optional: false`
-  (required) and 27 are `optional: true`** (verified count in `governance_contract.yaml` —
+  `optional: true` from the governance contract. Of the 51 steps, **19 are `optional: false`
+  (required) and 32 are `optional: true`** (verified count in `governance_contract.yaml` —
   NOTE: an older note that says "19 required" is off by one; it is 20).
 - **PARTIAL semantics.** `_run_step()` retries up to `max_attempts=2` but treats exit code 2 as
   PARTIAL and does NOT retry it (`loop_daily_job.py:372-396`): the step kept its completed work

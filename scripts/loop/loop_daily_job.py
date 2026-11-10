@@ -164,7 +164,7 @@ BBG_ENV = "/Users/arjundivecha/Dropbox/AAA Backup/A Working/OpusBloomberg/.venv"
 CONDA = shutil.which("conda") or "/opt/homebrew/bin/conda"
 
 # Per-step hard wall-clock cap (seconds). A hung BBG/Neo4j/Dropbox child must
-# never block the whole 33-step pipeline indefinitely. Generous by default
+# never block the whole pipeline indefinitely. Generous by default
 # (catch a HANG, not a slow step); override per step where known.
 DEFAULT_STEP_TIMEOUT = 1800
 STEP_TIMEOUTS = {

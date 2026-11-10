@@ -48,7 +48,7 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 def get_combiner_signals():
     """Get daily ridge combiner ranks from loop DB."""
-    con = duckdb.connect(LOOP_DB)
+    con = duckdb.connect(LOOP_DB, read_only=True)
 
     # Daily combiner scores (the live prediction surface)
     df = con.execute('''
@@ -62,7 +62,7 @@ def get_combiner_signals():
 
 def get_graph_signals():
     """Get PIT graph family signals."""
-    con = duckdb.connect(LOOP_DB)
+    con = duckdb.connect(LOOP_DB, read_only=True)
 
     # Graph features
     df = con.execute('''
@@ -77,7 +77,7 @@ def get_graph_signals():
 
 def get_country_returns_daily():
     """Get daily country index returns from warehouse."""
-    con = duckdb.connect(WAREHOUSE_DB)
+    con = duckdb.connect(WAREHOUSE_DB, read_only=True)
 
     # Daily returns are computed from T2 levels - we need to calculate
     # from the raw price data or check if precomputed exists
@@ -166,7 +166,7 @@ def main():
     print("(This is the base case - if this fails, local futures capture also dies)")
     print()
 
-    con = duckdb.connect(LOOP_DB)
+    con = duckdb.connect(LOOP_DB, read_only=True)
     # Get daily combiner (long format)
     combiner_df = con.execute('''
         SELECT date, country, value as combiner_value
@@ -175,7 +175,7 @@ def main():
     ''').fetchdf()
     con.close()
 
-    con = duckdb.connect(WAREHOUSE_DB)
+    con = duckdb.connect(WAREHOUSE_DB, read_only=True)
     # Get daily returns (1DRet is next-day return)
     returns_df = con.execute('''
         SELECT date, country, value as return_1d

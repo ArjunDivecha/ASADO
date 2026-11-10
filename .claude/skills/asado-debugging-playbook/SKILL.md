@@ -552,7 +552,7 @@ check the log for the fallback line.)
 <a id="s8"></a>
 ## 8. A single loop / detector step crashed
 
-The nightly loop (`scripts/loop/loop_daily_job.py`) is **47 steps** (matches
+The nightly loop (`scripts/loop/loop_daily_job.py`) is **51 steps** (matches
 `config/governance_contract.yaml`; the docstring saying ~33/37 is stale). It is
 **fail-soft**: each step gets up to 2 attempts, exit 2 is PARTIAL, `optional:true` steps
 never fail the job, and the job only returns exit 1 at the end if the *required*-failure
@@ -578,8 +578,8 @@ python scripts/loop/loop_daily_job.py --only <step_name>
   job exit to 1. This is the one that needs real diagnosis.
 
 `optional:true`/`false` come from `config/governance_contract.yaml` (`_load_optional_steps`,
-`loop_daily_job.py:361-368`). **20 of 47** steps are `optional:false` (required); the
-other 27 degrade gracefully.
+`loop_daily_job.py:361-368`). **19 of 51** steps are `optional:false` (required); the
+other 32 degrade gracefully.
 
 **Known-fragile steps to suspect first (detectors).** `build_dislocations.py` runs
 detectors D1–D5, D7–D10 (D6 is blocked on insufficient history; D8 is bookkeeping,

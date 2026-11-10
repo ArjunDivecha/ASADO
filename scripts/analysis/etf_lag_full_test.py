@@ -59,7 +59,7 @@ def main():
 
     # Get local data
     print("\nLoading local data...")
-    con = duckdb.connect(WAREHOUSE_DB)
+    con = duckdb.connect(WAREHOUSE_DB, read_only=True)
     local_df = con.execute('''
         SELECT date, country, value as local_return
         FROM t2_factors_daily

@@ -32,7 +32,7 @@ ingests market/macro/news data, builds a normalized factor warehouse, mines
 candidate trading signals, and runs them through a falsification harness that is
 deliberately hard to fool. Its core value is **trustworthy falsification** — the
 system is built to kill bad ideas honestly (pre-registration gates, forward-
-return bans, cost-and-deflation-adjusted verdicts) rather than to manufacture
+return bans, deflation-adjusted verdicts; cost gating was retired 2026-07-13) rather than to manufacture
 passing backtests. The **main checkout is the production tree**: launchd
 (macOS) runs the nightly jobs directly from it, so the repo you are standing in
 is not a scratch copy — it is the running factory. Verdicts accumulate in
@@ -181,8 +181,8 @@ these, in this order:
 **any step-count quoted in prose**. Multiple docs disagree on the nightly loop
 size (`AGENTS.md` says 27, then 32, then 33 across its dated entries;
 `loop_daily_job.py`'s docstring says ~33/37) — all stale. The authority is `config/governance_contract.yaml`, which currently
-defines **47 steps** (verified: 47 list entries under the `steps:` block; 20 are
-`optional: false` / hard-required, 27 are fail-soft `optional: true`).
+defines **51 steps** (verified: 51 list entries under the `steps:` block; 19 are
+`optional: false` / hard-required, 32 are fail-soft `optional: true`).
 
 ## 5. Routing map — the seven sibling skills
 

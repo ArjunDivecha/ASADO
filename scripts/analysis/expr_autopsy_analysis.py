@@ -36,7 +36,7 @@ def analyze_combiner_capture():
     print("ANALYSIS: Combiner → T2 Index Capture")
     print("=" * 70)
 
-    con = duckdb.connect(LOOP_DB)
+    con = duckdb.connect(LOOP_DB, read_only=True)
     combiner_df = con.execute('''
         SELECT date, country, value as signal
         FROM combiner_scores_daily
@@ -44,7 +44,7 @@ def analyze_combiner_capture():
     ''').fetchdf()
     con.close()
 
-    con = duckdb.connect(WAREHOUSE_DB)
+    con = duckdb.connect(WAREHOUSE_DB, read_only=True)
     returns_df = con.execute('''
         SELECT date, country, value as return_1d
         FROM t2_factors_daily
@@ -100,7 +100,7 @@ def analyze_graph_capture():
     print("ANALYSIS: Graph Families → T2 Index Capture")
     print("=" * 70)
 
-    con = duckdb.connect(LOOP_DB)
+    con = duckdb.connect(LOOP_DB, read_only=True)
     graph_df = con.execute('''
         SELECT date, country, variable, value as signal
         FROM graph_features_pit_daily
@@ -108,7 +108,7 @@ def analyze_graph_capture():
     ''').fetchdf()
     con.close()
 
-    con = duckdb.connect(WAREHOUSE_DB)
+    con = duckdb.connect(WAREHOUSE_DB, read_only=True)
     returns_df = con.execute('''
         SELECT date, country, value as return_1d
         FROM t2_factors_daily

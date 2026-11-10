@@ -20,3 +20,18 @@ yfinance>=0.2
 cryptography
 pydantic>=2,<3
 anthropic>=0.40,<1
+
+# Imported by pipeline code but previously unlisted (added 2026-11-10 audit)
+pyyaml>=6.0          # config loaders across scripts/, scripts/loop, harness
+scipy>=1.11          # harness/evaluate_signal.py, build_t2_master.py, p2p_monthly.py
+matplotlib>=3.7      # loop/event_study.py, loop/build_jst_risk_report.py
+networkx>=3.0        # loop/build_graph_features_pit.py, frontend/app.py
+
+# Optional surfaces (not needed by the nightly pipeline)
+statsmodels>=0.14    # backtest_overnight_signal.py
+openai>=1.0          # brier_gate/
+streamlit>=1.30      # frontend/app.py
+plotly>=5.0          # frontend/app.py
+pyvis>=0.3           # frontend/app.py
+hmmlearn>=0.3        # regime_ew/
+pytest>=8.0          # tests/

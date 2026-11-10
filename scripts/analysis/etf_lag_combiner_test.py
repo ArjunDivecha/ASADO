@@ -64,7 +64,7 @@ def main():
 
     # Get local data
     print("\nLoading data...")
-    con = duckdb.connect(WAREHOUSE_DB)
+    con = duckdb.connect(WAREHOUSE_DB, read_only=True)
     local_df = con.execute('''
         SELECT date, country, value as local_return
         FROM t2_factors_daily
@@ -74,7 +74,7 @@ def main():
     local_df['date'] = pd.to_datetime(local_df['date']).dt.date
 
     # Get combiner
-    con = duckdb.connect(LOOP_DB)
+    con = duckdb.connect(LOOP_DB, read_only=True)
     combiner_df = con.execute('''
         SELECT date, country, value as signal
         FROM combiner_scores_daily

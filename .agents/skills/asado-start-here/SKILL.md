@@ -32,7 +32,7 @@ ingests market/macro/news data, builds a normalized factor warehouse, mines
 candidate trading signals, and runs them through a falsification harness that is
 deliberately hard to fool. Its core value is **trustworthy falsification** — the
 system is built to kill bad ideas honestly (pre-registration gates, forward-
-return bans, cost-and-deflation-adjusted verdicts) rather than to manufacture
+return bans, deflation-adjusted verdicts; cost gating was retired 2026-07-13) rather than to manufacture
 passing backtests. The **main checkout is the production tree**: launchd
 (macOS) runs the nightly jobs directly from it, so the repo you are standing in
 is not a scratch copy — it is the running factory. Verdicts accumulate in
@@ -76,14 +76,14 @@ untracked files.**
   long-lived read-only handle). Even an idle read-only connection can block the
   nightly writer. Core builders use `guarded_connect()` in
   `scripts/duckdb_lock_guard.py:206` (reactive retry, kills only
-  `.Codex-science` lock holders, 300s budget, fails loudly). Several paths are
+  `.claude-science` lock holders, 300s budget, fails loudly). Several paths are
   **unguarded** (db_bridge, MCP server, Streamlit frontend, two monthly GDELT
   writers) — do not add your own unguarded opener. To inspect data, prefer the
   read-only API layers described in **asado-operations**.
 
 **Rule 3 — Stay in the sandbox; never run a destructive rebuild on production
 without an explicit user go-ahead.**
-- The repo's own permission allowlist (`.Codex/settings.local.json`) only
+- The repo's own permission allowlist (`.claude/settings.local.json`) only
   pre-approves `Bash(./venv/bin/python -c ' *)` — i.e. tiny read-only probes
   through the project venv. Anything beyond that needs a decision.
 - `scripts/setup_duckdb.py` performs a FULL DESTRUCTIVE rebuild: it `unlink`s
@@ -181,8 +181,8 @@ these, in this order:
 **any step-count quoted in prose**. Multiple docs disagree on the nightly loop
 size (`AGENTS.md` says 27, then 32, then 33 across its dated entries;
 `loop_daily_job.py`'s docstring says ~33/37) — all stale. The authority is `config/governance_contract.yaml`, which currently
-defines **47 steps** (verified: 47 list entries under the `steps:` block; 20 are
-`optional: false` / hard-required, 27 are fail-soft `optional: true`).
+defines **51 steps** (verified: 51 list entries under the `steps:` block; 19 are
+`optional: false` / hard-required, 32 are fail-soft `optional: true`).
 
 ## 5. Routing map — the seven sibling skills
 
@@ -243,5 +243,5 @@ route straight to that skill. In particular:
 - Bloomberg data work? → the global **bloomberg-skill** (not restated here).
 
 A wrong runbook is worse than none: if a claim here conflicts with a LIVE
-authority (`AGENTS.md` / `AGENTS.md`) or the ledgers, trust the live authority
+authority (`AGENTS.md`) or the ledgers, trust the live authority
 and tell the user about the drift.

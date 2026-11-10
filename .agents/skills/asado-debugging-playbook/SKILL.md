@@ -153,7 +153,7 @@ failure.
 
 DuckDB is one-writer / many-readers on a single file. **A single stray process holding
 either DB — even an idle read-only handle — blocks every nightly writer.** In practice
-the squatters are Codex Desktop analysis-sandbox kernels under `~/.Codex-science/`
+the squatters are Codex Desktop analysis-sandbox kernels under `~/.claude-science/`
 that open `Data/asado.duckdb` and never close it. This is exactly what killed the
 nightly daily-panels build AND the predmkt job on **2026-07-02 and 2026-07-03**
 (`scripts/duckdb_lock_guard.py:22-24`; guard wired in commit `fc1e0d2`, 2026-07-03).
@@ -165,7 +165,7 @@ which wraps the ~11 core builders:
    `Conflicting lock is held in (.+?) \(PID (\d+)\)` (`:93`). That gives it
    `(exe_path, PID)`.
 2. It kills the holder **only if** the holder's path/command matches a killable pattern
-   (default: the single substring `.Codex-science`, `:84`) **AND** `lsof` confirms that
+   (default: the single substring `.claude-science`, `:84`) **AND** `lsof` confirms that
    exact PID still holds the DB file open (`:245-253`, the guard against PID reuse). It
    never kills its own process/parent, and clears at most `MAX_KILLS = 5` stacked
    read-only squatters per call (`:88`).
@@ -188,7 +188,7 @@ which wraps the ~11 core builders:
   process), it is safe to let the guard clear it. Add its path substring to the killable
   set for the next run via env, e.g.:
   ```bash
-  ASADO_LOCK_GUARD_KILLABLE=".Codex-science,jupyter" \
+  ASADO_LOCK_GUARD_KILLABLE=".claude-science,jupyter" \
     "/Users/.../ASADO/venv/bin/python" scripts/daily_update.py --resume
   ```
 - If PID `n` is a **real ASADO job** (another `daily_update`, `setup_duckdb`,
@@ -552,7 +552,7 @@ check the log for the fallback line.)
 <a id="s8"></a>
 ## 8. A single loop / detector step crashed
 
-The nightly loop (`scripts/loop/loop_daily_job.py`) is **47 steps** (matches
+The nightly loop (`scripts/loop/loop_daily_job.py`) is **51 steps** (matches
 `config/governance_contract.yaml`; the docstring saying ~33/37 is stale). It is
 **fail-soft**: each step gets up to 2 attempts, exit 2 is PARTIAL, `optional:true` steps
 never fail the job, and the job only returns exit 1 at the end if the *required*-failure
@@ -578,8 +578,8 @@ python scripts/loop/loop_daily_job.py --only <step_name>
   job exit to 1. This is the one that needs real diagnosis.
 
 `optional:true`/`false` come from `config/governance_contract.yaml` (`_load_optional_steps`,
-`loop_daily_job.py:361-368`). **20 of 47** steps are `optional:false` (required); the
-other 27 degrade gracefully.
+`loop_daily_job.py:361-368`). **19 of 51** steps are `optional:false` (required); the
+other 32 degrade gracefully.
 
 **Known-fragile steps to suspect first (detectors).** `build_dislocations.py` runs
 detectors D1–D5, D7–D10 (D6 is blocked on insufficient history; D8 is bookkeeping,
